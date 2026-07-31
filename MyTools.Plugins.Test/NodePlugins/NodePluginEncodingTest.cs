@@ -69,13 +69,16 @@ public class NodePluginEncodingTest
             Keywords = ["utf8"]
         };
         var factory = new NodePluginFactory(NullLoggerFactory.Instance);
-        using var plugin = factory.CreatePlugins([manifest]).Single();
+        using (var plugin = factory.CreatePlugins([manifest]).Single())
+        {
+            var result = await plugin.SearchAsync("你好", CancellationToken.None);
 
-        var result = await plugin.SearchAsync("你好", CancellationToken.None);
+            Assert.That(result.Success, Is.True, result.ErrorMessage);
+            var item = result.Items.Single();
+            Assert.That(item.Title, Is.EqualTo("翻译：你好"));
+            Assert.That(item.SubTitle, Is.EqualTo("中文结果"));
+        }
 
-        Assert.That(result.Success, Is.True, result.ErrorMessage);
-        var item = result.Items.Single();
-        Assert.That(item.Title, Is.EqualTo("翻译：你好"));
-        Assert.That(item.SubTitle, Is.EqualTo("中文结果"));
+        Assert.That(() => Directory.Delete(rootPath, true), Throws.Nothing);
     }
 }

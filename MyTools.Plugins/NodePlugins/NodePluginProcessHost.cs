@@ -321,12 +321,18 @@ internal sealed class NodePluginProcessHost : IDisposable
             }
         }
 
-        if (process is { HasExited: false })
+        if (process is { } currentProcess)
         {
-            process.Kill(entireProcessTree: true);
+            if (!currentProcess.HasExited)
+            {
+                currentProcess.Kill(entireProcessTree: true);
+            }
+
+            currentProcess.WaitForExit();
+            currentProcess.Dispose();
+            process = null;
         }
 
-        process?.Dispose();
         startLock.Dispose();
     }
 
