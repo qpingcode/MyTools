@@ -12,6 +12,23 @@ namespace MyTools.Desktop.Test.Services;
 public class UpdateServiceTests
 {
     [Test]
+    public void DefaultUpdateUrl_UsesMyToolsGithubReleases()
+    {
+        Assert.That(UpdateService.DefaultUpdateUrl, Is.EqualTo("https://github.com/qpingcode/MyTools/releases"));
+    }
+
+    [TestCase("https://github.com/qpingcode/MyTools", "https://github.com/qpingcode/MyTools")]
+    [TestCase("https://github.com/qpingcode/MyTools/", "https://github.com/qpingcode/MyTools")]
+    [TestCase("https://github.com/qpingcode/MyTools/releases", "https://github.com/qpingcode/MyTools")]
+    [TestCase("https://GITHUB.COM/qpingcode/MyTools/RELEASES/", "https://github.com/qpingcode/MyTools")]
+    [TestCase("https://downloads.qping.me/mytools/stable/win-x64/", null)]
+    [TestCase("C:\\Updates\\MyTools", null)]
+    public void GetGithubRepositoryUrl_NormalizesSupportedUrls(string updateUrl, string? expected)
+    {
+        Assert.That(UpdateService.GetGithubRepositoryUrl(updateUrl), Is.EqualTo(expected));
+    }
+
+    [Test]
     public async Task CheckForUpdatesAsync_WhenUpdateUrlIsMissing_ReturnsNotConfigured()
     {
         var registry = new Mock<IConfigurationRegistry>();

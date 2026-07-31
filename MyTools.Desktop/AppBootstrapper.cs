@@ -248,7 +248,7 @@ public class AppBootstrapper : IDisposable
             registry.AddSetting(generalCategory, "AutoStart", "开机自启", "是否在系统启动时自动运行", false);
             registry.AddSetting(generalCategory, "MaxHistory", "最大历史记录", "保存的最大历史记录数量", 100);
             registry.AddSetting(generalCategory, "SearchDelay", "搜索延迟", "搜索防抖延迟时间（毫秒）", 100.0);
-            registry.AddSetting(generalCategory, "UpdateUrl", "更新地址", "Velopack 发布目录的 HTTPS 地址或本地目录；留空则禁用更新检查", string.Empty);
+            registry.AddSetting(generalCategory, "UpdateUrl", "更新地址", "GitHub 仓库/Releases 地址、Velopack 发布目录的 HTTPS 地址或本地目录", UpdateService.DefaultUpdateUrl);
             registry.AddSetting(generalCategory, "UpdateChannel", "更新通道", "Velopack 更新通道，例如 win、stable 或 beta", "win");
             
             // Add Plugin Settings

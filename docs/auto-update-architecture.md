@@ -10,17 +10,17 @@
 - 引入 `Velopack 1.2.0`，并用仓库级 Tool Manifest 固定 `vpk 1.2.0`；
 - 在显式 `Program.Main` 中运行最早期 Velopack 启动钩子；
 - 实现 `UpdateService`、托盘手动检查、下载、正常退出后安装及重启；
-- 在 General 设置中加入 `UpdateUrl` 和 `UpdateChannel`；
+- 在 General 设置中加入 `UpdateUrl` 和 `UpdateChannel`，默认使用项目的 GitHub Releases；
 - 修复版本目录变化后的自动启动路径；
 - 在退出时释放 DI 容器和动态 Node 插件；
 - 将 Velopack 完整/增量包生成接入带显式开关的 `dotnet publish`；
 - 将 `publish.ps1` 改为无参数交互发布，并用 `version.txt` 记录最近成功发布版本；
-- 新增 Desktop 更新服务测试，覆盖未配置更新源、非 Velopack 安装环境和无待下载更新；
+- 新增 Desktop 更新服务测试，覆盖默认源、GitHub URL 规范化、未配置更新源、非 Velopack 安装环境和无待下载更新；
 - 使用连续三个本地预发布版本验证完整包和增量包生成。
 
 正式发布前仍需完成：
 
-- 部署静态 HTTPS 更新目录并填写正式 `UpdateUrl`；
+- 在 GitHub Release 中上传 Velopack 索引、完整包和增量包；
 - 配置 Authenticode 证书和 CI Secret；
 - 将发布、签名、上传及最后替换索引的顺序固化到 CI；
 - 在隔离环境安装 Setup，执行真实的客户端跨版本更新验收。
@@ -143,7 +143,7 @@ Velopack 应直接管理 `MyTools.Desktop` 的安装和启动。`MyTools.Launche
 5. 用户数据已与安装目录分离，迁移成本较低；
 6. 能通过“等待应用正常退出再更新”与插件清理流程配合。
 
-不建议把 GitHub Releases 作为默认方案，因为当前仓库远端是自建 Git 服务。推荐在服务器上提供独立的静态 HTTPS 下载目录；开发阶段也可以先使用本地或 OneDrive 同步目录作为文件更新源。
+默认使用 `https://github.com/qpingcode/MyTools/releases`，并通过 Velopack `GithubSource` 读取公开 Release 资产。自建静态 HTTPS 下载目录、本地目录或 OneDrive 同步目录仍可通过 `General.UpdateUrl` 配置为替代更新源。
 
 ## 5. 目标架构
 
@@ -169,7 +169,7 @@ CI / 正式分发（待实现）
     ├── 上传包文件
     └── 最后原子替换索引
 
-静态 HTTPS 更新源（待部署）
+GitHub Releases（默认）或静态 HTTPS 更新源
     ├── releases.win.json
     ├── 完整发布包
     ├── 增量发布包
@@ -227,6 +227,7 @@ MyTools.Desktop/Services/UpdateService.cs
 
 - 判断程序是否为 Velopack 安装版；
 - 从 `General.UpdateUrl` 和 `General.UpdateChannel` 读取更新源及通道；
+- 将 GitHub 仓库或 Releases 页面地址规范化后交给 Velopack `GithubSource`；
 - 检查远程更新；
 - 下载更新并报告进度；
 - 使用 `SemaphoreSlim` 防止检查和下载并发执行；
