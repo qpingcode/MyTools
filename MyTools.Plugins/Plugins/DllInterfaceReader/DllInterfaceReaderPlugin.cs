@@ -29,8 +29,8 @@ namespace MyTools.Plugins
         private readonly ILogger<DllInterfaceReaderPlugin> logger;
         private Type? tableCodeAttributeType;
         private Type? tableNameAttributeType;
-        private Lazy<List<InterfaceInfo>> interfaceInfos;
-        private ConfigurationSetting spyPathSetting;
+        private Lazy<List<InterfaceInfo>>? interfaceInfos;
+        private ConfigurationSetting? spyPathSetting;
         public DllInterfaceReaderPlugin(ILogger<DllInterfaceReaderPlugin> logger, IConfigurationRegistry registry)
         {
             this.logger = logger;
@@ -95,7 +95,9 @@ namespace MyTools.Plugins
         private List<ResultItem> SearchInterfaces(string searchQuery)
         {
             var matchedResults = new List<ResultItem>();
-            foreach (var interfaceInfo in interfaceInfos.Value)
+            var initializedInterfaceInfos = interfaceInfos?.Value
+                ?? throw new InvalidOperationException("The DLL interface reader plugin has not been initialized.");
+            foreach (var interfaceInfo in initializedInterfaceInfos)
             {
                 var extraScoreIfMatched = 200;
                 AddResultIfMatch("Class",interfaceInfo.ClassName, searchQuery, interfaceInfo, matchedResults);

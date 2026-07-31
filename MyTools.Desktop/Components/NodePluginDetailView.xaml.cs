@@ -121,7 +121,8 @@ public partial class NodePluginDetailView : UserControl
             CoreWebView2HostResourceAccessKind.Allow);
 
         var relativeEntryPath = Path.GetRelativePath(fullPluginDirectory, fullEntryPath).Replace('\\', '/');
-        return new Uri($"https://{hostName}/{Uri.EscapeUriString(relativeEntryPath)}");
+        var escapedEntryPath = string.Join('/', relativeEntryPath.Split('/').Select(Uri.EscapeDataString));
+        return new Uri($"https://{hostName}/{escapedEntryPath}");
     }
 
     private static string BuildPluginHostName(string pluginDirectory)
