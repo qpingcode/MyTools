@@ -1,0 +1,188 @@
+name: Build and release
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mytools-master-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Test and create Velopack release
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+          cache: true
+          cache-dependency-path: |
+            **/*.csproj
+            Directory.Packages.props
+            .config/dotnet-tools.json
+
+      - name: Restore dependencies and tools
+        shell: pwsh
+        run: |
+          dotnet restore .\MyTools.sln
+          dotnet tool restore --tool-manifest .\.config\dotnet-tools.json
+
+      - name: Run automated tests
+        shell: pwsh
+        run: >-
+          dotnet test .\MyTools.sln
+          --configuration Release
+          --no-restore
+          --nologo
+          --filter "FullyQualifiedName!~OpenAIServiceTest"
+
+      - name: Calculate next release version
+        id: version
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $pattern = '^(?:v)?(?<major>0|[1-9]\d*)\.(?<minor>0|[1-9]\d*)\.(?<patch>0|[1-9]\d*)$'
+
+          function ConvertTo-VersionInfo([string] $value) {
+              $match = [regex]::Match($value.Trim(), $pattern)
+              if (-not $match.Success) {
+                  return $null
+              }
+
+              return [pscustomobject]@{
+                  Major = [System.Numerics.BigInteger]::Parse($match.Groups['major'].Value)
+                  Minor = [System.Numerics.BigInteger]::Parse($match.Groups['minor'].Value)
+                  Patch = [System.Numerics.BigInteger]::Parse($match.Groups['patch'].Value)
+                  Tag = $value.Trim()
+              }
+          }
+
+          $baseline = ConvertTo-VersionInfo (Get-Content .\version.txt -Raw)
+          if ($null -eq $baseline) {
+              throw "version.txt must contain a valid semantic version."
+          }
+
+          $releaseCandidates = @()
+          $releaseList = gh release list --repo $env:GITHUB_REPOSITORY --limit 100 --json tagName | ConvertFrom-Json
+          foreach ($release in $releaseList) {
+              $candidate = ConvertTo-VersionInfo $release.tagName
+              if ($null -ne $candidate) {
+                  $releaseCandidates += $candidate
+              }
+          }
+
+          $latestRelease = $releaseCandidates |
+              Sort-Object -Property `
+                  @{ Expression = 'Major'; Descending = $true },
+                  @{ Expression = 'Minor'; Descending = $true },
+                  @{ Expression = 'Patch'; Descending = $true } |
+              Select-Object -First 1
+
+          $current = @($baseline) + @($releaseCandidates) |
+              Sort-Object -Property `
+                  @{ Expression = 'Major'; Descending = $true },
+                  @{ Expression = 'Minor'; Descending = $true },
+                  @{ Expression = 'Patch'; Descending = $true } |
+              Select-Object -First 1
+
+          $version = '{0}.{1}.{2}' -f $current.Major, $current.Minor, ($current.Patch + 1)
+          $previousTag = if ($null -eq $latestRelease) { '' } else { $latestRelease.Tag }
+
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "tag=v$version" >> $env:GITHUB_OUTPUT
+          "previous_tag=$previousTag" >> $env:GITHUB_OUTPUT
+          Write-Host "Release version: $version"
+          if ($previousTag) {
+              Write-Host "Previous release used for delta generation: $previousTag"
+          }
+
+      - name: Download previous full package for delta generation
+        if: steps.version.outputs.previous_tag != ''
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREVIOUS_TAG: ${{ steps.version.outputs.previous_tag }}
+        run: |
+          New-Item -ItemType Directory -Path .\Releases -Force | Out-Null
+          gh release download $env:PREVIOUS_TAG `
+            --repo $env:GITHUB_REPOSITORY `
+            --pattern '*-full.nupkg' `
+            --dir .\Releases
+
+      - name: Create Velopack packages
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: >-
+          dotnet publish .\MyTools.Desktop\MyTools.Desktop.csproj
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          --property:CreateVelopackRelease=true
+          --property:VelopackChannel=win
+          --property:Version=$env:RELEASE_VERSION
+
+      - name: Verify release outputs
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          $requiredPatterns = @(
+              "MyTools.Desktop-$env:RELEASE_VERSION-full.nupkg",
+              'MyTools.Desktop-win-Setup.exe',
+              'MyTools.Desktop-win-Portable.zip',
+              'releases.win.json'
+          )
+
+          foreach ($pattern in $requiredPatterns) {
+              if (-not (Test-Path (Join-Path .\Releases $pattern) -PathType Leaf)) {
+                  throw "Required Velopack output is missing: $pattern"
+              }
+          }
+
+          Get-ChildItem .\Releases -File | Sort-Object Name | Format-Table Name, Length
+
+      - name: Create GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          $versionPattern = [regex]::Escape($env:RELEASE_VERSION)
+          $assets = @(
+              Get-ChildItem .\Releases -File |
+                  Where-Object {
+                      $_.Extension -ne '.nupkg' -or
+                      $_.Name -match "-$versionPattern-(?:full|delta)\.nupkg$"
+                  } |
+                  Select-Object -ExpandProperty FullName
+          )
+          if ($assets.Count -eq 0) {
+              throw 'No release assets were generated.'
+          }
+
+          gh release create $env:RELEASE_TAG `
+            --repo $env:GITHUB_REPOSITORY `
+            --target $env:GITHUB_SHA `
+            --title "MyTools $env:RELEASE_VERSION" `
+            --generate-notes `
+            @assets
+
+
