@@ -38,5 +38,3 @@ MyTools 是一款使用 .NET 8 和 WPF 开发的 Windows 桌面效率工具。�
 ## 许可证
 
 MyTools 使用 [MIT License](LICENSE) 授权。
-
-感谢 [SignPath](https://signpath.io/) 为本开源项目提供免费的代码签名服务。
