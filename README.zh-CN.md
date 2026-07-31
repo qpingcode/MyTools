@@ -25,7 +25,7 @@ MyTools 是一款使用 .NET 8 和 WPF 开发的 Windows 桌面效率工具。�
 
 ## 安装
 
-从[最新的 GitHub Release](https://github.com/qpingcode/MyTools/releases/latest) 下载并运行 `MyTools.Desktop-win-Setup.exe`。
+从 [最新的 GitHub Release](https://github.com/qpingcode/MyTools/releases/latest) 下载并运行 `MyTools.Desktop-win-Setup.exe`。
 
 每个 Release 还提供完整的便携包 `MyTools.Desktop-win-Portable.zip`。解压后直接运行 `MyTools.Desktop.exe` 即可。便携版不支持应用内 Velopack 自动更新。
 
@@ -39,3 +39,4 @@ MyTools 是一款使用 .NET 8 和 WPF 开发的 Windows 桌面效率工具。�
 
 MyTools 使用 [MIT License](LICENSE) 授权。
 
+感谢 [SignPath](https://signpath.io/) 为本开源项目提供免费的代码签名服务。
