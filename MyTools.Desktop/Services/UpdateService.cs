@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using MyTools.Common.Config.Interfaces;
 using Velopack;
 using Velopack.Locators;
+using Velopack.Sources;
 
 namespace MyTools.Desktop.Services;
 
@@ -28,6 +29,7 @@ public sealed class UpdateService(
     IConfigurationRegistry configurationRegistry,
     ILogger<UpdateService> logger) : IUpdateService
 {
+    public const string DefaultUpdateUrl = "https://github.com/qpingcode/MyTools/releases";
     private const string UpdateUrlSettingPath = "General.UpdateUrl";
     private const string UpdateChannelSettingPath = "General.UpdateChannel";
     private const string DefaultChannel = "win";
@@ -75,7 +77,7 @@ public sealed class UpdateService(
             {
                 ExplicitChannel = string.IsNullOrWhiteSpace(channel) ? DefaultChannel : channel.Trim()
             };
-            var updateManager = new UpdateManager(updateUrl.Trim(), options);
+            var updateManager = CreateUpdateManager(updateUrl, options);
             if (!updateManager.IsInstalled)
             {
                 return new UpdateCheckResult(UpdateCheckStatus.NotInstalled);
@@ -137,6 +139,39 @@ public sealed class UpdateService(
     private string? GetStringSetting(string path)
     {
         return configurationRegistry.FindSetting(path)?.GetValue<string>();
+    }
+
+    private static UpdateManager CreateUpdateManager(string updateUrl, UpdateOptions options)
+    {
+        var trimmedUpdateUrl = updateUrl.Trim();
+        var githubRepositoryUrl = GetGithubRepositoryUrl(trimmedUpdateUrl);
+        return githubRepositoryUrl == null
+            ? new UpdateManager(trimmedUpdateUrl, options)
+            // ReSharper disable once RedundantArgumentDefaultValue
+            : new UpdateManager(new GithubSource(githubRepositoryUrl, null, false, null), options);
+    }
+
+    internal static string? GetGithubRepositoryUrl(string updateUrl)
+    {
+        if (!Uri.TryCreate(updateUrl, UriKind.Absolute, out var uri)
+            || !uri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)
+            || !uri.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var pathSegments = uri.AbsolutePath.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (pathSegments.Length == 3 && pathSegments[2].Equals("releases", StringComparison.OrdinalIgnoreCase))
+        {
+            pathSegments = pathSegments[..2];
+        }
+
+        if (pathSegments.Length != 2)
+        {
+            return null;
+        }
+
+        return $"https://github.com/{pathSegments[0]}/{pathSegments[1]}";
     }
 }
 
