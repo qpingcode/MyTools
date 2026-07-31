@@ -1,0 +1,139 @@
+import { tool } from "@qping/plugin-common/web-tool";
+
+(function () {
+    type ChatMessage = {
+        role?: string;
+        content?: string;
+    };
+
+    type ChatState = {
+        status?: string;
+        conversationId?: string;
+        messages?: ChatMessage[];
+        streaming?: boolean;
+        error?: string;
+    };
+
+    var hostEvents = tool.events.host;
+    var POLL_INTERVAL_MS = 120;
+    var messagesElement = document.getElementById("messages") as HTMLElement;
+    var promptInput = document.getElementById("promptInput") as HTMLTextAreaElement;
+    var sendButton = document.getElementById("sendButton") as HTMLButtonElement;
+    var newChatButton = document.getElementById("newChatButton") as HTMLButtonElement;
+    var conversationId = "";
+    var pollTimer: number | null = null;
+
+    async function callState(action: string, data: Record<string, unknown> = {}) {
+        try {
+            renderState(await tool.call<ChatState>(action, data || {}));
+        } catch (error) {
+            renderState({
+                status: "error",
+                conversationId: conversationId,
+                messages: [],
+                streaming: false,
+                error: error instanceof Error ? error.message : String(error)
+            });
+        }
+    }
+
+    function normalize(value: unknown): string {
+        return typeof value === "string" ? value.trim() : "";
+    }
+
+    function renderState(state: ChatState | null | undefined): void {
+        var current = state || {};
+        conversationId = current.conversationId || conversationId;
+        var messages = Array.isArray(current.messages) ? current.messages : [];
+        messagesElement.replaceChildren();
+        messagesElement.className = messages.length === 0 ? "messages empty" : "messages";
+
+        if (messages.length === 0) {
+            messagesElement.textContent = current.error || "Ask DeepSeek anything";
+        }
+
+        messages.forEach(function (message: ChatMessage) {
+            var bubble = document.createElement("div");
+            bubble.className = message.role === "user" ? "message user" : "message assistant";
+            bubble.textContent = message.content || (message.role === "assistant" && current.streaming ? "…" : "");
+            messagesElement.appendChild(bubble);
+        });
+
+        if (current.error && messages.length > 0) {
+            var error = document.createElement("div");
+            error.className = "message error";
+            error.textContent = current.error;
+            messagesElement.appendChild(error);
+        }
+
+        sendButton.disabled = current.streaming === true;
+        promptInput.disabled = current.streaming === true;
+        scrollToBottom();
+
+        if (current.streaming === true) {
+            startPolling();
+        } else {
+            stopPolling();
+        }
+    }
+
+    function scrollToBottom(): void {
+        messagesElement.scrollTop = messagesElement.scrollHeight;
+    }
+
+    function startPolling(): void {
+        if (pollTimer) {
+            return;
+        }
+
+        pollTimer = window.setInterval(function () {
+            callState("poll", { conversationId: conversationId });
+        }, POLL_INTERVAL_MS);
+    }
+
+    function stopPolling(): void {
+        if (pollTimer !== null) {
+            window.clearInterval(pollTimer);
+        }
+        pollTimer = null;
+    }
+
+    function sendMessage(): void {
+        var text = normalize(promptInput.value);
+        if (!text || sendButton.disabled) {
+            return;
+        }
+
+        promptInput.value = "";
+        callState("send", {
+            conversationId: conversationId,
+            text: text
+        });
+    }
+
+    sendButton.addEventListener("click", sendMessage);
+    newChatButton.addEventListener("click", function () {
+        stopPolling();
+        callState("newChat");
+        promptInput.focus();
+    });
+    promptInput.addEventListener("keydown", function (event) {
+        if (event.key !== "Enter" || event.shiftKey) {
+            return;
+        }
+
+        event.preventDefault();
+        sendMessage();
+    });
+
+    tool.subscribe(hostEvents.initialize, function (payload) {
+        renderState(payload.initialState || {});
+    });
+    tool.subscribe(hostEvents.search, function (payload) {
+        var query = normalize(payload.query);
+        if (query && !normalize(promptInput.value)) {
+            promptInput.value = query;
+        }
+    });
+    tool.ready("deepseek-chat");
+})();

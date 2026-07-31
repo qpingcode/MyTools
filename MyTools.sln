@@ -1,0 +1,65 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyTools.Desktop", "MyTools.Desktop\MyTools.Desktop.csproj", "{11CCE55C-E87E-4B05-B2C0-6BFE72AB5875}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyTools.Desktop.Test", "MyTools.Desktop.Test\MyTools.Desktop.Test.csproj", "{8D714E11-1E1D-468F-B695-6C02C3C345F0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyTools.Plugins", "MyTools.Plugins\MyTools.Plugins.csproj", "{40AB564F-8BC7-4DF0-B056-42DB209913C4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyTools.Plugins.Test", "MyTools.Plugins.Test\MyTools.Plugins.Test.csproj", "{BDA48C93-DFE2-4E5E-B36A-B6E11F99AE16}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyTools.Common", "MyTools.Common\MyTools.Common.csproj", "{7D375128-0D1C-44E6-8CC1-0E20CF992149}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyTools.Common.Test", "MyTools.Common.Test\MyTools.Common.Test.csproj", "{BE4D8117-3E64-411E-B16E-A7B2CC4387D1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{CA4C57DD-299E-48C2-92A1-082ADCEAC454}"
+	ProjectSection(SolutionItems) = preProject
+		docs\auto-update-architecture.md = docs\auto-update-architecture.md
+		docs\i18n-architecture.md = docs\i18n-architecture.md
+		docs\module-boundaries.md = docs\module-boundaries.md
+		docs\node-plugin-runtime-design.md = docs\node-plugin-runtime-design.md
+		docs\plugin-mvp-design.md = docs\plugin-mvp-design.md
+		docs\plugin-platform-target-architecture.md = docs\plugin-platform-target-architecture.md
+		docs\plugin-protocol-draft.md = docs\plugin-protocol-draft.md
+		docs\refactor-and-plugin-roadmap.md = docs\refactor-and-plugin-roadmap.md
+		docs\type-migration-list.md = docs\type-migration-list.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{11CCE55C-E87E-4B05-B2C0-6BFE72AB5875}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{11CCE55C-E87E-4B05-B2C0-6BFE72AB5875}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{11CCE55C-E87E-4B05-B2C0-6BFE72AB5875}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{11CCE55C-E87E-4B05-B2C0-6BFE72AB5875}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8D714E11-1E1D-468F-B695-6C02C3C345F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D714E11-1E1D-468F-B695-6C02C3C345F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8D714E11-1E1D-468F-B695-6C02C3C345F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8D714E11-1E1D-468F-B695-6C02C3C345F0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40AB564F-8BC7-4DF0-B056-42DB209913C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40AB564F-8BC7-4DF0-B056-42DB209913C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40AB564F-8BC7-4DF0-B056-42DB209913C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40AB564F-8BC7-4DF0-B056-42DB209913C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BDA48C93-DFE2-4E5E-B36A-B6E11F99AE16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BDA48C93-DFE2-4E5E-B36A-B6E11F99AE16}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BDA48C93-DFE2-4E5E-B36A-B6E11F99AE16}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BDA48C93-DFE2-4E5E-B36A-B6E11F99AE16}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7D375128-0D1C-44E6-8CC1-0E20CF992149}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D375128-0D1C-44E6-8CC1-0E20CF992149}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D375128-0D1C-44E6-8CC1-0E20CF992149}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D375128-0D1C-44E6-8CC1-0E20CF992149}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BE4D8117-3E64-411E-B16E-A7B2CC4387D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE4D8117-3E64-411E-B16E-A7B2CC4387D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE4D8117-3E64-411E-B16E-A7B2CC4387D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE4D8117-3E64-411E-B16E-A7B2CC4387D1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

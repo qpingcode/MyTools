@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Hello Search</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="page">
+        <div class="badge">hello plugin</div>
+        <h1 id="title">Type after hello</h1>
+        <p id="subtitle">The host search box text is forwarded directly to this HTML page.</p>
+        <div class="card">
+            <div class="label">Current query</div>
+            <div id="query" class="query">(empty)</div>
+        </div>
+        <div class="card secondary-card">
+            <div class="label">State from node runtime</div>
+            <pre id="state" class="state">{}</pre>
+        </div>
+        <button id="refresh" class="refresh-button" type="button">Request refresh from Node runtime</button>
+    </div>
+    <script src="main.js"></script>
+</body>
+</html>

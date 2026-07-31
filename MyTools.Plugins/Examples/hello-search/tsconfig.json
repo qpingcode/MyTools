@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2024",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "moduleDetection": "legacy",
+    "lib": ["ES2024", "DOM"],
+    "types": ["node", "@qping/plugin-common"],
+    "strict": false,
+    "noImplicitAny": true,
+    "noEmitOnError": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "rootDir": ".",
+    "outDir": "dist"
+  },
+  "include": [
+    "src/web/**/*.ts",
+    "src/backend/**/*.mts"
+  ],
+  "exclude": [
+    "dist"
+  ]
+}

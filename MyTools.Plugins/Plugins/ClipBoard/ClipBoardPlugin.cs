@@ -1,0 +1,122 @@
+using System.IO;
+using System.Windows;
+using Microsoft.Extensions.Logging;
+using MyTools.Common;
+using MyTools.Common.Config;
+using MyTools.Common.Model.Plugins;
+using MyTools.Common.Plugins;
+using MyTools.Common.WindowsMessageHandler;
+using MyTools.Plugins.Param;
+using Timer = System.Timers.Timer;
+
+namespace MyTools.Plugins;
+
+public class ClipBoardPlugin(ILogger<ClipBoardPlugin> logger) : PluginBase, IWindowMessageHandler
+{
+    private ClipBoardDbHelper? _dbHelper;
+    private string _dbPath = Path.Combine(ConfigPath.DatabasePath, "clipboard_history.db");
+    private Timer? _cleanupTimer;
+
+    public override string Name => "ClipBoard History";
+    public override string Description => "Clipboard history management plugin";
+    public override List<IActionWithCommand> Actions => [WellKnownActions.CopyAndPaste.WithDefaultCommand()];
+    public override ViewModelType ViewModelType => ViewModelType.Detail;
+
+    public override async Task InitializeAsync()
+    {
+        _dbHelper = new ClipBoardDbHelper(_dbPath);
+        _cleanupTimer = new Timer(60 * 60 * 1000); // 1 hour
+        _cleanupTimer.Elapsed += (s, e) =>
+        {
+            CleanOldHistory();
+        };
+        _cleanupTimer.AutoReset = true;
+        _cleanupTimer.Start();
+
+        CleanOldHistory();
+
+        await Task.CompletedTask;
+    }
+
+    private void CleanOldHistory()
+    {
+        try
+        {
+            _dbHelper?.CleanupOldHistory();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex.Message, ex);
+        }
+    }
+
+    // todo 增加右击某一项目时，弹出对话框，可以增加/修改/删除 category
+    public override async Task<Result> SearchAsync(string query, CancellationToken cancellationToken, SearchOptions? searchOptions = null)
+    {
+        if (_dbHelper == null)
+            return Result.CreateFailure("Clipboard DB not initialized", null);
+        
+        var items = _dbHelper.Search(query, includeContent: false);
+        var resultItems = new List<ResultItem>();
+        
+        foreach (var item in items)
+        {
+            var lazyParam = new LazyClipboardParam(_dbHelper, item.Id);
+            var title = item.Summary.Length > 50 ? item.Summary.Substring(0, 50) + "..." : item.Summary;
+            string subTitle = item.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss");
+            resultItems.Add(new ResultItem(StringIcon.Empty, title, subTitle, lazyParam, ResultItemPriorities.Medium)
+            {
+                ResultKey = item.Id.ToString()
+            });
+        }
+        return await Task.FromResult(Result.CreateSuccessResult(resultItems));
+    }
+
+    IEnumerable<WindowsMessageType> IWindowMessageHandler.Messages => [WindowsMessageType.ClipboardUpdate];
+
+    void IWindowMessageHandler.Handle(int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        handled = true;
+        if (_dbHelper == null)
+        {
+            return;
+        }
+        try
+        {
+            if (Clipboard.ContainsData(DataObjectSerializer.MyToolsNotSaveHisotryFormat))
+            {
+                return;
+            }
+            var title = getTitleFromClipboard();
+            var content = DataObjectSerializer.SerializeIDataObject();
+            var hash = HashHelper.ComputeSha256Hash(content);
+            _dbHelper.AddHistory(content, title, hash);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, ex.Message);
+        }
+    }
+
+    private string getTitleFromClipboard()
+    {
+        if (Clipboard.ContainsText())
+        {
+            return Clipboard.GetText();
+        }
+
+        if (Clipboard.ContainsImage())
+        {
+            return "[Image]";
+        }
+
+        if (Clipboard.ContainsFileDropList())
+        {
+            return "[File]";
+        }
+
+        return "[Unknown]";
+    }
+    
+    int IWindowMessageHandler.Priority => IWindowMessageHandler.LowPriority;
+}

@@ -1,0 +1,374 @@
+using System.IO;
+using System.Text.Json;
+using Microsoft.Extensions.Logging;
+using MyTools.Common;
+using MyTools.Common.Config.Interfaces;
+using MyTools.Common.DependencyInjection;
+using MyTools.Common.Plugins;
+
+namespace MyTools.Plugins.NodePlugins;
+
+public sealed class NodePlugin : IPlugin, IDisposable
+{
+    private readonly NodePluginManifest manifest;
+    private readonly NodePluginProcessHost processHost;
+    private readonly ILogger<NodePlugin> logger;
+
+    internal NodePlugin(NodePluginManifest manifest, NodePluginProcessHost processHost, ILogger<NodePlugin> logger)
+    {
+        this.manifest = manifest;
+        this.processHost = processHost;
+        this.logger = logger;
+    }
+
+    public event EventHandler<NodePluginEventReceivedEventArgs>? EventReceived
+    {
+        add => processHost.EventReceived += value;
+        remove => processHost.EventReceived -= value;
+    }
+
+    public string Name => manifest.Name;
+
+    public string Description => $"Node plugin: {manifest.Name}";
+
+    public List<IActionWithCommand> Actions { get; } = [];
+
+    public bool IsEnabled => true;
+
+    public ViewModelType ViewModelType => ViewModelType.Basic;
+
+    public bool IsGlobalSearchPlugin => true;
+
+    public IReadOnlyList<string> Keywords => manifest.Keywords;
+
+    public string PrimaryKeyword => manifest.Keywords.FirstOrDefault() ?? string.Empty;
+
+    public string Id => manifest.Id;
+
+    public string? HotKey => manifest.HotKey;
+
+    public async Task<Result> SearchAsync(string query, CancellationToken cancellationToken, SearchOptions? searchOptions = null)
+    {
+        try
+        {
+            var mode = searchOptions?.SearchFrom == SearchFrom.Plugin ? "plugin" : "global";
+            var response = await processHost.SearchAsync(query, mode, cancellationToken);
+            var items = response.Items.Select((item, index) => MapResultItem(item, query, index)).ToList();
+            return Result.CreateSuccessResult(items);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Node plugin search failed for {PluginName}.", Name);
+            return Result.CreateFailure(ex.Message, ex);
+        }
+    }
+
+    public Task InitializeAsync()
+    {
+        return processHost.InitializeAsync();
+    }
+
+    public void RegisterSettings(IConfigurationRegistry configurationRegistry)
+    {
+    }
+
+    public string GetQueryWithoutKeyword(string searchText)
+    {
+        return TryParseKeywordSearchText(searchText, out var query, out _)
+            ? query
+            : searchText;
+    }
+
+    public bool CanHandleSearchText(string searchText)
+    {
+        return TryParseKeywordSearchText(searchText, out _, out _);
+    }
+
+    public bool ShouldOpenDetailOnKeywordRoute(string searchText)
+    {
+        if (string.IsNullOrWhiteSpace(manifest.DetailEntryFullPath))
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(PrimaryKeyword))
+        {
+            return false;
+        }
+
+        return TryParseKeywordSearchText(searchText, out _, out _);
+    }
+
+    public NodePluginDetailContext? CreateKeywordDetailContext(string searchText, string query)
+    {
+        return CreateDetailContext(
+            itemId: $"{manifest.Id}:keyword-route",
+            searchText: searchText,
+            query: query,
+            detail: new NodePluginDetailViewDto
+            {
+                HtmlEntry = manifest.DetailEntry ?? string.Empty,
+                Title = manifest.Name,
+                InitialState = CloneJson(BuildKeywordRouteState(query))
+            });
+    }
+
+    public NodePluginDetailContext? CreateHotKeyDetailContext()
+    {
+        return CreateDetailContext(
+            itemId: $"{manifest.Id}:hotkey-route",
+            searchText: string.IsNullOrWhiteSpace(PrimaryKeyword) ? string.Empty : $"{PrimaryKeyword} ",
+            query: string.Empty,
+            detail: new NodePluginDetailViewDto
+            {
+                HtmlEntry = manifest.DetailEntry ?? string.Empty,
+                Title = manifest.Name,
+                InitialState = CloneJson(BuildKeywordRouteState(string.Empty))
+            });
+    }
+
+    internal async Task<NodePluginActionResponse> InvokeActionAsync(string itemId, string actionId, string query)
+    {
+        return await processHost.InvokeActionAsync(itemId, actionId, query);
+    }
+
+    public async Task<JsonElement?> HandleDetailEventAsync(string itemId, string eventName, JsonElement? payload, string query)
+    {
+        var response = await processHost.SendDetailEventAsync(itemId, eventName, payload, query);
+        if (response.State.ValueKind == JsonValueKind.Undefined)
+        {
+            return null;
+        }
+
+        return response.State.Clone();
+    }
+
+    public async Task<JsonElement?> HandleDetailCallAsync(string itemId, string action, JsonElement? payload, string query)
+    {
+        var response = await processHost.SendDetailCallAsync(itemId, action, payload, query);
+        if (response.Result.ValueKind == JsonValueKind.Undefined)
+        {
+            return null;
+        }
+
+        return response.Result.Clone();
+    }
+
+    internal NodePluginDetailContext? CreateDetailContext(string itemId, string searchText, string query, NodePluginDetailViewDto? detail)
+    {
+        var detailPath = ResolveDetailEntryFullPath(detail?.HtmlEntry);
+        if (detailPath == null)
+        {
+            return null;
+        }
+
+        return new NodePluginDetailContext
+        {
+            Plugin = this,
+            PluginId = manifest.Id,
+            PluginName = string.IsNullOrWhiteSpace(detail?.Title) ? manifest.Name : detail.Title,
+            ProtocolVersion = manifest.ProtocolVersion,
+            PluginDirectory = manifest.PluginDirectory,
+            EntryFullPath = detailPath,
+            ItemId = itemId,
+            SearchText = searchText,
+            Query = query,
+            Keyword = PrimaryKeyword,
+            InitialState = CloneJson(detail?.InitialState)
+        };
+    }
+
+    private ResultItem MapResultItem(NodePluginSearchItem item, string query, int index)
+    {
+        var title = string.IsNullOrWhiteSpace(item.Title) ? manifest.Name : item.Title;
+        var resultItem = new ResultItem(
+            MapIcon(item.Icon),
+            title,
+            item.Subtitle ?? string.Empty,
+            new NodePluginActionArgs(item.Id, query),
+            item.Priority)
+        {
+            ResultKey = string.IsNullOrWhiteSpace(item.Id) ? $"{manifest.Id}-{index}" : item.Id,
+        };
+
+        resultItem.AllowedActions = BuildActions(item, query).ToList();
+        return resultItem;
+    }
+
+    private IEnumerable<IActionWithCommand> BuildActions(NodePluginSearchItem item, string query)
+    {
+        if (item.Actions.Count == 0)
+        {
+            yield break;
+        }
+
+        for (var index = 0; index < item.Actions.Count; index++)
+        {
+            var action = item.Actions[index];
+            var command = index == 0 ? Commands.DefaultCommand : $"NodeAction:{index}";
+            yield return new NodePluginInvokeAction(this, action.Id, action.Title, action.Description, action.Kind).WithCommand(command);
+        }
+    }
+
+    private string? ResolveDetailEntryFullPath(string? relativePath)
+    {
+        var effectiveRelativePath = string.IsNullOrWhiteSpace(relativePath) ? manifest.DetailEntry : relativePath;
+        if (string.IsNullOrWhiteSpace(effectiveRelativePath))
+        {
+            return manifest.DetailEntryFullPath;
+        }
+
+        var fullPath = Path.GetFullPath(Path.Combine(manifest.PluginDirectory, effectiveRelativePath));
+        if (!fullPath.StartsWith(manifest.PluginDirectory, StringComparison.OrdinalIgnoreCase) || !File.Exists(fullPath))
+        {
+            return null;
+        }
+
+        return fullPath;
+    }
+
+    private static Icon MapIcon(NodePluginIconDto? icon)
+    {
+        if (icon == null || string.IsNullOrWhiteSpace(icon.Value))
+        {
+            return StringIcon.Empty;
+        }
+
+        return string.Equals(icon.Kind, "emoji", StringComparison.OrdinalIgnoreCase)
+            ? new StringIcon(icon.Value)
+            : StringIcon.Empty;
+    }
+
+    private static JsonElement CloneJson(JsonElement? element)
+    {
+        if (element == null || element.Value.ValueKind == JsonValueKind.Undefined)
+        {
+            using var document = JsonDocument.Parse("{}");
+            return document.RootElement.Clone();
+        }
+
+        return element.Value.Clone();
+    }
+
+    private static JsonElement BuildKeywordRouteState(string query)
+    {
+        using var document = JsonDocument.Parse(JsonSerializer.Serialize(new
+        {
+            query,
+            route = "keyword",
+            lastEvent = "keyword-route"
+        }));
+        return document.RootElement.Clone();
+    }
+
+    private bool TryParseKeywordSearchText(string searchText, out string query, out bool hasSeparator)
+    {
+        query = searchText;
+        hasSeparator = false;
+
+        if (string.IsNullOrWhiteSpace(PrimaryKeyword) || string.IsNullOrEmpty(searchText))
+        {
+            return false;
+        }
+
+        if (!searchText.StartsWith(PrimaryKeyword, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (searchText.Length == PrimaryKeyword.Length)
+        {
+            query = string.Empty;
+            return true;
+        }
+
+        var separator = searchText[PrimaryKeyword.Length];
+        if (!char.IsWhiteSpace(separator))
+        {
+            return false;
+        }
+
+        hasSeparator = true;
+        query = searchText[PrimaryKeyword.Length..].TrimStart();
+        return true;
+    }
+
+    public void Dispose()
+    {
+        processHost.Dispose();
+    }
+}
+
+internal sealed class NodePluginInvokeAction : IAction
+{
+    private readonly NodePlugin plugin;
+    private readonly string actionId;
+    private readonly string title;
+    private readonly string description;
+    private readonly string kind;
+
+    public NodePluginInvokeAction(NodePlugin plugin, string actionId, string title, string description, string kind)
+    {
+        this.plugin = plugin;
+        this.actionId = actionId;
+        this.title = string.IsNullOrWhiteSpace(title) ? actionId : title;
+        this.description = description;
+        this.kind = kind;
+    }
+
+    public string Name => title;
+
+    public string Description => string.IsNullOrWhiteSpace(description) ? $"Invoke {title}" : description;
+
+    public async Task<ActionResult> ExecuteAsync(IActionParams args)
+    {
+        if (args is not NodePluginActionArgs actionArgs)
+        {
+            return ActionResult.CreateFailure("Invalid node plugin action arguments.");
+        }
+
+        try
+        {
+            var response = await plugin.InvokeActionAsync(actionArgs.ItemId, actionId, actionArgs.Query);
+            var detailContext = plugin.CreateDetailContext(actionArgs.ItemId, BuildSearchText(actionArgs.Query), actionArgs.Query, response.Detail);
+            if (detailContext != null)
+            {
+                var navigator = ServiceLocator.GetRequiredService<INodePluginDetailNavigator>();
+                navigator.OpenDetail(detailContext);
+            }
+
+            var actionType = ParseActionType(response.ActionType, detailContext != null || string.Equals(kind, "detail", StringComparison.OrdinalIgnoreCase));
+            var message = string.IsNullOrWhiteSpace(response.Message) ? $"Executed {title}" : response.Message;
+            return ActionResult.CreateSuccess(message, actionType);
+        }
+        catch (Exception ex)
+        {
+            return ActionResult.CreateFailure(ex.Message);
+        }
+    }
+
+    private string BuildSearchText(string query)
+    {
+        return string.IsNullOrWhiteSpace(plugin.PrimaryKeyword)
+            ? query
+            : string.IsNullOrWhiteSpace(query)
+                ? plugin.PrimaryKeyword
+                : $"{plugin.PrimaryKeyword} {query}";
+    }
+
+    private static ActionTypeEnum ParseActionType(string? actionType, bool openedDetail)
+    {
+        if (openedDetail)
+        {
+            return ActionTypeEnum.None;
+        }
+
+        return string.Equals(actionType, "close", StringComparison.OrdinalIgnoreCase)
+            ? ActionTypeEnum.Close
+            : ActionTypeEnum.None;
+    }
+}

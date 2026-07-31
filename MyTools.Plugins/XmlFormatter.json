@@ -1,0 +1,9 @@
+{
+  "Name": "XmlFormatter",
+  "Description": "Format and validate XML",
+  "Keywords": ["xml"],
+  "ViewModelType": "LeftRight"
+}
+
+
+

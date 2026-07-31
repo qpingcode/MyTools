@@ -1,0 +1,40 @@
+{
+  "name": "@qping/plugin-common",
+  "version": "0.1.0",
+  "description": "Common runtime helpers for MyTools plugins.",
+  "type": "module",
+  "types": "./global.d.ts",
+  "files": [
+    "dist",
+    "global.d.ts",
+    "web-tool-public.d.ts"
+  ],
+  "exports": {
+    ".": {
+      "types": "./global.d.ts"
+    },
+    "./node-tool": {
+      "types": "./dist/node-tool.d.mts",
+      "import": "./dist/node-tool.mjs"
+    },
+    "./web-tool": {
+      "types": "./web-tool-public.d.ts",
+      "import": "./dist/web-tool.js"
+    },
+    "./events": {
+      "types": "./dist/events.d.ts",
+      "import": "./dist/events.js"
+    },
+    "./dist/events.js": "./dist/events.js",
+    "./dist/web-tool.js": "./dist/web-tool.js",
+    "./global": {
+      "types": "./global.d.ts",
+      "default": "./global.d.ts"
+    }
+  },
+  "scripts": {
+    "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
+    "build": "npm run clean && tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit"
+  }
+}

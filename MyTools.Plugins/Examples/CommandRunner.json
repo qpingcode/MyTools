@@ -1,0 +1,86 @@
+[
+	{
+		"name": "CargoWise Odyssey",
+		"command": "C:\\git\\wtg\\CargoWise\\Dev\\Bin\\CargoWiseOne.exe",
+		"args": ". Odyssey",
+		"runAsAdmin": false
+	},
+	{
+		"name": "CargoWise OdysseyHYETIP",
+		"command": "C:\\git\\wtg\\CargoWise\\Dev\\Bin\\CargoWiseOne.exe",
+		"args": ". OdysseyHYETIP",
+		"runAsAdmin": false
+	},
+	{
+		"name": "npm run watch-dsk",
+		"runAsAdmin": false,
+		"isBashScript": true,
+		"scripts": [
+			"pushd C:\\git\\GitHub\\WiseTechGlobal\\Glow\\DotNet\\HTML\\Client\\Client",
+			"npm run watch-dsk",
+		]
+	},
+	{
+		"name": "npm run watch-configuration",
+		"runAsAdmin": false,
+		"isBashScript": true,
+		"scripts": [
+			"pushd C:\\git\\GitHub\\WiseTechGlobal\\Glow\\DotNet",
+			"npm run watch-configuration",
+		]
+	},
+	{
+		"name": "IIS Reset",
+		"command": "cmd.exe",
+		"args": "/k \"iisreset\"",
+		"runAsAdmin": true
+	},
+	{
+		"name": "PlatformBuilder",
+		"command": "C:\\git\\GitHub\\WiseTechGlobal\\Glow\\DotNet\\bin\\PlatformBuilder\\CargoWiseOne.PlatformBuilder.exe",
+		"args": "",
+		"runAsAdmin": false
+	},
+	{
+		"name": "HYETIP Glow Portal",
+		"command": "https://www-hyetip.cargowise.com/Portals/GHS/Desktop#/login",
+		"args": "",
+		"runAsAdmin": false
+	},
+	{
+		"name": "HYETIP Glow Server",
+		"command": "https://www-hyetip.cargowise.com/Glow/dev/login",
+		"args": "",
+		"runAsAdmin": false
+	},
+	{
+		"name": "Local Glow Server",
+		"command": "https://localhost/Glow/dev/login",
+		"args": "",
+		"runAsAdmin": false
+	},
+	{
+		"name": "Local Glow Portal",
+		"isBashScript": true,
+		"scripts": [
+			"@echo off",
+			"set PORT=59415",
+			"netstat -ano | findstr :%PORT% >nul",
+			"if %errorlevel% == 0 (",
+			"   echo 端口 %PORT% 已被占用",
+			"   ",
+			") else (",
+			"   start cmd /k \"dotnet run --project C:\\git\\GitHub\\WiseTechGlobal\\Glow\\DotNet\\HTML\\Client\\Client\"",
+			")",
+			"echo 正在打开浏览器...",
+			"start \"\" \"https:\/\/localhost:%PORT%\/321\"",
+			"exit"
+		]
+	},
+	{
+		"name": "Go to Deep Seek Site",
+		"command": "https://chat.deepseek.com/",
+		"args": "",
+		"runAsAdmin": false
+	}
+]

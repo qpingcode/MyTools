@@ -1,0 +1,82 @@
+<Window x:Class="MyTools.Desktop.Views.HotKeyEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="编辑快捷键"
+        Height="200"
+        Width="400"
+        WindowStartupLocation="CenterOwner"
+        KeyDown="Window_KeyDown"
+        PreviewKeyDown="Window_PreviewKeyDown">
+    <Window.Resources>
+        <Style x:Key="ModernButton" TargetType="Button">
+            <Setter Property="Background" Value="#2E75B6"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="20,4"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="MinWidth" Value="100"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#1E5A96"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="CancelButtonStyle" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+            <Setter Property="Background" Value="#E0E0E0"/>
+            <Setter Property="Foreground" Value="#333333"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#D0D0D0"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0"
+                   Text="请按下新的快捷键组合..."
+                   FontSize="16"
+                   Margin="0,0,0,10"/>
+
+        <TextBox x:Name="HotKeyTextBox"
+                 Grid.Row="1"
+                 IsReadOnly="True"
+                 FontSize="16"
+                 Padding="10"
+                 Margin="0,0,0,10"
+                 Text="{Binding HotKeyText, UpdateSourceTrigger=PropertyChanged}"/>
+
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+            <Button Content="确定"
+                    Style="{StaticResource ModernButton}"
+                    Margin="0,0,10,0"
+                    Click="ConfirmButton_Click"/>
+            <Button Content="取消"
+                    Style="{StaticResource CancelButtonStyle}"
+                    Click="CancelButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window> 

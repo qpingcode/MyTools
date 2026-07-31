@@ -1,0 +1,200 @@
+using Microsoft.Extensions.Logging.Abstractions;
+using MyTools.Plugins.NodePlugins;
+using NUnit.Framework;
+
+namespace MyTools.Plugins.Test.NodePlugins;
+
+[TestFixture]
+public class NodePluginCatalogTest
+{
+    private string rootPath = null!;
+
+    [SetUp]
+    public void SetUp()
+    {
+        rootPath = Path.Combine(Path.GetTempPath(), $"mytools-node-plugins-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(rootPath);
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        if (Directory.Exists(rootPath))
+        {
+            Directory.Delete(rootPath, true);
+        }
+    }
+
+    [Test]
+    public void Reload_ShouldDiscoverValidNodePluginManifest()
+    {
+        var pluginPath = Path.Combine(rootPath, "hello-search");
+        Directory.CreateDirectory(Path.Combine(pluginPath, "backend"));
+        Directory.CreateDirectory(Path.Combine(pluginPath, "web"));
+        File.WriteAllText(Path.Combine(pluginPath, "plugin.json"), """
+        {
+          "id": "hello-search",
+          "name": "Hello Search",
+          "version": "0.2.0",
+          "runtime": "node",
+          "protocolVersion": "2.0",
+          "entries": [
+            {
+              "id": "hello",
+              "name": "Hello Search",
+              "entry": "backend/index.mjs",
+              "keywords": ["hello"],
+              "hotKey": "Alt+C",
+              "detail": {
+                "type": "web",
+                "entry": "web/detail.html"
+              }
+            }
+          ]
+        }
+        """);
+        File.WriteAllText(Path.Combine(pluginPath, "backend", "index.mjs"), "console.log('ok');");
+        File.WriteAllText(Path.Combine(pluginPath, "web", "detail.html"), "<html></html>");
+
+        var catalog = new NodePluginCatalog(rootPath, NullLogger<NodePluginCatalog>.Instance);
+
+        var plugins = catalog.Reload();
+
+        Assert.That(plugins, Has.Count.EqualTo(1));
+        Assert.That(plugins[0].Id, Is.EqualTo("hello-search:hello"));
+        Assert.That(plugins[0].ParentId, Is.EqualTo("hello-search"));
+        Assert.That(plugins[0].EntryId, Is.EqualTo("hello"));
+        Assert.That(plugins[0].HotKey, Is.EqualTo("Alt+C"));
+        Assert.That(plugins[0].Keywords, Is.EquivalentTo(new[] { "hello" }));
+        Assert.That(plugins[0].EntryFullPath, Is.EqualTo(Path.Combine(pluginPath, "backend", "index.mjs")));
+        Assert.That(plugins[0].DetailEntryFullPath, Is.EqualTo(Path.Combine(pluginPath, "web", "detail.html")));
+    }
+
+    [Test]
+    public void Reload_ShouldExpandEntriesIntoIndependentNodePlugins()
+    {
+        var pluginPath = Path.Combine(rootPath, "deepseek-translator");
+        Directory.CreateDirectory(Path.Combine(pluginPath, "backend", "Translator"));
+        Directory.CreateDirectory(Path.Combine(pluginPath, "backend", "History"));
+        Directory.CreateDirectory(Path.Combine(pluginPath, "web", "Translator"));
+        Directory.CreateDirectory(Path.Combine(pluginPath, "web", "History"));
+        File.WriteAllText(Path.Combine(pluginPath, "plugin.json"), """
+        {
+          "id": "deepseek-translator",
+          "name": "DeepSeek Translator",
+          "version": "0.1.0",
+          "runtime": "node",
+          "protocolVersion": "2.0",
+          "entries": [
+            {
+              "id": "translator",
+              "name": "DeepSeek Translator",
+              "entry": "backend/Translator/index.mjs",
+              "keywords": ["tr", "translate"],
+              "hotKey": "Alt+C",
+              "detail": {
+                "type": "web",
+                "entry": "web/Translator/index.html"
+              }
+            },
+            {
+              "id": "history",
+              "name": "DeepSeek Translation History",
+              "entry": "backend/History/index.mjs",
+              "keywords": ["trh"],
+              "hotKey": "Alt+V",
+              "detail": {
+                "type": "web",
+                "entry": "web/History/index.html"
+              }
+            }
+          ]
+        }
+        """);
+        File.WriteAllText(Path.Combine(pluginPath, "backend", "Translator", "index.mjs"), "console.log('ok');");
+        File.WriteAllText(Path.Combine(pluginPath, "backend", "History", "index.mjs"), "console.log('ok');");
+        File.WriteAllText(Path.Combine(pluginPath, "web", "Translator", "index.html"), "<html></html>");
+        File.WriteAllText(Path.Combine(pluginPath, "web", "History", "index.html"), "<html></html>");
+
+        var catalog = new NodePluginCatalog(rootPath, NullLogger<NodePluginCatalog>.Instance);
+
+        var plugins = catalog.Reload();
+
+        Assert.That(plugins, Has.Count.EqualTo(2));
+        var translator = plugins.Single(plugin => plugin.EntryId == "translator");
+        var history = plugins.Single(plugin => plugin.EntryId == "history");
+        Assert.That(translator.Id, Is.EqualTo("deepseek-translator:translator"));
+        Assert.That(translator.Keywords, Is.EquivalentTo(new[] { "tr", "translate" }));
+        Assert.That(translator.HotKey, Is.EqualTo("Alt+C"));
+        Assert.That(translator.EntryFullPath, Is.EqualTo(Path.Combine(pluginPath, "backend", "Translator", "index.mjs")));
+        Assert.That(translator.DetailEntryFullPath, Is.EqualTo(Path.Combine(pluginPath, "web", "Translator", "index.html")));
+        Assert.That(history.Id, Is.EqualTo("deepseek-translator:history"));
+        Assert.That(history.Keywords, Is.EquivalentTo(new[] { "trh" }));
+        Assert.That(history.HotKey, Is.EqualTo("Alt+V"));
+    }
+
+    [Test]
+    public void Reload_ShouldSkipManifestWithMissingBackendEntry()
+    {
+        var pluginPath = Path.Combine(rootPath, "hello-search");
+        Directory.CreateDirectory(pluginPath);
+        File.WriteAllText(Path.Combine(pluginPath, "plugin.json"), """
+        {
+          "id": "hello-search",
+          "name": "Hello Search",
+          "version": "0.2.0",
+          "runtime": "node",
+          "protocolVersion": "2.0",
+          "entries": [
+            {
+              "id": "hello",
+              "name": "Hello Search",
+              "entry": "backend/index.mjs",
+              "keywords": ["hello"],
+              "detail": {
+                "type": "web",
+                "entry": "web/detail.html"
+              }
+            }
+          ]
+        }
+        """);
+
+        var catalog = new NodePluginCatalog(rootPath, NullLogger<NodePluginCatalog>.Instance);
+
+        var plugins = catalog.Reload();
+
+        Assert.That(plugins, Is.Empty);
+    }
+
+    [Test]
+    public void Reload_ShouldSkipLegacySingleEntryManifest()
+    {
+        var pluginPath = Path.Combine(rootPath, "legacy-search");
+        Directory.CreateDirectory(Path.Combine(pluginPath, "backend"));
+        Directory.CreateDirectory(Path.Combine(pluginPath, "web"));
+        File.WriteAllText(Path.Combine(pluginPath, "plugin.json"), """
+        {
+          "id": "legacy-search",
+          "name": "Legacy Search",
+          "version": "0.2.0",
+          "runtime": "node",
+          "entry": "backend/index.mjs",
+          "protocolVersion": "2.0",
+          "keywords": ["legacy"],
+          "detail": {
+            "type": "web",
+            "entry": "web/detail.html"
+          }
+        }
+        """);
+        File.WriteAllText(Path.Combine(pluginPath, "backend", "index.mjs"), "console.log('ok');");
+        File.WriteAllText(Path.Combine(pluginPath, "web", "detail.html"), "<html></html>");
+
+        var catalog = new NodePluginCatalog(rootPath, NullLogger<NodePluginCatalog>.Instance);
+
+        var plugins = catalog.Reload();
+
+        Assert.That(plugins, Is.Empty);
+    }
+}

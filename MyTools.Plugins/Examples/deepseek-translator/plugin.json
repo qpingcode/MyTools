@@ -1,0 +1,30 @@
+{
+  "id": "deepseek-translator",
+  "name": "DeepSeek Translator",
+  "version": "0.1.0",
+  "runtime": "node",
+  "protocolVersion": "2.0",
+  "entries": [
+    {
+      "id": "translator",
+      "name": "DeepSeek Translator",
+      "entry": "backend/Translator/index.mjs",
+      "keywords": ["ff"],
+      "hotKey": "Alt+C",
+      "detail": {
+        "type": "web",
+        "entry": "web/Translator/index.html"
+      }
+    },
+    {
+      "id": "ankicard",
+      "name": "DeepSeek Anki Cards",
+      "entry": "backend/AnkiCard/index.mjs",
+      "keywords": ["fc"],
+      "detail": {
+        "type": "web",
+        "entry": "web/AnkiCard/index.html"
+      }
+    }
+  ]
+}

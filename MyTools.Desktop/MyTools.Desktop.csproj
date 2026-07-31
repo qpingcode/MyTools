@@ -1,0 +1,118 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net8.0-windows</TargetFramework>
+        <Nullable>enable</Nullable>
+        <UseWPF>true</UseWPF>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <VersionFile>$(MSBuildProjectDirectory)\..\version.txt</VersionFile>
+        <Version Condition="'$(Version)' == '' and Exists('$(VersionFile)')">$([System.IO.File]::ReadAllText('$(VersionFile)').Trim())</Version>
+        <Version Condition="'$(Version)' == ''">1.0.0</Version>
+        <Authors>qping</Authors>
+        <Company>qping.me</Company>
+        <Description>MyTools Desktop Application</Description>
+        <ApplicationIcon>Assets\Maintenance.ico</ApplicationIcon>
+        <RootNamespace>MyTools.Desktop</RootNamespace>
+        <StartupObject>MyTools.Desktop.Program</StartupObject>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <CreateVelopackRelease Condition="'$(CreateVelopackRelease)' == ''">false</CreateVelopackRelease>
+        <VelopackRuntime Condition="'$(VelopackRuntime)' == '' and '$(RuntimeIdentifier)' != ''">$(RuntimeIdentifier)</VelopackRuntime>
+        <VelopackRuntime Condition="'$(VelopackRuntime)' == ''">win-x64</VelopackRuntime>
+        <RuntimeIdentifier Condition="'$(CreateVelopackRelease)' == 'true' and '$(RuntimeIdentifier)' == ''">$(VelopackRuntime)</RuntimeIdentifier>
+        <SelfContained Condition="'$(CreateVelopackRelease)' == 'true' and '$(SelfContained)' == ''">true</SelfContained>
+        <PublishSingleFile Condition="'$(CreateVelopackRelease)' == 'true' and '$(PublishSingleFile)' == ''">false</PublishSingleFile>
+        <VelopackChannel Condition="'$(VelopackChannel)' == ''">win</VelopackChannel>
+        <VelopackDeltaMode Condition="'$(VelopackDeltaMode)' == ''">BestSpeed</VelopackDeltaMode>
+        <VelopackRepositoryRoot>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..'))</VelopackRepositoryRoot>
+        <VelopackToolManifest>$(VelopackRepositoryRoot)\.config\dotnet-tools.json</VelopackToolManifest>
+        <VelopackReleaseDirectory Condition="'$(VelopackReleaseDirectory)' == ''">$(VelopackRepositoryRoot)\Releases</VelopackReleaseDirectory>
+        <VelopackPublishDirectory Condition="'$(VelopackPublishDirectory)' == ''">$(MSBuildProjectDirectory)\bin\$(Configuration)\$(TargetFramework)\$(VelopackRuntime)\publish-velopack</VelopackPublishDirectory>
+        <PublishDir Condition="'$(CreateVelopackRelease)' == 'true'">$(VelopackPublishDirectory)\</PublishDir>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\MyTools.Common\MyTools.Common.csproj"/>
+        <ProjectReference Include="..\MyTools.Plugins\MyTools.Plugins.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="Assets\**">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Page Remove="Resources\*.xaml"/>
+        <Resource Include="Resources\*.xaml"/>
+        <None Remove="Components\Search\test.png" />
+        <Page Update="Views\Components\Search\BasicListView.xaml">
+          <Generator>MSBuild:Compile</Generator>
+        </Page>
+        <Page Update="Views\Components\Search\DetailedListView.xaml">
+          <Generator>MSBuild:Compile</Generator>
+        </Page>
+        <Page Update="Views\Components\Search\LeftRightLayout.xaml">
+          <Generator>MSBuild:Compile</Generator>
+        </Page>
+        <Page Update="Views\Templates\BoolSettingTemplate.xaml">
+          <Generator>MSBuild:Compile</Generator>
+        </Page>
+        <Page Update="Views\Templates\IntegerSettingTemplate.xaml">
+          <Generator>MSBuild:Compile</Generator>
+        </Page>
+        <Page Update="Views\Templates\StringSettingTemplate.xaml">
+          <Generator>MSBuild:Compile</Generator>
+        </Page>
+        <Page Update="Views\Templates\DoubleSettingTemplate.xaml">
+          <Generator>MSBuild:Compile</Generator>
+        </Page>
+        <Page Update="Views\Templates\CustomSettingTemplate.xaml">
+          <Generator>MSBuild:Compile</Generator>
+        </Page>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="CommunityToolkit.Mvvm" />
+        <PackageReference Include="Hardcodet.NotifyIcon.Wpf"/>
+        <PackageReference Include="Microsoft.Extensions.Logging"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+        <PackageReference Include="Microsoft.Data.Sqlite" />
+      <PackageReference Include="Microsoft.Web.WebView2" />
+        <PackageReference Include="Newtonsoft.Json" />
+        <PackageReference Include="Serilog.Extensions.Logging"/>
+        <PackageReference Include="Serilog.Sinks.Console"/>
+        <PackageReference Include="Serilog.Sinks.File"/>
+        <PackageReference Include="Velopack" />
+    </ItemGroup>
+
+    <Target Name="PrepareVelopackRelease"
+            BeforeTargets="PrepareForPublish"
+            Condition="'$(CreateVelopackRelease)' == 'true' and '$(DesignTimeBuild)' != 'true'">
+        <Error Condition="!Exists('$(VelopackToolManifest)')"
+               Text="The Velopack tool manifest was not found at '$(VelopackToolManifest)'." />
+        <Error Condition="'$(Version)' == ''"
+               Text="A release version must be provided with -p:Version or defined in the project." />
+        <Message Importance="high"
+                 Text="Preparing MyTools $(Version) for $(VelopackRuntime) (self-contained: $(SelfContained))." />
+        <RemoveDir Directories="$(VelopackPublishDirectory)" />
+        <MakeDir Directories="$(VelopackPublishDirectory);$(VelopackReleaseDirectory)" />
+    </Target>
+
+    <Target Name="CreateVelopackPackage"
+            AfterTargets="Publish"
+            Condition="'$(CreateVelopackRelease)' == 'true' and '$(DesignTimeBuild)' != 'true'">
+        <Message Importance="high"
+                 Text="Restoring the repository-local Velopack tool." />
+        <Exec WorkingDirectory="$(VelopackRepositoryRoot)"
+              Command="dotnet tool restore --tool-manifest &quot;$(VelopackToolManifest)&quot;" />
+        <Message Importance="high"
+                 Text="Packing Velopack release $(Version) to '$(VelopackReleaseDirectory)'. Existing releases are retained for delta generation." />
+        <Exec WorkingDirectory="$(VelopackRepositoryRoot)"
+              Command="dotnet tool run vpk -- pack --packId MyTools.Desktop --packVersion &quot;$(Version)&quot; --packDir &quot;$(VelopackPublishDirectory)&quot; --mainExe MyTools.Desktop.exe --packTitle MyTools --packAuthors qping --runtime &quot;$(VelopackRuntime)&quot; --channel &quot;$(VelopackChannel)&quot; --delta &quot;$(VelopackDeltaMode)&quot; --icon &quot;$(MSBuildProjectDirectory)\Assets\Maintenance.ico&quot; --outputDir &quot;$(VelopackReleaseDirectory)&quot;" />
+        <Message Importance="high"
+                 Text="Velopack release $(Version) completed: $(VelopackReleaseDirectory)" />
+    </Target>
+</Project> 

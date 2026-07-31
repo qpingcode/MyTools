@@ -1,0 +1,20 @@
+{
+  "id": "deepseek-chat",
+  "name": "DeepSeek Chat",
+  "version": "0.1.0",
+  "runtime": "node",
+  "protocolVersion": "2.0",
+  "entries": [
+    {
+      "id": "chat",
+      "name": "DeepSeek Chat",
+      "entry": "backend/index.mjs",
+      "keywords": ["chat", "ds"],
+      "hotKey": "Alt+V",
+      "detail": {
+        "type": "web",
+        "entry": "web/index.html"
+      }
+    }
+  ]
+}

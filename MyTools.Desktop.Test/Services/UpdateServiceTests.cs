@@ -1,0 +1,68 @@
+using Microsoft.Extensions.Logging;
+using Moq;
+using NUnit.Framework;
+using MyTools.Common.Config.Interfaces;
+using MyTools.Common.Config.Models;
+using MyTools.Desktop.Serializers;
+using MyTools.Desktop.Services;
+
+namespace MyTools.Desktop.Test.Services;
+
+[TestFixture]
+public class UpdateServiceTests
+{
+    [Test]
+    public async Task CheckForUpdatesAsync_WhenUpdateUrlIsMissing_ReturnsNotConfigured()
+    {
+        var registry = new Mock<IConfigurationRegistry>();
+        var service = CreateService(registry);
+
+        var result = await service.CheckForUpdatesAsync();
+
+        Assert.That(result.Status, Is.EqualTo(UpdateCheckStatus.NotConfigured));
+    }
+
+    [Test]
+    public async Task CheckForUpdatesAsync_WhenRunningOutsideVelopack_ReturnsNotInstalled()
+    {
+        var registry = new Mock<IConfigurationRegistry>();
+        registry.Setup(x => x.FindSetting("General.UpdateUrl"))
+            .Returns(CreateStringSetting(TestContext.CurrentContext.WorkDirectory));
+        registry.Setup(x => x.FindSetting("General.UpdateChannel"))
+            .Returns(CreateStringSetting("win"));
+        var service = CreateService(registry);
+
+        var result = await service.CheckForUpdatesAsync();
+
+        Assert.That(result.Status, Is.EqualTo(UpdateCheckStatus.NotInstalled));
+    }
+
+    [Test]
+    public void DownloadAndPrepareUpdateAsync_WithoutAvailableUpdate_Throws()
+    {
+        var registry = new Mock<IConfigurationRegistry>();
+        var service = CreateService(registry);
+
+        Assert.That(
+            async () => await service.DownloadAndPrepareUpdateAsync(),
+            Throws.TypeOf<InvalidOperationException>());
+    }
+
+    private static UpdateService CreateService(Mock<IConfigurationRegistry> registry)
+    {
+        return new UpdateService(registry.Object, Mock.Of<ILogger<UpdateService>>());
+    }
+
+    private static ConfigurationSetting CreateStringSetting(string value)
+    {
+        var setting = new ConfigurationSetting
+        {
+            Name = "Test",
+            Serializer = new StringSerializer()
+        };
+        setting.InitValueWithoutNotify(value);
+        return setting;
+    }
+}
+
+

@@ -1,0 +1,86 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:system="clr-namespace:System;assembly=mscorlib">
+
+    <!-- Common -->
+    <system:String x:Key="AppTitle">My Tools</system:String>
+    <system:String x:Key="AppTitleDetail">Tools Desktop Version</system:String>
+    <system:String x:Key="VersionInfo">Based on .NET 8.0</system:String>
+    <system:String x:Key="Ready">Ready</system:String>
+    <system:String x:Key="Version">Version: 1.0.0</system:String>
+
+    <!-- Main Window -->
+    <system:String x:Key="AppSettings">Application Settings</system:String>
+    <system:String x:Key="AutoStart">Auto Start</system:String>
+    <system:String x:Key="HotKeySettings">Hotkey Settings</system:String>
+    <system:String x:Key="SearchHotKey">Search Hotkey:</system:String>
+    <system:String x:Key="Change">Change</system:String>
+
+    <!-- System Tray -->
+    <system:String x:Key="ShowMainWindow">Show Main Window</system:String>
+    <system:String x:Key="Exit">Exit</system:String>
+    <system:String x:Key="Language">Language</system:String>
+    <system:String x:Key="Language.zh-CN">Chinese</system:String>
+    <system:String x:Key="Language.en-US">English</system:String>
+    <system:String x:Key="CurrentVersion">Version: {0}</system:String>
+    <system:String x:Key="CheckForUpdates">Check for Updates</system:String>
+    <system:String x:Key="CheckingForUpdates">Checking for updates...</system:String>
+    <system:String x:Key="DownloadingUpdate">Downloading update... {0}%</system:String>
+    <system:String x:Key="UpdateNotConfigured">Configure General.UpdateUrl in Settings before checking for updates.</system:String>
+    <system:String x:Key="UpdateRequiresInstallation">Updates are available only when MyTools is installed by Velopack.</system:String>
+    <system:String x:Key="NoUpdateAvailable">You are using the latest version ({0}).</system:String>
+    <system:String x:Key="UpdateBusy">An update operation is already running.</system:String>
+    <system:String x:Key="UpdateAvailable">Version {0} is available. Download and restart MyTools now?</system:String>
+    <system:String x:Key="UpdateFailed">Update failed: {0}</system:String>
+
+    <!-- Error Messages -->
+    <system:String x:Key="Error">Error</system:String>
+    <system:String x:Key="Success">Success</system:String>
+    <system:String x:Key="Warning">Warning</system:String>
+    <system:String x:Key="Info">Information</system:String>
+    <system:String x:Key="AutoStartError">Failed to set auto start: {0}</system:String>
+    <system:String x:Key="HotKeySetSuccess">Hotkey has been set to: {0}</system:String>
+    <system:String x:Key="HotKeySetError">Failed to set hotkey: {0}</system:String>
+    <system:String x:Key="LoadConfigError">Error loading configuration file: {0}</system:String>
+    <system:String x:Key="SaveConfigError">Error saving configuration file: {0}</system:String>
+    <system:String x:Key="ConfigError">Configuration Error</system:String>
+    <system:String x:Key="LanguageLoadError">Failed to load language resources: {0}</system:String>
+
+    <!-- Hotkey Editor Window -->
+    <system:String x:Key="EditHotKey">Edit Hotkey</system:String>
+    <system:String x:Key="PressKey">Press the key combination you want to set</system:String>
+    <system:String x:Key="CurrentHotKey">Current Hotkey:</system:String>
+    <system:String x:Key="Save">Save</system:String>
+    <system:String x:Key="Cancel">Cancel</system:String>
+
+    <!-- Search Window -->
+    <system:String x:Key="SearchResults">Search Results</system:String>
+    <system:String x:Key="QuickSearch">Quick Search</system:String>
+    <system:String x:Key="PressEscToClose">Press ESC to close window</system:String>
+    <system:String x:Key="SearchError">Search Error: {0}</system:String>
+    <system:String x:Key="NoResults">No Results</system:String>
+    <system:String x:Key="FoundResults">Found {0} matching results</system:String>
+
+    <!-- Search result prefixes and suffixes -->
+    <system:String x:Key="DocPrefix">Document:</system:String>
+    <system:String x:Key="ProjectPrefix">Project:</system:String>
+    <system:String x:Key="SettingPrefix">Setting:</system:String>
+    <system:String x:Key="CodePrefix">Code:</system:String>
+    <system:String x:Key="ConfigPrefix">Config:</system:String>
+    <system:String x:Key="NotePrefix">Note:</system:String>
+    <system:String x:Key="FilePrefix">File:</system:String>
+    <system:String x:Key="EmailPrefix">Email:</system:String>
+    <system:String x:Key="RecordPrefix">Record:</system:String>
+    <system:String x:Key="ResultPrefix">Result:</system:String>
+
+    <system:String x:Key="RecentlyUpdated">- Recently Updated</system:String>
+    <system:String x:Key="CommonItem">- Common Item</system:String>
+    <system:String x:Key="TodayRecommended">- Today's Recommendation</system:String>
+    <system:String x:Key="HighPriority">- High Priority</system:String>
+    <system:String x:Key="CommonQuestion">- Common Question</system:String>
+    <system:String x:Key="FavoriteItem">- Favorite Item</system:String>
+    <system:String x:Key="ReadLater">- Read Later</system:String>
+    <system:String x:Key="NeedAttention">- Needs Attention</system:String>
+    <system:String x:Key="ImportantInfo">- Important Information</system:String>
+    <system:String x:Key="NewContent">- New Content</system:String>
+</ResourceDictionary> 

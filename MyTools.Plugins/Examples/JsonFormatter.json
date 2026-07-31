@@ -1,0 +1,10 @@
+{
+  "Name": "JsonFormatter",
+  "Description": "Format and validate JSON",
+  "Version": "1.0.0",
+  "Author": "MyTools",
+  "IsEnabled": true,
+  "Keywords": ["json", "format", "formatter", "validate"],
+  "ViewModelType": "LeftRight"
+}
+

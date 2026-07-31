@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DeepSeek Translator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="page">
+        <section class="translator">
+            <div class="panel input-panel">
+                <div class="label-row">
+                    <label class="label" for="sourceText">Input</label>
+                    <button id="sendMode" class="send-mode" type="button" title="Click to switch send mode">Enter</button>
+                    <button id="historyButton" class="history-button" type="button" title="Translation history" aria-label="Translation history"><span class="history-clock" aria-hidden="true"></span></button>
+                    <button id="favoriteListButton" class="history-button favorite-list-button" type="button" title="Favorite list" aria-label="Favorite list">★</button>
+                </div>
+                <textarea id="sourceText" spellcheck="false" placeholder="Enter text to translate"></textarea>
+            </div>
+
+            <div class="panel result-panel">
+                <div class="label-row">
+                    <button id="historyBackButton" class="result-back-button" type="button" title="Back to translation" aria-label="Back to translation" hidden></button>
+                    <div id="resultTitle" class="label">Translation</div>
+                    <div id="sourceStatus" class="source-status" hidden></div>
+                    <button id="favoriteButton" class="star-button" type="button" hidden>☆</button>
+                </div>
+                <div id="translation" class="translation empty">Translation appears here</div>
+            </div>
+        </section>
+    </main>
+
+    <script src="../common/speech.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

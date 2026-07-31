@@ -1,0 +1,19 @@
+{
+  "id": "hello-search",
+  "name": "Hello Search",
+  "version": "0.2.0",
+  "runtime": "node",
+  "protocolVersion": "2.0",
+  "entries": [
+    {
+      "id": "hello",
+      "name": "Hello Search",
+      "entry": "backend/index.mjs",
+      "keywords": ["hello"],
+      "detail": {
+        "type": "web",
+        "entry": "web/index.html"
+      }
+    }
+  ]
+}

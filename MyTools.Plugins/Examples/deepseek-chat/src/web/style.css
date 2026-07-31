@@ -1,0 +1,161 @@
+html,
+body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+
+body {
+    font-family: "Segoe UI", sans-serif;
+    background: #1e1e1e;
+    color: #ffffff;
+}
+
+.page {
+    box-sizing: border-box;
+    height: 100vh;
+    padding: 5px;
+}
+
+.panel {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    border-radius: 12px;
+    padding: 5px;
+    background: #1a1a1a;
+    border: 1px solid #292929;
+    overflow: hidden;
+}
+
+.label-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+    padding: 8px 10px;
+    border-bottom: 1px solid #292929;
+}
+
+.label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #cccccc;
+    letter-spacing: 0.08em;
+}
+
+.new-chat-button,
+.send-button {
+    border: 1px solid #555555;
+    border-radius: 999px;
+    background: #333333;
+    color: #cccccc;
+    padding: 4px 10px;
+    font: inherit;
+    font-size: 12px;
+    line-height: 1.2;
+    cursor: pointer;
+}
+
+.new-chat-button {
+    margin-left: auto;
+}
+
+.new-chat-button:hover,
+.send-button:hover:not(:disabled) {
+    border-color: #666666;
+    color: #ffffff;
+    background: #3a3a3a;
+}
+
+.messages {
+    flex: 1;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 12px;
+}
+
+.messages.empty {
+    color: #666666;
+}
+
+.message {
+    box-sizing: border-box;
+    max-width: 82%;
+    margin-bottom: 10px;
+    border: 1px solid #333333;
+    border-radius: 12px;
+    padding: 9px 11px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    line-height: 1.45;
+    font-size: 15px;
+}
+
+.message.user {
+    margin-left: auto;
+    border-color: rgba(96, 165, 250, 0.32);
+    background: rgba(37, 99, 235, 0.22);
+    color: #ffffff;
+    border-bottom-right-radius: 4px;
+}
+
+.message.assistant {
+    margin-right: auto;
+    background: #222222;
+    color: #eeeeee;
+    border-bottom-left-radius: 4px;
+}
+
+.message.error {
+    margin-right: auto;
+    border-color: rgba(248, 113, 113, 0.28);
+    background: rgba(220, 38, 38, 0.12);
+    color: #fca5a5;
+}
+
+.composer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 8px;
+    padding: 8px;
+    border-top: 1px solid #292929;
+}
+
+#promptInput {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 42px;
+    max-height: 120px;
+    resize: vertical;
+    border: 1px solid #333333;
+    outline: none;
+    border-radius: 10px;
+    padding: 9px 10px;
+    background: #222222;
+    color: #ffffff;
+    font: inherit;
+    line-height: 1.4;
+}
+
+#promptInput:focus {
+    border-color: #60a5fa;
+}
+
+#promptInput::placeholder {
+    color: #666666;
+}
+
+.send-button {
+    min-height: 38px;
+    padding-inline: 14px;
+}
+
+.send-button:disabled {
+    opacity: 0.6;
+    cursor: default;
+}

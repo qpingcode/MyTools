@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DeepSeek Anki Cards</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="page">
+        <section class="panel">
+            <div class="label-row">
+                <button id="backButton" class="title-icon-button back-icon" type="button" title="Back to Review" aria-label="Back to Review" hidden></button>
+                <button id="browseButton" class="title-icon-button" type="button" title="Browse All Cards" aria-label="Browse All Cards">☰</button>
+                <div class="label">Anki Card</div>
+                <div id="summary" class="summary">0 due</div>
+            </div>
+            <div id="cardHost" class="card-host empty">Loading cards</div>
+        </section>
+    </main>
+
+    <script src="../common/speech.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
