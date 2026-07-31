@@ -38,5 +38,3 @@ Issues and pull requests are welcome. Before submitting a change, make sure the 
 ## License
 
 MyTools is licensed under the [MIT License](LICENSE).
-
-Thanks to [SignPath](https://signpath.io/) for providing free code-signing services to this open-source project.
