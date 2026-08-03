@@ -111,7 +111,7 @@
         <Message Importance="high"
                  Text="Packing Velopack release $(Version) to '$(VelopackReleaseDirectory)'. Existing releases are retained for delta generation." />
         <Exec WorkingDirectory="$(VelopackRepositoryRoot)"
-              Command="dotnet tool run vpk -- pack --packId MyTools.Desktop --packVersion &quot;$(Version)&quot; --packDir &quot;$(VelopackPublishDirectory)&quot; --mainExe MyTools.Desktop.exe --packTitle MyTools --packAuthors qping --runtime &quot;$(VelopackRuntime)&quot; --channel &quot;$(VelopackChannel)&quot; --delta &quot;$(VelopackDeltaMode)&quot; --icon &quot;$(MSBuildProjectDirectory)\Assets\Maintenance.ico&quot; --outputDir &quot;$(VelopackReleaseDirectory)&quot;" />
+              Command="dotnet tool run vpk -- pack --packId MyTools --packVersion &quot;$(Version)&quot; --packDir &quot;$(VelopackPublishDirectory)&quot; --mainExe MyTools.Desktop.exe --packTitle MyTools --packAuthors qping --runtime &quot;$(VelopackRuntime)&quot; --channel &quot;$(VelopackChannel)&quot; --delta &quot;$(VelopackDeltaMode)&quot; --icon &quot;$(MSBuildProjectDirectory)\Assets\Maintenance.ico&quot; --outputDir &quot;$(VelopackReleaseDirectory)&quot;" />
         <Message Importance="high"
                  Text="Velopack release $(Version) completed: $(VelopackReleaseDirectory)" />
     </Target>
