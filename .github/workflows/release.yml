@@ -108,9 +108,12 @@ jobs:
           "tag=v$version" >> $env:GITHUB_OUTPUT
           "previous_tag=$previousTag" >> $env:GITHUB_OUTPUT
           Write-Host "Release version: $version"
-          if ($previousTag) {
-              Write-Host "Previous release used for delta generation: $previousTag"
-          }
+
+      - name: Prepare clean release directory
+        shell: pwsh
+        run: |
+          Remove-Item .\Releases -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Path .\Releases | Out-Null
 
       - name: Download previous full package for delta generation
         if: steps.version.outputs.previous_tag != ''
@@ -119,11 +122,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PREVIOUS_TAG: ${{ steps.version.outputs.previous_tag }}
         run: |
-          New-Item -ItemType Directory -Path .\Releases -Force | Out-Null
           gh release download $env:PREVIOUS_TAG `
             --repo $env:GITHUB_REPOSITORY `
-            --pattern '*-full.nupkg' `
+            --pattern 'MyTools-*-full.nupkg' `
             --dir .\Releases
+
+          if ($LASTEXITCODE -ne 0) {
+              Write-Host 'No package from the new MyTools release line was found. Starting without a delta base.'
+              $global:LASTEXITCODE = 0
+          }
 
       - name: Create Velopack packages
         shell: pwsh
@@ -143,10 +150,16 @@ jobs:
         env:
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
         run: |
+          $installerName = 'MyTools-win-Setup.exe'
+          $portableName = 'MyTools-win-Portable.zip'
+          $installerAssetName = "MyTools-$env:RELEASE_VERSION-windows-x64-setup.exe"
+          $portableAssetName = "MyTools-$env:RELEASE_VERSION-windows-x64-portable.zip"
           $requiredPatterns = @(
-              "MyTools.Desktop-$env:RELEASE_VERSION-full.nupkg",
-              'MyTools.Desktop-win-Setup.exe',
-              'MyTools.Desktop-win-Portable.zip',
+              "MyTools-$env:RELEASE_VERSION-full.nupkg",
+              $installerName,
+              $portableName,
+              'RELEASES',
+              'assets.win.json',
               'releases.win.json'
           )
 
@@ -155,6 +168,19 @@ jobs:
                   throw "Required Velopack output is missing: $pattern"
               }
           }
+
+          Copy-Item (Join-Path .\Releases $installerName) (Join-Path .\Releases $installerAssetName)
+          Copy-Item (Join-Path .\Releases $portableName) (Join-Path .\Releases $portableAssetName)
+
+          $assetsManifestPath = Join-Path .\Releases 'assets.win.json'
+          $assetsManifest = Get-Content $assetsManifestPath -Raw | ConvertFrom-Json
+          foreach ($asset in $assetsManifest) {
+              switch ($asset.Type) {
+                  'Installer' { $asset.RelativeFileName = $installerAssetName }
+                  'Portable' { $asset.RelativeFileName = $portableAssetName }
+              }
+          }
+          $assetsManifest | ConvertTo-Json -Compress | Set-Content $assetsManifestPath -Encoding utf8
 
           Get-ChildItem .\Releases -File | Sort-Object Name | Format-Table Name, Length
 
@@ -165,23 +191,45 @@ jobs:
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
         run: |
-          $versionPattern = [regex]::Escape($env:RELEASE_VERSION)
+          $installerName = "MyTools-$env:RELEASE_VERSION-windows-x64-setup.exe"
+          $portableName = "MyTools-$env:RELEASE_VERSION-windows-x64-portable.zip"
+          $fullPackageName = "MyTools-$env:RELEASE_VERSION-full.nupkg"
+          $deltaPackageName = "MyTools-$env:RELEASE_VERSION-delta.nupkg"
+
           $assets = @(
-              Get-ChildItem .\Releases -File |
-                  Where-Object {
-                      $_.Extension -ne '.nupkg' -or
-                      $_.Name -match "-$versionPattern-(?:full|delta)\.nupkg$"
-                  } |
-                  Select-Object -ExpandProperty FullName
+              "$(Resolve-Path (Join-Path .\Releases $installerName))#Windows x64 Installer (Recommended)"
+              "$(Resolve-Path (Join-Path .\Releases $portableName))#Windows x64 Portable"
+              "$(Resolve-Path (Join-Path .\Releases $fullPackageName))#Automatic updater package"
+              "$(Resolve-Path .\Releases\RELEASES)#Automatic updater metadata"
+              "$(Resolve-Path .\Releases\assets.win.json)#Automatic updater asset metadata"
+              "$(Resolve-Path .\Releases\releases.win.json)#Automatic updater release metadata"
           )
-          if ($assets.Count -eq 0) {
-              throw 'No release assets were generated.'
+
+          $deltaPackagePath = Join-Path .\Releases $deltaPackageName
+          if (Test-Path $deltaPackagePath -PathType Leaf) {
+              $assets += "$(Resolve-Path $deltaPackagePath)#Automatic updater delta package"
           }
+
+          $repositoryUrl = "https://github.com/$env:GITHUB_REPOSITORY"
+          $downloadBaseUrl = "$repositoryUrl/releases/download/$env:RELEASE_TAG"
+          $releaseNotesPath = Join-Path $env:RUNNER_TEMP 'release-notes.md'
+          @"
+          ## Download
+
+          **[Download Windows x64 Installer (Recommended)]($downloadBaseUrl/$installerName)**
+
+          [Download Windows x64 Portable]($downloadBaseUrl/$portableName)
+
+          > The `.nupkg`, `.json`, and `RELEASES` assets are used by the automatic updater. Most users do not need to download them.
+
+          ## What's Changed
+          "@ | Set-Content -Path $releaseNotesPath -Encoding utf8
 
           gh release create $env:RELEASE_TAG `
             --repo $env:GITHUB_REPOSITORY `
             --target $env:GITHUB_SHA `
-            --title "MyTools $env:RELEASE_VERSION" `
+            --title "MyTools v$env:RELEASE_VERSION" `
+            --notes-file $releaseNotesPath `
             --generate-notes `
             @assets
 
