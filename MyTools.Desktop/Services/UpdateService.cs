@@ -32,7 +32,16 @@ public sealed class UpdateService(
     public const string DefaultUpdateUrl = "https://github.com/qpingcode/MyTools/releases";
     private const string UpdateUrlSettingPath = "General.UpdateUrl";
     private const string UpdateChannelSettingPath = "General.UpdateChannel";
+    private const string UpdateProxyUrlSettingPath = "General.UpdateProxyUrl";
     private const string DefaultChannel = "win";
+    private static readonly HashSet<string> SupportedProxySchemes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        Uri.UriSchemeHttp,
+        Uri.UriSchemeHttps,
+        "socks4",
+        "socks4a",
+        "socks5"
+    };
 
     private readonly SemaphoreSlim operationLock = new(1, 1);
     private UpdateManager? pendingUpdateManager;
@@ -77,13 +86,17 @@ public sealed class UpdateService(
             {
                 ExplicitChannel = string.IsNullOrWhiteSpace(channel) ? DefaultChannel : channel.Trim()
             };
-            var updateManager = CreateUpdateManager(updateUrl, options);
+            var proxyUri = ParseProxyUri(GetStringSetting(UpdateProxyUrlSettingPath));
+            var updateManager = CreateUpdateManager(updateUrl, options, proxyUri);
             if (!updateManager.IsInstalled)
             {
                 return new UpdateCheckResult(UpdateCheckStatus.NotInstalled);
             }
 
-            logger.LogInformation("Checking the configured update source on channel {Channel}.", options.ExplicitChannel);
+            logger.LogInformation(
+                "Checking the configured update source on channel {Channel} ({ConnectionMode}).",
+                options.ExplicitChannel,
+                proxyUri == null ? "direct connection" : "proxy");
             cancellationToken.ThrowIfCancellationRequested();
             var update = await updateManager.CheckForUpdatesAsync();
             cancellationToken.ThrowIfCancellationRequested();
@@ -141,14 +154,45 @@ public sealed class UpdateService(
         return configurationRegistry.FindSetting(path)?.GetValue<string>();
     }
 
-    private static UpdateManager CreateUpdateManager(string updateUrl, UpdateOptions options)
+    private static UpdateManager CreateUpdateManager(string updateUrl, UpdateOptions options, Uri? proxyUri)
     {
         var trimmedUpdateUrl = updateUrl.Trim();
         var githubRepositoryUrl = GetGithubRepositoryUrl(trimmedUpdateUrl);
-        return githubRepositoryUrl == null
-            ? new UpdateManager(trimmedUpdateUrl, options)
-            // ReSharper disable once RedundantArgumentDefaultValue
-            : new UpdateManager(new GithubSource(githubRepositoryUrl, null, false, null), options);
+        var downloader = new UpdateProxyFileDownloader(proxyUri);
+        if (githubRepositoryUrl != null)
+        {
+            return new UpdateManager(new GithubSource(githubRepositoryUrl, null, false, downloader), options);
+        }
+
+        return Uri.TryCreate(trimmedUpdateUrl, UriKind.Absolute, out var updateUri)
+            && (updateUri.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+                || updateUri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+            ? new UpdateManager(new SimpleWebSource(updateUri, downloader), options)
+            : new UpdateManager(trimmedUpdateUrl, options);
+    }
+
+    internal static Uri? ParseProxyUri(string? proxyUrl)
+    {
+        if (string.IsNullOrWhiteSpace(proxyUrl))
+        {
+            return null;
+        }
+
+        var trimmedProxyUrl = proxyUrl.Trim();
+        if (!Uri.TryCreate(trimmedProxyUrl, UriKind.Absolute, out var proxyUri)
+            || !SupportedProxySchemes.Contains(proxyUri.Scheme)
+            || string.IsNullOrWhiteSpace(proxyUri.Host))
+        {
+            throw new InvalidOperationException(
+                "The update proxy URL must be an absolute HTTP, HTTPS, SOCKS4, SOCKS4A, or SOCKS5 URL.");
+        }
+
+        if (!string.IsNullOrEmpty(proxyUri.UserInfo))
+        {
+            throw new InvalidOperationException("The update proxy URL must not contain a username or password.");
+        }
+
+        return proxyUri;
     }
 
     internal static string? GetGithubRepositoryUrl(string updateUrl)
