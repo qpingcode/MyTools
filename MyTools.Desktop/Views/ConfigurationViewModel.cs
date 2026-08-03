@@ -7,6 +7,7 @@ using MyTools.Common.Config.Models;
 using MyTools.Common.DependencyInjection;
 using MyTools.Common.Localization;
 using MyTools.Desktop.Services;
+using MyTools.Desktop.Utils;
 
 namespace MyTools.Desktop.ViewModels;
 
@@ -208,7 +209,7 @@ public partial class ConfigurationViewModel : ObservableRecipient
 
             if (languageChanged)
             {
-                var restart = MessageBox.Show(
+                var restart = TopmostMessageBox.Show(
                     localization.GetCaption("Language.RestartPrompt", "The display language has been saved. Restart MyTools now to apply it?"),
                     localization.GetCaption("Language.RestartTitle", "Restart required"),
                     MessageBoxButton.YesNo,

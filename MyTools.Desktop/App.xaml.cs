@@ -279,7 +279,7 @@ public partial class App
             return;
         }
 
-        var restart = MessageBox.Show(
+        var restart = TopmostMessageBox.Show(
             GetCaption("Language.RestartPrompt", "The display language has been saved. Restart MyTools now to apply it?"),
             GetCaption("Language.RestartTitle", "Restart required"),
             MessageBoxButton.YesNo,
