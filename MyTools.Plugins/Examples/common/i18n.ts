@@ -65,21 +65,39 @@ class MyToolsI18n {
   apply(root: ParentNode = document): void {
     root.querySelectorAll<HTMLElement>("[data-i18n]").forEach((element) => {
       const descriptor = element.dataset.i18n ?? "";
-      const match = descriptor.match(/^\[([^\]]+)](.+)$/);
-      const attribute = match?.[1] ?? "text";
-      const key = match?.[2] ?? descriptor;
-      const defaultValue = element.dataset.i18nDefaultValue ?? element.textContent ?? key;
-      const value = this.t(key, { defaultValue });
-      if (attribute === "text") {
-        element.textContent = value;
-      } else {
-        element.setAttribute(attribute, value);
-      }
+      const parsed = parseDescriptor(descriptor);
+      const defaultValue = element.dataset.i18nDefaultValue ?? element.textContent ?? parsed.key;
+      const value = this.t(parsed.key, { defaultValue });
+      parsed.attributes.forEach((attribute) => {
+        if (attribute === "text") {
+          element.textContent = value;
+        } else {
+          element.setAttribute(attribute, value);
+        }
+      });
     });
     if (typeof document !== "undefined") {
       document.documentElement.lang = this.#locale;
     }
   }
+}
+
+function parseDescriptor(descriptor: string): { attributes: string[]; key: string } {
+  const attributes: string[] = [];
+  let key = descriptor;
+  while (key.startsWith("[")) {
+    const closingBracket = key.indexOf("]");
+    if (closingBracket <= 1) {
+      break;
+    }
+
+    attributes.push(key.slice(1, closingBracket));
+    key = key.slice(closingBracket + 1);
+  }
+
+  return key
+    ? { attributes: attributes.length > 0 ? attributes : ["text"], key }
+    : { attributes: ["text"], key: descriptor };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

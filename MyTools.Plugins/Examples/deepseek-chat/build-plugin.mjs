@@ -41,6 +41,10 @@ await build({
           from: ["src/web/style.css"],
           to: ["dist/web/style.css"],
         },
+        {
+          from: ["i18n/**/*"],
+          to: ["dist/i18n"],
+        },
       ],
     }),
   ],

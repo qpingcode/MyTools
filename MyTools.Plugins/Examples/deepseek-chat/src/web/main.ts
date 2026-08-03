@@ -22,6 +22,7 @@ import { tool } from "@qping/plugin-common/web-tool";
     var newChatButton = document.getElementById("newChatButton") as HTMLButtonElement;
     var conversationId = "";
     var pollTimer: number | null = null;
+    var currentState: ChatState = {};
 
     async function callState(action: string, data: Record<string, unknown> = {}) {
         try {
@@ -43,19 +44,24 @@ import { tool } from "@qping/plugin-common/web-tool";
 
     function renderState(state: ChatState | null | undefined): void {
         var current = state || {};
+        currentState = current;
         conversationId = current.conversationId || conversationId;
         var messages = Array.isArray(current.messages) ? current.messages : [];
         messagesElement.replaceChildren();
         messagesElement.className = messages.length === 0 ? "messages empty" : "messages";
 
         if (messages.length === 0) {
-            messagesElement.textContent = current.error || "Ask DeepSeek anything";
+            messagesElement.textContent = current.error || tool.i18n.t("Plugin.DeepSeekChat.Detail.Empty", {
+                defaultValue: "Ask DeepSeek anything"
+            });
         }
 
         messages.forEach(function (message: ChatMessage) {
             var bubble = document.createElement("div");
             bubble.className = message.role === "user" ? "message user" : "message assistant";
-            bubble.textContent = message.content || (message.role === "assistant" && current.streaming ? "…" : "");
+            bubble.textContent = message.content || (message.role === "assistant" && current.streaming
+                ? tool.i18n.t("Plugin.DeepSeekChat.Detail.Streaming", { defaultValue: "…" })
+                : "");
             messagesElement.appendChild(bubble);
         });
 
@@ -134,6 +140,9 @@ import { tool } from "@qping/plugin-common/web-tool";
         if (query && !normalize(promptInput.value)) {
             promptInput.value = query;
         }
+    });
+    tool.subscribe(hostEvents.languageChanged, function () {
+        renderState(currentState);
     });
     tool.ready("deepseek-chat");
 })();

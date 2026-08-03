@@ -1,4 +1,5 @@
 import { createTool } from "@qping/plugin-common/node-tool";
+import { mytoolsI18n } from "@qping/plugin-common/i18n";
 
 const DEEPSEEK_API_URL = process.env.DEEPSEEK_API_URL || "https://api.deepseek.com/chat/completions";
 const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat";
@@ -65,8 +66,12 @@ function buildSearchItem(query: unknown) {
   const text = normalizeText(query);
   return {
     id: "deepseek-chat",
-    title: text ? `Chat: ${text}` : "DeepSeek Chat",
-    subtitle: "Talk with DeepSeek using a streaming chat view",
+    title: text
+      ? mytoolsI18n.t("Plugin.DeepSeekChat.Result.Title", { defaultValue: "Chat: {{text}}", text })
+      : mytoolsI18n.t("Plugin.DeepSeekChat.Name", { defaultValue: "DeepSeek Chat" }),
+    subtitle: mytoolsI18n.t("Plugin.DeepSeekChat.Result.Subtitle", {
+      defaultValue: "Talk with DeepSeek using a streaming chat view",
+    }),
     priority: 100,
     icon: {
       kind: "emoji",
@@ -75,9 +80,11 @@ function buildSearchItem(query: unknown) {
     actions: [
       {
         id: "open-detail",
-        title: "Open Chat",
+        title: mytoolsI18n.t("Plugin.DeepSeekChat.Action.OpenChat.Title", { defaultValue: "Open Chat" }),
         kind: "detail",
-        description: "Open DeepSeek chat",
+        description: mytoolsI18n.t("Plugin.DeepSeekChat.Action.OpenChat.Description", {
+          defaultValue: "Open DeepSeek chat",
+        }),
       },
     ],
   };
@@ -94,7 +101,7 @@ function createDetail(query: unknown) {
   return {
     type: "web-detail",
     htmlEntry: "web/index.html",
-    title: "DeepSeek Chat",
+    title: mytoolsI18n.t("Plugin.DeepSeekChat.Name", { defaultValue: "DeepSeek Chat" }),
     initialState: toState(conversation),
   };
 }
@@ -141,7 +148,9 @@ function startAssistantStream(conversation: Conversation): void {
 async function streamAssistantResponse(conversation: Conversation, assistantIndex: number): Promise<void> {
   try {
     if (!DEEPSEEK_API_KEY) {
-      throw new Error("Missing DEEPSEEK_API_KEY environment variable.");
+      throw new Error(mytoolsI18n.t("Plugin.DeepSeekChat.Error.MissingApiKey", {
+        defaultValue: "Missing DEEPSEEK_API_KEY environment variable.",
+      }));
     }
 
     const response = await fetch(DEEPSEEK_API_URL, {
@@ -159,11 +168,17 @@ async function streamAssistantResponse(conversation: Conversation, assistantInde
 
     if (!response.ok) {
       const body = await response.text();
-      throw new Error(`DeepSeek chat failed (${response.status}): ${body}`);
+      throw new Error(mytoolsI18n.t("Plugin.DeepSeekChat.Error.ApiFailed", {
+        defaultValue: "DeepSeek chat failed ({{status}}): {{body}}",
+        status: response.status,
+        body,
+      }));
     }
 
     if (!response.body) {
-      throw new Error("DeepSeek chat response did not include a stream.");
+      throw new Error(mytoolsI18n.t("Plugin.DeepSeekChat.Error.NoStream", {
+        defaultValue: "DeepSeek chat response did not include a stream.",
+      }));
     }
 
     const reader = response.body.getReader();
@@ -248,11 +263,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 const tool = createTool();
 
 tool
+  .initialize((params) => {
+    mytoolsI18n.configure(params);
+    return {};
+  })
   .search((params) => ({
     items: [buildSearchItem(params.query || "")],
   }))
   .action((params) => ({
-    message: "Opened DeepSeek chat",
+    message: mytoolsI18n.t("Plugin.DeepSeekChat.Action.OpenChat.Success", {
+      defaultValue: "Opened DeepSeek chat",
+    }),
     actionType: "none",
     detail: createDetail(params.query || ""),
   }))

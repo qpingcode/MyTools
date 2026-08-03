@@ -1,11 +1,14 @@
 import { buildDeckSummary, deleteCard, getCardPage, getNextDueCard, reviewCard, saveCard } from "../common/anki.mjs";
 import { createTool } from "@qping/plugin-common/node-tool";
+import { mytoolsI18n } from "@qping/plugin-common/i18n";
 
 function buildSearchItem() {
   return {
     id: "deepseek-translator-anki-card",
-    title: "DeepSeek Anki Cards",
-    subtitle: "Review generated cards with FSRS scheduling",
+    title: mytoolsI18n.t("Plugin.DeepSeekTranslator.Anki.Name", { defaultValue: "DeepSeek Anki Cards" }),
+    subtitle: mytoolsI18n.t("Plugin.DeepSeekTranslator.Anki.Result.Subtitle", {
+      defaultValue: "Review generated cards with FSRS scheduling",
+    }),
     priority: 100,
     icon: {
       kind: "emoji",
@@ -14,9 +17,11 @@ function buildSearchItem() {
     actions: [
       {
         id: "open-detail",
-        title: "Review Cards",
+        title: mytoolsI18n.t("Plugin.DeepSeekTranslator.Anki.Action.Review.Title", { defaultValue: "Review Cards" }),
         kind: "detail",
-        description: "Open the Anki card review page",
+        description: mytoolsI18n.t("Plugin.DeepSeekTranslator.Anki.Action.Review.Description", {
+          defaultValue: "Open the Anki card review page",
+        }),
       },
     ],
   };
@@ -44,7 +49,7 @@ function createDetail() {
   return {
     type: "web-detail",
     htmlEntry: "web/AnkiCard/index.html",
-    title: "DeepSeek Anki Cards",
+    title: mytoolsI18n.t("Plugin.DeepSeekTranslator.Anki.Name", { defaultValue: "DeepSeek Anki Cards" }),
     initialState: createReviewState(),
   };
 }
@@ -65,11 +70,17 @@ function payloadRecord(payload: unknown): Record<string, unknown> {
 const tool = createTool();
 
 tool
+  .initialize((params) => {
+    mytoolsI18n.configure(params);
+    return {};
+  })
   .search(() => ({
     items: [buildSearchItem()],
   }))
   .action(() => ({
-    message: "Opened Anki cards",
+    message: mytoolsI18n.t("Plugin.DeepSeekTranslator.Anki.Action.Review.Success", {
+      defaultValue: "Opened Anki cards",
+    }),
     actionType: "none",
     detail: createDetail(),
   }))

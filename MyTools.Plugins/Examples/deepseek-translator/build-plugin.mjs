@@ -53,6 +53,10 @@ await build({
           from: ["src/web/common/speech.js"],
           to: ["dist/web/common/speech.js"],
         },
+        {
+          from: ["i18n/**/*"],
+          to: ["dist/i18n"],
+        },
       ],
     }),
   ],

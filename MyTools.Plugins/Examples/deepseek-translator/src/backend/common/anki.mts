@@ -1,4 +1,5 @@
 import { ANKI_CARDS_PATH, normalizeText, readJsonFile, writeJsonFile } from "./storage.mjs";
+import { mytoolsI18n } from "@qping/plugin-common/i18n";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -96,7 +97,9 @@ export function deleteCard(cardId: unknown): AnkiCard[] {
   const data = readAnkiCards();
   const cards = data.cards.filter((card) => card.id !== cardId);
   if (cards.length === data.cards.length) {
-    throw new Error("Card not found.");
+    throw new Error(mytoolsI18n.t("Plugin.DeepSeekTranslator.Anki.Error.CardNotFound", {
+      defaultValue: "Card not found.",
+    }));
   }
 
   writeAnkiCards(cards);
@@ -139,7 +142,9 @@ export function reviewCard(cardId: unknown, ratingValue: unknown, now = new Date
   const data = readAnkiCards();
   const index = data.cards.findIndex((card) => card.id === cardId);
   if (index < 0) {
-    throw new Error("Card not found.");
+    throw new Error(mytoolsI18n.t("Plugin.DeepSeekTranslator.Anki.Error.CardNotFound", {
+      defaultValue: "Card not found.",
+    }));
   }
 
   const reviewed = scheduleWithFsrs(data.cards[index], rating, now);
@@ -204,8 +209,12 @@ function normalizeEditableCard(payload: unknown): AnkiCard {
   const phonetic = normalizeText(data.phonetic);
   if (!isValidCardContent(type, front, back, answer, options)) {
     throw new Error(type === "basic"
-      ? "Basic cards require source, front, and back."
-      : "Choice cards require source, front, back, answer, and at least two options including the answer.");
+      ? mytoolsI18n.t("Plugin.DeepSeekTranslator.Anki.Error.InvalidBasicCard", {
+        defaultValue: "Basic cards require source, front, and back.",
+      })
+      : mytoolsI18n.t("Plugin.DeepSeekTranslator.Anki.Error.InvalidChoiceCard", {
+        defaultValue: "Choice cards require source, front, back, answer, and at least two options including the answer.",
+      }));
   }
 
   const now = new Date().toISOString();
@@ -381,7 +390,9 @@ function meanReversion(init: number, current: number): number {
 function normalizeRating(value: unknown): number {
   const rating = Number(value);
   if (![1, 2, 3, 4].includes(rating)) {
-    throw new Error("Invalid review rating.");
+    throw new Error(mytoolsI18n.t("Plugin.DeepSeekTranslator.Anki.Error.InvalidRating", {
+      defaultValue: "Invalid review rating.",
+    }));
   }
 
   return rating;

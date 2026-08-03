@@ -63,6 +63,10 @@ import { tool } from "@qping/plugin-common/web-tool";
         return typeof value === "string" ? value.trim() : "";
     }
 
+    function t(key: string, defaultValue: string, values: Record<string, unknown> = {}): string {
+        return tool.i18n.t(key, { defaultValue: defaultValue, ...values });
+    }
+
     function setInput(text: unknown, requestTranslation: boolean): void {
         var normalized = typeof text === "string" ? text : "";
         if (sourceText.value !== normalized) {
@@ -81,7 +85,9 @@ import { tool } from "@qping/plugin-common/web-tool";
         translation.replaceChildren();
         translation.classList.remove("history");
         translation.classList.remove("pending");
-        translation.textContent = normalize(text) ? "Please wait" : "Translation appears here";
+        translation.textContent = normalize(text)
+            ? t("Plugin.DeepSeekTranslator.Detail.PleaseWait", "Please wait")
+            : t("Plugin.DeepSeekTranslator.Detail.Empty", "Translation appears here");
         translation.classList.toggle("empty", !normalize(text));
     }
 
@@ -92,7 +98,9 @@ import { tool } from "@qping/plugin-common/web-tool";
         hideFavoriteButton();
         translation.replaceChildren();
         translation.classList.remove("history");
-        translation.textContent = normalize(text) ? "Press Enter to translate" : "Translation appears here";
+        translation.textContent = normalize(text)
+            ? t("Plugin.DeepSeekTranslator.Detail.PressEnter", "Press Enter to translate")
+            : t("Plugin.DeepSeekTranslator.Detail.Empty", "Translation appears here");
         translation.classList.toggle("empty", !normalize(text));
         translation.classList.toggle("pending", !!normalize(text));
     }
@@ -117,23 +125,27 @@ import { tool } from "@qping/plugin-common/web-tool";
     }
 
     function setResultTitle(text: unknown): void {
-        resultTitle.textContent = normalize(text) || "Translation";
+        resultTitle.textContent = normalize(text) || t("Plugin.DeepSeekTranslator.Detail.Translation", "Translation");
     }
 
     function showSourceStatus(current: TranslationState): void {
         stopLoadingTimer();
         sourceStatus.hidden = false;
-        sourceStatus.textContent = current.fromCache ? "From Cache" : formatApiStatus(current.tokenUsage);
+        sourceStatus.textContent = current.fromCache
+            ? t("Plugin.DeepSeekTranslator.Detail.Source.Cache", "From Cache")
+            : formatApiStatus(current.tokenUsage);
         sourceStatus.title = current.fromCache ? "" : formatTokenUsageTitle(current.tokenUsage);
         sourceStatus.className = current.fromCache ? "source-status cache" : "source-status api";
     }
 
     function formatApiStatus(usage: TokenUsage | null | undefined): string {
         if (!usage || typeof usage.totalTokens !== "number") {
-            return "From Api";
+            return t("Plugin.DeepSeekTranslator.Detail.Source.Api", "From API");
         }
 
-        return "From Api · " + usage.totalTokens + " tokens";
+        return t("Plugin.DeepSeekTranslator.Detail.Source.ApiTokens", "From API · {{count}} tokens", {
+            count: usage.totalTokens
+        });
     }
 
     function formatTokenUsageTitle(usage: TokenUsage | null | undefined): string {
@@ -141,15 +153,15 @@ import { tool } from "@qping/plugin-common/web-tool";
             return "";
         }
 
-        var parts = ["Total: " + usage.totalTokens];
+        var parts = [t("Plugin.DeepSeekTranslator.Detail.Tokens.Total", "Total: {{count}}", { count: usage.totalTokens })];
         if (typeof usage.promptTokens === "number") {
-            parts.push("Input: " + usage.promptTokens);
+            parts.push(t("Plugin.DeepSeekTranslator.Detail.Tokens.Input", "Input: {{count}}", { count: usage.promptTokens }));
         }
         if (typeof usage.completionTokens === "number") {
-            parts.push("Output: " + usage.completionTokens);
+            parts.push(t("Plugin.DeepSeekTranslator.Detail.Tokens.Output", "Output: {{count}}", { count: usage.completionTokens }));
         }
         if (typeof usage.cachedPromptTokens === "number") {
-            parts.push("Cached input: " + usage.cachedPromptTokens);
+            parts.push(t("Plugin.DeepSeekTranslator.Detail.Tokens.CachedInput", "Cached input: {{count}}", { count: usage.cachedPromptTokens }));
         }
         return parts.join(" · ");
     }
@@ -176,7 +188,9 @@ import { tool } from "@qping/plugin-common/web-tool";
         favoriteButton.disabled = false;
         favoriteButton.removeAttribute("aria-busy");
         favoriteButton.className = current.isFavorite ? "star-button favorited" : "star-button";
-        favoriteButton.title = current.isFavorite ? "Remove from review" : "Save for review";
+        favoriteButton.title = current.isFavorite
+            ? t("Plugin.DeepSeekTranslator.Detail.Favorite.Remove", "Remove from review")
+            : t("Plugin.DeepSeekTranslator.Detail.Favorite.Save", "Save for review");
         favoriteButton.textContent = current.isFavorite ? "★" : "☆";
     }
 
@@ -186,7 +200,9 @@ import { tool } from "@qping/plugin-common/web-tool";
         favoriteButton.disabled = true;
         favoriteButton.setAttribute("aria-busy", "true");
         favoriteButton.className = current && current.isFavorite ? "star-button favorited loading" : "star-button loading";
-        favoriteButton.title = current && current.isFavorite ? "Removing from review" : "Saving for review";
+        favoriteButton.title = current && current.isFavorite
+            ? t("Plugin.DeepSeekTranslator.Detail.Favorite.Removing", "Removing from review")
+            : t("Plugin.DeepSeekTranslator.Detail.Favorite.Saving", "Saving for review");
         favoriteButton.textContent = current && current.isFavorite ? "★" : "☆";
     }
 
@@ -205,7 +221,7 @@ import { tool } from "@qping/plugin-common/web-tool";
         dot.className = "loading-dot";
         dot.setAttribute("aria-hidden", "true");
         var label = document.createElement("span");
-        label.textContent = "loading ";
+        label.textContent = t("Plugin.DeepSeekTranslator.Detail.Loading", "Loading ");
         var elapsed = document.createElement("span");
         elapsed.className = "loading-elapsed";
         sourceStatus.append(dot, label, elapsed);
@@ -258,7 +274,8 @@ import { tool } from "@qping/plugin-common/web-tool";
 
         if (current.isValidWord !== true) {
             hideFavoriteButton();
-            appendTextElement(translation, "invalid-word", current.translation || "This is not a valid English word.");
+            appendTextElement(translation, "invalid-word",
+                t("Plugin.DeepSeekTranslator.Detail.InvalidWord", "This is not a valid English word."));
             translation.classList.remove("empty");
             return;
         }
@@ -269,7 +286,8 @@ import { tool } from "@qping/plugin-common/web-tool";
 
         var definitions = Array.isArray(current.definitions) ? current.definitions.slice(0, 3) : [];
         if (definitions.length === 0) {
-            appendTextElement(translation, "definition", current.translation || "No English definition returned");
+            appendTextElement(translation, "definition", current.translation ||
+                t("Plugin.DeepSeekTranslator.Detail.NoDefinition", "No English definition returned"));
         }
 
         definitions.forEach(function (definition: TranslationDefinition) {
@@ -291,12 +309,16 @@ import { tool } from "@qping/plugin-common/web-tool";
             chineseElement.textContent = chinese;
             var isExpanded: boolean = current.isExpanded === true;
             chineseElement.hidden = !isExpanded;
-            button.textContent = isExpanded ? "收起" : "展开";
+            button.textContent = isExpanded
+                ? t("Plugin.DeepSeekTranslator.Detail.Collapse", "Collapse")
+                : t("Plugin.DeepSeekTranslator.Detail.Expand", "Expand");
 
             button.addEventListener("click", function () {
                 var nextExpanded: boolean = chineseElement.hidden === true;
                 chineseElement.hidden = !nextExpanded;
-                button.textContent = nextExpanded ? "收起" : "展开";
+                button.textContent = nextExpanded
+                    ? t("Plugin.DeepSeekTranslator.Detail.Collapse", "Collapse")
+                    : t("Plugin.DeepSeekTranslator.Detail.Expand", "Expand");
                 current.isExpanded = nextExpanded;
                 currentState = current;
                 callState("setExpanded", {
@@ -319,7 +341,7 @@ import { tool } from "@qping/plugin-common/web-tool";
     }
 
     function renderHistory(current: TranslationState): void {
-        setResultTitle("History");
+        setResultTitle(t("Plugin.DeepSeekTranslator.Detail.HistoryTitle", "History"));
         setHistoryMode(true, "history");
         stopLoadingTimer();
         hideSourceStatus();
@@ -327,18 +349,18 @@ import { tool } from "@qping/plugin-common/web-tool";
         translation.replaceChildren();
         translation.className = "translation history";
 
-        renderEntryList(current, "No translation history");
+        renderEntryList(current, t("Plugin.DeepSeekTranslator.Detail.NoHistory", "No translation history"));
     }
 
     function renderFavorites(current: TranslationState): void {
-        setResultTitle("Favorite");
+        setResultTitle(t("Plugin.DeepSeekTranslator.Detail.FavoritesTitle", "Favorites"));
         setHistoryMode(true, "favorites");
         stopLoadingTimer();
         hideSourceStatus();
         hideFavoriteButton();
         translation.replaceChildren();
         translation.className = "translation history";
-        renderEntryList(current, "No favorite items");
+        renderEntryList(current, t("Plugin.DeepSeekTranslator.Detail.NoFavorites", "No favorite items"));
     }
 
     function renderEntryList(current: TranslationState, emptyText: string): void {
@@ -356,7 +378,7 @@ import { tool } from "@qping/plugin-common/web-tool";
                 item.classList.add("sentence-item");
             }
             item.type = "button";
-            item.title = "Translate again";
+            item.title = t("Plugin.DeepSeekTranslator.Detail.TranslateAgain", "Translate again");
             item.addEventListener("click", function () {
                 setInput(entry.input || "", false);
                 lastRequestedText = "";
@@ -375,7 +397,13 @@ import { tool } from "@qping/plugin-common/web-tool";
 
             var meta = document.createElement("div");
             meta.className = "history-meta";
-            meta.textContent = [entry.inputType || "text", entry.phonetic || "", formatTime(entry.cachedAt)].filter(Boolean).join(" · ");
+            meta.textContent = [
+                entry.inputType === "word"
+                    ? t("Plugin.DeepSeekTranslator.Detail.InputType.Word", "Word")
+                    : t("Plugin.DeepSeekTranslator.Detail.InputType.Text", "Text"),
+                entry.phonetic || "",
+                formatTime(entry.cachedAt)
+            ].filter(Boolean).join(" · ");
             item.appendChild(meta);
 
             translation.appendChild(item);
@@ -397,16 +425,16 @@ import { tool } from "@qping/plugin-common/web-tool";
         }
 
         if (current.status === "error") {
-            setResultTitle("Translation");
+            setResultTitle(t("Plugin.DeepSeekTranslator.Detail.Translation", "Translation"));
             setHistoryMode(false);
             stopLoadingTimer();
             hideFavoriteButton();
             sourceStatus.hidden = false;
-            sourceStatus.textContent = "error";
+            sourceStatus.textContent = t("Plugin.DeepSeekTranslator.Detail.ErrorStatus", "Error");
             sourceStatus.className = "source-status error";
             translation.replaceChildren();
             translation.classList.remove("pending");
-            translation.textContent = current.error || "Translation failed";
+            translation.textContent = current.error || t("Plugin.DeepSeekTranslator.Detail.TranslationFailed", "Translation failed");
             translation.classList.remove("empty");
             return;
         }
@@ -422,7 +450,7 @@ import { tool } from "@qping/plugin-common/web-tool";
         }
 
         if (current.status === "done") {
-            setResultTitle("Translation");
+            setResultTitle(t("Plugin.DeepSeekTranslator.Detail.Translation", "Translation"));
             setHistoryMode(false);
             showSourceStatus(current);
             translation.classList.remove("pending");
@@ -433,7 +461,7 @@ import { tool } from "@qping/plugin-common/web-tool";
             }
 
             updateFavoriteButton(current);
-            var output = current.translation || "No translation returned";
+            var output = current.translation || t("Plugin.DeepSeekTranslator.Detail.NoTranslation", "No translation returned");
             translation.replaceChildren();
             translation.textContent = output;
             translation.classList.remove("empty");
@@ -441,13 +469,13 @@ import { tool } from "@qping/plugin-common/web-tool";
         }
 
         hideSourceStatus();
-        setResultTitle("Translation");
+        setResultTitle(t("Plugin.DeepSeekTranslator.Detail.Translation", "Translation"));
         setHistoryMode(false);
         hideFavoriteButton();
         translation.replaceChildren();
         translation.classList.remove("history");
         translation.classList.remove("pending");
-        translation.textContent = "Translation appears here";
+        translation.textContent = t("Plugin.DeepSeekTranslator.Detail.Empty", "Translation appears here");
         translation.classList.add("empty");
     }
 
@@ -532,10 +560,12 @@ import { tool } from "@qping/plugin-common/web-tool";
     function setSendMode(mode: unknown): void {
         var normalized = mode === "realtime" ? "realtime" : "enter";
         sendMode.dataset.mode = normalized;
-        sendMode.textContent = normalized === "realtime" ? "Real-time Mode" : "Enter Mode";
+        sendMode.textContent = normalized === "realtime"
+            ? t("Plugin.DeepSeekTranslator.Detail.Mode.Realtime", "Real-time Mode")
+            : t("Plugin.DeepSeekTranslator.Detail.Mode.Enter", "Enter Mode");
         sendMode.title = normalized === "realtime"
-            ? "Real-time mode. Click to switch to enter mode."
-            : "Enter mode. Click to switch to real-time mode.";
+            ? t("Plugin.DeepSeekTranslator.Detail.Mode.RealtimeTip", "Real-time mode. Click to switch to enter mode.")
+            : t("Plugin.DeepSeekTranslator.Detail.Mode.EnterTip", "Enter mode. Click to switch to real-time mode.");
     }
 
     function handleInputChanged() {
@@ -605,7 +635,7 @@ import { tool } from "@qping/plugin-common/web-tool";
         hideSourceStatus();
         hideFavoriteButton();
         translation.className = "translation empty";
-        translation.textContent = "Loading history";
+        translation.textContent = t("Plugin.DeepSeekTranslator.Detail.LoadingHistory", "Loading history");
         callState("getHistory");
     });
 
@@ -625,7 +655,7 @@ import { tool } from "@qping/plugin-common/web-tool";
         hideSourceStatus();
         hideFavoriteButton();
         translation.className = "translation empty";
-        translation.textContent = "Loading favorites";
+        translation.textContent = t("Plugin.DeepSeekTranslator.Detail.LoadingFavorites", "Loading favorites");
         callState("getFavorites");
     });
 
@@ -657,6 +687,10 @@ import { tool } from "@qping/plugin-common/web-tool";
         if (payload.key === "Enter" && getSendMode() === "enter") {
             translateNow();
         }
+    });
+    tool.subscribe(hostEvents.languageChanged, function () {
+        setSendMode(getSendMode());
+        updateState(currentState || { status: "idle", input: sourceText.value });
     });
     tool.ready("deepseek-translator");
 })();

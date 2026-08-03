@@ -56,6 +56,11 @@ import { tool } from "@qping/plugin-common/web-tool";
     var selectedOption = "";
     var reviewTimer: number | null = null;
     var currentBrowsePage = 0;
+    var currentState: AnkiState = {};
+
+    function t(key: string, defaultValue: string, values: Record<string, unknown> = {}): string {
+        return tool.i18n.t(key, { defaultValue: defaultValue, ...values });
+    }
 
     async function callState(action: string, data: Record<string, unknown> = {}): Promise<void> {
         try {
@@ -72,7 +77,10 @@ import { tool } from "@qping/plugin-common/web-tool";
 
     function updateSummary(value: Summary | undefined): void {
         var current = value || {};
-        summary.textContent = (current.due || 0) + " due · " + (current.total || 0) + " total";
+        summary.textContent = t("Plugin.DeepSeekTranslator.Anki.Detail.Summary", "{{due}} due · {{total}} total", {
+            due: current.due || 0,
+            total: current.total || 0
+        });
     }
 
     function setHeaderMode(mode: string): void {
@@ -88,14 +96,14 @@ import { tool } from "@qping/plugin-common/web-tool";
     function cardTypeLabel(card: AnkiCard | null): string {
         var type = card ? card.type : "";
         if (type === "basic") {
-            return "Original";
+            return t("Plugin.DeepSeekTranslator.Anki.Detail.Type.Original", "Original");
         }
 
         if (type === "choice-zh-to-en" || card && card.direction === "zh-to-en") {
-            return "中文选英文";
+            return t("Plugin.DeepSeekTranslator.Anki.Detail.Type.ChineseToEnglish", "Chinese to English");
         }
 
-        return "英文选中文";
+        return t("Plugin.DeepSeekTranslator.Anki.Detail.Type.EnglishToChinese", "English to Chinese");
     }
 
     function appendCardPhoneticRow(parent: Element, card: AnkiCard | null): void {
@@ -116,6 +124,7 @@ import { tool } from "@qping/plugin-common/web-tool";
 
     function renderState(state: AnkiState): void {
         var current = state || {};
+        currentState = current;
         updateSummary(current.summary);
         currentCard = current.card || null;
         selectedOption = "";
@@ -127,7 +136,7 @@ import { tool } from "@qping/plugin-common/web-tool";
         if (current.status === "error") {
             setHeaderMode("review");
             cardHost.className = "card-host error";
-            cardHost.textContent = current.error || "Failed to load cards";
+            cardHost.textContent = current.error || t("Plugin.DeepSeekTranslator.Anki.Detail.LoadFailed", "Failed to load cards");
             return;
         }
 
@@ -141,7 +150,10 @@ import { tool } from "@qping/plugin-common/web-tool";
         if (!currentCard) {
             cardHost.className = "card-host empty";
             var empty = document.createElement("div");
-            empty.textContent = "No cards are due now. 收藏单词后会自动生成 Anki 卡片。";
+            empty.textContent = t(
+                "Plugin.DeepSeekTranslator.Anki.Detail.NoDueCards",
+                "No cards are due now. Saving words for review automatically generates Anki cards."
+            );
             cardHost.append(empty);
             return;
         }
@@ -164,7 +176,7 @@ import { tool } from "@qping/plugin-common/web-tool";
             var showAnswer = document.createElement("button");
             showAnswer.className = "show-answer";
             showAnswer.type = "button";
-            showAnswer.textContent = "Show Answer";
+            showAnswer.textContent = t("Plugin.DeepSeekTranslator.Anki.Detail.ShowAnswer", "Show Answer");
             showAnswer.addEventListener("click", function () {
                 showAnswer.disabled = true;
                 renderBasicAnswer();
@@ -199,12 +211,12 @@ import { tool } from "@qping/plugin-common/web-tool";
         if (!currentCard) {
             cardHost.className = "card-host empty";
             var empty = document.createElement("div");
-            empty.textContent = "No cards have been generated yet.";
+            empty.textContent = t("Plugin.DeepSeekTranslator.Anki.Detail.NoCards", "No cards have been generated yet.");
             var emptyTop = document.createElement("div");
             emptyTop.className = "browse-card-top";
             var emptySource = document.createElement("div");
             emptySource.className = "source";
-            emptySource.textContent = "Browse All Cards";
+            emptySource.textContent = t("Plugin.DeepSeekTranslator.Anki.Detail.BrowseAll", "Browse All Cards");
             emptyTop.append(emptySource, createCardActions(browse));
             cardHost.append(emptyTop, empty);
             return;
@@ -215,7 +227,11 @@ import { tool } from "@qping/plugin-common/web-tool";
         top.className = "browse-card-top";
         var source = document.createElement("div");
         source.className = "source";
-        source.textContent = "Browse " + (browse.page + 1) + " / " + browse.total + " · " + cardTypeLabel(currentCard) + " · " + currentCard.sourceText;
+        source.textContent = t(
+            "Plugin.DeepSeekTranslator.Anki.Detail.BrowsePosition",
+            "Browse {{page}} / {{total}} · {{type}} · {{source}}",
+            { page: browse.page + 1, total: browse.total, type: cardTypeLabel(currentCard), source: currentCard.sourceText }
+        );
         top.append(source, createCardActions(browse));
         cardHost.appendChild(top);
 
@@ -239,21 +255,26 @@ import { tool } from "@qping/plugin-common/web-tool";
 
         var back = document.createElement("div");
         back.className = "answer";
-        back.textContent = (isBasicCard(currentCard) ? "Back: " : "Answer: " + currentCard.answer + " · ") + (currentCard.back || currentCard.answer);
+        back.textContent = isBasicCard(currentCard)
+            ? t("Plugin.DeepSeekTranslator.Anki.Detail.Back", "Back: {{back}}", { back: currentCard.back || currentCard.answer })
+            : t("Plugin.DeepSeekTranslator.Anki.Detail.AnswerWithExplanation", "Answer: {{answer}} · {{explanation}}", {
+                answer: currentCard.answer,
+                explanation: currentCard.back || currentCard.answer
+            });
         cardHost.appendChild(back);
 
         var nav = document.createElement("div");
         nav.className = "browse-nav";
         var previous = document.createElement("button");
         previous.type = "button";
-        previous.textContent = "Previous";
+        previous.textContent = t("Plugin.DeepSeekTranslator.Anki.Detail.Previous", "Previous");
         previous.disabled = !browse.hasPrevious;
         previous.addEventListener("click", function () {
             requestBrowsePage(browse.page - 1);
         });
         var next = document.createElement("button");
         next.type = "button";
-        next.textContent = "Next";
+        next.textContent = t("Plugin.DeepSeekTranslator.Anki.Detail.Next", "Next");
         next.disabled = !browse.hasNext;
         next.addEventListener("click", function () {
             requestBrowsePage(browse.page + 1);
@@ -266,16 +287,16 @@ import { tool } from "@qping/plugin-common/web-tool";
         var toolbar = document.createElement("div");
         toolbar.className = "card-actions";
         ([
-            ["＋", "New Card", function () { renderEditForm(null, browse.page || 0); }],
-            ["✎", "Edit", function () { if (currentCard) { renderEditForm(currentCard, browse.page || 0); } }],
-            ["🗑", "Delete", function () { deleteCurrentCard(browse.page || 0); }]
+            ["＋", t("Plugin.DeepSeekTranslator.Anki.Detail.NewCard", "New Card"), function () { renderEditForm(null, browse.page || 0); }],
+            ["✎", t("Plugin.DeepSeekTranslator.Anki.Detail.Edit", "Edit"), function () { if (currentCard) { renderEditForm(currentCard, browse.page || 0); } }],
+            ["🗑", t("Plugin.DeepSeekTranslator.Anki.Detail.Delete", "Delete"), function () { deleteCurrentCard(browse.page || 0); }]
         ] as [string, string, () => void][]).forEach(function (item) {
             var button = document.createElement("button");
             button.type = "button";
             button.textContent = item[0];
             button.title = item[1];
             button.setAttribute("aria-label", item[1]);
-            button.disabled = (item[1] === "Edit" || item[1] === "Delete") && !currentCard;
+            button.disabled = item[0] !== "＋" && !currentCard;
             button.addEventListener("click", item[2]);
             toolbar.appendChild(button);
         });
@@ -290,20 +311,26 @@ import { tool } from "@qping/plugin-common/web-tool";
 
         var title = document.createElement("div");
         title.className = "source";
-        title.textContent = editing ? "Edit card" : "New card";
+        title.textContent = editing
+            ? t("Plugin.DeepSeekTranslator.Anki.Detail.EditCard", "Edit card")
+            : t("Plugin.DeepSeekTranslator.Anki.Detail.NewCard", "New card");
         cardHost.appendChild(title);
 
         var form = document.createElement("div");
         form.className = "card-form";
-        var source = createField("Source", card ? card.sourceText : "");
-        var phonetic = createField("Phonetic", card ? card.phonetic : "");
-        var front = createField("Front", card ? (card.front || card.prompt) : "");
-        var back = createField("Back", card ? (card.back || card.answer) : "", true);
-        var answer = createField("Answer", card ? card.answer : "");
-        var options = createField("Options (one per line)", card ? card.options.join("\n") : "", true);
+        var source = createField(t("Plugin.DeepSeekTranslator.Anki.Detail.Field.Source", "Source"), card ? card.sourceText : "");
+        var phonetic = createField(t("Plugin.DeepSeekTranslator.Anki.Detail.Field.Phonetic", "Phonetic"), card ? card.phonetic : "");
+        var front = createField(t("Plugin.DeepSeekTranslator.Anki.Detail.Field.Front", "Front"), card ? (card.front || card.prompt) : "");
+        var back = createField(t("Plugin.DeepSeekTranslator.Anki.Detail.Field.Back", "Back"), card ? (card.back || card.answer) : "", true);
+        var answer = createField(t("Plugin.DeepSeekTranslator.Anki.Detail.Field.Answer", "Answer"), card ? card.answer : "");
+        var options = createField(t("Plugin.DeepSeekTranslator.Anki.Detail.Field.Options", "Options (one per line)"), card ? card.options.join("\n") : "", true);
         var type = document.createElement("select");
         type.className = "form-control";
-        [["basic", "Original Anki card"], ["choice-en-to-zh", "Choice: English to Chinese"], ["choice-zh-to-en", "Choice: Chinese to English"]].forEach(function (item) {
+        [
+            ["basic", t("Plugin.DeepSeekTranslator.Anki.Detail.FormType.Original", "Original Anki card")],
+            ["choice-en-to-zh", t("Plugin.DeepSeekTranslator.Anki.Detail.FormType.EnglishToChinese", "Choice: English to Chinese")],
+            ["choice-zh-to-en", t("Plugin.DeepSeekTranslator.Anki.Detail.FormType.ChineseToEnglish", "Choice: Chinese to English")]
+        ].forEach(function (item) {
             var option = document.createElement("option");
             option.value = item[0];
             option.textContent = item[1];
@@ -312,7 +339,7 @@ import { tool } from "@qping/plugin-common/web-tool";
         });
         var answerWrapper = answer.wrapper;
         var optionsWrapper = options.wrapper;
-        form.append(source.wrapper, wrapControl("Type", type), phonetic.wrapper, front.wrapper, back.wrapper, answerWrapper, optionsWrapper);
+        form.append(source.wrapper, wrapControl(t("Plugin.DeepSeekTranslator.Anki.Detail.Field.Type", "Type"), type), phonetic.wrapper, front.wrapper, back.wrapper, answerWrapper, optionsWrapper);
 
         function updateFormVisibility() {
             var choice = type.value !== "basic";
@@ -327,11 +354,11 @@ import { tool } from "@qping/plugin-common/web-tool";
         actions.className = "browse-nav";
         var cancel = document.createElement("button");
         cancel.type = "button";
-        cancel.textContent = "Cancel";
+        cancel.textContent = t("Plugin.DeepSeekTranslator.Anki.Detail.Cancel", "Cancel");
         cancel.addEventListener("click", function () { requestBrowsePage(page); });
         var save = document.createElement("button");
         save.type = "button";
-        save.textContent = "Save";
+        save.textContent = t("Plugin.DeepSeekTranslator.Anki.Detail.Save", "Save");
         save.addEventListener("click", function () {
             var isChoice = type.value !== "basic";
             var nextOptions = isChoice ? splitOptions(options.control.value) : [];
@@ -403,7 +430,7 @@ import { tool } from "@qping/plugin-common/web-tool";
     }
 
     function deleteCurrentCard(page: number): void {
-        if (!currentCard || !window.confirm("Delete this card?")) {
+        if (!currentCard || !window.confirm(t("Plugin.DeepSeekTranslator.Anki.Detail.ConfirmDelete", "Delete this card?"))) {
             return;
         }
 
@@ -429,12 +456,19 @@ import { tool } from "@qping/plugin-common/web-tool";
 
         var result = document.createElement("div");
         result.className = isCorrect ? "choice-result correct" : "choice-result wrong";
-        result.textContent = isCorrect ? "Correct · rating Easy" : "Wrong · rating Again";
+        result.textContent = isCorrect
+            ? t("Plugin.DeepSeekTranslator.Anki.Detail.Correct", "Correct · rating Easy")
+            : t("Plugin.DeepSeekTranslator.Anki.Detail.Wrong", "Wrong · rating Again");
         cardHost.appendChild(result);
 
         var answer = document.createElement("div");
         answer.className = "answer";
-        answer.textContent = "Answer: " + currentCard.answer + (currentCard.back ? " · " + currentCard.back : "");
+        answer.textContent = currentCard.back
+            ? t("Plugin.DeepSeekTranslator.Anki.Detail.AnswerWithExplanation", "Answer: {{answer}} · {{explanation}}", {
+                answer: currentCard.answer,
+                explanation: currentCard.back
+            })
+            : t("Plugin.DeepSeekTranslator.Anki.Detail.Answer", "Answer: {{answer}}", { answer: currentCard.answer });
         cardHost.appendChild(answer);
 
         var countdownRow = document.createElement("div");
@@ -444,7 +478,7 @@ import { tool } from "@qping/plugin-common/web-tool";
         var nextButton = document.createElement("button");
         nextButton.className = "next-card-button";
         nextButton.type = "button";
-        nextButton.textContent = "Next";
+        nextButton.textContent = t("Plugin.DeepSeekTranslator.Anki.Detail.Next", "Next");
         countdownRow.append(countdown, nextButton);
         cardHost.appendChild(countdownRow);
         startChoiceAutoReview(rating, countdown, nextButton);
@@ -453,7 +487,7 @@ import { tool } from "@qping/plugin-common/web-tool";
     function startChoiceAutoReview(rating: number, countdownElement: HTMLElement, nextButton: HTMLButtonElement): void {
         var secondsLeft = 5;
         var submitted = false;
-        countdownElement.textContent = "Next card in " + secondsLeft + "s";
+        countdownElement.textContent = t("Plugin.DeepSeekTranslator.Anki.Detail.NextCountdown", "Next card in {{seconds}}s", { seconds: secondsLeft });
         if (reviewTimer !== null) {
             window.clearTimeout(reviewTimer);
         }
@@ -477,7 +511,7 @@ import { tool } from "@qping/plugin-common/web-tool";
                 return;
             }
 
-            countdownElement.textContent = "Next card in " + secondsLeft + "s";
+            countdownElement.textContent = t("Plugin.DeepSeekTranslator.Anki.Detail.NextCountdown", "Next card in {{seconds}}s", { seconds: secondsLeft });
             reviewTimer = window.setTimeout(tick, 1000);
         }
 
@@ -503,10 +537,10 @@ import { tool } from "@qping/plugin-common/web-tool";
         var actions = document.createElement("div");
         actions.className = "review-actions";
         ([
-            ["Again", 1],
-            ["Hard", 2],
-            ["Good", 3],
-            ["Easy", 4]
+            [t("Plugin.DeepSeekTranslator.Anki.Detail.Rating.Again", "Again"), 1],
+            [t("Plugin.DeepSeekTranslator.Anki.Detail.Rating.Hard", "Hard"), 2],
+            [t("Plugin.DeepSeekTranslator.Anki.Detail.Rating.Good", "Good"), 3],
+            [t("Plugin.DeepSeekTranslator.Anki.Detail.Rating.Easy", "Easy"), 4]
         ] as [string, number][]).forEach(function (item) {
             var button = document.createElement("button");
             button.type = "button";
@@ -538,14 +572,14 @@ import { tool } from "@qping/plugin-common/web-tool";
     function requestNextCard() {
         setHeaderMode("review");
         cardHost.className = "card-host empty";
-        cardHost.textContent = "Loading cards";
+        cardHost.textContent = t("Plugin.DeepSeekTranslator.Anki.Detail.Loading", "Loading cards");
         callState("load");
     }
 
     function requestBrowsePage(page: number): void {
         setHeaderMode("browse");
         cardHost.className = "card-host empty";
-        cardHost.textContent = "Loading cards";
+        cardHost.textContent = t("Plugin.DeepSeekTranslator.Anki.Detail.Loading", "Loading cards");
         callState("browse", { page: page });
     }
 
@@ -557,6 +591,9 @@ import { tool } from "@qping/plugin-common/web-tool";
 
     tool.subscribe(hostEvents.initialize, function () {
         requestNextCard();
+    });
+    tool.subscribe(hostEvents.languageChanged, function () {
+        renderState(currentState);
     });
     tool.ready("deepseek-translator:ankicard");
 })();
