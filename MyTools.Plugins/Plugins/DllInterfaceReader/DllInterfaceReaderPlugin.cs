@@ -6,6 +6,7 @@ using MyTools.Common;
 using MyTools.Common.Config.Enums;
 using MyTools.Common.Config.Interfaces;
 using MyTools.Common.Config.Models;
+using MyTools.Common.Localization;
 using MyTools.Common.Plugins;
 using MyTools.Plugins.Param;
 
@@ -13,8 +14,11 @@ namespace MyTools.Plugins
 {
     public class DllInterfaceReaderPlugin : PluginBase
     {
-        public override string Name => "Dll Interface Reader";
-        public override string Description => "Reader interfaces from a specified DLL and allow searching by class name, table code, table name, and field names.";
+        public override string PluginId => "DllInterfaceReader";
+        public override string Name => localization.GetCaption("Plugin.DllInterfaceReader.Name", "DLL Interface Reader");
+        public override string Description => localization.GetCaption(
+            "Plugin.DllInterfaceReader.Description",
+            "Read interfaces from a DLL and search classes, table codes, table names and fields.");
 
         private IActionWithCommand IlSpyAction;
         public override List<IActionWithCommand> Actions => [IlSpyAction];
@@ -27,13 +31,18 @@ namespace MyTools.Plugins
         private readonly string annotationsDllPath = @"C:\git\GitHub\WiseTechGlobal\Glow\DotNet\bin\CoreServer\WTG.Glow.Data.Annotations.dll";
 
         private readonly ILogger<DllInterfaceReaderPlugin> logger;
+        private readonly ILocalizationService localization;
         private Type? tableCodeAttributeType;
         private Type? tableNameAttributeType;
         private Lazy<List<InterfaceInfo>>? interfaceInfos;
         private ConfigurationSetting? spyPathSetting;
-        public DllInterfaceReaderPlugin(ILogger<DllInterfaceReaderPlugin> logger, IConfigurationRegistry registry)
+        public DllInterfaceReaderPlugin(
+            ILogger<DllInterfaceReaderPlugin> logger,
+            IConfigurationRegistry registry,
+            ILocalizationService localization)
         {
             this.logger = logger;
+            this.localization = localization;
             IlSpyAction = new OpenInILSpyAction(() => spyPathSetting?.GetValue<string>()).WithDefaultCommand();
         }
         
@@ -79,7 +88,13 @@ namespace MyTools.Plugins
         {
             base.AddPluginSettings(pluginCategory, configurationRegistry);
             var defaultPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "ILSpy", "ILSpy.exe");
-            spyPathSetting = configurationRegistry.AddSetting(pluginCategory, "ILSpyPathSetting", "ILSpy Install Path", "ILSpy Install Path", defaultPath, options: SettingOptions.None);
+            spyPathSetting = configurationRegistry.AddSetting(
+                pluginCategory,
+                "ILSpyPathSetting",
+                localization.GetCaption("Plugin.DllInterfaceReader.Setting.IlSpyPath.Title", "ILSpy install path"),
+                localization.GetCaption("Plugin.DllInterfaceReader.Setting.IlSpyPath.Description", "Path to ILSpy.exe"),
+                defaultPath,
+                options: SettingOptions.None);
         }
 
         private string CopyDllToTemp(string originPath)

@@ -77,6 +77,7 @@ public class ChromeBookmarkReader
 
 public class ChromeBookmarksPlugin : PluginBase
 {
+    public override string PluginId => "ChromeBookmarks";
     private readonly string? _bookmarkFilePathOverride;
     private readonly ChromeBookmarkReader _bookmarkReader;
     private readonly Icon _icon = new StringIcon("🔖");
@@ -94,8 +95,10 @@ public class ChromeBookmarksPlugin : PluginBase
         _bookmarkReader = bookmarkReader ?? new ChromeBookmarkReader();
     }
 
-    public override string Name => "Chrome Bookmarks";
-    public override string Description => "Search local Chrome bookmarks and open them in browser";
+    public override string Name => GetCaption("Plugin.ChromeBookmarks.Name", "Chrome Bookmarks");
+    public override string Description => GetCaption(
+        "Plugin.ChromeBookmarks.Description",
+        "Search local Chrome bookmarks and open them in browser");
     public override List<IActionWithCommand> Actions => [WellKnownActions.OpenInBrowser.WithDefaultCommand()];
     public override bool IsGlobalSearchPlugin => true;
 

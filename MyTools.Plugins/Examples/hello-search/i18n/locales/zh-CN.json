@@ -1,0 +1,16 @@
+{
+  "Plugin.HelloSearch.Name": "你好搜索",
+  "Plugin.HelloSearch.Common.Empty": "（空）",
+  "Plugin.HelloSearch.Result.Greeting": "你好，{{name}}",
+  "Plugin.HelloSearch.Result.Subtitle": "打开由 Node 运行时驱动的自定义详情页",
+  "Plugin.HelloSearch.Action.OpenDetail.Title": "打开详情",
+  "Plugin.HelloSearch.Action.OpenDetail.Description": "打开自定义详情页",
+  "Plugin.HelloSearch.Action.OpenDetail.Success": "已打开你好详情",
+  "Plugin.HelloSearch.Detail.Badge": "你好插件",
+  "Plugin.HelloSearch.Detail.TypeAfterHello": "在 hello 后输入内容",
+  "Plugin.HelloSearch.Detail.Subtitle": "宿主搜索框中的文本会直接转发到此 HTML 页面。",
+  "Plugin.HelloSearch.Detail.CurrentQuery": "当前查询",
+  "Plugin.HelloSearch.Detail.RuntimeState": "来自 Node 运行时的状态",
+  "Plugin.HelloSearch.Detail.Refresh": "请求 Node 运行时刷新"
+}
+

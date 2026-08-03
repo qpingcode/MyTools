@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="AppTitle" xml:space="preserve"><value>My Tools</value></data>
+  <data name="AppTitleDetail" xml:space="preserve"><value>Tools Desktop Version</value></data>
+  <data name="VersionInfo" xml:space="preserve"><value>Based on .NET 8.0</value></data>
+  <data name="Ready" xml:space="preserve"><value>Ready</value></data>
+  <data name="Version" xml:space="preserve"><value>Version: 1.0.0</value></data>
+  <data name="AppSettings" xml:space="preserve"><value>Application Settings</value></data>
+  <data name="Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="OpenConfigFolder" xml:space="preserve"><value>Open Config Folder</value></data>
+  <data name="AutoStart" xml:space="preserve"><value>Auto Start</value></data>
+  <data name="HotKeySettings" xml:space="preserve"><value>Hotkey Settings</value></data>
+  <data name="SearchHotKey" xml:space="preserve"><value>Search Hotkey:</value></data>
+  <data name="Change" xml:space="preserve"><value>Change</value></data>
+  <data name="ShowMainWindow" xml:space="preserve"><value>Show Main Window</value></data>
+  <data name="Exit" xml:space="preserve"><value>Exit</value></data>
+  <data name="Language" xml:space="preserve"><value>Language</value></data>
+  <data name="Language.zh-CN" xml:space="preserve"><value>Chinese</value></data>
+  <data name="Language.en-US" xml:space="preserve"><value>English</value></data>
+  <data name="Language.fr-FR" xml:space="preserve"><value>French</value></data>
+  <data name="CurrentVersion" xml:space="preserve"><value>Version: {0}</value></data>
+  <data name="CheckForUpdates" xml:space="preserve"><value>Check for Updates</value></data>
+  <data name="CheckingForUpdates" xml:space="preserve"><value>Checking for updates...</value></data>
+  <data name="DownloadingUpdate" xml:space="preserve"><value>Downloading update... {0}%</value></data>
+  <data name="UpdateNotConfigured" xml:space="preserve"><value>Configure General.UpdateUrl in Settings before checking for updates.</value></data>
+  <data name="UpdateRequiresInstallation" xml:space="preserve"><value>Updates are available only when MyTools is installed by Velopack.</value></data>
+  <data name="NoUpdateAvailable" xml:space="preserve"><value>You are using the latest version ({0}).</value></data>
+  <data name="UpdateBusy" xml:space="preserve"><value>An update operation is already running.</value></data>
+  <data name="UpdateAvailable" xml:space="preserve"><value>Version {0} is available. Download and restart MyTools now?</value></data>
+  <data name="UpdateFailed" xml:space="preserve"><value>Update failed: {0}</value></data>
+  <data name="Error" xml:space="preserve"><value>Error</value></data>
+  <data name="Success" xml:space="preserve"><value>Success</value></data>
+  <data name="Warning" xml:space="preserve"><value>Warning</value></data>
+  <data name="Info" xml:space="preserve"><value>Information</value></data>
+  <data name="AutoStartError" xml:space="preserve"><value>Failed to set auto start: {0}</value></data>
+  <data name="HotKeySetSuccess" xml:space="preserve"><value>Hotkey has been set to: {0}</value></data>
+  <data name="HotKeySetError" xml:space="preserve"><value>Failed to set hotkey: {0}</value></data>
+  <data name="LoadConfigError" xml:space="preserve"><value>Error loading configuration file: {0}</value></data>
+  <data name="SaveConfigError" xml:space="preserve"><value>Error saving configuration file: {0}</value></data>
+  <data name="ConfigError" xml:space="preserve"><value>Configuration Error</value></data>
+  <data name="OpenSettingsError" xml:space="preserve"><value>Failed to open settings: {0}</value></data>
+  <data name="EditHotKey" xml:space="preserve"><value>Edit Hotkey</value></data>
+  <data name="PressKey" xml:space="preserve"><value>Press the new key combination...</value></data>
+  <data name="CurrentHotKey" xml:space="preserve"><value>Current Hotkey:</value></data>
+  <data name="Confirm" xml:space="preserve"><value>OK</value></data>
+  <data name="Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="SearchResults" xml:space="preserve"><value>Search Results</value></data>
+  <data name="QuickSearch" xml:space="preserve"><value>Quick Search</value></data>
+  <data name="PressEscToClose" xml:space="preserve"><value>Press ESC to close window</value></data>
+  <data name="SearchError" xml:space="preserve"><value>Search Error: {0}</value></data>
+  <data name="NoResults" xml:space="preserve"><value>No Results</value></data>
+  <data name="FoundResults" xml:space="preserve"><value>Found {0} matching results</value></data>
+  <data name="Configuration.Title" xml:space="preserve"><value>Settings</value></data>
+  <data name="Configuration.CategoryNotSelectable" xml:space="preserve"><value>This category cannot be selected</value></data>
+  <data name="Configuration.General.Name" xml:space="preserve"><value>General</value></data>
+  <data name="Configuration.General.Description" xml:space="preserve"><value>General Settings</value></data>
+  <data name="Configuration.General.Language.Title" xml:space="preserve"><value>Language</value></data>
+  <data name="Configuration.General.Language.Description" xml:space="preserve"><value>Select the application display language</value></data>
+  <data name="Configuration.General.AutoStart.Title" xml:space="preserve"><value>Auto start</value></data>
+  <data name="Configuration.General.AutoStart.Description" xml:space="preserve"><value>Run MyTools when the system starts</value></data>
+  <data name="Configuration.General.MaxHistory.Title" xml:space="preserve"><value>Maximum history</value></data>
+  <data name="Configuration.General.MaxHistory.Description" xml:space="preserve"><value>Maximum number of history items to keep</value></data>
+  <data name="Configuration.General.SearchDelay.Title" xml:space="preserve"><value>Search delay</value></data>
+  <data name="Configuration.General.SearchDelay.Description" xml:space="preserve"><value>Search debounce delay in milliseconds</value></data>
+  <data name="Configuration.General.UpdateUrl.Title" xml:space="preserve"><value>Update URL</value></data>
+  <data name="Configuration.General.UpdateUrl.Description" xml:space="preserve"><value>HTTPS or local path containing Velopack releases</value></data>
+  <data name="Configuration.General.UpdateChannel.Title" xml:space="preserve"><value>Update channel</value></data>
+  <data name="Configuration.General.UpdateChannel.Description" xml:space="preserve"><value>Velopack update channel, such as win, stable or beta</value></data>
+  <data name="Configuration.General.UpdateProxyUrl.Title" xml:space="preserve"><value>Update proxy</value></data>
+  <data name="Configuration.General.UpdateProxyUrl.Description" xml:space="preserve"><value>Optional proxy URL; leave empty for a direct connection</value></data>
+  <data name="Configuration.Plugins.Name" xml:space="preserve"><value>Plugins</value></data>
+  <data name="Configuration.Plugins.Description" xml:space="preserve"><value>Plugin Settings</value></data>
+  <data name="Plugin.Calculator.Name" xml:space="preserve"><value>Calculator</value></data>
+  <data name="Plugin.Calculator.Description" xml:space="preserve"><value>Perform basic arithmetic calculations.</value></data>
+  <data name="Plugin.Calculator.InvalidExpression" xml:space="preserve"><value>Invalid arithmetic expression.</value></data>
+  <data name="Plugin.Calculator.InvalidQuery" xml:space="preserve"><value>Query is not a valid arithmetic expression.</value></data>
+  <data name="Plugin.XmlFormatter.Name" xml:space="preserve"><value>XML Formatter</value></data>
+  <data name="Plugin.XmlFormatter.Description" xml:space="preserve"><value>Format and validate XML</value></data>
+  <data name="Plugin.UuidGenerator.Name" xml:space="preserve"><value>UUID/GUID Generator</value></data>
+  <data name="Plugin.UuidGenerator.Description" xml:space="preserve"><value>Generate UUIDs by default, or GUIDs when specified. Supports various formats and batch generation.</value></data>
+  <data name="Plugin.PluginSearcher.Name" xml:space="preserve"><value>Plugin Searcher</value></data>
+  <data name="Plugin.PluginSearcher.Description" xml:space="preserve"><value>All available plugins</value></data>
+  <data name="Plugin.ClipBoard.Name" xml:space="preserve"><value>Clipboard History</value></data>
+  <data name="Plugin.ClipBoard.Description" xml:space="preserve"><value>Clipboard history management plugin</value></data>
+  <data name="Plugin.ChromeBookmarks.Name" xml:space="preserve"><value>Chrome Bookmarks</value></data>
+  <data name="Plugin.ChromeBookmarks.Description" xml:space="preserve"><value>Search local Chrome bookmarks and open them in browser</value></data>
+  <data name="Plugin.SearchEngine.Name" xml:space="preserve"><value>Web Search</value></data>
+  <data name="Plugin.SearchEngine.Description" xml:space="preserve"><value>Search using different search engines</value></data>
+  <data name="Plugin.JsonFormatter.Name" xml:space="preserve"><value>JSON Formatter</value></data>
+  <data name="Plugin.JsonFormatter.Description" xml:space="preserve"><value>Format and validate JSON</value></data>
+  <data name="Plugin.ProcessKiller.Name" xml:space="preserve"><value>Process Killer</value></data>
+  <data name="Plugin.ProcessKiller.Description" xml:space="preserve"><value>Search and manage running processes</value></data>
+  <data name="Plugin.FileSearcher.Name" xml:space="preserve"><value>File Searcher</value></data>
+  <data name="Plugin.FileSearcher.Description" xml:space="preserve"><value>Search for files and scripts</value></data>
+  <data name="Plugin.CommandRunner.Name" xml:space="preserve"><value>Command Runner</value></data>
+  <data name="Plugin.CommandRunner.Description" xml:space="preserve"><value>Run predefined commands</value></data>
+  <data name="Plugin.DllInterfaceReader.Name" xml:space="preserve"><value>DLL Interface Reader</value></data>
+  <data name="Plugin.DllInterfaceReader.Description" xml:space="preserve"><value>Read interfaces from a DLL and search classes, table codes, table names and fields.</value></data>
+  <data name="Plugin.DllInterfaceReader.Setting.IlSpyPath.Title" xml:space="preserve"><value>ILSpy install path</value></data>
+  <data name="Plugin.DllInterfaceReader.Setting.IlSpyPath.Description" xml:space="preserve"><value>Path to ILSpy.exe</value></data>
+  <data name="Plugin.Common.Enable.Title" xml:space="preserve"><value>Enable plugin</value></data>
+  <data name="Plugin.Common.Enable.Description" xml:space="preserve"><value>Enable or disable this plugin</value></data>
+  <data name="Language.RestartTitle" xml:space="preserve"><value>Restart required</value></data>
+  <data name="Language.RestartPrompt" xml:space="preserve"><value>The display language has been saved. Restart MyTools now to apply it?</value></data>
+  <data name="Configuration.SaveSuccess" xml:space="preserve"><value>Settings saved successfully.</value></data>
+  <data name="Configuration.SaveFailed" xml:space="preserve"><value>Failed to save settings: {{message}}</value></data>
+  <data name="Action.Execute.Name" xml:space="preserve"><value>Execute</value></data>
+  <data name="Action.Execute.Description" xml:space="preserve"><value>Execute a program or script</value></data>
+  <data name="Action.Execute.InvalidParameters" xml:space="preserve"><value>Invalid parameters for Execute action</value></data>
+  <data name="Action.Execute.EmptyPath" xml:space="preserve"><value>File path is empty</value></data>
+  <data name="Action.Execute.Success" xml:space="preserve"><value>Executed: {{path}}</value></data>
+  <data name="Action.Execute.Failed" xml:space="preserve"><value>Failed to execute: {{message}}</value></data>
+  <data name="Action.AdminExecute.Name" xml:space="preserve"><value>Admin Execute</value></data>
+  <data name="Action.AdminExecute.Description" xml:space="preserve"><value>Execute a program or script with administrator privileges</value></data>
+  <data name="Action.Copy.Name" xml:space="preserve"><value>Copy</value></data>
+  <data name="Action.Copy.Description" xml:space="preserve"><value>Copy the selected text to clipboard</value></data>
+  <data name="Action.Copy.Success" xml:space="preserve"><value>Copied to clipboard</value></data>
+  <data name="Action.Copy.InvalidParameters" xml:space="preserve"><value>Invalid parameters for Copy action</value></data>
+  <data name="Action.CopyAndPaste.Name" xml:space="preserve"><value>Copy and Paste</value></data>
+  <data name="Action.CopyAndPaste.Description" xml:space="preserve"><value>Copy and paste text to the previously focused window</value></data>
+  <data name="Action.CopyAndPaste.Success" xml:space="preserve"><value>Copied to clipboard and pasted to the previously focused window.</value></data>
+  <data name="Action.CopyAndPaste.InvalidParameters" xml:space="preserve"><value>Invalid parameters for Copy and Paste action</value></data>
+  <data name="Action.OpenInExplorer.Name" xml:space="preserve"><value>Open in Explorer</value></data>
+  <data name="Action.OpenInExplorer.Description" xml:space="preserve"><value>Open the directory or locate the file in Windows Explorer</value></data>
+  <data name="Action.OpenInExplorer.InvalidParameters" xml:space="preserve"><value>Invalid parameters for Open in Explorer action</value></data>
+  <data name="Action.OpenInExplorer.EmptyPath" xml:space="preserve"><value>Path cannot be empty</value></data>
+  <data name="Action.OpenInExplorer.Success" xml:space="preserve"><value>Opened in Explorer: {{path}}</value></data>
+  <data name="Action.OpenInExplorer.Failed" xml:space="preserve"><value>Failed to open in Explorer: {{message}}</value></data>
+  <data name="Action.OpenInBrowser.Name" xml:space="preserve"><value>Open in Browser</value></data>
+  <data name="Action.OpenInBrowser.Description" xml:space="preserve"><value>Open URL in the default browser</value></data>
+  <data name="Action.OpenInBrowser.InvalidParameters" xml:space="preserve"><value>Invalid parameters for Open in Browser action</value></data>
+  <data name="Action.OpenInBrowser.Success" xml:space="preserve"><value>Opened in browser</value></data>
+  <data name="Action.OpenInBrowser.Failed" xml:space="preserve"><value>Failed to open in browser: {{message}}</value></data>
+  <data name="Action.KillProcess.Name" xml:space="preserve"><value>Kill Process</value></data>
+  <data name="Action.KillProcess.Description" xml:space="preserve"><value>Terminate the selected process</value></data>
+  <data name="Action.KillProcess.InvalidParameters" xml:space="preserve"><value>Invalid parameters for Kill Process action</value></data>
+  <data name="Action.KillProcess.Success" xml:space="preserve"><value>Process {{processName}} (PID: {{processId}}) terminated successfully</value></data>
+  <data name="Action.KillProcess.Failed" xml:space="preserve"><value>Failed to kill process: {{message}}</value></data>
+  <data name="Action.ExecuteFailed.Title" xml:space="preserve"><value>Action execution failed</value></data>
+  <data name="Action.ExecuteFailed.Message" xml:space="preserve"><value>Cannot execute {{action}}: {{message}}</value></data>
+</root>
+

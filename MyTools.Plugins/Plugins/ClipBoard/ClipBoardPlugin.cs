@@ -13,12 +13,13 @@ namespace MyTools.Plugins;
 
 public class ClipBoardPlugin(ILogger<ClipBoardPlugin> logger) : PluginBase, IWindowMessageHandler
 {
+    public override string PluginId => "ClipBoard";
     private ClipBoardDbHelper? _dbHelper;
     private string _dbPath = Path.Combine(ConfigPath.DatabasePath, "clipboard_history.db");
     private Timer? _cleanupTimer;
 
-    public override string Name => "ClipBoard History";
-    public override string Description => "Clipboard history management plugin";
+    public override string Name => GetCaption("Plugin.ClipBoard.Name", "Clipboard History");
+    public override string Description => GetCaption("Plugin.ClipBoard.Description", "Clipboard history management plugin");
     public override List<IActionWithCommand> Actions => [WellKnownActions.CopyAndPaste.WithDefaultCommand()];
     public override ViewModelType ViewModelType => ViewModelType.Detail;
 

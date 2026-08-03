@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="AppTitle" xml:space="preserve"><value>我的工具集</value></data>
+  <data name="AppTitleDetail" xml:space="preserve"><value>工具集桌面版</value></data>
+  <data name="VersionInfo" xml:space="preserve"><value>基于 .NET 8.0</value></data>
+  <data name="Ready" xml:space="preserve"><value>就绪</value></data>
+  <data name="Version" xml:space="preserve"><value>版本：1.0.0</value></data>
+  <data name="AppSettings" xml:space="preserve"><value>应用设置</value></data>
+  <data name="Settings" xml:space="preserve"><value>设置</value></data>
+  <data name="OpenConfigFolder" xml:space="preserve"><value>打开配置目录</value></data>
+  <data name="AutoStart" xml:space="preserve"><value>开机启动</value></data>
+  <data name="HotKeySettings" xml:space="preserve"><value>快捷键设置</value></data>
+  <data name="SearchHotKey" xml:space="preserve"><value>搜索热键：</value></data>
+  <data name="Change" xml:space="preserve"><value>修改</value></data>
+  <data name="ShowMainWindow" xml:space="preserve"><value>显示主窗口</value></data>
+  <data name="Exit" xml:space="preserve"><value>退出</value></data>
+  <data name="Language" xml:space="preserve"><value>语言</value></data>
+  <data name="Language.zh-CN" xml:space="preserve"><value>中文</value></data>
+  <data name="Language.en-US" xml:space="preserve"><value>英文</value></data>
+  <data name="Language.fr-FR" xml:space="preserve"><value>法语</value></data>
+  <data name="CurrentVersion" xml:space="preserve"><value>版本：{0}</value></data>
+  <data name="CheckForUpdates" xml:space="preserve"><value>检查更新</value></data>
+  <data name="CheckingForUpdates" xml:space="preserve"><value>正在检查更新...</value></data>
+  <data name="DownloadingUpdate" xml:space="preserve"><value>正在下载更新... {0}%</value></data>
+  <data name="UpdateNotConfigured" xml:space="preserve"><value>请先在设置中配置 General.UpdateUrl，再检查更新。</value></data>
+  <data name="UpdateRequiresInstallation" xml:space="preserve"><value>只有通过 Velopack 安装的 MyTools 才能使用自动更新。</value></data>
+  <data name="NoUpdateAvailable" xml:space="preserve"><value>当前已是最新版本（{0}）。</value></data>
+  <data name="UpdateBusy" xml:space="preserve"><value>已有更新操作正在进行。</value></data>
+  <data name="UpdateAvailable" xml:space="preserve"><value>发现版本 {0}，是否立即下载并重启 MyTools？</value></data>
+  <data name="UpdateFailed" xml:space="preserve"><value>更新失败：{0}</value></data>
+  <data name="Error" xml:space="preserve"><value>错误</value></data>
+  <data name="Success" xml:space="preserve"><value>成功</value></data>
+  <data name="Warning" xml:space="preserve"><value>警告</value></data>
+  <data name="Info" xml:space="preserve"><value>信息</value></data>
+  <data name="AutoStartError" xml:space="preserve"><value>设置开机启动失败：{0}</value></data>
+  <data name="HotKeySetSuccess" xml:space="preserve"><value>快捷键已设置为：{0}</value></data>
+  <data name="HotKeySetError" xml:space="preserve"><value>设置快捷键失败：{0}</value></data>
+  <data name="LoadConfigError" xml:space="preserve"><value>加载配置文件时出错：{0}</value></data>
+  <data name="SaveConfigError" xml:space="preserve"><value>保存配置文件时出错：{0}</value></data>
+  <data name="ConfigError" xml:space="preserve"><value>配置错误</value></data>
+  <data name="OpenSettingsError" xml:space="preserve"><value>打开设置窗口失败：{0}</value></data>
+  <data name="EditHotKey" xml:space="preserve"><value>编辑快捷键</value></data>
+  <data name="PressKey" xml:space="preserve"><value>请按下新的快捷键组合...</value></data>
+  <data name="CurrentHotKey" xml:space="preserve"><value>当前快捷键：</value></data>
+  <data name="Confirm" xml:space="preserve"><value>确定</value></data>
+  <data name="Save" xml:space="preserve"><value>保存</value></data>
+  <data name="Cancel" xml:space="preserve"><value>取消</value></data>
+  <data name="SearchResults" xml:space="preserve"><value>搜索结果</value></data>
+  <data name="QuickSearch" xml:space="preserve"><value>快速搜索</value></data>
+  <data name="PressEscToClose" xml:space="preserve"><value>按 ESC 键关闭窗口</value></data>
+  <data name="SearchError" xml:space="preserve"><value>查询错误：{0}</value></data>
+  <data name="NoResults" xml:space="preserve"><value>无结果</value></data>
+  <data name="FoundResults" xml:space="preserve"><value>找到 {0} 条匹配结果</value></data>
+  <data name="Configuration.Title" xml:space="preserve"><value>配置设置</value></data>
+  <data name="Configuration.CategoryNotSelectable" xml:space="preserve"><value>此分类不可选择</value></data>
+  <data name="Configuration.General.Name" xml:space="preserve"><value>常规</value></data>
+  <data name="Configuration.General.Description" xml:space="preserve"><value>常规设置</value></data>
+  <data name="Configuration.General.Language.Title" xml:space="preserve"><value>界面语言</value></data>
+  <data name="Configuration.General.Language.Description" xml:space="preserve"><value>选择应用程序的显示语言</value></data>
+  <data name="Configuration.General.AutoStart.Title" xml:space="preserve"><value>开机自启</value></data>
+  <data name="Configuration.General.AutoStart.Description" xml:space="preserve"><value>系统启动时自动运行 MyTools</value></data>
+  <data name="Configuration.General.MaxHistory.Title" xml:space="preserve"><value>最大历史记录</value></data>
+  <data name="Configuration.General.MaxHistory.Description" xml:space="preserve"><value>保留的最大历史记录数量</value></data>
+  <data name="Configuration.General.SearchDelay.Title" xml:space="preserve"><value>搜索延迟</value></data>
+  <data name="Configuration.General.SearchDelay.Description" xml:space="preserve"><value>搜索防抖延迟时间（毫秒）</value></data>
+  <data name="Configuration.General.UpdateUrl.Title" xml:space="preserve"><value>更新地址</value></data>
+  <data name="Configuration.General.UpdateUrl.Description" xml:space="preserve"><value>包含 Velopack 发布内容的 HTTPS 地址或本地路径</value></data>
+  <data name="Configuration.General.UpdateChannel.Title" xml:space="preserve"><value>更新通道</value></data>
+  <data name="Configuration.General.UpdateChannel.Description" xml:space="preserve"><value>Velopack 更新通道，例如 win、stable 或 beta</value></data>
+  <data name="Configuration.General.UpdateProxyUrl.Title" xml:space="preserve"><value>更新代理</value></data>
+  <data name="Configuration.General.UpdateProxyUrl.Description" xml:space="preserve"><value>可选代理地址；留空时使用直连</value></data>
+  <data name="Configuration.Plugins.Name" xml:space="preserve"><value>插件</value></data>
+  <data name="Configuration.Plugins.Description" xml:space="preserve"><value>插件设置</value></data>
+  <data name="Plugin.Calculator.Name" xml:space="preserve"><value>计算器</value></data>
+  <data name="Plugin.Calculator.Description" xml:space="preserve"><value>执行基本算术计算。</value></data>
+  <data name="Plugin.Calculator.InvalidExpression" xml:space="preserve"><value>无效的算术表达式。</value></data>
+  <data name="Plugin.Calculator.InvalidQuery" xml:space="preserve"><value>查询不是有效的算术表达式。</value></data>
+  <data name="Plugin.XmlFormatter.Name" xml:space="preserve"><value>XML 格式化</value></data>
+  <data name="Plugin.XmlFormatter.Description" xml:space="preserve"><value>格式化并验证 XML</value></data>
+  <data name="Plugin.UuidGenerator.Name" xml:space="preserve"><value>UUID/GUID 生成器</value></data>
+  <data name="Plugin.UuidGenerator.Description" xml:space="preserve"><value>生成 UUID 或 GUID，支持多种格式和批量生成。</value></data>
+  <data name="Plugin.PluginSearcher.Name" xml:space="preserve"><value>插件搜索</value></data>
+  <data name="Plugin.PluginSearcher.Description" xml:space="preserve"><value>搜索所有可用插件</value></data>
+  <data name="Plugin.ClipBoard.Name" xml:space="preserve"><value>剪贴板历史</value></data>
+  <data name="Plugin.ClipBoard.Description" xml:space="preserve"><value>管理剪贴板历史记录</value></data>
+  <data name="Plugin.ChromeBookmarks.Name" xml:space="preserve"><value>Chrome 书签</value></data>
+  <data name="Plugin.ChromeBookmarks.Description" xml:space="preserve"><value>搜索本地 Chrome 书签并在浏览器中打开</value></data>
+  <data name="Plugin.SearchEngine.Name" xml:space="preserve"><value>网页搜索</value></data>
+  <data name="Plugin.SearchEngine.Description" xml:space="preserve"><value>使用不同的搜索引擎进行搜索</value></data>
+  <data name="Plugin.JsonFormatter.Name" xml:space="preserve"><value>JSON 格式化</value></data>
+  <data name="Plugin.JsonFormatter.Description" xml:space="preserve"><value>格式化并验证 JSON</value></data>
+  <data name="Plugin.ProcessKiller.Name" xml:space="preserve"><value>进程管理</value></data>
+  <data name="Plugin.ProcessKiller.Description" xml:space="preserve"><value>搜索并管理正在运行的进程</value></data>
+  <data name="Plugin.FileSearcher.Name" xml:space="preserve"><value>文件搜索</value></data>
+  <data name="Plugin.FileSearcher.Description" xml:space="preserve"><value>搜索文件和脚本</value></data>
+  <data name="Plugin.CommandRunner.Name" xml:space="preserve"><value>命令运行器</value></data>
+  <data name="Plugin.CommandRunner.Description" xml:space="preserve"><value>运行预定义命令</value></data>
+  <data name="Plugin.DllInterfaceReader.Name" xml:space="preserve"><value>DLL 接口读取器</value></data>
+  <data name="Plugin.DllInterfaceReader.Description" xml:space="preserve"><value>读取 DLL 接口，并搜索类、表代码、表名称和字段。</value></data>
+  <data name="Plugin.DllInterfaceReader.Setting.IlSpyPath.Title" xml:space="preserve"><value>ILSpy 安装路径</value></data>
+  <data name="Plugin.DllInterfaceReader.Setting.IlSpyPath.Description" xml:space="preserve"><value>ILSpy.exe 的文件路径</value></data>
+  <data name="Plugin.Common.Enable.Title" xml:space="preserve"><value>启用插件</value></data>
+  <data name="Plugin.Common.Enable.Description" xml:space="preserve"><value>启用或禁用此插件</value></data>
+  <data name="Language.RestartTitle" xml:space="preserve"><value>需要重启</value></data>
+  <data name="Language.RestartPrompt" xml:space="preserve"><value>显示语言已保存。是否立即重启 MyTools 以应用更改？</value></data>
+  <data name="Configuration.SaveSuccess" xml:space="preserve"><value>设置保存成功。</value></data>
+  <data name="Configuration.SaveFailed" xml:space="preserve"><value>保存设置失败：{{message}}</value></data>
+  <data name="Action.Execute.Name" xml:space="preserve"><value>运行</value></data>
+  <data name="Action.Execute.Description" xml:space="preserve"><value>运行程序或脚本</value></data>
+  <data name="Action.Execute.InvalidParameters" xml:space="preserve"><value>运行操作的参数无效</value></data>
+  <data name="Action.Execute.EmptyPath" xml:space="preserve"><value>文件路径为空</value></data>
+  <data name="Action.Execute.Success" xml:space="preserve"><value>已运行：{{path}}</value></data>
+  <data name="Action.Execute.Failed" xml:space="preserve"><value>运行失败：{{message}}</value></data>
+  <data name="Action.AdminExecute.Name" xml:space="preserve"><value>以管理员身份运行</value></data>
+  <data name="Action.AdminExecute.Description" xml:space="preserve"><value>以管理员权限运行程序或脚本</value></data>
+  <data name="Action.Copy.Name" xml:space="preserve"><value>复制</value></data>
+  <data name="Action.Copy.Description" xml:space="preserve"><value>将所选文本复制到剪贴板</value></data>
+  <data name="Action.Copy.Success" xml:space="preserve"><value>已复制到剪贴板</value></data>
+  <data name="Action.Copy.InvalidParameters" xml:space="preserve"><value>复制操作的参数无效</value></data>
+  <data name="Action.CopyAndPaste.Name" xml:space="preserve"><value>复制并粘贴</value></data>
+  <data name="Action.CopyAndPaste.Description" xml:space="preserve"><value>复制文本并粘贴到上一个获得焦点的窗口</value></data>
+  <data name="Action.CopyAndPaste.Success" xml:space="preserve"><value>已复制到剪贴板并粘贴到上一个获得焦点的窗口。</value></data>
+  <data name="Action.CopyAndPaste.InvalidParameters" xml:space="preserve"><value>复制并粘贴操作的参数无效</value></data>
+  <data name="Action.OpenInExplorer.Name" xml:space="preserve"><value>在资源管理器中打开</value></data>
+  <data name="Action.OpenInExplorer.Description" xml:space="preserve"><value>在 Windows 资源管理器中打开目录或定位文件</value></data>
+  <data name="Action.OpenInExplorer.InvalidParameters" xml:space="preserve"><value>在资源管理器中打开操作的参数无效</value></data>
+  <data name="Action.OpenInExplorer.EmptyPath" xml:space="preserve"><value>路径不能为空</value></data>
+  <data name="Action.OpenInExplorer.Success" xml:space="preserve"><value>已在资源管理器中打开：{{path}}</value></data>
+  <data name="Action.OpenInExplorer.Failed" xml:space="preserve"><value>无法在资源管理器中打开：{{message}}</value></data>
+  <data name="Action.OpenInBrowser.Name" xml:space="preserve"><value>在浏览器中打开</value></data>
+  <data name="Action.OpenInBrowser.Description" xml:space="preserve"><value>在默认浏览器中打开网址</value></data>
+  <data name="Action.OpenInBrowser.InvalidParameters" xml:space="preserve"><value>在浏览器中打开操作的参数无效</value></data>
+  <data name="Action.OpenInBrowser.Success" xml:space="preserve"><value>已在浏览器中打开</value></data>
+  <data name="Action.OpenInBrowser.Failed" xml:space="preserve"><value>无法在浏览器中打开：{{message}}</value></data>
+  <data name="Action.KillProcess.Name" xml:space="preserve"><value>结束进程</value></data>
+  <data name="Action.KillProcess.Description" xml:space="preserve"><value>终止所选进程</value></data>
+  <data name="Action.KillProcess.InvalidParameters" xml:space="preserve"><value>结束进程操作的参数无效</value></data>
+  <data name="Action.KillProcess.Success" xml:space="preserve"><value>进程 {{processName}}（PID：{{processId}}）已成功终止</value></data>
+  <data name="Action.KillProcess.Failed" xml:space="preserve"><value>结束进程失败：{{message}}</value></data>
+  <data name="Action.ExecuteFailed.Title" xml:space="preserve"><value>操作执行失败</value></data>
+  <data name="Action.ExecuteFailed.Message" xml:space="preserve"><value>无法执行“{{action}}”：{{message}}</value></data>
+</root>
+

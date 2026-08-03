@@ -56,6 +56,17 @@ public sealed class NodePluginCatalog
             }
 
             var fullPluginDirectory = Path.GetFullPath(pluginDirectory);
+            var catalogFullPath = fileModel.I18n == null
+                ? null
+                : ResolveFileUnderPluginRoot(fullPluginDirectory, fileModel.I18n.Catalog!);
+            var localesDirectoryFullPath = fileModel.I18n == null
+                ? null
+                : ResolveDirectoryUnderPluginRoot(fullPluginDirectory, fileModel.I18n.LocalesPath!);
+            if (fileModel.I18n != null && (catalogFullPath == null || localesDirectoryFullPath == null))
+            {
+                logger.LogWarning("Skipping node plugin manifest with invalid i18n paths: {ManifestPath}", manifestPath);
+                return [];
+            }
             var manifests = new List<NodePluginManifest>();
             foreach (var entryModel in fileModel.Entries!)
             {
@@ -94,7 +105,11 @@ public sealed class NodePluginCatalog
                     DetailEntry = entryModel.Detail.Entry,
                     DetailEntryFullPath = detailEntryFullPath,
                     Keywords = entryModel.Keywords ?? [],
-                    HotKey = entryModel.HotKey
+                    HotKey = entryModel.HotKey,
+                    DefaultLocale = fileModel.I18n?.DefaultLocale ?? "en-US",
+                    CatalogFullPath = catalogFullPath,
+                    LocalesDirectoryFullPath = localesDirectoryFullPath,
+                    SupportedLocales = fileModel.I18n?.SupportedLocales ?? []
                 });
             }
 
@@ -110,12 +125,28 @@ public sealed class NodePluginCatalog
     private static string? ResolveFileUnderPluginRoot(string pluginDirectory, string relativePath)
     {
         var fullPath = Path.GetFullPath(Path.Combine(pluginDirectory, relativePath));
-        if (!fullPath.StartsWith(pluginDirectory, StringComparison.OrdinalIgnoreCase))
+        var rootWithSeparator = pluginDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                                + Path.DirectorySeparatorChar;
+        if (!fullPath.StartsWith(rootWithSeparator, StringComparison.OrdinalIgnoreCase))
         {
             return null;
         }
 
         if (!File.Exists(fullPath))
+        {
+            return null;
+        }
+
+        return fullPath;
+    }
+
+    private static string? ResolveDirectoryUnderPluginRoot(string pluginDirectory, string relativePath)
+    {
+        var fullPath = Path.GetFullPath(Path.Combine(pluginDirectory, relativePath));
+        var rootWithSeparator = pluginDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                                + Path.DirectorySeparatorChar;
+        if (!fullPath.StartsWith(rootWithSeparator, StringComparison.OrdinalIgnoreCase)
+            || !Directory.Exists(fullPath))
         {
             return null;
         }
@@ -130,7 +161,11 @@ public sealed class NodePluginCatalog
             && !string.IsNullOrWhiteSpace(fileModel.Version)
             && string.Equals(fileModel.Runtime, "node", StringComparison.OrdinalIgnoreCase)
             && !string.IsNullOrWhiteSpace(fileModel.ProtocolVersion)
-            && fileModel.Entries is { Count: > 0 };
+            && fileModel.Entries is { Count: > 0 }
+            && (fileModel.I18n == null
+                || (!string.IsNullOrWhiteSpace(fileModel.I18n.DefaultLocale)
+                    && !string.IsNullOrWhiteSpace(fileModel.I18n.Catalog)
+                    && !string.IsNullOrWhiteSpace(fileModel.I18n.LocalesPath)));
     }
 
     private static bool IsValidEntry(EntryManifestFile entryModel)
@@ -155,6 +190,7 @@ public sealed class NodePluginCatalog
         public string? Runtime { get; init; }
         public string? ProtocolVersion { get; init; }
         public List<EntryManifestFile>? Entries { get; init; }
+        public I18nManifestFile? I18n { get; init; }
     }
 
     private sealed class EntryManifestFile
@@ -171,5 +207,13 @@ public sealed class NodePluginCatalog
     {
         public string? Type { get; init; }
         public string? Entry { get; init; }
+    }
+
+    private sealed class I18nManifestFile
+    {
+        public string? DefaultLocale { get; init; }
+        public string? Catalog { get; init; }
+        public string? LocalesPath { get; init; }
+        public List<string>? SupportedLocales { get; init; }
     }
 }

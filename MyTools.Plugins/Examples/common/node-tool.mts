@@ -12,6 +12,8 @@ type NodeToolContext = {
   action: string;
   itemId: string;
   query: string;
+  locale: string;
+  fallbackLocale: string;
 };
 
 type NodeToolHandler = (payload: unknown, context: NodeToolContext) => unknown | Promise<unknown>;
@@ -21,7 +23,13 @@ export class NodeTool {
   #handlers = new Map<string, NodeToolHandler>();
   #searchHandler: NodeToolHostHandler | null = null;
   #actionHandler: NodeToolHostHandler | null = null;
+  #initializeHandler: NodeToolHostHandler | null = null;
   #started = false;
+
+  initialize(handler: NodeToolHostHandler): this {
+    this.#initializeHandler = handler;
+    return this;
+  }
 
   search(handler: NodeToolHostHandler): this {
     this.#searchHandler = handler;
@@ -95,6 +103,12 @@ export class NodeTool {
     const params = message.params ?? {};
 
     try {
+      if (method === "initialize") {
+        const result = this.#initializeHandler ? await this.#initializeHandler(params) : {};
+        writeResponse(id, result ?? {});
+        return;
+      }
+
       if (method === "search") {
         if (!this.#searchHandler) {
           writeError(id, -32601, "Search handler is not registered.");
@@ -115,8 +129,10 @@ export class NodeTool {
         return;
       }
 
-      if (method === "detailCall") {
-        const action = typeof params.action === "string" ? params.action : "";
+      if (method === "detailCall" || method === "detailEvent") {
+        const action = method === "detailEvent"
+          ? (typeof params.eventName === "string" ? params.eventName : "")
+          : (typeof params.action === "string" ? params.action : "");
         const handler = this.#handlers.get(action);
         if (!handler) {
           writeError(id, -32601, `Unsupported detail action: ${action}`);
@@ -127,8 +143,10 @@ export class NodeTool {
           action,
           itemId: typeof params.itemId === "string" ? params.itemId : "",
           query: typeof params.query === "string" ? params.query : "",
+          locale: typeof params.locale === "string" ? params.locale : "en-US",
+          fallbackLocale: typeof params.fallbackLocale === "string" ? params.fallbackLocale : "en-US",
         });
-        writeResponse(id, { result });
+        writeResponse(id, method === "detailEvent" ? { state: result } : { result });
         return;
       }
 
@@ -144,7 +162,7 @@ export function createTool(): NodeTool {
 }
 
 function parseRequest(line: string): JsonRpcRequest {
-  const message = JSON.parse(line) as unknown;
+  const message = JSON.parse(line.replace(/^\uFEFF/, "")) as unknown;
   if (!isRecord(message)) {
     throw new Error("JSON-RPC request must be an object.");
   }

@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using MyTools.Common;
 using MyTools.Common.Config;
 using MyTools.Common.Config.Interfaces;
+using MyTools.Common.Localization;
 using MyTools.Common.Utils;
 using MyTools.Common.WindowsMessageHandler;
 using MyTools.Desktop.Components;
@@ -35,6 +36,7 @@ public static class DesktopServiceCollectionExtensions
         serviceCollection.AddSingleton<AutoStartService>();
         serviceCollection.AddSingleton<IUpdateService, UpdateService>();
         serviceCollection.AddSingleton<LanguageService>();
+        serviceCollection.AddSingleton<ILocalizationService>(sp => sp.GetRequiredService<LanguageService>());
         serviceCollection.AddSingleton<GestureRegistry>();
         serviceCollection.AddSingleton<MouseHelper>();
         serviceCollection.AddSingleton<NodePluginDetailNavigator>();

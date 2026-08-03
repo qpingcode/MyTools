@@ -4,14 +4,18 @@ using System.Data;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using MyTools.Common.Plugins;
+using MyTools.Common.Localization;
 using MyTools.Plugins.Param;
 
 namespace MyTools.Plugins
 {
-    public class CalculatorPlugin(ILogger<CalculatorPlugin> logger) : PluginBase
+    public class CalculatorPlugin(ILogger<CalculatorPlugin> logger, ILocalizationService localization) : PluginBase
     {
-        public override string Name => "Calculator";
-        public override string Description => "Perform basic arithmetic calculations.";
+        public override string PluginId => "Calculator";
+        public override string Name => localization.GetCaption("Plugin.Calculator.Name", "Calculator");
+        public override string Description => localization.GetCaption(
+            "Plugin.Calculator.Description",
+            "Perform basic arithmetic calculations.");
         public override List<IActionWithCommand> Actions => new() { WellKnownActions.Copy.WithDefaultCommand() };
 
         private readonly Icon resultIcon = new StringIcon("🧮");
@@ -49,11 +53,15 @@ namespace MyTools.Plugins
                     }
                     catch (Exception)
                     {
-                        return Result.CreateFailure("Invalid arithmetic expression.", null);
+                        return Result.CreateFailure(new LocalizedMessage(
+                            "Plugin.Calculator.InvalidExpression",
+                            "Invalid arithmetic expression."));
                     }
                 }
 
-                return Result.CreateFailure("Query is not a valid arithmetic expression.", null);
+                return Result.CreateFailure(new LocalizedMessage(
+                    "Plugin.Calculator.InvalidQuery",
+                    "Query is not a valid arithmetic expression."));
             }
             catch (OperationCanceledException)
             {

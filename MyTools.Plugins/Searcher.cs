@@ -103,7 +103,7 @@ public class Searcher(IGlobalSearchRegistry globalSearchRegistry, IMemoryCache c
 
     private IEnumerable<ResultItem> PrepareResultItems(IEnumerable<ResultItem> items, IPlugin plugin, string query)
     {
-        var pluginId = GetPluginId(plugin);
+        var pluginId = plugin.PluginId;
         foreach (var resultItem in items)
         {
             resultItem.AllowedActions = resultItem.AllowedActions.Any() ? resultItem.AllowedActions : plugin.Actions;
@@ -133,10 +133,6 @@ public class Searcher(IGlobalSearchRegistry globalSearchRegistry, IMemoryCache c
         return items.Select(item => item.Clone()).ToList();
     }
 
-    private static string GetPluginId(IPlugin plugin)
-    {
-        return plugin.GetType().FullName ?? plugin.Name;
-    }
 
     private static string BuildResultKey(ResultItem item)
     {

@@ -5,6 +5,8 @@ using CommunityToolkit.Mvvm.Input;
 using MyTools.Common.Config.Interfaces;
 using MyTools.Common.Config.Models;
 using MyTools.Common.DependencyInjection;
+using MyTools.Common.Localization;
+using MyTools.Desktop.Services;
 
 namespace MyTools.Desktop.ViewModels;
 
@@ -187,15 +189,49 @@ public partial class ConfigurationViewModel : ObservableRecipient
     {
         try
         {
+            var localization = ServiceLocator.GetRequiredService<ILocalizationService>();
+            var languageService = ServiceLocator.GetRequiredService<LanguageService>();
+            var languageSetting = _registry.FindSetting("General.Language");
+            var requestedLocale = languageSetting is { IsDirty: true, CurrentValue: string locale }
+                ? locale
+                : null;
+            if (requestedLocale != null && !languageService.SupportedCultures.Any(
+                    culture => string.Equals(culture.Name, requestedLocale, StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new ArgumentException($"Unsupported locale: {requestedLocale}");
+            }
+
             _registry.SaveChanges();
+            var languageChanged = requestedLocale != null
+                                  && languageService.SetLanguageForNextStartup(requestedLocale);
             OnPropertyChanged(nameof(HasUnsavedChanges));
 
-            MessageBox.Show("配置保存成功！", "保存成功",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            if (languageChanged)
+            {
+                var restart = MessageBox.Show(
+                    localization.GetCaption("Language.RestartPrompt", "The display language has been saved. Restart MyTools now to apply it?"),
+                    localization.GetCaption("Language.RestartTitle", "Restart required"),
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+                if (restart == MessageBoxResult.Yes)
+                {
+                    ((MyTools.Desktop.App)Application.Current).Restart();
+                }
+                return;
+            }
+
+            MessageBox.Show(
+                localization.GetCaption("Configuration.SaveSuccess", "Settings saved successfully."),
+                localization.GetCaption("Success", "Success"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"保存配置失败：{ex.Message}", "保存失败",
+            var localization = ServiceLocator.GetRequiredService<ILocalizationService>();
+            MessageBox.Show(
+                localization.GetCaption("Configuration.SaveFailed", "Failed to save settings: {{message}}", new { message = ex.Message }),
+                localization.GetCaption("Error", "Error"),
                 MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }

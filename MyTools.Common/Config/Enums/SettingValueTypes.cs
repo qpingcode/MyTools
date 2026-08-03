@@ -19,6 +19,11 @@ public enum SettingValueTypes
     /// 字符串值
     /// </summary>
     String,
+
+    /// <summary>
+    /// 应用显示语言
+    /// </summary>
+    Language,
     
     /// <summary>
     /// 浮点数值

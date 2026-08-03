@@ -7,9 +7,11 @@ namespace MyTools.Common.Config.Interfaces;
 public interface IConfigurationRegistry
 {
     ConfigurationCategory AddCategory(string name, string description, ConfigurationCategory? parent = null, bool IsSelectable = true);
+    ConfigurationCategory AddCategory(string key, string name, string description, ConfigurationCategory? parent = null, bool IsSelectable = true);
     IEnumerable<ConfigurationCategory> GetRootCategories();
     ConfigurationSetting AddSetting<T>(ConfigurationCategory category, string name, string title, string description,
-        T defaultValue, IRegistrySerializer? serializer = null, SettingOptions options = SettingOptions.None);
+        T defaultValue, IRegistrySerializer? serializer = null, SettingOptions options = SettingOptions.None,
+        SettingValueTypes? valueType = null);
     ConfigurationCategory? FindCategory(string path);
     ConfigurationSetting? FindSetting(string path);
     IEnumerable<object> Search(string query);

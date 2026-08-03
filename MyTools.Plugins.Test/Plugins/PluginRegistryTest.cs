@@ -50,6 +50,7 @@ public class PluginRegistryTest
 
     private sealed class TestPlugin : IPlugin
     {
+        public string PluginId => "test";
         public string Name => "Test";
         public string Description => "Test plugin";
         public List<IActionWithCommand> Actions { get; } = [];
@@ -64,4 +65,5 @@ public class PluginRegistryTest
         }
     }
 }
+
 

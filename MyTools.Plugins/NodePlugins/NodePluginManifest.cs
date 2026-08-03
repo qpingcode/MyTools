@@ -16,4 +16,8 @@ public sealed class NodePluginManifest
     public string? DetailEntryFullPath { get; init; }
     public IReadOnlyList<string> Keywords { get; init; } = [];
     public string? HotKey { get; init; }
+    public string DefaultLocale { get; init; } = "en-US";
+    public string? CatalogFullPath { get; init; }
+    public string? LocalesDirectoryFullPath { get; init; }
+    public IReadOnlyList<string> SupportedLocales { get; init; } = [];
 }

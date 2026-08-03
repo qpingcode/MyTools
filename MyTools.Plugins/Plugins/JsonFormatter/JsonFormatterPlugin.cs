@@ -9,8 +9,9 @@ namespace MyTools.Plugins
 {
     public class JsonFormatterPlugin(ILogger<JsonFormatterPlugin> logger) : PluginBase
     {
-        public override string Name => "Json Formatter";
-        public override string Description => "Format and validate JSON";
+        public override string PluginId => "JsonFormatter";
+        public override string Name => GetCaption("Plugin.JsonFormatter.Name", "JSON Formatter");
+        public override string Description => GetCaption("Plugin.JsonFormatter.Description", "Format and validate JSON");
         public override List<IActionWithCommand> Actions => [WellKnownActions.Copy.WithDefaultCommand()];
 
         private readonly Icon resultIcon = new StringIcon("📄");

@@ -3,8 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:loc="clr-namespace:MyTools.Desktop.Localization"
         mc:Ignorable="d"
-        Title="编辑快捷键"
+        Title="{loc:Loc EditHotKey, DefaultValue=Edit Hotkey}"
         Height="200"
         Width="400"
         WindowStartupLocation="CenterOwner"
@@ -55,7 +56,7 @@
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0"
-                   Text="请按下新的快捷键组合..."
+                   Text="{loc:Loc PressKey, DefaultValue=Press the new key combination...}"
                    FontSize="16"
                    Margin="0,0,0,10"/>
 
@@ -70,11 +71,11 @@
         <StackPanel Grid.Row="2"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right">
-            <Button Content="确定"
+            <Button Content="{loc:Loc Confirm, DefaultValue=OK}"
                     Style="{StaticResource ModernButton}"
                     Margin="0,0,10,0"
                     Click="ConfirmButton_Click"/>
-            <Button Content="取消"
+            <Button Content="{loc:Loc Cancel, DefaultValue=Cancel}"
                     Style="{StaticResource CancelButtonStyle}"
                     Click="CancelButton_Click"/>
         </StackPanel>

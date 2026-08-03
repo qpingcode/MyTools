@@ -1,127 +1,124 @@
 using System.Globalization;
-using System.Windows;
-using MyTools.Desktop.Models;
-using Application = System.Windows.Application;
-using MessageBox = System.Windows.MessageBox;
+using System.Resources;
+using MyTools.Common.DependencyInjection;
+using MyTools.Common.Localization;
 
-namespace MyTools.Desktop.Services
+namespace MyTools.Desktop.Services;
+
+public class LanguageService : ILocalizationService
 {
-    public class LanguageService
+    private const string DefaultLocale = "en-US";
+    private static readonly ResourceManager ResourceManager = new(
+        "MyTools.Desktop.Localization.HostStrings",
+        typeof(LanguageService).Assembly);
+    private readonly AppConfigService appConfigService;
+
+    public LanguageService(AppConfigService appConfigService)
     {
-        AppConfigService appConfigService;
-        public LanguageService(AppConfigService appConfigService)
-        {
-            this.appConfigService = appConfigService;
-            string savedLanguage = appConfigService.AppConfig.Language;
-            if (string.IsNullOrEmpty(savedLanguage))
-            {
-                throw new ArgumentNullException(savedLanguage);
-            }
-            CurrentCulture = new CultureInfo(savedLanguage);
-            ApplyCulture(CurrentCulture);
-        }
-
-        public CultureInfo CurrentCulture { get; private set; }
-
-        public List<CultureInfo> SupportedCultures { get; } =
-        [
-            new CultureInfo("zh-CN"),
-            new CultureInfo("en-US")
-        ];
-
-        private CultureInfo GetDefaultCulture()
-        {
-            var systemCulture = CultureInfo.CurrentUICulture;
-
-            foreach (var culture in SupportedCultures)
-            {
-                if (systemCulture.TwoLetterISOLanguageName == culture.TwoLetterISOLanguageName)
-                {
-                    return culture;
-                }
-            }
-
-            return new CultureInfo("en-US");
-        }
-
-        public void ChangeLanguage(string languageCode)
-        {
-            var newCulture = new CultureInfo(languageCode);
-            ChangeLanguage(newCulture);
-        }
-
-        private void ChangeLanguage(CultureInfo culture)
-        {
-            if (culture.Equals(CurrentCulture))
-                return;
-
-            CurrentCulture = culture;
-            appConfigService.SetLanguage(culture.Name);
-            ApplyCulture(culture);
-
-            ResourceDictionaryChanged?.Invoke(this, EventArgs.Empty);
-        }
-
-        private void ApplyCulture(CultureInfo culture)
-        {
-            Thread.CurrentThread.CurrentCulture = culture;
-            Thread.CurrentThread.CurrentUICulture = culture;
-
-            RefreshResourceDictionaries();
-        }
-
-        private void RefreshResourceDictionaries()
-        {
-            var oldDictionaries = new List<ResourceDictionary>();
-            var newDictionary = new ResourceDictionary();
-
-            foreach (ResourceDictionary dictionary in Application.Current.Resources.MergedDictionaries)
-            {
-                if (dictionary.Source != null && dictionary.Source.OriginalString.Contains("/Resources/Strings."))
-                {
-                    oldDictionaries.Add(dictionary);
-                }
-            }
-
-            foreach (var oldDictionary in oldDictionaries)
-            {
-                Application.Current.Resources.MergedDictionaries.Remove(oldDictionary);
-            }
-
-            string langCode = CurrentCulture.Name;
-            Uri resourceUri = new Uri($"pack://application:,,,/MyTools.Desktop;component/Resources/Strings.{langCode}.xaml", UriKind.Absolute);
-
-            try
-            {
-                newDictionary.Source = resourceUri;
-                Application.Current.Resources.MergedDictionaries.Add(newDictionary);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"加载语言资源失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-
-                if (langCode != "en-US")
-                {
-                    Uri defaultUri = new Uri($"pack://application:,,,/MyTools.Desktop;component/Resources/Strings.en-US.xaml", UriKind.Absolute);
-                    newDictionary.Source = defaultUri;
-                    Application.Current.Resources.MergedDictionaries.Add(newDictionary);
-                }
-            }
-        }
-
-        public static string GetCaption(string key, string? fallback)
-        {
-            var resources = Application.Current.Resources;
-            return resources[key] as string ?? fallback ?? key;
-        }
-        
-        public static string GetCaption(string key, string fallback, params object?[] args)
-        {
-            var resources = Application.Current.Resources;
-            var resourceString = resources[key] as string ?? fallback;
-            return string.Format(resourceString, args);
-        }
-
-        public event EventHandler? ResourceDictionaryChanged;
+        this.appConfigService = appConfigService;
+        var savedLanguage = appConfigService.AppConfig.Language;
+        CurrentCulture = TryGetSupportedCulture(savedLanguage) ?? GetDefaultCulture();
+        ApplyCulture(CurrentCulture);
     }
+
+    public CultureInfo CurrentCulture { get; private set; }
+    public string CurrentLocale => CurrentCulture.Name;
+
+    public IReadOnlyList<CultureInfo> SupportedCultures { get; } =
+    [
+        new("zh-CN"),
+        new("fr-FR"),
+        new(DefaultLocale)
+    ];
+
+    private CultureInfo GetDefaultCulture()
+    {
+        var systemCulture = CultureInfo.CurrentUICulture;
+        return SupportedCultures.FirstOrDefault(culture =>
+                   systemCulture.TwoLetterISOLanguageName == culture.TwoLetterISOLanguageName)
+               ?? new CultureInfo(DefaultLocale);
+    }
+
+    public void ChangeLanguage(string languageCode)
+    {
+        var culture = TryGetSupportedCulture(languageCode)
+            ?? throw new ArgumentException($"Unsupported locale: {languageCode}", nameof(languageCode));
+        if (string.Equals(culture.Name, CurrentCulture.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        var previousLocale = CurrentCulture.Name;
+        CurrentCulture = culture;
+        appConfigService.SetLanguage(culture.Name);
+        ApplyCulture(culture);
+        LocaleChanged?.Invoke(this, new LocaleChangedEventArgs(previousLocale, culture.Name));
+        ResourceDictionaryChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public bool SetLanguageForNextStartup(string languageCode)
+    {
+        var culture = TryGetSupportedCulture(languageCode)
+            ?? throw new ArgumentException($"Unsupported locale: {languageCode}", nameof(languageCode));
+        if (string.Equals(culture.Name, appConfigService.AppConfig.Language, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        appConfigService.SetLanguage(culture.Name);
+        return true;
+    }
+
+    public string GetCaption(string key, string defaultValue, object? values = null, string? translatorComment = null)
+    {
+        var resource = ResourceManager.GetString(key, CurrentCulture)
+            ?? ResourceManager.GetString(key, CultureInfo.GetCultureInfo(DefaultLocale))
+            ?? defaultValue
+            ?? key;
+        return LocalizedMessage.Format(resource, LocalizedMessage.ToDictionary(values), CurrentCulture);
+    }
+
+    private static void ApplyCulture(CultureInfo culture)
+    {
+        CultureInfo.CurrentCulture = culture;
+        CultureInfo.CurrentUICulture = culture;
+        CultureInfo.DefaultThreadCurrentCulture = culture;
+        CultureInfo.DefaultThreadCurrentUICulture = culture;
+    }
+
+    private CultureInfo? TryGetSupportedCulture(string? locale)
+    {
+        if (string.IsNullOrWhiteSpace(locale))
+        {
+            return null;
+        }
+
+        return SupportedCultures.FirstOrDefault(culture =>
+            string.Equals(culture.Name, locale, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public static string GetCaption(string key, string? fallback)
+    {
+        var service = ServiceLocator.GetRequiredService<ILocalizationService>();
+        return service.GetCaption(key, fallback ?? key);
+    }
+
+    public static string GetCaption(string key, string fallback, params object?[] args)
+    {
+        var service = ServiceLocator.GetRequiredService<ILocalizationService>();
+        var resource = service.GetCaption(key, fallback);
+        try
+        {
+            return string.Format(CultureInfo.CurrentCulture, resource, args);
+        }
+        catch (FormatException)
+        {
+            return resource;
+        }
+    }
+
+    public event EventHandler<LocaleChangedEventArgs>? LocaleChanged;
+
+    [Obsolete("Use LocaleChanged instead.")]
+    public event EventHandler? ResourceDictionaryChanged;
 }

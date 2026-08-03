@@ -11,10 +11,11 @@ namespace MyTools.Plugins;
 
 public class CommandRunner : PluginBase
 {
+    public override string PluginId => "CommandRunner";
     private List<CommandConfig> _commands = new();
 
-    public override string Name => "Command Runner";
-    public override string Description => "Run predefined commands";
+    public override string Name => GetCaption("Plugin.CommandRunner.Name", "Command Runner");
+    public override string Description => GetCaption("Plugin.CommandRunner.Description", "Run predefined commands");
     public override List<IActionWithCommand> Actions => [new RunCommandAction().WithDefaultCommand()];
 
     private Icon defaultIcon = new StringIcon("🚀");

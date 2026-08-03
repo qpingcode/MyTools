@@ -1,6 +1,7 @@
 using System.Windows;
 using CommunityToolkit.Mvvm.Messaging;
 using MyTools.Common.DependencyInjection;
+using MyTools.Common.Localization;
 using MyTools.Desktop.Components;
 using MyTools.Plugins;
 
@@ -41,7 +42,16 @@ public static class ResultItemExtensions
 
         if (!actionResult.Success)
         {
-            MessageBox.Show($"Cannot Execute {action.Name}: {actionResult.Message} ", "Action Execute Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+            var localization = ServiceLocator.GetRequiredService<ILocalizationService>();
+            var message = actionResult.LocalizedMessage?.Resolve(localization) ?? actionResult.Message;
+            MessageBox.Show(
+                localization.GetCaption(
+                    "Action.ExecuteFailed.Message",
+                    "Cannot execute {{action}}: {{message}}",
+                    new { action = action.Name, message }),
+                localization.GetCaption("Action.ExecuteFailed.Title", "Action execution failed"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
     }
 

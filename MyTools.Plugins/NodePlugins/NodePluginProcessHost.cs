@@ -24,24 +24,36 @@ internal sealed class NodePluginProcessHost : IDisposable
         this.logger = logger;
     }
 
-    public async Task InitializeAsync(CancellationToken cancellationToken = default)
+    public Task<JsonElement> InitializeAsync(
+        string locale,
+        string fallbackLocale,
+        IReadOnlyDictionary<string, string> messages,
+        CancellationToken cancellationToken = default)
     {
-        await EnsureStartedAsync(cancellationToken);
+        return SendRequestAsync<JsonElement>(
+            "initialize",
+            new { locale, fallbackLocale, messages },
+            cancellationToken);
     }
 
-    public Task<NodePluginSearchResponse> SearchAsync(string query, string mode, CancellationToken cancellationToken)
+    public Task<NodePluginSearchResponse> SearchAsync(
+        string query, string mode, string locale, string fallbackLocale, CancellationToken cancellationToken)
     {
         return SendRequestAsync<NodePluginSearchResponse>(
             "search",
             new
             {
                 query,
-                mode
+                mode,
+                locale,
+                fallbackLocale
             },
             cancellationToken);
     }
 
-    public Task<NodePluginActionResponse> InvokeActionAsync(string itemId, string actionId, string query, CancellationToken cancellationToken = default)
+    public Task<NodePluginActionResponse> InvokeActionAsync(
+        string itemId, string actionId, string query, string locale, string fallbackLocale,
+        CancellationToken cancellationToken = default)
     {
         return SendRequestAsync<NodePluginActionResponse>(
             "invokeAction",
@@ -49,12 +61,16 @@ internal sealed class NodePluginProcessHost : IDisposable
             {
                 itemId,
                 actionId,
-                query
+                query,
+                locale,
+                fallbackLocale
             },
             cancellationToken);
     }
 
-    public Task<NodePluginDetailEventResponse> SendDetailEventAsync(string itemId, string eventName, JsonElement? payload, string query, CancellationToken cancellationToken = default)
+    public Task<NodePluginDetailEventResponse> SendDetailEventAsync(
+        string itemId, string eventName, JsonElement? payload, string query, string locale, string fallbackLocale,
+        CancellationToken cancellationToken = default)
     {
         return SendRequestAsync<NodePluginDetailEventResponse>(
             "detailEvent",
@@ -63,12 +79,16 @@ internal sealed class NodePluginProcessHost : IDisposable
                 itemId,
                 eventName,
                 query,
-                payload
+                payload,
+                locale,
+                fallbackLocale
             },
             cancellationToken);
     }
 
-    public Task<NodePluginDetailCallResponse> SendDetailCallAsync(string itemId, string action, JsonElement? payload, string query, CancellationToken cancellationToken = default)
+    public Task<NodePluginDetailCallResponse> SendDetailCallAsync(
+        string itemId, string action, JsonElement? payload, string query, string locale, string fallbackLocale,
+        CancellationToken cancellationToken = default)
     {
         return SendRequestAsync<NodePluginDetailCallResponse>(
             "detailCall",
@@ -77,7 +97,9 @@ internal sealed class NodePluginProcessHost : IDisposable
                 itemId,
                 action,
                 query,
-                payload
+                payload,
+                locale,
+                fallbackLocale
             },
             cancellationToken);
     }

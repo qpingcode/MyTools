@@ -6,8 +6,9 @@ namespace MyTools.Plugins;
 
 public class PluginSearcher(IKeywordRegistry keywordRegistry) : PluginBase
 {
-    public override string Name => "Plugin Searcher";
-    public override string Description => "All available plugins";
+    public override string PluginId => "PluginSearcher";
+    public override string Name => GetCaption("Plugin.PluginSearcher.Name", "Plugin Searcher");
+    public override string Description => GetCaption("Plugin.PluginSearcher.Description", "All available plugins");
     public override List<IActionWithCommand> Actions => [];
     
     public override bool IsGlobalSearchPlugin => false;

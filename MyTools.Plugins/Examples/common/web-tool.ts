@@ -1,4 +1,5 @@
 import { MyToolsEventSubjects } from "./events.js";
+import { mytoolsI18n } from "./i18n.js";
 
 type PendingCall = {
     resolve: (value: unknown) => void;
@@ -136,6 +137,10 @@ function handleResponse(message: Record<string, unknown>): void {
 
 function handleEvent(message: Record<string, unknown>): void {
     var subjectId = typeof message.subjectId === "string" ? message.subjectId : "";
+    if (subjectId === events.host.initialize && isRecord(message.payload)) {
+        mytoolsI18n.configure(message.payload);
+        mytoolsI18n.apply();
+    }
     var callbacks = subscriptions.get(subjectId);
     if (!callbacks) {
         return;
@@ -162,6 +167,17 @@ function dispatch(message: unknown): void {
         handleEvent(message);
         return;
     }
+
+    if (message.type === "language-changed" && isRecord(message.payload)) {
+        mytoolsI18n.configure(message.payload);
+        mytoolsI18n.apply();
+        handleEvent({
+            type: "tool-event",
+            subjectId: events.host.languageChanged,
+            payload: message.payload
+        });
+        return;
+    }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -178,5 +194,6 @@ export const tool: MyToolsTool = {
     call: call,
     subscribe: subscribe,
     events: events,
-    ready: ready
+    ready: ready,
+    i18n: mytoolsI18n
 };

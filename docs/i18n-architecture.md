@@ -599,7 +599,7 @@ MyTools 维护两类共享资产：
 
 1. 确认所有 WPF 页面和代码均使用 RESX 本地化服务。
 2. 删除 `Strings.*.xaml`、`App.xaml` 中对应合并字典、`LanguageService.RefreshResourceDictionaries()` 和基于 `Application.Current.Resources` 的 `GetCaption` 实现。
-3. 保留必要的旧插件协议兼容分支，并在文档中标注废弃时间线。
+3. 不用保留旧插件协议兼容分支
 
 ---
 
@@ -607,7 +607,7 @@ MyTools 维护两类共享资产：
 
 ### 14.1 宿主
 
-1. `en-US`、`zh-CN`、`fr-FR` 之间切换时，WPF 窗口、托盘、配置页、状态栏和弹窗无需重启即可刷新。
+1. `en-US`、`zh-CN`、`fr-FR` 之间切换时，允许提示用户重启应用；重启后 WPF 窗口、托盘、配置页、状态栏、弹窗和内置 Actions 必须统一使用所选语言，不要求当前进程动态刷新全部界面。
 2. 宿主用户可见文本不再依赖旧 `Strings.*.xaml`；旧资源文件已删除或不再被编译/加载。
 3. 新增用户可见 C# 文案未通过 `ILocalizationService`/`LocalizedMessage` 时，CI 能检测并报告。
 

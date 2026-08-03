@@ -7,6 +7,8 @@ using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Web.WebView2.Core;
 using MyTools.Common.Config;
+using MyTools.Common.DependencyInjection;
+using MyTools.Common.Localization;
 using MyTools.Plugins.NodePlugins;
 
 namespace MyTools.Desktop.Components;
@@ -25,13 +27,28 @@ public partial class NodePluginDetailView : UserControl
     private bool focusPrimaryInputWhenReady;
     private readonly HashSet<string> subjectSubscriptions = new(StringComparer.Ordinal);
     private NodePlugin? subscribedPlugin;
+    private readonly ILocalizationService localizationService;
 
     public NodePluginDetailView()
     {
+        localizationService = ServiceLocator.GetRequiredService<ILocalizationService>();
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
-        Loaded += (_, _) => NavigateIfNeeded();
-        Unloaded += (_, _) => ClearPluginEventSubscription();
+        Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        localizationService.LocaleChanged -= OnLocaleChanged;
+        localizationService.LocaleChanged += OnLocaleChanged;
+        NavigateIfNeeded();
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        localizationService.LocaleChanged -= OnLocaleChanged;
+        ClearPluginEventSubscription();
     }
 
     private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -302,6 +319,7 @@ public partial class NodePluginDetailView : UserControl
         }
 
         var initialState = JsonSerializer.Deserialize<JsonElement>(viewModel.CurrentStateJson);
+        var messages = viewModel.CurrentContext.Plugin.GetCurrentMessages();
         var messageJson = BuildEventMessage(
             HostInitializeSubject,
             new
@@ -311,9 +329,46 @@ public partial class NodePluginDetailView : UserControl
                 itemId = viewModel.CurrentContext.ItemId,
                 query = viewModel.CurrentQuery,
                 keyword = viewModel.CurrentContext.Keyword,
-                initialState
+                initialState,
+                locale = localizationService.CurrentLocale,
+                fallbackLocale = viewModel.CurrentContext.FallbackLocale,
+                translationRevision = BuildTranslationRevision(localizationService.CurrentLocale, messages),
+                messages
             });
         SendMessage(messageJson);
+    }
+
+    private void OnLocaleChanged(object? sender, LocaleChangedEventArgs e)
+    {
+        if (viewModel?.CurrentContext == null)
+        {
+            return;
+        }
+
+        Dispatcher.Invoke(() =>
+        {
+            var context = viewModel.CurrentContext;
+            var messages = context.Plugin.GetCurrentMessages();
+            SendMessage(JsonSerializer.Serialize(new
+            {
+                type = "language-changed",
+                payload = new
+                {
+                    locale = e.CurrentLocale,
+                    fallbackLocale = context.FallbackLocale,
+                    translationRevision = BuildTranslationRevision(e.CurrentLocale, messages),
+                    messages
+                }
+            }));
+            _ = context.Plugin.InitializeAsync();
+        });
+    }
+
+    private static string BuildTranslationRevision(string locale, IReadOnlyDictionary<string, string> messages)
+    {
+        var content = locale + "\n" + string.Join("\n", messages.OrderBy(pair => pair.Key)
+            .Select(pair => $"{pair.Key}={pair.Value}"));
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(content))).ToLowerInvariant();
     }
 
     private void SendSearchMessage()

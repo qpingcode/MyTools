@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -128,11 +129,11 @@ public partial class App
         _notifyIcon.ContextMenu.Items.Add(autoStartItem);
 
         var languageMenu = new MenuItem();
-        languageMenu.Header = FindResource("Language") as string;
+        languageMenu.Header = GetCaption("Language", "Language");
         foreach (var culture in languageService.SupportedCultures)
         {
             var cultureItem = new MenuItem();
-            cultureItem.Header = FindResource($"Language.{culture.Name}") as string ?? culture.NativeName;
+            cultureItem.Header = GetCaption($"Language.{culture.Name}", culture.NativeName);
             cultureItem.IsChecked = languageService.CurrentCulture.Name == culture.Name;
             cultureItem.Click += ChangeLanguage_Click;
             cultureItem.Tag = culture.Name;
@@ -242,7 +243,11 @@ public partial class App
         {
             var logger = ServiceLocator.GetRequiredService<ILogger<App>>();
             logger.LogError(ex, "Failed to open settings window");
-            MessageBox.Show($"打开设置窗口失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(
+                GetCaption("OpenSettingsError", "Failed to open settings: {0}", ex.Message),
+                GetCaption("Error", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
     }
     
@@ -269,8 +274,46 @@ public partial class App
         }
 
         var languageService = ServiceLocator.GetRequiredService<LanguageService>();
-        languageService.ChangeLanguage(languageCode);
+        if (!languageService.SetLanguageForNextStartup(languageCode))
+        {
+            return;
+        }
+
+        var restart = MessageBox.Show(
+            GetCaption("Language.RestartPrompt", "The display language has been saved. Restart MyTools now to apply it?"),
+            GetCaption("Language.RestartTitle", "Restart required"),
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+        if (restart == MessageBoxResult.Yes)
+        {
+            Restart();
+            return;
+        }
+
         UpdateNotifyIconMenu();
+    }
+
+    public void Restart()
+    {
+        var executablePath = Environment.ProcessPath;
+        if (string.IsNullOrWhiteSpace(executablePath))
+        {
+            throw new InvalidOperationException("Unable to determine the MyTools executable path.");
+        }
+
+        using var process = Process.Start(new ProcessStartInfo
+        {
+            FileName = executablePath,
+            Arguments = $"--restart-wait {Environment.ProcessId}",
+            UseShellExecute = true,
+            WorkingDirectory = AppContext.BaseDirectory
+        });
+        if (process == null)
+        {
+            throw new InvalidOperationException("Unable to start a new MyTools process.");
+        }
+
+        Current.Shutdown();
     }
     
     protected override void OnExit(ExitEventArgs e)

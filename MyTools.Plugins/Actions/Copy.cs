@@ -1,23 +1,24 @@
-﻿using System.IO;
-using System.Windows;
-using System.Windows.Media.Imaging;
+﻿using System.Windows;
 using MyTools.Common;
+using MyTools.Common.Localization;
 
 namespace MyTools.Plugins;
 
 public class Copy : IAction
 {
-    public virtual string Name => "Copy";
-    public virtual string Description => "Copy the selected text to clipboard";
+    public virtual string Name => ActionText.Get("Action.Copy.Name", "Copy");
+    public virtual string Description => ActionText.Get("Action.Copy.Description", "Copy the selected text to clipboard");
     public virtual Task<ActionResult> ExecuteAsync(IActionParams args)
     {
         if (Copied(args))
         {
-            var result = ActionResult.CreateSuccess("Copied to clipboard");
+            var result = ActionResult.CreateSuccess(new LocalizedMessage(
+                "Action.Copy.Success", "Copied to clipboard"));
             return Task.FromResult(result);
         }
       
-        return Task.FromResult(ActionResult.CreateFailure("Invalid parameters for Copy action"));
+        return Task.FromResult(ActionResult.CreateFailure(new LocalizedMessage(
+            "Action.Copy.InvalidParameters", "Invalid parameters for Copy action")));
     }
 
     protected bool Copied(IActionParams args)

@@ -7,8 +7,9 @@
         xmlns:converters="clr-namespace:MyTools.Desktop.Converters"
         xmlns:controls="clr-namespace:MyTools.Desktop.Controls"
         xmlns:viewModels="clr-namespace:MyTools.Desktop.ViewModels"
+        xmlns:loc="clr-namespace:MyTools.Desktop.Localization"
         mc:Ignorable="d"
-        Title="配置设置" Height="600" Width="900"
+        Title="{loc:Loc Configuration.Title, DefaultValue=Settings}" Height="600" Width="900"
         d:DataContext="{d:DesignInstance viewModels:ConfigurationViewModel, IsDesignTimeCreatable=false}"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanResize">
@@ -19,6 +20,7 @@
                 <ResourceDictionary Source="/MyTools.Desktop;component/Views/Templates/BoolSettingTemplate.xaml" />
                 <ResourceDictionary Source="/MyTools.Desktop;component/Views/Templates/IntegerSettingTemplate.xaml" />
                 <ResourceDictionary Source="/MyTools.Desktop;component/Views/Templates/StringSettingTemplate.xaml" />
+                <ResourceDictionary Source="/MyTools.Desktop;component/Views/Templates/LanguageSettingTemplate.xaml" />
                 <ResourceDictionary Source="/MyTools.Desktop;component/Views/Templates/DoubleSettingTemplate.xaml" />
                 <ResourceDictionary Source="/MyTools.Desktop;component/Views/Templates/CustomSettingTemplate.xaml" />
             </ResourceDictionary.MergedDictionaries>
@@ -207,7 +209,7 @@
                                                            VerticalAlignment="Center"
                                                            HorizontalAlignment="Right"
                                                            Margin="0,0,5,0"
-                                                           ToolTip="此分类不可选择"
+                                                           ToolTip="{loc:Loc Configuration.CategoryNotSelectable, DefaultValue=This category cannot be selected}"
                                                            Visibility="Collapsed" />
                                             </Grid>
 
@@ -408,7 +410,7 @@
                     BorderThickness="0,1,0,0"
                     Padding="15,10">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="保存"
+                    <Button Content="{loc:Loc Save, DefaultValue=Save}"
                             Style="{StaticResource PrimaryButtonStyle}"
                             Command="{Binding SaveCommand}" />
                 </StackPanel>

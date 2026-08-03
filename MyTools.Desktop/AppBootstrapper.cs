@@ -4,7 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MyTools.Common.Config;
 using MyTools.Common.Config.Interfaces;
+using MyTools.Common.Config.Enums;
 using MyTools.Common.DependencyInjection;
+using MyTools.Common.Localization;
 using MyTools.Desktop.Models;
 using MyTools.Desktop.Services;
 using MyTools.Desktop.Services.WindowNativeHandler;
@@ -241,19 +243,43 @@ public class AppBootstrapper : IDisposable
         try
         {
             var registry = ServiceLocator.GetRequiredService<IConfigurationRegistry>();
+            var localization = ServiceLocator.GetRequiredService<ILocalizationService>();
             
-            // 添加常规设置分类
-            var generalCategory = registry.AddCategory("General", "General Settings");
-            registry.AddSetting(generalCategory, "Language", "界面语言", "选择应用程序的显示语言",  "en-US");
-            registry.AddSetting(generalCategory, "AutoStart", "开机自启", "是否在系统启动时自动运行", false);
-            registry.AddSetting(generalCategory, "MaxHistory", "最大历史记录", "保存的最大历史记录数量", 100);
-            registry.AddSetting(generalCategory, "SearchDelay", "搜索延迟", "搜索防抖延迟时间（毫秒）", 100.0);
-            registry.AddSetting(generalCategory, "UpdateUrl", "更新地址", "GitHub 仓库/Releases 地址、Velopack 发布目录的 HTTPS 地址或本地目录", UpdateService.DefaultUpdateUrl);
-            registry.AddSetting(generalCategory, "UpdateChannel", "更新通道", "Velopack 更新通道，例如 win、stable 或 beta", "win");
-            registry.AddSetting(generalCategory, "UpdateProxyUrl", "更新代理", "可选代理地址，例如 http://127.0.0.1:7890；留空时使用直连", string.Empty);
+            var generalCategory = registry.AddCategory(
+                "General",
+                localization.GetCaption("Configuration.General.Name", "General"),
+                localization.GetCaption("Configuration.General.Description", "General Settings"));
+            var languageSetting = registry.AddSetting(generalCategory, "Language",
+                localization.GetCaption("Configuration.General.Language.Title", "Language"),
+                localization.GetCaption("Configuration.General.Language.Description", "Select the application display language"),
+                localization.CurrentLocale,
+                options: SettingOptions.RequiresRestart,
+                valueType: SettingValueTypes.Language);
+            registry.AddSetting(generalCategory, "AutoStart",
+                localization.GetCaption("Configuration.General.AutoStart.Title", "Auto start"),
+                localization.GetCaption("Configuration.General.AutoStart.Description", "Run MyTools when the system starts"), false);
+            registry.AddSetting(generalCategory, "MaxHistory",
+                localization.GetCaption("Configuration.General.MaxHistory.Title", "Maximum history"),
+                localization.GetCaption("Configuration.General.MaxHistory.Description", "Maximum number of history items to keep"), 100);
+            registry.AddSetting(generalCategory, "SearchDelay",
+                localization.GetCaption("Configuration.General.SearchDelay.Title", "Search delay"),
+                localization.GetCaption("Configuration.General.SearchDelay.Description", "Search debounce delay in milliseconds"), 100.0);
+            registry.AddSetting(generalCategory, "UpdateUrl",
+                localization.GetCaption("Configuration.General.UpdateUrl.Title", "Update URL"),
+                localization.GetCaption("Configuration.General.UpdateUrl.Description", "HTTPS or local path containing Velopack releases"), UpdateService.DefaultUpdateUrl);
+            registry.AddSetting(generalCategory, "UpdateChannel",
+                localization.GetCaption("Configuration.General.UpdateChannel.Title", "Update channel"),
+                localization.GetCaption("Configuration.General.UpdateChannel.Description", "Velopack update channel, such as win, stable or beta"), "win");
+            registry.AddSetting(generalCategory, "UpdateProxyUrl",
+                localization.GetCaption("Configuration.General.UpdateProxyUrl.Title", "Update proxy"),
+                localization.GetCaption("Configuration.General.UpdateProxyUrl.Description", "Optional proxy URL; leave empty for a direct connection"), string.Empty);
             
             // Add Plugin Settings
-            registry.AddCategory("Plugins", "Plugin Settings", IsSelectable: false);
+            registry.AddCategory(
+                "Plugins",
+                localization.GetCaption("Configuration.Plugins.Name", "Plugins"),
+                localization.GetCaption("Configuration.Plugins.Description", "Plugin Settings"),
+                IsSelectable: false);
             var plugins = ServiceLocator.GetServices<IPlugin>();
             foreach (var plugin in plugins)
             {
@@ -262,6 +288,8 @@ public class AppBootstrapper : IDisposable
             
             // Load configuration from file if exists
             registry.Reload();
+            // AppConfigService is authoritative for the locale. Ignore a stale legacy copy in Settings.json.
+            languageSetting.InitValueWithoutNotify(localization.CurrentLocale);
         }
         catch (Exception ex)
         {
