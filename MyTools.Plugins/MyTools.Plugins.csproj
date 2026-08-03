@@ -26,12 +26,30 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Plugins\Translator\WordNet\Dict\*.*" />
-    <None Update="Examples\*.json">
+    <None Remove="Examples\**\*" />
+    <None Include="Examples\CommandRunner.json;Examples\JsonFormatter.json;Examples\SearchEnginePlugin.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Examples\**\*.*" Exclude="Examples\*.json">
+    <None Include="Examples\hello-search\dist\**\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>Examples\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <Link>Examples\hello-search\dist\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </None>
+    <None Include="Examples\deepseek-chat\dist\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>Examples\deepseek-chat\dist\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </None>
+    <None Include="Examples\deepseek-translator\dist\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>Examples\deepseek-translator\dist\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </None>
   </ItemGroup>
+
+  <Target Name="ValidateNodePluginExampleOutputs" BeforeTargets="PrepareForBuild">
+    <Error Condition="!Exists('Examples\hello-search\dist\plugin.json')"
+           Text="Hello Search plugin output is missing. Run 'npm ci' and 'npm run build' in MyTools.Plugins\Examples." />
+    <Error Condition="!Exists('Examples\deepseek-chat\dist\plugin.json')"
+           Text="DeepSeek Chat plugin output is missing. Run 'npm ci' and 'npm run build' in MyTools.Plugins\Examples." />
+    <Error Condition="!Exists('Examples\deepseek-translator\dist\plugin.json')"
+           Text="DeepSeek Translator plugin output is missing. Run 'npm ci' and 'npm run build' in MyTools.Plugins\Examples." />
+  </Target>
 </Project>

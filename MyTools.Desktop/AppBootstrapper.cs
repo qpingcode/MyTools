@@ -215,7 +215,7 @@ public class AppBootstrapper : IDisposable
     private static string GetExamplePluginSourceDirectory(string sourcePluginDirectory)
     {
         var distDirectory = Path.Combine(sourcePluginDirectory, "dist");
-        return File.Exists(Path.Combine(distDirectory, "plugin.json")) ? distDirectory : sourcePluginDirectory;
+        return File.Exists(Path.Combine(distDirectory, "plugin.json")) ? distDirectory : throw new Exception("Missing dist folder, please compile plugin first.");
     }
 
     private static void SyncDirectory(string sourceDirectory, string targetDirectory)
