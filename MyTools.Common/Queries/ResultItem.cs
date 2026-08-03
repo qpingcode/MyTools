@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
+using MyTools.Common.Localization;
 
 namespace MyTools.Common;
 
@@ -8,6 +9,8 @@ public sealed partial class ResultItem(Icon icon, string title, string subTitle,
     public Icon Icon { get; } = icon;
     public string Title { get; } = title;
     public string? SubTitle { get; } = subTitle;
+    public LocalizedMessage? LocalizedTitle { get; private init; }
+    public LocalizedMessage? LocalizedSubTitle { get; private init; }
     public IActionParams Args { get; } = args;
     public int Priority { get; } = priority;
     public double SortScore { get; set; } = priority;
@@ -30,6 +33,20 @@ public sealed partial class ResultItem(Icon icon, string title, string subTitle,
     
     public IEnumerable<IActionWithCommand> AllowedActions { get; set; } = Enumerable.Empty<IActionWithCommand>();
 
+    public ResultItem(
+        Icon icon,
+        LocalizedMessage title,
+        LocalizedMessage subTitle,
+        IActionParams args,
+        int priority = 0,
+        PreviewContentType previewContentType = PreviewContentType.Text,
+        byte[]? content = null)
+        : this(icon, title.FormatFallback(), subTitle.FormatFallback(), args, priority, previewContentType, content)
+    {
+        LocalizedTitle = title;
+        LocalizedSubTitle = subTitle;
+    }
+
     public ResultItem Clone()
     {
         return new ResultItem(Icon, Title, SubTitle ?? string.Empty, Args, Priority, PreviewContentType, [.. Content])
@@ -42,6 +59,8 @@ public sealed partial class ResultItem(Icon icon, string title, string subTitle,
             SearchQuery = SearchQuery,
             AllowedActions = AllowedActions,
             NumberLabel = NumberLabel,
+            LocalizedTitle = LocalizedTitle,
+            LocalizedSubTitle = LocalizedSubTitle,
         };
     }
 }

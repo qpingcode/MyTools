@@ -45,8 +45,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Page Remove="Resources\*.xaml"/>
-        <Resource Include="Resources\*.xaml"/>
         <None Remove="Components\Search\test.png" />
         <Page Update="Views\Components\Search\BasicListView.xaml">
           <Generator>MSBuild:Compile</Generator>
@@ -61,6 +59,9 @@
           <Generator>MSBuild:Compile</Generator>
         </Page>
         <Page Update="Views\Templates\IntegerSettingTemplate.xaml">
+          <Generator>MSBuild:Compile</Generator>
+        </Page>
+        <Page Update="Views\Templates\LanguageSettingTemplate.xaml">
           <Generator>MSBuild:Compile</Generator>
         </Page>
         <Page Update="Views\Templates\StringSettingTemplate.xaml">

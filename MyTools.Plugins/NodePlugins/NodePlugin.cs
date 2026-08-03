@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using MyTools.Common;
 using MyTools.Common.Config.Interfaces;
 using MyTools.Common.DependencyInjection;
+using MyTools.Common.Localization;
 using MyTools.Common.Plugins;
 
 namespace MyTools.Plugins.NodePlugins;
@@ -13,12 +14,18 @@ public sealed class NodePlugin : IPlugin, IDisposable
     private readonly NodePluginManifest manifest;
     private readonly NodePluginProcessHost processHost;
     private readonly ILogger<NodePlugin> logger;
+    private readonly ILocalizationService localizationService;
 
-    internal NodePlugin(NodePluginManifest manifest, NodePluginProcessHost processHost, ILogger<NodePlugin> logger)
+    internal NodePlugin(
+        NodePluginManifest manifest,
+        NodePluginProcessHost processHost,
+        ILogger<NodePlugin> logger,
+        ILocalizationService localizationService)
     {
         this.manifest = manifest;
         this.processHost = processHost;
         this.logger = logger;
+        this.localizationService = localizationService;
     }
 
     public event EventHandler<NodePluginEventReceivedEventArgs>? EventReceived
@@ -28,6 +35,8 @@ public sealed class NodePlugin : IPlugin, IDisposable
     }
 
     public string Name => manifest.Name;
+
+    public string PluginId => manifest.Id;
 
     public string Description => $"Node plugin: {manifest.Name}";
 
@@ -52,7 +61,12 @@ public sealed class NodePlugin : IPlugin, IDisposable
         try
         {
             var mode = searchOptions?.SearchFrom == SearchFrom.Plugin ? "plugin" : "global";
-            var response = await processHost.SearchAsync(query, mode, cancellationToken);
+            var response = await processHost.SearchAsync(
+                query,
+                mode,
+                localizationService.CurrentLocale,
+                manifest.DefaultLocale,
+                cancellationToken);
             var items = response.Items.Select((item, index) => MapResultItem(item, query, index)).ToList();
             return Result.CreateSuccessResult(items);
         }
@@ -67,9 +81,12 @@ public sealed class NodePlugin : IPlugin, IDisposable
         }
     }
 
-    public Task InitializeAsync()
+    public async Task InitializeAsync()
     {
-        return processHost.InitializeAsync();
+        await processHost.InitializeAsync(
+            localizationService.CurrentLocale,
+            manifest.DefaultLocale,
+            GetCurrentMessages());
     }
 
     public void RegisterSettings(IConfigurationRegistry configurationRegistry)
@@ -133,12 +150,14 @@ public sealed class NodePlugin : IPlugin, IDisposable
 
     internal async Task<NodePluginActionResponse> InvokeActionAsync(string itemId, string actionId, string query)
     {
-        return await processHost.InvokeActionAsync(itemId, actionId, query);
+        return await processHost.InvokeActionAsync(
+            itemId, actionId, query, localizationService.CurrentLocale, manifest.DefaultLocale);
     }
 
     public async Task<JsonElement?> HandleDetailEventAsync(string itemId, string eventName, JsonElement? payload, string query)
     {
-        var response = await processHost.SendDetailEventAsync(itemId, eventName, payload, query);
+        var response = await processHost.SendDetailEventAsync(
+            itemId, eventName, payload, query, localizationService.CurrentLocale, manifest.DefaultLocale);
         if (response.State.ValueKind == JsonValueKind.Undefined)
         {
             return null;
@@ -149,7 +168,8 @@ public sealed class NodePlugin : IPlugin, IDisposable
 
     public async Task<JsonElement?> HandleDetailCallAsync(string itemId, string action, JsonElement? payload, string query)
     {
-        var response = await processHost.SendDetailCallAsync(itemId, action, payload, query);
+        var response = await processHost.SendDetailCallAsync(
+            itemId, action, payload, query, localizationService.CurrentLocale, manifest.DefaultLocale);
         if (response.Result.ValueKind == JsonValueKind.Undefined)
         {
             return null;
@@ -178,9 +198,15 @@ public sealed class NodePlugin : IPlugin, IDisposable
             SearchText = searchText,
             Query = query,
             Keyword = PrimaryKeyword,
-            InitialState = CloneJson(detail?.InitialState)
+            InitialState = CloneJson(detail?.InitialState),
+            Locale = localizationService.CurrentLocale,
+            FallbackLocale = manifest.DefaultLocale,
+            Messages = GetCurrentMessages()
         };
     }
+
+    public IReadOnlyDictionary<string, string> GetCurrentMessages() =>
+        NodePluginLocalization.LoadMessages(manifest, localizationService.CurrentLocale);
 
     private ResultItem MapResultItem(NodePluginSearchItem item, string query, int index)
     {

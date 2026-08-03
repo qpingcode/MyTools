@@ -7,8 +7,11 @@ namespace MyTools.Plugins
 {
     public class UuidGeneratorPlugin(ILogger<UuidGeneratorPlugin> logger) : PluginBase
     {
-        public override string Name => "UUID/GUID Generator";
-        public override string Description => "Generate UUIDs by default, or GUIDs when specified. Supports various formats and batch generation.";
+        public override string PluginId => "UuidGenerator";
+        public override string Name => GetCaption("Plugin.UuidGenerator.Name", "UUID/GUID Generator");
+        public override string Description => GetCaption(
+            "Plugin.UuidGenerator.Description",
+            "Generate UUIDs by default, or GUIDs when specified. Supports various formats and batch generation.");
         public override List<IActionWithCommand> Actions => new() { WellKnownActions.Copy.WithDefaultCommand() };
 
         private readonly Icon resultIcon = new StringIcon("🔑");

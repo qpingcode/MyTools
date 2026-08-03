@@ -3,13 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "workspaces": [
+    "common",
     "hello-search",
     "deepseek-chat",
     "deepseek-translator"
   ],
   "scripts": {
     "clean": "npm run clean --workspaces --if-present",
-    "build": "npm run build -w mytools-plugin-hello-search && npm run build -w mytools-plugin-deepseek-chat && npm run build -w mytools-plugin-deepseek-translator",
-    "check": "npm run check -w mytools-plugin-hello-search && npm run check -w mytools-plugin-deepseek-chat && npm run check -w mytools-plugin-deepseek-translator"
+    "build": "npm run build -w @qping/plugin-common && npm run build -w mytools-plugin-hello-search && npm run build -w mytools-plugin-deepseek-chat && npm run build -w mytools-plugin-deepseek-translator",
+    "check": "npm run check -w @qping/plugin-common && npm run check -w mytools-plugin-hello-search && npm run check -w mytools-plugin-deepseek-chat && npm run check -w mytools-plugin-deepseek-translator"
   }
 }

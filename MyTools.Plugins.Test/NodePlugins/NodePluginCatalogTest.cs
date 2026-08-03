@@ -31,6 +31,7 @@ public class NodePluginCatalogTest
         var pluginPath = Path.Combine(rootPath, "hello-search");
         Directory.CreateDirectory(Path.Combine(pluginPath, "backend"));
         Directory.CreateDirectory(Path.Combine(pluginPath, "web"));
+        Directory.CreateDirectory(Path.Combine(pluginPath, "i18n", "locales"));
         File.WriteAllText(Path.Combine(pluginPath, "plugin.json"), """
         {
           "id": "hello-search",
@@ -38,6 +39,12 @@ public class NodePluginCatalogTest
           "version": "0.2.0",
           "runtime": "node",
           "protocolVersion": "2.0",
+          "i18n": {
+            "defaultLocale": "en-US",
+            "catalog": "i18n/catalog.en-US.json",
+            "localesPath": "i18n/locales",
+            "supportedLocales": ["en-US", "zh-CN"]
+          },
           "entries": [
             {
               "id": "hello",
@@ -55,6 +62,7 @@ public class NodePluginCatalogTest
         """);
         File.WriteAllText(Path.Combine(pluginPath, "backend", "index.mjs"), "console.log('ok');");
         File.WriteAllText(Path.Combine(pluginPath, "web", "detail.html"), "<html></html>");
+        File.WriteAllText(Path.Combine(pluginPath, "i18n", "catalog.en-US.json"), "{\"entries\":[]}");
 
         var catalog = new NodePluginCatalog(rootPath, NullLogger<NodePluginCatalog>.Instance);
 
@@ -68,6 +76,10 @@ public class NodePluginCatalogTest
         Assert.That(plugins[0].Keywords, Is.EquivalentTo(new[] { "hello" }));
         Assert.That(plugins[0].EntryFullPath, Is.EqualTo(Path.Combine(pluginPath, "backend", "index.mjs")));
         Assert.That(plugins[0].DetailEntryFullPath, Is.EqualTo(Path.Combine(pluginPath, "web", "detail.html")));
+        Assert.That(plugins[0].DefaultLocale, Is.EqualTo("en-US"));
+        Assert.That(plugins[0].CatalogFullPath, Is.EqualTo(Path.Combine(pluginPath, "i18n", "catalog.en-US.json")));
+        Assert.That(plugins[0].LocalesDirectoryFullPath, Is.EqualTo(Path.Combine(pluginPath, "i18n", "locales")));
+        Assert.That(plugins[0].SupportedLocales, Is.EquivalentTo(new[] { "en-US", "zh-CN" }));
     }
 
     [Test]
@@ -194,6 +206,36 @@ public class NodePluginCatalogTest
         var catalog = new NodePluginCatalog(rootPath, NullLogger<NodePluginCatalog>.Instance);
 
         var plugins = catalog.Reload();
+
+        Assert.That(plugins, Is.Empty);
+    }
+
+    [Test]
+    public void Reload_ShouldRejectI18nPathOutsidePluginDirectory()
+    {
+        var pluginPath = Path.Combine(rootPath, "unsafe");
+        Directory.CreateDirectory(Path.Combine(pluginPath, "backend"));
+        Directory.CreateDirectory(Path.Combine(pluginPath, "web"));
+        File.WriteAllText(Path.Combine(pluginPath, "backend", "index.mjs"), "");
+        File.WriteAllText(Path.Combine(pluginPath, "web", "detail.html"), "");
+        File.WriteAllText(Path.Combine(rootPath, "outside.json"), "{\"entries\":[]}");
+        File.WriteAllText(Path.Combine(pluginPath, "plugin.json"), """
+        {
+          "id": "unsafe", "name": "Unsafe", "version": "1.0.0",
+          "runtime": "node", "protocolVersion": "2.0",
+          "i18n": {
+            "defaultLocale": "en-US",
+            "catalog": "../outside.json",
+            "localesPath": "../"
+          },
+          "entries": [{
+            "id": "main", "entry": "backend/index.mjs", "keywords": ["unsafe"],
+            "detail": { "type": "web", "entry": "web/detail.html" }
+          }]
+        }
+        """);
+
+        var plugins = new NodePluginCatalog(rootPath, NullLogger<NodePluginCatalog>.Instance).Reload();
 
         Assert.That(plugins, Is.Empty);
     }

@@ -1,12 +1,19 @@
 import { createTool } from "@qping/plugin-common/node-tool";
+import { mytoolsI18n } from "@qping/plugin-common/i18n";
 
 function buildItem(query: unknown) {
   const text = typeof query === "string" ? query.trim() : "";
-  const normalized = text.length > 0 ? text : "(empty)";
+  const normalized = text.length > 0 ? text : mytoolsI18n.t("Plugin.HelloSearch.Common.Empty", {
+    defaultValue: "(empty)"
+  });
   return {
     id: `hello:${normalized}`,
-    title: normalized === "(empty)" ? "Hello Search" : `Hello ${normalized}`,
-    subtitle: "Open the custom detail page powered by the Node runtime",
+    title: text.length === 0
+      ? mytoolsI18n.t("Plugin.HelloSearch.Name", { defaultValue: "Hello Search" })
+      : mytoolsI18n.t("Plugin.HelloSearch.Result.Greeting", { defaultValue: "Hello {{name}}", name: normalized }),
+    subtitle: mytoolsI18n.t("Plugin.HelloSearch.Result.Subtitle", {
+      defaultValue: "Open the custom detail page powered by the Node runtime"
+    }),
     priority: 100,
     icon: {
       kind: "emoji",
@@ -15,9 +22,11 @@ function buildItem(query: unknown) {
     actions: [
       {
         id: "open-detail",
-        title: "Open Detail",
+        title: mytoolsI18n.t("Plugin.HelloSearch.Action.OpenDetail.Title", { defaultValue: "Open Detail" }),
         kind: "detail",
-        description: "Open the custom detail page"
+        description: mytoolsI18n.t("Plugin.HelloSearch.Action.OpenDetail.Description", {
+          defaultValue: "Open the custom detail page"
+        })
       }
     ]
   };
@@ -27,7 +36,7 @@ function createDetail(query: unknown, itemId: unknown, eventName = "initialize")
   return {
     type: "web-detail",
     htmlEntry: "web/index.html",
-    title: "Hello Search",
+    title: mytoolsI18n.t("Plugin.HelloSearch.Name", { defaultValue: "Hello Search" }),
     initialState: {
       itemId,
       query,
@@ -40,11 +49,17 @@ function createDetail(query: unknown, itemId: unknown, eventName = "initialize")
 const tool = createTool();
 
 tool
+  .initialize((params) => {
+    mytoolsI18n.configure(params);
+    return {};
+  })
   .search((params) => ({
     items: [buildItem(params.query || "")]
   }))
   .action((params) => ({
-    message: "Opened hello detail",
+    message: mytoolsI18n.t("Plugin.HelloSearch.Action.OpenDetail.Success", {
+      defaultValue: "Opened hello detail"
+    }),
     actionType: "none",
     detail: createDetail(params.query || "", params.itemId || "hello:item")
   }))

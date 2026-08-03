@@ -8,6 +8,8 @@ namespace MyTools.Common.Config.Models;
 /// </summary>
 public partial class ConfigurationCategory : ObservableObject, ICloneable
 {
+    public string Key { get; set; } = string.Empty;
+
     public string Name { get; set; } = string.Empty;
     
     public string Description { get; set; } = string.Empty;
@@ -29,7 +31,9 @@ public partial class ConfigurationCategory : ObservableObject, ICloneable
     [ObservableProperty]
     private bool isExpanded = false;
     
-    public string FullPath => Parent != null ? $"{Parent.FullPath}.{Name}" : Name;
+    public string FullPath => Parent != null ? $"{Parent.FullPath}.{EffectiveKey}" : EffectiveKey;
+
+    private string EffectiveKey => string.IsNullOrWhiteSpace(Key) ? Name : Key;
     
     public void AddSetting(ConfigurationSetting setting)
     {
@@ -40,6 +44,7 @@ public partial class ConfigurationCategory : ObservableObject, ICloneable
     {
         return new ConfigurationCategory()
         {
+            Key = Key,
             Name = Name,
             Description = Description,
             Icon = Icon,

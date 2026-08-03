@@ -2,14 +2,16 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using MyTools.Common;
 using MyTools.Common.DependencyInjection;
+using MyTools.Common.Localization;
 using MyTools.Common.Utils;
 
 namespace MyTools.Plugins;
 
 public sealed class CopyAndPaste : Copy
 {
-    public override string Name => "Copy and Paste";
-    public override string Description => "Copy and Paste text to the previous focused window";
+    public override string Name => ActionText.Get("Action.CopyAndPaste.Name", "Copy and Paste");
+    public override string Description => ActionText.Get(
+        "Action.CopyAndPaste.Description", "Copy and paste text to the previously focused window");
     
     public override async Task<ActionResult> ExecuteAsync(IActionParams args)
     {
@@ -30,11 +32,13 @@ public sealed class CopyAndPaste : Copy
                 keyboardHelper.Paste();
             });
             
-            var result = ActionResult.CreateSuccess("Copied to clipboard and pasted to the previous focused window.");
+            var result = ActionResult.CreateSuccess(new LocalizedMessage(
+                "Action.CopyAndPaste.Success", "Copied to clipboard and pasted to the previously focused window."));
             return result;
         }
         
-        return ActionResult.CreateFailure("Invalid parameters for CopyAndPaste action");
+        return ActionResult.CreateFailure(new LocalizedMessage(
+            "Action.CopyAndPaste.InvalidParameters", "Invalid parameters for Copy and Paste action"));
     }
     
     [DllImport("user32.dll")]

@@ -19,13 +19,14 @@ namespace MyTools.Plugins;
 
 public class FileSearcher(ILogger<FileSearcher> logger, IMemoryCache cache): PluginBase
 {
+    public override string PluginId => "FileSearcher";
     private const LuceneVersion LuceneVersion = Lucene.Net.Util.LuceneVersion.LUCENE_48;
     private const string IndexDir = "FileSearcherIndex";
     private IndexWriter? _indexWriter;
     private readonly object _indexLock = new();
 
-    public override string Name => "File Searcher";
-    public override string Description => "Search for files and scripts";
+    public override string Name => GetCaption("Plugin.FileSearcher.Name", "File Searcher");
+    public override string Description => GetCaption("Plugin.FileSearcher.Description", "Search for files and scripts");
     public override List<IActionWithCommand> Actions => [
         WellKnownActions.Execute.WithDefaultCommand(), 
         WellKnownActions.AdminExecute.WithCommand(Commands.Ctrl_Enter), 

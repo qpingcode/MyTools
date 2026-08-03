@@ -67,7 +67,7 @@ public class SearchHistoryDbHelperTest
 
     private sealed class FakePlugin : PluginBase
     {
-        public string PluginId => GetType().FullName!;
+        public override string PluginId => GetType().FullName!;
 
         public override string Name => "Fake";
         public override string Description => "Fake";

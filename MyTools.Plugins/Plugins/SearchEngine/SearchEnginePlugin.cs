@@ -10,10 +10,11 @@ namespace MyTools.Plugins;
 
 public sealed class SearchEnginePlugin : PluginBase, IPlugin
 {
+    public override string PluginId => "SearchEngine";
     private List<SearchEngineConfig> _searchEngines = new();
 
-    public override string Name => "Web Search";
-    public override string Description => "Search using different search engines";
+    public override string Name => GetCaption("Plugin.SearchEngine.Name", "Web Search");
+    public override string Description => GetCaption("Plugin.SearchEngine.Description", "Search using different search engines");
     public override List<IActionWithCommand> Actions => [WellKnownActions.OpenInBrowser.WithDefaultCommand()];
 
     private Icon _icon = new StringIcon("🌐");

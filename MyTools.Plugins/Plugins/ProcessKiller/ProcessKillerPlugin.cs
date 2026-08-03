@@ -9,8 +9,9 @@ namespace MyTools.Plugins;
 
 public class ProcessKillerPlugin(IMemoryCache memoryCache) : PluginBase
 {
-    public override string Name => "Process Killer";
-    public override string Description => "Search and manage running processes";
+    public override string PluginId => "ProcessKiller";
+    public override string Name => GetCaption("Plugin.ProcessKiller.Name", "Process Killer");
+    public override string Description => GetCaption("Plugin.ProcessKiller.Description", "Search and manage running processes");
     public override List<IActionWithCommand> Actions => [new KillProcessAction().WithDefaultCommand()];
     
     private Icon _icon = new StringIcon("💀");

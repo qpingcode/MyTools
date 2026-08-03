@@ -15,4 +15,7 @@ public sealed class NodePluginDetailContext
     public required string Query { get; init; }
     public required string Keyword { get; init; }
     public required JsonElement InitialState { get; init; }
+    public required string Locale { get; init; }
+    public required string FallbackLocale { get; init; }
+    public required IReadOnlyDictionary<string, string> Messages { get; init; }
 }

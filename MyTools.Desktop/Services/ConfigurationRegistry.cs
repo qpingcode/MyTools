@@ -14,11 +14,17 @@ public class ConfigurationRegistry(IConfigurationStorage storage) : IConfigurati
 
     public ConfigurationCategory AddCategory(string name, string description, ConfigurationCategory? parent = null, bool IsSelectable = true)
     {
+        return AddCategory(name, name, description, parent, IsSelectable);
+    }
+
+    public ConfigurationCategory AddCategory(string key, string name, string description, ConfigurationCategory? parent = null, bool IsSelectable = true)
+    {
         
         var order = parent == null ? _rootCategories.Count : parent.Children.Count;
         
         var category = new ConfigurationCategory
         {
+            Key = key,
             Name = name,
             Description = description,
             Parent = parent,
@@ -46,7 +52,8 @@ public class ConfigurationRegistry(IConfigurationStorage storage) : IConfigurati
         string description, 
         T defaultValue, 
         IRegistrySerializer? serializer,
-        SettingOptions options = SettingOptions.None)
+        SettingOptions options = SettingOptions.None,
+        SettingValueTypes? valueType = null)
     {
         
         var serializerFoRegistry = serializer ?? GetSerializer(typeof(T));
@@ -59,7 +66,7 @@ public class ConfigurationRegistry(IConfigurationStorage storage) : IConfigurati
             DefaultValue = defaultValue,
             Options = options,
             Category = category,
-            ValueType = GetSettingType(typeof(T)),
+            ValueType = valueType ?? GetSettingType(typeof(T)),
             Serializer = serializerFoRegistry,
             SortOrder = category.Settings.Count
         };

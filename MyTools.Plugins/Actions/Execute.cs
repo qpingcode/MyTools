@@ -1,36 +1,41 @@
 ﻿using System.Diagnostics;
 using System.IO;
 using MyTools.Common;
+using MyTools.Common.Localization;
 
 namespace MyTools.Plugins;
 
 public class Execute : IAction
 {
-    public virtual string Name => "Execute";
-    public virtual string Description => "Execute a program or script";
+    public virtual string Name => ActionText.Get("Action.Execute.Name", "Execute");
+    public virtual string Description => ActionText.Get("Action.Execute.Description", "Execute a program or script");
 
     public async Task<ActionResult> ExecuteAsync(IActionParams args)
     {
         if (args is not IActionStringParam stringParam)
         {
-            return ActionResult.CreateFailure("Invalid parameters for Execute action");
+            return ActionResult.CreateFailure(new LocalizedMessage(
+                "Action.Execute.InvalidParameters", "Invalid parameters for Execute action"));
         }
         
         var filePath = stringParam.GetValue();
         
         if (string.IsNullOrWhiteSpace(filePath))
         {
-            return ActionResult.CreateFailure("File path is empty");
+            return ActionResult.CreateFailure(new LocalizedMessage(
+                "Action.Execute.EmptyPath", "File path is empty"));
         }
 
         try
         {
             await ExecuteCoreAsync(filePath, string.Empty, false).ConfigureAwait(false);
-            return ActionResult.CreateSuccess($"Executed: {filePath}");
+            return ActionResult.CreateSuccess(new LocalizedMessage(
+                "Action.Execute.Success", "Executed: {{path}}", new { path = filePath }));
         }
         catch (Exception ex)
         {
-            return ActionResult.CreateFailure($"Failed to execute: {ex.Message}");
+            return ActionResult.CreateFailure(new LocalizedMessage(
+                "Action.Execute.Failed", "Failed to execute: {{message}}", new { message = ex.Message }));
         }
     }
     

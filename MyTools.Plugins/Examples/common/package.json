@@ -25,12 +25,19 @@
       "types": "./dist/events.d.ts",
       "import": "./dist/events.js"
     },
+    "./i18n": {
+      "types": "./dist/i18n.d.ts",
+      "import": "./dist/i18n.js"
+    },
     "./dist/events.js": "./dist/events.js",
     "./dist/web-tool.js": "./dist/web-tool.js",
     "./global": {
       "types": "./global.d.ts",
       "default": "./global.d.ts"
     }
+  },
+  "dependencies": {
+    "i18next": "^25.3.2"
   },
   "scripts": {
     "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",

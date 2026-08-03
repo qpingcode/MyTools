@@ -10,8 +10,9 @@ namespace MyTools.Plugins
 {
     public class XmlFormatterPlugin(ILogger<XmlFormatterPlugin> logger) : PluginBase
     {
-        public override string Name => "Xml Formatter";
-        public override string Description => "Format and validate XML";
+        public override string PluginId => "XmlFormatter";
+        public override string Name => GetCaption("Plugin.XmlFormatter.Name", "XML Formatter");
+        public override string Description => GetCaption("Plugin.XmlFormatter.Description", "Format and validate XML");
         public override List<IActionWithCommand> Actions => [WellKnownActions.Copy.WithDefaultCommand()];
 
         private readonly Icon resultIcon = new StringIcon("📄");

@@ -27,6 +27,7 @@ public class SettingTypeToTemplateConverter : IValueConverter
                 SettingValueTypes.Bool => "BoolSettingTemplate",
                 SettingValueTypes.Integer => "IntegerSettingTemplate",
                 SettingValueTypes.String => "StringSettingTemplate",
+                SettingValueTypes.Language => "LanguageSettingTemplate",
                 SettingValueTypes.Double => "DoubleSettingTemplate",
                 SettingValueTypes.Custom => "CustomSettingTemplate",
                 _ => "StringSettingTemplate"

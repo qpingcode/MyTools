@@ -6,6 +6,7 @@ namespace MyTools.Plugins;
 
 public interface IPlugin
 {
+    string PluginId { get; }
     string Name { get; }
     string Description { get; }
     public List<IActionWithCommand> Actions { get; }
