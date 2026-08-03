@@ -250,6 +250,7 @@ public class AppBootstrapper : IDisposable
             registry.AddSetting(generalCategory, "SearchDelay", "搜索延迟", "搜索防抖延迟时间（毫秒）", 100.0);
             registry.AddSetting(generalCategory, "UpdateUrl", "更新地址", "GitHub 仓库/Releases 地址、Velopack 发布目录的 HTTPS 地址或本地目录", UpdateService.DefaultUpdateUrl);
             registry.AddSetting(generalCategory, "UpdateChannel", "更新通道", "Velopack 更新通道，例如 win、stable 或 beta", "win");
+            registry.AddSetting(generalCategory, "UpdateProxyUrl", "更新代理", "可选代理地址，例如 http://127.0.0.1:7890；留空时使用直连", string.Empty);
             
             // Add Plugin Settings
             registry.AddCategory("Plugins", "Plugin Settings", IsSelectable: false);

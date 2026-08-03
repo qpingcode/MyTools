@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
+using System.Net;
 using MyTools.Common.Config.Interfaces;
 using MyTools.Common.Config.Models;
 using MyTools.Desktop.Serializers;
@@ -26,6 +27,71 @@ public class UpdateServiceTests
     public void GetGithubRepositoryUrl_NormalizesSupportedUrls(string updateUrl, string? expected)
     {
         Assert.That(UpdateService.GetGithubRepositoryUrl(updateUrl), Is.EqualTo(expected));
+    }
+
+    [TestCase(null)]
+    [TestCase("")]
+    [TestCase("   ")]
+    public void ParseProxyUri_WhenProxyIsEmpty_ReturnsNull(string? proxyUrl)
+    {
+        Assert.That(UpdateService.ParseProxyUri(proxyUrl), Is.Null);
+    }
+
+    [TestCase("http://127.0.0.1:7890", "http://127.0.0.1:7890/")]
+    [TestCase("  https://proxy.example.com:8443  ", "https://proxy.example.com:8443/")]
+    [TestCase("socks4://localhost:1080", "socks4://localhost:1080/")]
+    [TestCase("socks4a://localhost:1080", "socks4a://localhost:1080/")]
+    [TestCase("socks5://localhost:1080", "socks5://localhost:1080/")]
+    public void ParseProxyUri_WhenProxyIsValid_ReturnsNormalizedUri(string proxyUrl, string expected)
+    {
+        Assert.That(UpdateService.ParseProxyUri(proxyUrl)?.AbsoluteUri, Is.EqualTo(expected));
+    }
+
+    [TestCase("localhost:7890")]
+    [TestCase("ftp://proxy.example.com:21")]
+    [TestCase("http://")]
+    public void ParseProxyUri_WhenProxyIsInvalid_Throws(string proxyUrl)
+    {
+        Assert.That(
+            () => UpdateService.ParseProxyUri(proxyUrl),
+            Throws.TypeOf<InvalidOperationException>());
+    }
+
+    [TestCase("http://user@proxy.example.com:7890")]
+    [TestCase("http://user:password@proxy.example.com:7890")]
+    public void ParseProxyUri_WhenProxyContainsCredentials_Throws(string proxyUrl)
+    {
+        Assert.That(
+            () => UpdateService.ParseProxyUri(proxyUrl),
+            Throws.TypeOf<InvalidOperationException>()
+                .With.Message.EqualTo("The update proxy URL must not contain a username or password."));
+    }
+
+    [Test]
+    public void UpdateProxyFileDownloader_ConfiguresProxyWithoutCredentials()
+    {
+        var proxyUri = new Uri("http://127.0.0.1:7890");
+        var downloader = new TestableUpdateProxyFileDownloader(proxyUri);
+
+        using var handler = downloader.CreateHandler();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(handler.UseProxy, Is.True);
+            Assert.That(handler.Proxy, Is.TypeOf<WebProxy>());
+            Assert.That(((WebProxy)handler.Proxy!).Address, Is.EqualTo(proxyUri));
+            Assert.That(handler.Proxy!.Credentials, Is.Null);
+        });
+    }
+
+    [Test]
+    public void UpdateProxyFileDownloader_WithoutProxy_DisablesProxy()
+    {
+        var downloader = new TestableUpdateProxyFileDownloader(null);
+
+        using var handler = downloader.CreateHandler();
+
+        Assert.That(handler.UseProxy, Is.False);
     }
 
     [Test]
@@ -79,6 +145,14 @@ public class UpdateServiceTests
         };
         setting.InitValueWithoutNotify(value);
         return setting;
+    }
+
+    private sealed class TestableUpdateProxyFileDownloader(Uri? proxyUri) : UpdateProxyFileDownloader(proxyUri)
+    {
+        public HttpClientHandler CreateHandler()
+        {
+            return CreateHttpClientHandler();
+        }
     }
 }
 
