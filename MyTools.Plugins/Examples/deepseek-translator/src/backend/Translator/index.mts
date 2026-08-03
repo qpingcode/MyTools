@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import { createTool } from "@qping/plugin-common/node-tool";
+import { mytoolsI18n } from "@qping/plugin-common/i18n";
 import {
   FAVORITES_PATH,
   SETTINGS_PATH,
@@ -94,7 +95,9 @@ function buildAnkiCardPrompt(state: TranslationState): string {
 
 async function generateAnkiCards(state: TranslationState): Promise<JsonRecord[]> {
   if (!DEEPSEEK_API_KEY) {
-    throw new Error("Missing DEEPSEEK_API_KEY environment variable.");
+    throw new Error(mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.MissingApiKey", {
+      defaultValue: "Missing DEEPSEEK_API_KEY environment variable.",
+    }));
   }
 
   const response = await fetch(DEEPSEEK_API_URL, {
@@ -121,7 +124,11 @@ async function generateAnkiCards(state: TranslationState): Promise<JsonRecord[]>
 
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(`DeepSeek card generation failed (${response.status}): ${body}`);
+    throw new Error(mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.CardGenerationFailed", {
+      defaultValue: "DeepSeek card generation failed ({{status}}): {{body}}",
+      status: response.status,
+      body,
+    }));
   }
 
   const data = await response.json() as JsonRecord;
@@ -130,17 +137,23 @@ async function generateAnkiCards(state: TranslationState): Promise<JsonRecord[]>
   const message = payloadRecord(firstChoice.message);
   const content = message.content;
   if (typeof content !== "string" || !content.trim()) {
-    throw new Error("DeepSeek returned empty Anki card content.");
+    throw new Error(mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.EmptyCardContent", {
+      defaultValue: "DeepSeek returned empty Anki card content.",
+    }));
   }
 
   const jsonText = extractJsonObject(content);
   if (!jsonText) {
-    throw new Error("DeepSeek returned non-JSON Anki card content.");
+    throw new Error(mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.NonJsonCardContent", {
+      defaultValue: "DeepSeek returned non-JSON Anki card content.",
+    }));
   }
 
   const parsed = JSON.parse(jsonText) as JsonRecord;
   if (!Array.isArray(parsed.cards) || parsed.cards.length === 0) {
-    throw new Error("DeepSeek did not return Anki cards.");
+    throw new Error(mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.NoCardsReturned", {
+      defaultValue: "DeepSeek did not return Anki cards.",
+    }));
   }
 
   return parsed.cards.map((card: unknown) => payloadRecord(card));
@@ -160,7 +173,9 @@ async function ensureAnkiCardsForFavorite(state: TranslationState): Promise<numb
 
     const back = normalizeText(state.translation);
     if (!back) {
-      throw new Error("Sentence translation is required before saving.");
+      throw new Error(mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.TranslationRequired", {
+        defaultValue: "Sentence translation is required before saving.",
+      }));
     }
 
     return upsertGeneratedCards(source, [{
@@ -216,8 +231,12 @@ function buildSearchItem(query: unknown) {
   const text = normalizeText(query);
   return {
     id: `deepseek-translator:${text || "empty"}`,
-    title: text ? `Translate: ${text}` : "DeepSeek Translator",
-    subtitle: "Translate sentences or words with IPA using DeepSeek",
+    title: text
+      ? mytoolsI18n.t("Plugin.DeepSeekTranslator.Result.Title", { defaultValue: "Translate: {{text}}", text })
+      : mytoolsI18n.t("Plugin.DeepSeekTranslator.Name", { defaultValue: "DeepSeek Translator" }),
+    subtitle: mytoolsI18n.t("Plugin.DeepSeekTranslator.Result.Subtitle", {
+      defaultValue: "Translate sentences or words with IPA using DeepSeek",
+    }),
     priority: 100,
     icon: {
       kind: "emoji",
@@ -226,9 +245,11 @@ function buildSearchItem(query: unknown) {
     actions: [
       {
         id: "open-detail",
-        title: "Open Translator",
+        title: mytoolsI18n.t("Plugin.DeepSeekTranslator.Action.Open.Title", { defaultValue: "Open Translator" }),
         kind: "detail",
-        description: "Open the translator detail page",
+        description: mytoolsI18n.t("Plugin.DeepSeekTranslator.Action.Open.Description", {
+          defaultValue: "Open the translator detail page",
+        }),
       },
     ],
   };
@@ -238,7 +259,7 @@ function createDetail(query: unknown, itemId: unknown) {
   return {
     type: "web-detail",
     htmlEntry: "web/Translator/index.html",
-    title: "DeepSeek Translator",
+    title: mytoolsI18n.t("Plugin.DeepSeekTranslator.Name", { defaultValue: "DeepSeek Translator" }),
     initialState: createInitialState(query),
   };
 }
@@ -515,7 +536,13 @@ async function toggleFavoriteWord(text: string, state: TranslationState): Promis
       isFavorite: false,
       sendMode: getConfiguredSendMode(),
       isExpanded: getConfiguredIsExpanded(),
-      error: word ? "Only valid English words can be saved." : "Translate the sentence before saving it.",
+      error: word
+        ? mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.InvalidFavorite", {
+          defaultValue: "Only valid English words can be saved.",
+        })
+        : mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.TranslateBeforeSaving", {
+          defaultValue: "Translate the sentence before saving it.",
+        }),
     };
   }
 
@@ -586,7 +613,9 @@ async function translate(text: unknown): Promise<TranslationState> {
   if (!DEEPSEEK_API_KEY) {
     return {
       ...createInitialState(normalized, "error"),
-      error: "Missing DEEPSEEK_API_KEY environment variable.",
+      error: mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.MissingApiKey", {
+        defaultValue: "Missing DEEPSEEK_API_KEY environment variable.",
+      }),
     };
   }
 
@@ -614,7 +643,11 @@ async function translate(text: unknown): Promise<TranslationState> {
 
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(`DeepSeek API request failed (${response.status}): ${body}`);
+    throw new Error(mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.ApiFailed", {
+      defaultValue: "DeepSeek API request failed ({{status}}): {{body}}",
+      status: response.status,
+      body,
+    }));
   }
 
   const data = await response.json() as JsonRecord;
@@ -624,12 +657,16 @@ async function translate(text: unknown): Promise<TranslationState> {
   const message = payloadRecord(firstChoice.message);
   const content = message.content;
   if (typeof content !== "string" || !content.trim()) {
-    throw new Error("DeepSeek API returned an empty translation.");
+    throw new Error(mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.EmptyTranslation", {
+      defaultValue: "DeepSeek API returned an empty translation.",
+    }));
   }
 
   const jsonText = extractJsonObject(content);
   if (!jsonText) {
-    throw new Error("DeepSeek API returned non-JSON content.");
+    throw new Error(mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.NonJson", {
+      defaultValue: "DeepSeek API returned non-JSON content.",
+    }));
   }
 
   const parsed = JSON.parse(jsonText) as JsonRecord;
@@ -645,7 +682,7 @@ async function translate(text: unknown): Promise<TranslationState> {
     input: normalized,
     status: "done",
     inputType: word ? "word" : "sentence",
-    translation: word && !validWord ? "This does not look like a valid English word." : normalizeText(parsed.translation),
+    translation: word && !validWord ? "" : normalizeText(parsed.translation),
     phonetic: validWord ? normalizeText(parsed.phonetic) : "",
     definitions: validWord ? definitions : [],
     chineseTranslation: validWord ? normalizeText(parsed.chineseTranslation || parsed.translation) : "",
@@ -710,11 +747,17 @@ function toCacheEntries(entries: Record<string, unknown>[]): CacheEntry[] {
 const tool = createTool();
 
 tool
+  .initialize((params) => {
+    mytoolsI18n.configure(params);
+    return {};
+  })
   .search((params) => ({
     items: [buildSearchItem(params.query || "")],
   }))
   .action((params) => ({
-    message: "Opened translator",
+    message: mytoolsI18n.t("Plugin.DeepSeekTranslator.Action.Open.Success", {
+      defaultValue: "Opened translator",
+    }),
     actionType: "none",
     detail: createDetail(params.query || "", params.itemId || "deepseek-translator:item"),
   }))

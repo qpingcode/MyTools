@@ -1,21 +1,24 @@
-<!DOCTYPE html>
+x<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>DeepSeek Anki Cards</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1<title data-i18n="[text]Plugin.DeepSeekTranslator.Anki.Name" data-i18n-default-value="DeepSeek Anki Cards"></title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <main class="page">
         <section class="panel">
             <div class="label-row">
-                <button id="backButton" class="title-icon-button back-icon" type="button" title="Back to Review" aria-label="Back to Review" hidden></button>
-                <button id="browseButton" class="title-icon-button" type="button" title="Browse All Cards" aria-label="Browse All Cards">☰</button>
-                <div class="label">Anki Card</div>
-                <div id="summary" class="summary">0 due</div>
+                <button id="backButton" class="title-icon-button back-icon" type="button"
+                        data-i18n="[title][aria-label]Plugin.DeepSeekTranslator.Anki.Detail.BackToReview"
+                        data-i18n-default-value="Back to Review" hidden></button>
+                <button id="browseButton" class="title-icon-button" type="button"
+                        data-i18n="[title][aria-label]Plugin.DeepSeekTranslator.Anki.Detail.BrowseAll"
+                        data-i18n-default-value="Browse All Cards">☰</button>
+                <div class="label" data-i18n="[text]Plugin.DeepSeekTranslator.Anki.Detail.Label" data-i18n-default-value="Anki Card"></div>
+                <div id="summary" class="summary" data-i18n="[text]Plugin.DeepSeekTranslator.Anki.Detail.InitialSummary" data-i18n-default-value="0 due"></div>
             </div>
-            <div id="cardHost" class="card-host empty">Loading cards</div>
+            <div id="cardHost" class="card-host empty" data-i18n="[text]Plugin.DeepSeekTranslator.Anki.Detail.Loading" data-i18n-default-value="Loading cards"></div>
         </section>
     </main>
 

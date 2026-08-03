@@ -3,20 +3,26 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>DeepSeek Chat</title>
+    <title data-i18n="[text]Plugin.DeepSeekChat.Name" data-i18n-default-value="DeepSeek Chat"></title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <main class="page">
         <section class="panel">
             <div class="label-row">
-                <div class="label">DeepSeek Chat</div>
-                <button id="newChatButton" class="new-chat-button" type="button">New</button>
+                <div class="label" data-i18n="[text]Plugin.DeepSeekChat.Name" data-i18n-default-value="DeepSeek Chat"></div>
+                <button id="newChatButton" class="new-chat-button" type="button"
+                        data-i18n="[text]Plugin.DeepSeekChat.Detail.New" data-i18n-default-value="New"></button>
             </div>
-            <div id="messages" class="messages empty">Ask DeepSeek anything</div>
+            <div id="messages" class="messages empty"
+                 data-i18n="[text]Plugin.DeepSeekChat.Detail.Empty"
+                 data-i18n-default-value="Ask DeepSeek anything"></div>
             <div class="composer">
-                <textarea id="promptInput" spellcheck="false" placeholder="Type a message"></textarea>
-                <button id="sendButton" class="send-button" type="button">Send</button>
+                <textarea id="promptInput" spellcheck="false"
+                          data-i18n="[placeholder]Plugin.DeepSeekChat.Detail.InputPlaceholder"
+                          data-i18n-default-value="Type a message"></textarea>
+                <button id="sendButton" class="send-button" type="button"
+                        data-i18n="[text]Plugin.DeepSeekChat.Detail.Send" data-i18n-default-value="Send"></button>
             </div>
         </section>
     </main>

@@ -1,6 +1,6 @@
 {
   "name": "@qping/plugin-common",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Common runtime helpers for MyTools plugins.",
   "type": "module",
   "types": "./global.d.ts",

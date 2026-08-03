@@ -1,0 +1,265 @@
+{
+  "schemaVersion": 1,
+  "scope": "plugin:deepseek-chat",
+  "pluginId": "deepseek-chat",
+  "sourceLocale": "en-US",
+  "entries": [
+    {
+      "key": "Plugin.DeepSeekChat.Name",
+      "defaultValue": "DeepSeek Chat",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/backend/index.mts",
+          "line": 71,
+          "column": 24,
+          "symbol": "index",
+          "translatorComment": "Plugin user-visible text"
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "DeepSeek 对话"
+      },
+      "sourceHash": "sha256:e11a0cfc3de7169074c54dca1e352d7243a710f1211defd19e954649f3a0cae5"
+    },
+    {
+      "key": "Plugin.DeepSeekChat.Result.Title",
+      "defaultValue": "Chat: {{text}}",
+      "placeholders": [
+        "text"
+      ],
+      "references": [
+        {
+          "filePath": "src/backend/index.mts",
+          "line": 70,
+          "column": 24,
+          "symbol": "index",
+          "translatorComment": "Plugin user-visible text"
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "对话：{{text}}"
+      },
+      "sourceHash": "sha256:dd84b45262b627ecdeb9d14154c8e0e6f4d5cea56cb0669d2b263be3c70dc320"
+    },
+    {
+      "key": "Plugin.DeepSeekChat.Result.Subtitle",
+      "defaultValue": "Talk with DeepSeek using a streaming chat view",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/backend/index.mts",
+          "line": 72,
+          "column": 30,
+          "symbol": "index",
+          "translatorComment": "Plugin user-visible text"
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "使用流式对话界面与 DeepSeek 交流"
+      },
+      "sourceHash": "sha256:65390ce7e766e2a066cef1f84608bd127523c01b6be7fe1fc79923f85b503584"
+    },
+    {
+      "key": "Plugin.DeepSeekChat.Action.OpenChat.Title",
+      "defaultValue": "Open Chat",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/backend/index.mts",
+          "line": 83,
+          "column": 31,
+          "symbol": "index",
+          "translatorComment": "Plugin user-visible text"
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "打开对话"
+      },
+      "sourceHash": "sha256:0979c6fdbdca1675519f66928be14992cb4b6503e657f89bbbd34b6bdc8ffa79"
+    },
+    {
+      "key": "Plugin.DeepSeekChat.Action.OpenChat.Description",
+      "defaultValue": "Open DeepSeek chat",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/backend/index.mts",
+          "line": 85,
+          "column": 37,
+          "symbol": "index",
+          "translatorComment": "Plugin user-visible text"
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "打开 DeepSeek 对话"
+      },
+      "sourceHash": "sha256:4d53a010dcd25a497a307183bbc20f4bb124d9a13465af8ce40319b0f2887a98"
+    },
+    {
+      "key": "Plugin.DeepSeekChat.Action.OpenChat.Success",
+      "defaultValue": "Opened DeepSeek chat",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/backend/index.mts",
+          "line": 274,
+          "column": 29,
+          "symbol": "index",
+          "translatorComment": "Plugin user-visible text"
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "已打开 DeepSeek 对话"
+      },
+      "sourceHash": "sha256:884a4ca9e97687d0c7cf38c8067db1d477a7577a936565e47ba3707348cc24f1"
+    },
+    {
+      "key": "Plugin.DeepSeekChat.Error.MissingApiKey",
+      "defaultValue": "Missing DEEPSEEK_API_KEY environment variable.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/backend/index.mts",
+          "line": 151,
+          "column": 38,
+          "symbol": "index",
+          "translatorComment": "Plugin user-visible text"
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "缺少 DEEPSEEK_API_KEY 环境变量。"
+      },
+      "sourceHash": "sha256:34a96ff8efbd9188eb5df2b0fa6ad6179abe22bbb63db42a2a7164726a697b23"
+    },
+    {
+      "key": "Plugin.DeepSeekChat.Error.ApiFailed",
+      "defaultValue": "DeepSeek chat failed ({{status}}): {{body}}",
+      "placeholders": [
+        "body",
+        "status"
+      ],
+      "references": [
+        {
+          "filePath": "src/backend/index.mts",
+          "line": 171,
+          "column": 38,
+          "symbol": "index",
+          "translatorComment": "Plugin user-visible text"
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "DeepSeek 对话请求失败（{{status}}）：{{body}}"
+      },
+      "sourceHash": "sha256:24fc221be09e252df87797bb4589f21aa797a2a72dd383e6f6df435f65ddcaf2"
+    },
+    {
+      "key": "Plugin.DeepSeekChat.Error.NoStream",
+      "defaultValue": "DeepSeek chat response did not include a stream.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/backend/index.mts",
+          "line": 179,
+          "column": 38,
+          "symbol": "index",
+          "translatorComment": "Plugin user-visible text"
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "DeepSeek 对话响应中没有数据流。"
+      },
+      "sourceHash": "sha256:ad261a9ad9b7c052e2500e990427f372ebf1e16481b3393a59d146ab35785cab"
+    },
+    {
+      "key": "Plugin.DeepSeekChat.Detail.New",
+      "defaultValue": "New",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/index.html",
+          "line": 15,
+          "column": 42,
+          "symbol": "index",
+          "translatorComment": "Plugin user-visible text"
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "新对话"
+      },
+      "sourceHash": "sha256:18fdd549b2ed367ac0c74cbec1214644728515b30edbcb78e7d322757a7c8359"
+    },
+    {
+      "key": "Plugin.DeepSeekChat.Detail.Empty",
+      "defaultValue": "Ask DeepSeek anything",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/index.html",
+          "line": 18,
+          "column": 35,
+          "symbol": "index",
+          "translatorComment": "Plugin user-visible text"
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "向 DeepSeek 提问"
+      },
+      "sourceHash": "sha256:eb939b05dd36c769cede3e2abbab117ed9495dc969f566f2b358709236d1dec9"
+    },
+    {
+      "key": "Plugin.DeepSeekChat.Detail.InputPlaceholder",
+      "defaultValue": "Type a message",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/index.html",
+          "line": 22,
+          "column": 51,
+          "symbol": "index",
+          "translatorComment": "Plugin user-visible text"
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "输入消息"
+      },
+      "sourceHash": "sha256:00cd58f655daed8adff9b434b2fcfa8f8532cbc24d786f0d2e4334f006595571"
+    },
+    {
+      "key": "Plugin.DeepSeekChat.Detail.Send",
+      "defaultValue": "Send",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/index.html",
+          "line": 25,
+          "column": 42,
+          "symbol": "index",
+          "translatorComment": "Plugin user-visible text"
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "发送"
+      },
+      "sourceHash": "sha256:f6f4688ff23d50c67053963c251fa0ce64a925cf283537cf066b1f362cb9b778"
+    },
+    {
+      "key": "Plugin.DeepSeekChat.Detail.Streaming",
+      "defaultValue": "…",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/main.ts",
+          "line": 63,
+          "column": 32,
+          "symbol": "main",
+          "translatorComment": "Plugin user-visible text"
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "…"
+      },
+      "sourceHash": "sha256:b4935894c8ce16bde67bbffc672428b1533c4f1e1e8b1ce21a2933183db6bfa5"
+    }
+  ]
+}
