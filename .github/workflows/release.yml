@@ -35,6 +35,42 @@ jobs:
             Directory.Packages.props
             .config/dotnet-tools.json
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+          cache-dependency-path: MyTools.Plugins/Examples/package-lock.json
+
+      - name: Build Node plugin examples
+        shell: pwsh
+        working-directory: .\MyTools.Plugins\Examples
+        run: |
+          npm ci
+          npm run build
+
+          $pluginDirectories = @('hello-search', 'deepseek-chat', 'deepseek-translator')
+          foreach ($pluginDirectory in $pluginDirectories) {
+              $manifestPath = Join-Path (Join-Path $PWD $pluginDirectory) 'dist\plugin.json'
+              if (-not (Test-Path $manifestPath -PathType Leaf)) {
+                  throw "Node plugin manifest is missing: $manifestPath"
+              }
+
+              $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
+              foreach ($entry in $manifest.entries) {
+                  $backendPath = Join-Path (Split-Path $manifestPath) $entry.entry
+                  $detailPath = Join-Path (Split-Path $manifestPath) $entry.detail.entry
+                  if (-not (Test-Path $backendPath -PathType Leaf)) {
+                      throw "Node plugin backend is missing: $backendPath"
+                  }
+                  if (-not (Test-Path $detailPath -PathType Leaf)) {
+                      throw "Node plugin detail page is missing: $detailPath"
+                  }
+              }
+
+              Write-Host "Verified Node plugin: $($manifest.name)"
+          }
+
       - name: Restore dependencies and tools
         shell: pwsh
         run: |
