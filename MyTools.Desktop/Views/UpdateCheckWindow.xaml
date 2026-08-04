@@ -63,7 +63,7 @@
             </Grid.RowDefinitions>
 
             <TextBlock Grid.Row="0"
-                       HorizontalAlignment="Center"
+                       HorizontalAlignment="Left"
                        Text="{loc:Loc CheckingForUpdates, DefaultValue=Checking for updates...}"
                        FontSize="15"
                        Margin="0,0,0,16"/>
@@ -71,11 +71,11 @@
             <ProgressBar Grid.Row="1"
                          IsIndeterminate="True"
                          Height="6"
-                         Margin="40,0"/>
+                         Margin="0,0"/>
 
             <StackPanel Grid.Row="3"
                         Orientation="Horizontal"
-                        HorizontalAlignment="Center">
+                        HorizontalAlignment="Right">
                 <Button Content="{loc:Loc Cancel, DefaultValue=Cancel}"
                         Style="{StaticResource CancelButtonStyle}"
                         Click="CancelButton_Click"/>
@@ -91,16 +91,16 @@
 
             <TextBlock x:Name="ResultMessage"
                        Grid.Row="0"
-                       HorizontalAlignment="Center"
+                       HorizontalAlignment="Left"
                        VerticalAlignment="Center"
-                       TextAlignment="Center"
+                       TextAlignment="Left"
                        TextWrapping="Wrap"
                        FontSize="14"
                        Margin="0,0,0,16"/>
 
             <StackPanel Grid.Row="1"
                         Orientation="Horizontal"
-                        HorizontalAlignment="Center">
+                        HorizontalAlignment="Right">
                 <Button x:Name="DownloadButton"
                         Content="{loc:Loc UpdateDownloadAndRestart, DefaultValue=Download and Restart}"
                         Style="{StaticResource ModernButton}"
@@ -123,7 +123,7 @@
 
             <TextBlock x:Name="DownloadingText"
                        Grid.Row="0"
-                       HorizontalAlignment="Center"
+                       HorizontalAlignment="Left"
                        FontSize="15"
                        Margin="0,0,0,16"/>
 
@@ -132,7 +132,7 @@
                          Minimum="0"
                          Maximum="100"
                          Height="14"
-                         Margin="20,0"/>
+                         Margin="0,0"/>
         </Grid>
     </Grid>
 </Window>

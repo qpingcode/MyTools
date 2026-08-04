@@ -100,7 +100,21 @@ public sealed class UpdateService(
                 options.ExplicitChannel,
                 proxyUri == null ? "direct connection" : "proxy");
             cancellationToken.ThrowIfCancellationRequested();
-            var update = await updateManager.CheckForUpdatesAsync();
+
+            // Velopack's CheckForUpdatesAsync does not honor our cancellation token, so race it
+            // against cancellation. On cancel we return immediately (releasing the lock) and let
+            // the in-flight network call finish in the background; it uses its own UpdateManager
+            // instance and does not affect the next check.
+            var checkTask = updateManager.CheckForUpdatesAsync();
+            var completed = await Task.WhenAny(checkTask, Task.Delay(Timeout.Infinite, cancellationToken));
+            if (completed != checkTask)
+            {
+                // Cancelled before the network call returned.
+                _ = checkTask.ContinueWith(_ => { }, TaskContinuationOptions.OnlyOnFaulted);
+                cancellationToken.ThrowIfCancellationRequested();
+            }
+
+            var update = await checkTask;
             cancellationToken.ThrowIfCancellationRequested();
             if (update == null)
             {
