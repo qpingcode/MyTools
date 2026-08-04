@@ -32,6 +32,9 @@
     <system:String x:Key="UpdateBusy">已有更新操作正在进行。</system:String>
     <system:String x:Key="UpdateAvailable">发现版本 {0}，是否立即下载并重启 MyTools？</system:String>
     <system:String x:Key="UpdateFailed">更新失败：{0}</system:String>
+    <system:String x:Key="UpdateRateLimitExceeded">GitHub 更新检查请求次数已达上限,可能代理 IP 被多人共用。请稍后再试或更换更新代理节点。</system:String>
+    <system:String x:Key="UpdateDownloadAndRestart">下载并重启</system:String>
+    <system:String x:Key="Confirm">确定</system:String>
 
     <!-- 错误信息 -->
     <system:String x:Key="Error">错误</system:String>

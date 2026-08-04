@@ -32,6 +32,9 @@
     <system:String x:Key="UpdateBusy">An update operation is already running.</system:String>
     <system:String x:Key="UpdateAvailable">Version {0} is available. Download and restart MyTools now?</system:String>
     <system:String x:Key="UpdateFailed">Update failed: {0}</system:String>
+    <system:String x:Key="UpdateRateLimitExceeded">GitHub's update-check request limit has been reached. The proxy IP may be shared by multiple users. Please try again later or switch the update proxy node.</system:String>
+    <system:String x:Key="UpdateDownloadAndRestart">Download and Restart</system:String>
+    <system:String x:Key="Confirm">OK</system:String>
 
     <!-- Error Messages -->
     <system:String x:Key="Error">Error</system:String>
