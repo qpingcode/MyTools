@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Http;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
 using MyTools.Common.Config.Interfaces;
@@ -193,6 +195,23 @@ public sealed class UpdateService(
         }
 
         return proxyUri;
+    }
+
+    internal static bool IsGithubRateLimitException(Exception exception)
+    {
+        for (var current = exception; current != null; current = current.InnerException)
+        {
+            if (current is HttpRequestException
+                {
+                    StatusCode: HttpStatusCode.Forbidden or HttpStatusCode.TooManyRequests
+                }
+                && current.Message.Contains("rate limit", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     internal static string? GetGithubRepositoryUrl(string updateUrl)
