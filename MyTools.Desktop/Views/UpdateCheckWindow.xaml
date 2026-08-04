@@ -20,7 +20,6 @@
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="Padding" Value="20,4"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="MinWidth" Value="100"/>
             <Setter Property="Height" Value="28"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -30,7 +29,8 @@
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="4">
                             <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
@@ -107,7 +107,8 @@
                         Margin="0,0,10,0"
                         Visibility="Collapsed"
                         Click="DownloadButton_Click"/>
-                <Button Content="{loc:Loc Confirm, DefaultValue=OK}"
+                <Button x:Name="OkButton"
+                        Content="{loc:Loc Confirm, DefaultValue=OK}"
                         Style="{StaticResource ModernButton}"
                         Click="OkButton_Click"/>
             </StackPanel>

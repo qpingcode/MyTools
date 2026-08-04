@@ -82,7 +82,10 @@ public partial class UpdateCheckWindow
     private void ShowMessage(string message, bool showDownload = false)
     {
         ResultMessage.Text = message;
+        // Show only the relevant action: download-and-restart when an update is available,
+        // otherwise a single OK button to dismiss the message.
         DownloadButton.Visibility = showDownload ? Visibility.Visible : Visibility.Collapsed;
+        OkButton.Visibility = showDownload ? Visibility.Collapsed : Visibility.Visible;
 
         CheckingState.Visibility = Visibility.Collapsed;
         DownloadingState.Visibility = Visibility.Collapsed;
