@@ -147,88 +147,11 @@ public partial class App
         _notifyIcon.ContextMenu.Items.Add(exitItem);
     }
 
-    private async void CheckForUpdates_Click(object sender, RoutedEventArgs e)
+    private void CheckForUpdates_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not MenuItem menuItem)
-        {
-            return;
-        }
-
-        menuItem.IsEnabled = false;
-        var originalHeader = menuItem.Header;
-        try
-        {
-            menuItem.Header = GetCaption("CheckingForUpdates", "Checking for updates...");
-            var updateService = ServiceLocator.GetRequiredService<IUpdateService>();
-            var result = await updateService.CheckForUpdatesAsync();
-            switch (result.Status)
-            {
-                case UpdateCheckStatus.NotConfigured:
-                    MessageBox.Show(
-                        GetCaption("UpdateNotConfigured", "Configure General.UpdateUrl in Settings before checking for updates."),
-                        GetCaption("Info", "Information"), MessageBoxButton.OK, MessageBoxImage.Information);
-                    break;
-                case UpdateCheckStatus.NotInstalled:
-                    MessageBox.Show(
-                        GetCaption("UpdateRequiresInstallation", "Updates are available only when MyTools is installed by Velopack."),
-                        GetCaption("Info", "Information"), MessageBoxButton.OK, MessageBoxImage.Information);
-                    break;
-                case UpdateCheckStatus.NoUpdate:
-                    MessageBox.Show(
-                        GetCaption("NoUpdateAvailable", "You are using the latest version ({0}).", result.Version),
-                        GetCaption("Info", "Information"), MessageBoxButton.OK, MessageBoxImage.Information);
-                    break;
-                case UpdateCheckStatus.Busy:
-                    MessageBox.Show(
-                        GetCaption("UpdateBusy", "An update operation is already running."),
-                        GetCaption("Info", "Information"), MessageBoxButton.OK, MessageBoxImage.Information);
-                    break;
-                case UpdateCheckStatus.UpdateAvailable:
-                    await ConfirmDownloadAndInstallUpdateAsync(updateService, result.Version, menuItem);
-                    break;
-            }
-        }
-        catch (Exception ex)
-        {
-            var logger = ServiceLocator.GetRequiredService<ILogger<App>>();
-            logger.LogError(ex, "Failed to check for or install updates.");
-            var message = UpdateService.IsGithubRateLimitException(ex)
-                ? GetCaption(
-                    "UpdateRateLimitExceeded",
-                    "GitHub's update-check request limit has been reached. The proxy IP may be shared by multiple users. Please try again later or switch the update proxy node.")
-                : GetCaption("UpdateFailed", "Update failed: {0}", ex.Message);
-            MessageBox.Show(
-                message,
-                GetCaption("Error", "Error"), MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-        finally
-        {
-            menuItem.Header = originalHeader;
-            menuItem.IsEnabled = true;
-        }
-    }
-
-    private static async Task ConfirmDownloadAndInstallUpdateAsync(
-        IUpdateService updateService,
-        string? version,
-        MenuItem menuItem)
-    {
-        var answer = MessageBox.Show(
-            GetCaption("UpdateAvailable", "Version {0} is available. Download and restart MyTools now?", version),
-            GetCaption("CheckForUpdates", "Check for Updates"),
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Information);
-        if (answer != MessageBoxResult.Yes)
-        {
-            return;
-        }
-
-        var progress = new Progress<int>(value =>
-        {
-            menuItem.Header = GetCaption("DownloadingUpdate", "Downloading update... {0}%", value);
-        });
-        await updateService.DownloadAndPrepareUpdateAsync(progress);
-        Current.Shutdown();
+        var updateService = ServiceLocator.GetRequiredService<IUpdateService>();
+        var window = new UpdateCheckWindow(updateService);
+        window.Show();
     }
     
     private void OpenConfigFolder_Click(object? sender, EventArgs e)
