@@ -67,6 +67,30 @@ public class UpdateServiceTests
                 .With.Message.EqualTo("The update proxy URL must not contain a username or password."));
     }
 
+    [TestCase(HttpStatusCode.Forbidden, "rate limit exceeded", true)]
+    [TestCase(HttpStatusCode.TooManyRequests, "API rate limit exceeded", true)]
+    [TestCase(HttpStatusCode.Forbidden, "Forbidden", false)]
+    [TestCase(HttpStatusCode.InternalServerError, "rate limit exceeded", false)]
+    public void IsGithubRateLimitException_ClassifiesHttpFailures(
+        HttpStatusCode statusCode,
+        string message,
+        bool expected)
+    {
+        var exception = new HttpRequestException(message, null, statusCode);
+
+        Assert.That(UpdateService.IsGithubRateLimitException(exception), Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void IsGithubRateLimitException_WhenWrapped_FindsInnerHttpFailure()
+    {
+        var exception = new InvalidOperationException(
+            "Update check failed.",
+            new HttpRequestException("Rate limit exceeded", null, HttpStatusCode.Forbidden));
+
+        Assert.That(UpdateService.IsGithubRateLimitException(exception), Is.True);
+    }
+
     [Test]
     public void UpdateProxyFileDownloader_ConfiguresProxyWithoutCredentials()
     {

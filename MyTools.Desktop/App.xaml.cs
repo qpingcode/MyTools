@@ -192,8 +192,13 @@ public partial class App
         {
             var logger = ServiceLocator.GetRequiredService<ILogger<App>>();
             logger.LogError(ex, "Failed to check for or install updates.");
+            var message = UpdateService.IsGithubRateLimitException(ex)
+                ? GetCaption(
+                    "UpdateRateLimitExceeded",
+                    "GitHub's update-check request limit has been reached. The proxy IP may be shared by multiple users. Please try again later or switch the update proxy node.")
+                : GetCaption("UpdateFailed", "Update failed: {0}", ex.Message);
             MessageBox.Show(
-                GetCaption("UpdateFailed", "Update failed: {0}", ex.Message),
+                message,
                 GetCaption("Error", "Error"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
