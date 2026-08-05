@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Caching.Memory;
@@ -18,7 +19,12 @@ public class Searcher(IGlobalSearchRegistry globalSearchRegistry, IMemoryCache c
 
         if (plugin != null)
         {
+            var pluginStopwatch = Stopwatch.StartNew();
             var result = await plugin.SearchAsync(searchText, cancellationToken, new SearchOptions(SearchFrom.Plugin));
+            pluginStopwatch.Stop();
+            logger.LogInformation(
+                "Search completed: query={Query} plugin={PluginName} total={TotalMs}ms",
+                searchText, plugin.Name, pluginStopwatch.ElapsedMilliseconds);
             var prepared = PrepareResultItems(result.Items, plugin, searchText).ToList();
             ApplyHistoryBoosts(prepared, searchText);
             return Result.CreateSuccessResult(prepared);
@@ -70,14 +76,18 @@ public class Searcher(IGlobalSearchRegistry globalSearchRegistry, IMemoryCache c
 
     private async Task<Result> GlobalSearchAsync(string query, CancellationToken cancellationToken)
     {
+        var totalStopwatch = Stopwatch.StartNew();
+
         var tasks = globalSearchRegistry.Plugins
             .Where(p => p.IsEnabled && p.IsGlobalSearchPlugin)
             .Select(async plugin =>
             {
+                var pluginStopwatch = Stopwatch.StartNew();
                 try
                 {
                     var result = await plugin.SearchAsync(query, cancellationToken, new SearchOptions(SearchFrom.Global));
-                    return (Plugin: plugin, Result: result);
+                    pluginStopwatch.Stop();
+                    return (Plugin: plugin, Result: result, ElapsedMs: pluginStopwatch.ElapsedMilliseconds);
                 }
                 catch (OperationCanceledException)
                 {
@@ -85,13 +95,35 @@ public class Searcher(IGlobalSearchRegistry globalSearchRegistry, IMemoryCache c
                 }
                 catch (Exception ex)
                 {
+                    pluginStopwatch.Stop();
                     logger.LogError(ex, "Global search failed for plugin {PluginName}.", plugin.Name);
-                    return (Plugin: plugin, Result: Result.CreateFailure(ex.Message, ex));
+                    return (Plugin: plugin, Result: Result.CreateFailure(ex.Message, ex), ElapsedMs: pluginStopwatch.ElapsedMilliseconds);
                 }
             })
             .ToList();
 
         var results = await Task.WhenAll(tasks);
+        totalStopwatch.Stop();
+
+        var breakdown = string.Join(", ", results
+            .OrderByDescending(r => r.ElapsedMs)
+            .Select(r => $"{r.Plugin.Name}:{r.ElapsedMs}ms"));
+        var failedPlugins = string.Join(", ", results
+            .Where(r => !r.Result.Success)
+            .Select(r => r.Plugin.Name));
+        if (failedPlugins.Length == 0)
+        {
+            logger.LogInformation(
+                "Search completed: query={Query} total={TotalMs}ms plugins=[{PluginBreakdown}]",
+                query, totalStopwatch.ElapsedMilliseconds, breakdown);
+        }
+        else
+        {
+            logger.LogWarning(
+                "Search completed with failures: query={Query} total={TotalMs}ms plugins=[{PluginBreakdown}] failed=[{FailedPlugins}]",
+                query, totalStopwatch.ElapsedMilliseconds, breakdown, failedPlugins);
+        }
+
         var items = results
             .Where(pair => pair.Result.Success)
             .SelectMany(pair => PrepareResultItems(pair.Result.Items, pair.Plugin, query))

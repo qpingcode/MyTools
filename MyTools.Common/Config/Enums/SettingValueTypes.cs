@@ -24,7 +24,12 @@ public enum SettingValueTypes
     /// 应用显示语言
     /// </summary>
     Language,
-    
+
+    /// <summary>
+    /// 日志级别
+    /// </summary>
+    LogLevel,
+
     /// <summary>
     /// 浮点数值
     /// </summary>

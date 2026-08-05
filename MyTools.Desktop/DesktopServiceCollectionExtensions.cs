@@ -17,7 +17,6 @@ using MyTools.Desktop.ViewModels;
 using MyTools.Desktop.Views;
 using MyTools.Plugins.NodePlugins;
 using Serilog;
-using Serilog.Events;
 
 namespace MyTools.Desktop;
 
@@ -56,14 +55,18 @@ public static class DesktopServiceCollectionExtensions
     
     public static IServiceCollection AddLog(this IServiceCollection serviceCollection)
     {
+        // The level switch lets the minimum log level change at runtime (via LogLevelService)
+        // without rebuilding the logger or restarting the app.
+        var logLevelService = new LogLevelService();
         var logPath = Path.Join(ConfigPath.Base, "logs/log.txt");
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
+            .MinimumLevel.ControlledBy(logLevelService.LevelSwitch)
             .WriteTo.Console()
-            .WriteTo.File(logPath, rollingInterval: RollingInterval.Day, restrictedToMinimumLevel: LogEventLevel.Information)
+            .WriteTo.File(logPath, rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7)
             .CreateLogger();
-        
-        
+
+        serviceCollection.AddSingleton(logLevelService);
+
         serviceCollection.AddLogging(loggingBuilder =>
         {
             loggingBuilder.ClearProviders();

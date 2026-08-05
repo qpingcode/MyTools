@@ -21,6 +21,7 @@
                 <ResourceDictionary Source="/MyTools.Desktop;component/Views/Templates/IntegerSettingTemplate.xaml" />
                 <ResourceDictionary Source="/MyTools.Desktop;component/Views/Templates/StringSettingTemplate.xaml" />
                 <ResourceDictionary Source="/MyTools.Desktop;component/Views/Templates/LanguageSettingTemplate.xaml" />
+                <ResourceDictionary Source="/MyTools.Desktop;component/Views/Templates/LogLevelSettingTemplate.xaml" />
                 <ResourceDictionary Source="/MyTools.Desktop;component/Views/Templates/DoubleSettingTemplate.xaml" />
                 <ResourceDictionary Source="/MyTools.Desktop;component/Views/Templates/CustomSettingTemplate.xaml" />
             </ResourceDictionary.MergedDictionaries>

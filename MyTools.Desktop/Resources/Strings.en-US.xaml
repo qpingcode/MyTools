@@ -16,8 +16,16 @@
     <system:String x:Key="SearchHotKey">Search Hotkey:</system:String>
     <system:String x:Key="Change">Change</system:String>
 
+    <!-- Log Levels -->
+    <system:String x:Key="LogLevel.Debug">Debug</system:String>
+    <system:String x:Key="LogLevel.Information">Information</system:String>
+    <system:String x:Key="LogLevel.Warning">Warning</system:String>
+    <system:String x:Key="LogLevel.Error">Error</system:String>
+
     <!-- System Tray -->
     <system:String x:Key="ShowMainWindow">Show Main Window</system:String>
+    <system:String x:Key="OpenConfigFolder">Open Config Folder</system:String>
+    <system:String x:Key="OpenLogFolder">Open Log Folder</system:String>
     <system:String x:Key="Exit">Exit</system:String>
     <system:String x:Key="Language">Language</system:String>
     <system:String x:Key="Language.zh-CN">Chinese</system:String>

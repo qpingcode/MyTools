@@ -203,6 +203,10 @@ public partial class ConfigurationViewModel : ObservableRecipient
             }
 
             _registry.SaveChanges();
+
+            // Apply the log level immediately if it was changed.
+            ServiceLocator.GetRequiredService<LogLevelService>().ApplyFromSettings(_registry);
+
             var languageChanged = requestedLocale != null
                                   && languageService.SetLanguageForNextStartup(requestedLocale);
             OnPropertyChanged(nameof(HasUnsavedChanges));

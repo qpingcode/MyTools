@@ -16,8 +16,16 @@
     <system:String x:Key="SearchHotKey">搜索热键:</system:String>
     <system:String x:Key="Change">修改</system:String>
 
+    <!-- 日志级别 -->
+    <system:String x:Key="LogLevel.Debug">调试</system:String>
+    <system:String x:Key="LogLevel.Information">信息</system:String>
+    <system:String x:Key="LogLevel.Warning">警告</system:String>
+    <system:String x:Key="LogLevel.Error">错误</system:String>
+
     <!-- 系统托盘 -->
     <system:String x:Key="ShowMainWindow">显示主窗口</system:String>
+    <system:String x:Key="OpenConfigFolder">打开配置文件夹</system:String>
+    <system:String x:Key="OpenLogFolder">打开日志文件夹</system:String>
     <system:String x:Key="Exit">退出</system:String>
     <system:String x:Key="Language">语言</system:String>
     <system:String x:Key="Language.zh-CN">中文</system:String>
