@@ -146,5 +146,10 @@
   <data name="Action.KillProcess.Failed" xml:space="preserve"><value>Failed to kill process: {{message}}</value></data>
   <data name="Action.ExecuteFailed.Title" xml:space="preserve"><value>Action execution failed</value></data>
   <data name="Action.ExecuteFailed.Message" xml:space="preserve"><value>Cannot execute {{action}}: {{message}}</value></data>
+  <data name="UpdateDownloadAndRestart" xml:space="preserve"><value>Download and Restart</value></data>
+  <data name="LogLevel.Debug" xml:space="preserve"><value>Debug</value></data>
+  <data name="LogLevel.Information" xml:space="preserve"><value>Information</value></data>
+  <data name="LogLevel.Warning" xml:space="preserve"><value>Warning</value></data>
+  <data name="LogLevel.Error" xml:space="preserve"><value>Error</value></data>
 </root>
 
