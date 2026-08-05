@@ -15,6 +15,7 @@ using MyTools.Desktop.Storage;
 using MyTools.Desktop.Utils;
 using MyTools.Desktop.ViewModels;
 using MyTools.Desktop.Views;
+using MyTools.Plugins;
 using MyTools.Plugins.NodePlugins;
 using Serilog;
 
@@ -22,6 +23,19 @@ namespace MyTools.Desktop;
 
 public static class DesktopServiceCollectionExtensions
 {
+    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+    {
+        services.AddSingleton<MouseGestureDetector>();
+        services.AddPluginServices();
+        services.AddDesktopServices();
+        services.AddConfigurationSystem();
+        services.AddLog();
+        services.AddMemoryCache();
+        services.AddSingleton<AppBootstrapper>();
+
+        return services;
+    }
+
     public static IServiceCollection AddDesktopServices(this IServiceCollection serviceCollection)
     {
         serviceCollection.AddSingleton<MessageOnlyWindow>();

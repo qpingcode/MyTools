@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Threading;
 using Hardcodet.Wpf.TaskbarNotification;
 using Hardcodet.Wpf.TaskbarNotification.Interop;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MyTools.Common.Config;
 using MyTools.Common.DependencyInjection;
@@ -27,6 +28,8 @@ public partial class App
     private bool ownsMutex;
     private TaskbarIcon? _notifyIcon;
     private AppBootstrapper? appBootstrapper;
+    private ServiceProvider? serviceProvider;
+
     protected override void OnStartup(StartupEventArgs e)
     {
         _mutex = new Mutex(true, appName, out var createdNew);
@@ -40,7 +43,16 @@ public partial class App
         
         DispatcherUnhandledException += App_DispatcherUnhandledException;
         
-        appBootstrapper = new AppBootstrapper();
+        var services = new ServiceCollection();
+        services.AddApplicationServices();
+        serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions
+        {
+            ValidateOnBuild = true,
+            ValidateScopes = true
+        });
+        ServiceLocator.ServiceProvider = serviceProvider;
+
+        appBootstrapper = serviceProvider.GetRequiredService<AppBootstrapper>();
         appBootstrapper.Init();
         
         InitializeNotifyIcon();
@@ -260,7 +272,7 @@ public partial class App
     protected override void OnExit(ExitEventArgs e)
     {
         _notifyIcon?.Dispose();
-        appBootstrapper?.Dispose();
+        serviceProvider?.Dispose();
         if (ownsMutex)
         {
             _mutex?.ReleaseMutex();

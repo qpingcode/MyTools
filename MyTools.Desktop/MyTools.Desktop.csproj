@@ -89,6 +89,10 @@
         <PackageReference Include="Velopack" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Properties\" />
+    </ItemGroup>
+
     <Target Name="PrepareVelopackRelease"
             BeforeTargets="PrepareForPublish"
             Condition="'$(CreateVelopackRelease)' == 'true' and '$(DesignTimeBuild)' != 'true'">
