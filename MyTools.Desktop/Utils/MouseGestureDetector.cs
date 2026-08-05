@@ -250,7 +250,7 @@ public class MouseGestureDetector : IDisposable
         
         if (!_initialMoveValid)
         {
-            _logger.LogDebug("Mouse Right Click Up ( Invalid Move, Simulating Right Click )");
+           // _logger.LogDebug("Mouse Right Click Up ( Invalid Move, Simulating Right Click )");
             _mouseHelper.RightClick(_point);
             Application.Current.Dispatcher.Invoke(() =>
             {
@@ -262,7 +262,7 @@ public class MouseGestureDetector : IDisposable
         else
         {
             ResetInvalidMove();
-            _logger.LogDebug("Mouse Right Click Up");
+           // _logger.LogDebug("Mouse Right Click Up");
         }
         
         Application.Current.Dispatcher.Invoke(() =>

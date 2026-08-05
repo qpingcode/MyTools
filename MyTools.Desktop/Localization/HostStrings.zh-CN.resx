@@ -74,6 +74,8 @@
   <data name="Configuration.General.UpdateChannel.Description" xml:space="preserve"><value>Velopack 更新通道，例如 win、stable 或 beta</value></data>
   <data name="Configuration.General.UpdateProxyUrl.Title" xml:space="preserve"><value>更新代理</value></data>
   <data name="Configuration.General.UpdateProxyUrl.Description" xml:space="preserve"><value>可选代理地址；留空时使用直连</value></data>
+  <data name="Configuration.General.LogLevel.Title" xml:space="preserve"><value>日志级别</value></data>
+  <data name="Configuration.General.LogLevel.Description" xml:space="preserve"><value>写入日志文件的最低消息级别</value></data>
   <data name="Configuration.Plugins.Name" xml:space="preserve"><value>插件</value></data>
   <data name="Configuration.Plugins.Description" xml:space="preserve"><value>插件设置</value></data>
   <data name="Plugin.Calculator.Name" xml:space="preserve"><value>计算器</value></data>

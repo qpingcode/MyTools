@@ -40,7 +40,11 @@ public class AppBootstrapper : IDisposable
         EnsureMessageOnlyWindow();
         
         InitializeConfigurationData();
-        
+
+        // Apply the user-configured log level now that settings have been loaded.
+        ServiceLocator.GetRequiredService<LogLevelService>().ApplyFromSettings(
+            ServiceLocator.GetRequiredService<IConfigurationRegistry>());
+
         RegisterGlobalHotKey(appConfig.SearchHotKey);
         EnableGestureDetection(appConfig.EnableGesture);
         LoadPlugins();
@@ -273,6 +277,11 @@ public class AppBootstrapper : IDisposable
             registry.AddSetting(generalCategory, "UpdateProxyUrl",
                 localization.GetCaption("Configuration.General.UpdateProxyUrl.Title", "Update proxy"),
                 localization.GetCaption("Configuration.General.UpdateProxyUrl.Description", "Optional proxy URL; leave empty for a direct connection"), string.Empty);
+            registry.AddSetting(generalCategory, "LogLevel",
+                localization.GetCaption("Configuration.General.LogLevel.Title", "Log level"),
+                localization.GetCaption("Configuration.General.LogLevel.Description", "Minimum level of messages written to the log file"),
+                "Debug",
+                valueType: SettingValueTypes.LogLevel);
             
             // Add Plugin Settings
             registry.AddCategory(
