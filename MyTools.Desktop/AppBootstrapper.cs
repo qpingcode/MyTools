@@ -1,11 +1,9 @@
 using System.IO;
 using System.Windows.Input;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MyTools.Common.Config;
 using MyTools.Common.Config.Interfaces;
 using MyTools.Common.Config.Enums;
-using MyTools.Common.DependencyInjection;
 using MyTools.Common.Localization;
 using MyTools.Desktop.Models;
 using MyTools.Desktop.Services;
@@ -20,19 +18,49 @@ namespace MyTools.Desktop;
 
 public class AppBootstrapper : IDisposable
 {
-    private GestureRegistry? gestureRegistry;
-    private HotKeyManager? hotKeyManager;
-    private ServiceProvider? serviceProvider;
+    private readonly AppConfigService appConfigService;
+    private readonly MessageOnlyWindow messageOnlyWindow;
+    private readonly GestureRegistry gestureRegistry;
+    private readonly MouseHelper mouseHelper;
+    private readonly HotKeyManager hotKeyManager;
+    private readonly IReadOnlyList<IPlugin> plugins;
+    private readonly NodePluginCatalog nodePluginCatalog;
+    private readonly PluginLoader pluginLoader;
+    private readonly ILogger<AppBootstrapper> logger;
+    private readonly NodePluginDetailNavigator nodePluginDetailNavigator;
+    private readonly IConfigurationRegistry registry;
+    private readonly ILocalizationService localization;
+
+    public AppBootstrapper(
+        AppConfigService appConfigService,
+        MessageOnlyWindow messageOnlyWindow,
+        GestureRegistry gestureRegistry,
+        MouseHelper mouseHelper,
+        HotKeyManager hotKeyManager,
+        IEnumerable<IPlugin> plugins,
+        NodePluginCatalog nodePluginCatalog,
+        PluginLoader pluginLoader,
+        ILogger<AppBootstrapper> logger,
+        NodePluginDetailNavigator nodePluginDetailNavigator,
+        IConfigurationRegistry registry,
+        ILocalizationService localization)
+    {
+        this.appConfigService = appConfigService;
+        this.messageOnlyWindow = messageOnlyWindow;
+        this.gestureRegistry = gestureRegistry;
+        this.mouseHelper = mouseHelper;
+        this.hotKeyManager = hotKeyManager;
+        this.plugins = plugins.ToArray();
+        this.nodePluginCatalog = nodePluginCatalog;
+        this.pluginLoader = pluginLoader;
+        this.logger = logger;
+        this.nodePluginDetailNavigator = nodePluginDetailNavigator;
+        this.registry = registry;
+        this.localization = localization;
+    }
 
     public void Init()
     {
-        var serviceCollection = new ServiceCollection();
-        ConfigureServices(serviceCollection);
-        
-        serviceProvider = serviceCollection.BuildServiceProvider();
-        ServiceLocator.ServiceProvider = serviceProvider;
-
-        var appConfigService = serviceProvider.GetRequiredService<AppConfigService>();
         var appConfig = appConfigService.AppConfig;
         
         // Ensure that MessageOnlyWindow has been loaded and Windows messages have been properly monitored
@@ -52,7 +80,6 @@ public class AppBootstrapper : IDisposable
     
     private void EnsureMessageOnlyWindow()
     {
-        var messageOnlyWindow = ServiceLocator.GetRequiredService<MessageOnlyWindow>();
         messageOnlyWindow.Show();
     }
 
@@ -63,9 +90,6 @@ public class AppBootstrapper : IDisposable
             return;
         }
         
-        gestureRegistry = ServiceLocator.GetRequiredService<GestureRegistry>();
-        var mouseHelper = ServiceLocator.GetRequiredService<MouseHelper>();
-
         MoveDirection[] downRight = [MoveDirection.Down, MoveDirection.Right];
         gestureRegistry.RegisterGesture(downRight, _ => KeyboardHelper.SimulateKeyPress(ModifierKeys.Control, Key.W), "Close Tab");
         gestureRegistry.RegisterGesture(downRight, ["rider", "rider64", "devenv"], _ => KeyboardHelper.SimulateKeyPress(ModifierKeys.Control, Key.F4), "Close Tab");
@@ -98,32 +122,13 @@ public class AppBootstrapper : IDisposable
         gestureThread.Start();
     }
 
-    private void ConfigureServices(ServiceCollection serviceCollection)
-    {
-        serviceCollection.AddSingleton<MouseGestureDetector>();
-        
-        // register plugins
-        serviceCollection.AddPluginServices();
-        
-        // register windows & services
-        serviceCollection.AddDesktopServices();
-        
-        // register configuration system
-        serviceCollection.AddConfigurationSystem();
-        
-        serviceCollection.AddLog();
-        
-        serviceCollection.AddMemoryCache();
-    }
-    
     private void RegisterGlobalHotKey(HotKeyConfig SearchHotKey)
     {
-        hotKeyManager = ServiceLocator.GetRequiredService<HotKeyManager>();
         hotKeyManager.RegisterySearchHotKey(SearchHotKey);
 
         hotKeyManager.RegisterHotKey(Key.V, ModifierKeys.Control | ModifierKeys.Shift, () =>
         {
-            var clipboardPlugin = ServiceLocator.GetServices<IPlugin>().OfType<ClipBoardPlugin>().First();
+            var clipboardPlugin = plugins.OfType<ClipBoardPlugin>().First();
             WindowHelper.ShowSearchWindow(clipboardPlugin);
         });
     }
@@ -132,21 +137,14 @@ public class AppBootstrapper : IDisposable
     {
         CopyExampleWhenConfigNotExists();
 
-        var nodePluginCatalog = ServiceLocator.GetRequiredService<NodePluginCatalog>();
         nodePluginCatalog.Reload();
         
-        var pluginLoader = ServiceLocator.GetRequiredService<PluginLoader>();
         var loadedPlugins = pluginLoader.InitPlugins();
         RegisterNodePluginHotKeys(loadedPlugins.OfType<NodePlugin>());
     }
 
     private void RegisterNodePluginHotKeys(IEnumerable<NodePlugin> nodePlugins)
     {
-        if (hotKeyManager == null)
-        {
-            hotKeyManager = ServiceLocator.GetRequiredService<HotKeyManager>();
-        }
-
         foreach (var nodePlugin in nodePlugins)
         {
             if (string.IsNullOrWhiteSpace(nodePlugin.HotKey))
@@ -166,13 +164,12 @@ public class AppBootstrapper : IDisposable
             }
             catch (InvalidOperationException ex)
             {
-                var logger = ServiceLocator.GetRequiredService<ILogger<AppBootstrapper>>();
                 logger.LogError(ex, "Cannot register hotkey {HotKey} for node plugin {PluginName}.", nodePlugin.HotKey, nodePlugin.Name);
             }
         }
     }
 
-    private static void OpenNodePluginDetail(NodePlugin nodePlugin)
+    private void OpenNodePluginDetail(NodePlugin nodePlugin)
     {
         if (WindowHelper.TryFocusNodePluginDetail(nodePlugin))
         {
@@ -187,7 +184,7 @@ public class AppBootstrapper : IDisposable
         }
 
         WindowHelper.ShowSearchWindow(text: context.SearchText);
-        ServiceLocator.GetRequiredService<NodePluginDetailNavigator>().OpenDetail(context);
+        nodePluginDetailNavigator.OpenDetail(context);
         WindowHelper.FocusCurrentNodePluginDetailInput();
     }
     
@@ -246,34 +243,38 @@ public class AppBootstrapper : IDisposable
     {
         try
         {
-            var registry = ServiceLocator.GetRequiredService<IConfigurationRegistry>();
-            var localization = ServiceLocator.GetRequiredService<ILocalizationService>();
-            
             var generalCategory = registry.AddCategory(
                 "General",
                 localization.GetCaption("Configuration.General.Name", "General"),
                 localization.GetCaption("Configuration.General.Description", "General Settings"));
+            
             var languageSetting = registry.AddSetting(generalCategory, "Language",
                 localization.GetCaption("Configuration.General.Language.Title", "Language"),
                 localization.GetCaption("Configuration.General.Language.Description", "Select the application display language"),
                 localization.CurrentLocale,
                 options: SettingOptions.RequiresRestart,
                 valueType: SettingValueTypes.Language);
+            
             registry.AddSetting(generalCategory, "AutoStart",
                 localization.GetCaption("Configuration.General.AutoStart.Title", "Auto start"),
                 localization.GetCaption("Configuration.General.AutoStart.Description", "Run MyTools when the system starts"), false);
+            
             registry.AddSetting(generalCategory, "MaxHistory",
                 localization.GetCaption("Configuration.General.MaxHistory.Title", "Maximum history"),
                 localization.GetCaption("Configuration.General.MaxHistory.Description", "Maximum number of history items to keep"), 100);
+            
             registry.AddSetting(generalCategory, "SearchDelay",
                 localization.GetCaption("Configuration.General.SearchDelay.Title", "Search delay"),
                 localization.GetCaption("Configuration.General.SearchDelay.Description", "Search debounce delay in milliseconds"), 100.0);
+            
             registry.AddSetting(generalCategory, "UpdateUrl",
                 localization.GetCaption("Configuration.General.UpdateUrl.Title", "Update URL"),
                 localization.GetCaption("Configuration.General.UpdateUrl.Description", "HTTPS or local path containing Velopack releases"), UpdateService.DefaultUpdateUrl);
+            
             registry.AddSetting(generalCategory, "UpdateChannel",
                 localization.GetCaption("Configuration.General.UpdateChannel.Title", "Update channel"),
                 localization.GetCaption("Configuration.General.UpdateChannel.Description", "Velopack update channel, such as win, stable or beta"), "win");
+            
             registry.AddSetting(generalCategory, "UpdateProxyUrl",
                 localization.GetCaption("Configuration.General.UpdateProxyUrl.Title", "Update proxy"),
                 localization.GetCaption("Configuration.General.UpdateProxyUrl.Description", "Optional proxy URL; leave empty for a direct connection"), string.Empty);
@@ -289,7 +290,7 @@ public class AppBootstrapper : IDisposable
                 localization.GetCaption("Configuration.Plugins.Name", "Plugins"),
                 localization.GetCaption("Configuration.Plugins.Description", "Plugin Settings"),
                 IsSelectable: false);
-            var plugins = ServiceLocator.GetServices<IPlugin>();
+            
             foreach (var plugin in plugins)
             {
                 plugin.RegisterSettings(registry);
@@ -345,13 +346,5 @@ public class AppBootstrapper : IDisposable
     public void Dispose()
     {
         hotKeyManager?.UnregisterAllHotKeys();
-        if (serviceProvider != null)
-        {
-            serviceProvider.Dispose();
-        }
-        else
-        {
-            gestureRegistry?.Dispose();
-        }
     }
 }
