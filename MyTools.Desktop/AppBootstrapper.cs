@@ -27,6 +27,7 @@ public class AppBootstrapper : IDisposable
     private readonly NodePluginCatalog nodePluginCatalog;
     private readonly PluginLoader pluginLoader;
     private readonly ILogger<AppBootstrapper> logger;
+    private readonly LogLevelService logLevelService;
     private readonly NodePluginDetailNavigator nodePluginDetailNavigator;
     private readonly IConfigurationRegistry registry;
     private readonly ILocalizationService localization;
@@ -41,6 +42,7 @@ public class AppBootstrapper : IDisposable
         NodePluginCatalog nodePluginCatalog,
         PluginLoader pluginLoader,
         ILogger<AppBootstrapper> logger,
+        LogLevelService logLevelService,
         NodePluginDetailNavigator nodePluginDetailNavigator,
         IConfigurationRegistry registry,
         ILocalizationService localization)
@@ -54,6 +56,7 @@ public class AppBootstrapper : IDisposable
         this.nodePluginCatalog = nodePluginCatalog;
         this.pluginLoader = pluginLoader;
         this.logger = logger;
+        this.logLevelService = logLevelService;
         this.nodePluginDetailNavigator = nodePluginDetailNavigator;
         this.registry = registry;
         this.localization = localization;
@@ -70,8 +73,7 @@ public class AppBootstrapper : IDisposable
         InitializeConfigurationData();
 
         // Apply the user-configured log level now that settings have been loaded.
-        ServiceLocator.GetRequiredService<LogLevelService>().ApplyFromSettings(
-            ServiceLocator.GetRequiredService<IConfigurationRegistry>());
+        logLevelService.ApplyFromSettings(registry);
 
         RegisterGlobalHotKey(appConfig.SearchHotKey);
         EnableGestureDetection(appConfig.EnableGesture);
