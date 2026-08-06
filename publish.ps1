@@ -29,7 +29,7 @@
 
       --property:SelfContained=true|false
           true 表示发布包自带 .NET Runtime；false 表示目标电脑必须安装 .NET Desktop Runtime。
-          启用 CreateVelopackRelease 且未指定时，默认值为 true。
+          启用 CreateVelopackRelease 且未指定时，默认值为 false。
 
       --property:CreateVelopackRelease=true
           显式启用项目中的 Velopack MSBuild Target。没有该参数时只执行普通 dotnet publish，
@@ -148,7 +148,7 @@ if (-not (Test-Path -LiteralPath $versionFile -PathType Leaf)) {
 $currentVersion = (Get-Content -LiteralPath $versionFile -Raw).Trim()
 $releaseVersion = Get-NextPatchVersion -CurrentVersion $currentVersion
 $channel = "win"
-$frameworkDependent = $false
+$frameworkDependent = $true
 
 Write-Host "MyTools 交互式发布"
 Write-Host "最近发布版本: $currentVersion"
