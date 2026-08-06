@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     以交互方式发布 MyTools。直接运行 .\publish.ps1 即可按默认规则将 patch 版本加一。
 
@@ -15,7 +15,7 @@
        dotnet publish .\MyTools.Desktop\MyTools.Desktop.csproj `
            --configuration Release `
            --runtime win-x64 `
-           --self-contained true `
+           --property:SelfContained=true `
            --property:CreateVelopackRelease=true `
            --property:Version=1.0.2 `
            --property:VelopackChannel=win
@@ -27,7 +27,7 @@
       --runtime win-x64
           发布目标运行时。启用 CreateVelopackRelease 且未指定时，默认也是 win-x64。
 
-      --self-contained true|false
+      --property:SelfContained=true|false
           true 表示发布包自带 .NET Runtime；false 表示目标电脑必须安装 .NET Desktop Runtime。
           启用 CreateVelopackRelease 且未指定时，默认值为 true。
 
@@ -167,7 +167,7 @@ $publishArguments = @(
     $projectPath,
     "--configuration", "Release",
     "--runtime", "win-x64",
-    "--self-contained", $selfContained,
+    "--property:SelfContained=$selfContained",
     "--property:CreateVelopackRelease=true",
     "--property:VelopackChannel=$channel",
     "--property:Version=$releaseVersion"
