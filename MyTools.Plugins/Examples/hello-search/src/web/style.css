@@ -1,8 +1,8 @@
 body {
     margin: 0;
     font-family: "Segoe UI", sans-serif;
-    background: linear-gradient(135deg, #141414, #20252d);
-    color: #f4f4f4;
+    background: var(--mt-surface-bg, #141414);
+    color: var(--mt-text, #f4f4f4);
 }
 
 .page {
@@ -13,7 +13,7 @@ body {
     display: inline-block;
     padding: 6px 10px;
     border-radius: 999px;
-    background: #2f7cf6;
+    background: var(--mt-accent, #2f7cf6);
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -25,15 +25,15 @@ h1 {
 }
 
 #subtitle {
-    color: #c4c9d4;
+    color: var(--mt-text-muted, #c4c9d4);
     margin-bottom: 20px;
 }
 
 .card {
     border-radius: 16px;
     padding: 18px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--mt-surface, rgba(255, 255, 255, 0.06));
+    border: 1px solid var(--mt-border-subtle, rgba(255, 255, 255, 0.08));
 }
 
 .secondary-card {
@@ -43,7 +43,7 @@ h1 {
 .label {
     font-size: 12px;
     text-transform: uppercase;
-    color: #8ea1bf;
+    color: var(--mt-text-tertiary, #8ea1bf);
     letter-spacing: 0.08em;
 }
 
@@ -58,7 +58,7 @@ h1 {
     margin: 12px 0 0;
     white-space: pre-wrap;
     word-break: break-word;
-    color: #d7dfef;
+    color: var(--mt-text, #d7dfef);
     font-size: 14px;
 }
 
@@ -66,8 +66,8 @@ h1 {
     margin-top: 18px;
     border: 0;
     border-radius: 12px;
-    background: #2f7cf6;
-    color: white;
+    background: var(--mt-accent, #2f7cf6);
+    color: var(--mt-text, white);
     padding: 12px 16px;
     font-size: 14px;
     cursor: pointer;

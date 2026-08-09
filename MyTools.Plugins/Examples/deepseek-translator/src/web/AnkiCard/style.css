@@ -7,8 +7,8 @@ body {
 
 body {
     font-family: "Segoe UI", sans-serif;
-    background: #1e1e1e;
-    color: #ffffff;
+    background: var(--mt-surface-bg, #1e1e1e);
+    color: var(--mt-text, #ffffff);
 }
 
 .page {
@@ -25,8 +25,8 @@ body {
     min-height: 0;
     border-radius: 12px;
     padding: 5px;
-    background: #1a1a1a;
-    border: 1px solid #292929;
+    background: var(--mt-surface, #1a1a1a);
+    border: 1px solid var(--mt-border, #292929);
     overflow: hidden;
 }
 
@@ -36,13 +36,13 @@ body {
     gap: 8px;
     flex: 0 0 auto;
     padding: 8px 10px;
-    border-bottom: 1px solid #292929;
+    border-bottom: 1px solid var(--mt-border, #292929);
 }
 
 .label {
     font-size: 11px;
     text-transform: uppercase;
-    color: #cccccc;
+    color: var(--mt-text-muted, #cccccc);
     letter-spacing: 0.08em;
 }
 
@@ -52,10 +52,10 @@ body {
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    border: 1px solid #444444;
+    border: 1px solid var(--mt-border, #444444);
     border-radius: 999px;
-    background: #242424;
-    color: #cccccc;
+    background: var(--mt-surface-alt, #242424);
+    color: var(--mt-text-muted, #cccccc);
     font: inherit;
     cursor: pointer;
 }
@@ -83,22 +83,22 @@ body {
 
 .title-icon-button:hover,
 .card-actions button:hover:not(:disabled) {
-    border-color: #60a5fa;
-    color: #ffffff;
-    background: #2d3748;
+    border-color: var(--mt-accent, #60a5fa);
+    color: var(--mt-text, #ffffff);
+    background: var(--mt-surface-hover, #2d3748);
 }
 
 .title-icon-button:focus-visible,
 .card-actions button:focus-visible {
-    outline: 2px solid rgba(96, 165, 250, 0.65);
+    outline: 2px solid var(--mt-accent, rgba(96, 165, 250, 0.65));
     outline-offset: 2px;
 }
 
 .summary {
     margin-left: auto;
-    border: 1px solid #555555;
+    border: 1px solid var(--mt-border, #555555);
     border-radius: 999px;
-    color: #aaaaaa;
+    color: var(--mt-text-tertiary, #aaaaaa);
     padding: 1px 7px;
     font-size: 10px;
 }
@@ -115,14 +115,14 @@ body {
 }
 
 .card-host.empty {
-    color: #666666;
+    color: var(--mt-text-tertiary, #666666);
 }
 
 .source {
     min-width: 0;
     max-width: 100%;
     overflow-wrap: anywhere;
-    color: #aaaaaa;
+    color: var(--mt-text-tertiary, #aaaaaa);
     font-size: 12px;
     margin-bottom: 10px;
 }
@@ -144,7 +144,7 @@ body {
 }
 
 .phonetic {
-    color: #aaaaaa;
+    color: var(--mt-text-tertiary, #aaaaaa);
     font-size: 16px;
 }
 
@@ -154,10 +154,10 @@ body {
     justify-content: center;
     width: 24px;
     height: 24px;
-    border: 1px solid #555555;
+    border: 1px solid var(--mt-border, #555555);
     border-radius: 999px;
-    background: #333333;
-    color: #cccccc;
+    background: var(--mt-surface-alt, #333333);
+    color: var(--mt-text-muted, #cccccc);
     padding: 0;
     font-size: 13px;
     line-height: 1;
@@ -165,9 +165,9 @@ body {
 }
 
 .pronounce-button:hover {
-    border-color: #666666;
-    color: #ffffff;
-    background: #3a3a3a;
+    border-color: var(--mt-border-subtle, #666666);
+    color: var(--mt-text, #ffffff);
+    background: var(--mt-surface-hover, #3a3a3a);
 }
 
 .options {
@@ -181,10 +181,10 @@ body {
     min-width: 0;
     max-width: 100%;
     width: 100%;
-    border: 1px solid #555555;
+    border: 1px solid var(--mt-border, #555555);
     border-radius: 8px;
-    background: #222222;
-    color: #ffffff;
+    background: var(--mt-surface, #222222);
+    color: var(--mt-text, #ffffff);
     padding: 9px 10px;
     text-align: left;
     font: inherit;
@@ -194,7 +194,7 @@ body {
 }
 
 .option:hover {
-    background: #333333;
+    background: var(--mt-surface-alt, #333333);
 }
 
 .browse-option {
@@ -202,7 +202,7 @@ body {
 }
 
 .browse-option:hover {
-    background: #222222;
+    background: var(--mt-surface, #222222);
 }
 
 .option.correct {
@@ -240,10 +240,10 @@ body {
 }
 
 .review-actions button {
-    border: 1px solid #555555;
+    border: 1px solid var(--mt-border, #555555);
     border-radius: 8px;
-    background: #333333;
-    color: #cccccc;
+    background: var(--mt-surface-alt, #333333);
+    color: var(--mt-text-muted, #cccccc);
     padding: 8px;
     font: inherit;
     cursor: pointer;
@@ -260,39 +260,39 @@ body {
     display: inline-flex;
     justify-content: center;
     min-width: 132px;
-    border: 1px solid #555555;
+    border: 1px solid var(--mt-border, #555555);
     border-radius: 8px;
-    background: #333333;
-    color: #cccccc;
+    background: var(--mt-surface-alt, #333333);
+    color: var(--mt-text-muted, #cccccc);
     padding: 8px 12px;
     font: inherit;
     cursor: pointer;
 }
 
 .show-answer:hover:not(:disabled) {
-    color: #ffffff;
-    background: #3a3a3a;
+    color: var(--mt-text, #ffffff);
+    background: var(--mt-surface-hover, #3a3a3a);
 }
 
 .show-answer:disabled {
-    color: #666666;
+    color: var(--mt-text-disabled, #666666);
     cursor: default;
     opacity: 0.65;
 }
 
 .review-actions button:hover {
-    color: #ffffff;
-    background: #3a3a3a;
+    color: var(--mt-text, #ffffff);
+    background: var(--mt-surface-hover, #3a3a3a);
 }
 
 .browse-button,
 .browse-nav button {
     box-sizing: border-box;
     min-width: 0;
-    border: 1px solid #555555;
+    border: 1px solid var(--mt-border, #555555);
     border-radius: 8px;
-    background: #333333;
-    color: #cccccc;
+    background: var(--mt-surface-alt, #333333);
+    color: var(--mt-text-muted, #cccccc);
     padding: 8px 10px;
     font: inherit;
     cursor: pointer;
@@ -311,12 +311,12 @@ body {
 
 .browse-button:hover,
 .browse-nav button:hover:not(:disabled) {
-    color: #ffffff;
-    background: #3a3a3a;
+    color: var(--mt-text, #ffffff);
+    background: var(--mt-surface-hover, #3a3a3a);
 }
 
 .browse-nav button:disabled {
-    color: #666666;
+    color: var(--mt-text-disabled, #666666);
     cursor: default;
     opacity: 0.55;
 }
@@ -348,20 +348,20 @@ body {
 }
 
 .card-actions button:disabled {
-    color: #666666;
+    color: var(--mt-text-disabled, #666666);
     cursor: default;
     opacity: 0.5;
 }
 
 .review-actions button.selected {
-    border-color: #60a5fa;
-    background: #2563eb;
-    color: #ffffff;
-    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.25);
+    border-color: var(--mt-accent, #60a5fa);
+    background: var(--mt-accent, #2563eb);
+    color: var(--mt-text, #ffffff);
+    box-shadow: 0 0 0 2px var(--mt-accent, rgba(96, 165, 250, 0.25));
 }
 
 .countdown {
-    color: #60a5fa;
+    color: var(--mt-accent, #60a5fa);
     font-size: 13px;
 }
 
@@ -373,10 +373,10 @@ body {
 }
 
 .next-card-button {
-    border: 1px solid #555555;
+    border: 1px solid var(--mt-border, #555555);
     border-radius: 999px;
-    background: #333333;
-    color: #cccccc;
+    background: var(--mt-surface-alt, #333333);
+    color: var(--mt-text-muted, #cccccc);
     padding: 3px 10px;
     font: inherit;
     font-size: 12px;
@@ -385,13 +385,13 @@ body {
 }
 
 .next-card-button:hover:not(:disabled) {
-    border-color: #666666;
-    color: #ffffff;
-    background: #3a3a3a;
+    border-color: var(--mt-border-subtle, #666666);
+    color: var(--mt-text, #ffffff);
+    background: var(--mt-surface-hover, #3a3a3a);
 }
 
 .next-card-button:disabled {
-    color: #666666;
+    color: var(--mt-text-disabled, #666666);
     cursor: default;
     opacity: 0.65;
 }
@@ -405,7 +405,7 @@ body {
     overflow-wrap: anywhere;
     word-break: break-word;
     margin-top: 12px;
-    color: #cccccc;
+    color: var(--mt-text-muted, #cccccc);
     font-size: 14px;
 }
 
@@ -421,7 +421,7 @@ body {
 .form-field {
     display: grid;
     gap: 4px;
-    color: #aaaaaa;
+    color: var(--mt-text-tertiary, #aaaaaa);
     font-size: 12px;
 }
 
@@ -429,10 +429,10 @@ body {
     box-sizing: border-box;
     width: 100%;
     min-width: 0;
-    border: 1px solid #555555;
+    border: 1px solid var(--mt-border, #555555);
     border-radius: 8px;
-    background: #222222;
-    color: #ffffff;
+    background: var(--mt-surface, #222222);
+    color: var(--mt-text, #ffffff);
     padding: 8px 10px;
     font: inherit;
     overflow-wrap: anywhere;

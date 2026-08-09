@@ -23,9 +23,9 @@
         <Style x:Key="ModernTextBox"
                TargetType="TextBox">
             <Setter Property="Background"
-                    Value="#292929" />
+                    Value="{DynamicResource SurfaceBrush}" />
             <Setter Property="Foreground"
-                    Value="White" />
+                    Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="BorderThickness"
                     Value="0" />
             <Setter Property="Padding"
@@ -36,8 +36,8 @@
 
         <Style x:Key="ModernButton"
                TargetType="Button">
-            <Setter Property="Background" Value="#333333" />
-            <Setter Property="Foreground" Value="#cccccc" />
+            <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Template">
                 <Setter.Value>
@@ -52,8 +52,8 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#3a3a3a" />
-                                <Setter Property="Foreground" Value="White" />
+                                <Setter Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -93,13 +93,13 @@
     </Window.Resources>
 
     <Border CornerRadius="12"
-            Background="#1e1e1e"
+            Background="{DynamicResource WindowBackgroundBrush}"
             Opacity="0.95"
             Margin="10">
         <Border.Effect>
             <DropShadowEffect ShadowDepth="3"
                               Direction="315"
-                              Color="Black"
+                              Color="{DynamicResource ShadowColor}"
                               Opacity="0.5"
                               BlurRadius="10" />
         </Border.Effect>
@@ -115,7 +115,7 @@
             <Border Grid.Row="0"
                     Margin="0,0,0,15"
                     CornerRadius="8"
-                    Background="#292929">
+                    Background="{DynamicResource SurfaceBrush}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -151,7 +151,7 @@
                 </Grid.RowDefinitions>
 
                 <!-- 状态文本和动作列表 -->
-                <Border Background="#292929"
+                <Border Background="{DynamicResource SurfaceBrush}"
                         CornerRadius="6"
                         Padding="10,5">
                     <Grid>
@@ -169,7 +169,7 @@
 
                         <TextBlock Grid.Column="1"
                                    Text="{Binding PluginName}"
-                                   Foreground="#cccccc"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
                                    Margin="8,0,0,0"
                                    VerticalAlignment="Center"
                                    Visibility="{Binding PluginName, Converter={StaticResource IsNullToVisibilityConverter}}" />
@@ -178,7 +178,7 @@
                         <TextBlock Grid.Column="2"
                                    ToolTip="{Binding DetailedStatusText}"
                                    Text="{Binding StatusText}"
-                                   Foreground="#aaaaaa"
+                                   Foreground="{DynamicResource TextTertiaryBrush}"
                                    Margin="8,0,0,0"
                                    VerticalAlignment="Center" />
 

@@ -9,6 +9,8 @@ using Microsoft.Web.WebView2.Core;
 using MyTools.Common.Config;
 using MyTools.Common.DependencyInjection;
 using MyTools.Common.Localization;
+using MyTools.Common.Theming;
+using MyTools.Desktop.Themes;
 using MyTools.Plugins.NodePlugins;
 
 namespace MyTools.Desktop.Components;
@@ -28,11 +30,23 @@ public partial class NodePluginDetailView : UserControl
     private readonly HashSet<string> subjectSubscriptions = new(StringComparer.Ordinal);
     private NodePlugin? subscribedPlugin;
     private readonly ILocalizationService localizationService;
+    private readonly IThemeService themeService;
 
     public NodePluginDetailView()
     {
         localizationService = ServiceLocator.GetRequiredService<ILocalizationService>();
+        themeService = ServiceLocator.GetRequiredService<IThemeService>();
         InitializeComponent();
+
+        // Preset the native background to the dark fallback color used by every
+        // plugin's CSS (var(--mt-surface-bg, #1e1e1e)). Keeping the control surface,
+        // the CSS fallback and the first frame all dark-aligned means the dark theme
+        // never flashes, and the light theme only has a brief dark first frame that is
+        // corrected as soon as NavigationCompleted applies the real tokens. This is
+        // fixed (not theme-aware) on purpose: the CSS fallback is static, so the native
+        // background must match it to avoid a mismatched flash.
+        PluginBrowser.DefaultBackgroundColor = System.Drawing.Color.FromArgb(30, 30, 30);
+
         DataContextChanged += OnDataContextChanged;
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
@@ -42,12 +56,15 @@ public partial class NodePluginDetailView : UserControl
     {
         localizationService.LocaleChanged -= OnLocaleChanged;
         localizationService.LocaleChanged += OnLocaleChanged;
+        themeService.ThemeChanged -= OnThemeChanged;
+        themeService.ThemeChanged += OnThemeChanged;
         NavigateIfNeeded();
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
         localizationService.LocaleChanged -= OnLocaleChanged;
+        themeService.ThemeChanged -= OnThemeChanged;
         ClearPluginEventSubscription();
     }
 
@@ -109,11 +126,57 @@ public partial class NodePluginDetailView : UserControl
         browserReady = false;
         subjectSubscriptions.Clear();
         await PluginBrowser.EnsureCoreWebView2Async(await WebView2Environment.Value);
+
         PluginBrowser.NavigationCompleted -= PluginBrowserOnNavigationCompleted;
         PluginBrowser.NavigationCompleted += PluginBrowserOnNavigationCompleted;
         PluginBrowser.CoreWebView2.WebMessageReceived -= PluginBrowserOnWebMessageReceived;
         PluginBrowser.CoreWebView2.WebMessageReceived += PluginBrowserOnWebMessageReceived;
         PluginBrowser.Source = BuildPluginEntryUri(entryPath);
+    }
+
+    /// <summary>
+    /// Builds the script that sets <c>data-theme</c> and CSS variables on
+    /// <c>:root</c>. Token values are inlined as literals so the script has no
+    /// async dependency. Run via <see cref="CoreWebView2.ExecuteScriptAsync"/>
+    /// (reliable, post-first-frame) — not via AddScriptToExecuteOnDocumentCreated,
+    /// which was found not to fire reliably on first navigation.
+    /// </summary>
+    private static string BuildThemeBootstrapScript(ThemeKind theme)
+    {
+        var tokens = WebThemeTokens.For(theme);
+        var tokenJs = string.Join(
+            ",",
+            tokens.OrderBy(kv => kv.Key, StringComparer.Ordinal)
+                  .Select(kv => $"\"{kv.Key}\":\"{kv.Value}\""));
+
+        // Executed via ExecuteScriptAsync, which wraps the result in a JSON string.
+        // We return a value to satisfy the wrapper; the DOM side effect is what matters.
+        return $$"""
+        (() => {
+            const theme = "{{theme.ToWireString()}}";
+            const tokens = { {{tokenJs}} };
+            const apply = () => {
+                const root = document.documentElement;
+                root.setAttribute("data-theme", theme);
+                root.style.colorScheme = theme;
+                // Set an inline background on <html> directly from the surface-bg token,
+                // so the page background is correct even before <body>'s CSS (which uses
+                // var(--mt-surface-bg, <dark-fallback>)) is parsed. Without this, the body
+                // fallback color would flash over the WebView2 native background.
+                root.style.backgroundColor = tokens["--mt-surface-bg"] || "";
+                for (const [k, v] of Object.entries(tokens)) {
+                    root.style.setProperty(k, v);
+                }
+            };
+            apply();
+            // Re-apply once DOM is ready; documentElement exists at creation but
+            // re-applying is harmless and guards against early reset.
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", apply, { once: true });
+            }
+            return theme;
+        })();
+        """;
     }
 
     private Uri BuildPluginEntryUri(string entryPath)
@@ -154,12 +217,21 @@ public partial class NodePluginDetailView : UserControl
         return CoreWebView2Environment.CreateAsync(userDataFolder: ConfigPath.WebView2UserDataPath);
     }
 
-    private void PluginBrowserOnNavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e)
+    private async void PluginBrowserOnNavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e)
     {
         browserReady = e.IsSuccess;
         if (!browserReady)
         {
             return;
+        }
+
+        // Inject theme tokens as early as reliably possible. ExecuteScriptAsync is
+        // the first dependable injection point (AddScriptToExecuteOnDocumentCreated
+        // was found not to fire reliably on first navigation).
+        if (PluginBrowser.CoreWebView2 != null)
+        {
+            await PluginBrowser.CoreWebView2.ExecuteScriptAsync(
+                BuildThemeBootstrapScript(themeService.CurrentTheme));
         }
 
         SendInitializeMessage();
@@ -320,6 +392,7 @@ public partial class NodePluginDetailView : UserControl
 
         var initialState = JsonSerializer.Deserialize<JsonElement>(viewModel.CurrentStateJson);
         var messages = viewModel.CurrentContext.Plugin.GetCurrentMessages();
+        var theme = themeService.CurrentTheme;
         var messageJson = BuildEventMessage(
             HostInitializeSubject,
             new
@@ -333,7 +406,9 @@ public partial class NodePluginDetailView : UserControl
                 locale = localizationService.CurrentLocale,
                 fallbackLocale = viewModel.CurrentContext.FallbackLocale,
                 translationRevision = BuildTranslationRevision(localizationService.CurrentLocale, messages),
-                messages
+                messages,
+                theme = theme.ToWireString(),
+                themeTokens = WebThemeTokens.For(theme)
             });
         SendMessage(messageJson);
     }
@@ -361,6 +436,37 @@ public partial class NodePluginDetailView : UserControl
                 }
             }));
             _ = context.Plugin.InitializeAsync();
+        });
+    }
+
+    private void OnThemeChanged(object? sender, ThemeChangedEventArgs e)
+    {
+        if (viewModel?.CurrentContext == null)
+        {
+            return;
+        }
+
+        Dispatcher.Invoke(() =>
+        {
+            // Re-apply CSS variables on the already-loaded page (DOM exists, so
+            // ExecuteScriptAsync is reliable). DefaultBackgroundColor stays fixed
+            // dark on purpose (matches every plugin's CSS fallback); the token
+            // swap below recolors the actual content.
+            if (browserReady && PluginBrowser.CoreWebView2 != null)
+            {
+                _ = PluginBrowser.CoreWebView2.ExecuteScriptAsync(BuildThemeBootstrapScript(e.CurrentTheme));
+            }
+
+            // Notify plugin business logic (e.g. charts, icons that depend on theme).
+            SendMessage(JsonSerializer.Serialize(new
+            {
+                type = "theme-changed",
+                payload = new
+                {
+                    theme = e.CurrentTheme.ToWireString(),
+                    themeTokens = WebThemeTokens.For(e.CurrentTheme)
+                }
+            }));
         });
     }
 
