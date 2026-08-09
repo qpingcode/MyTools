@@ -38,14 +38,7 @@ public partial class NodePluginDetailView : UserControl
         themeService = ServiceLocator.GetRequiredService<IThemeService>();
         InitializeComponent();
 
-        // Preset the native background to the dark fallback color used by every
-        // plugin's CSS (var(--mt-surface-bg, #1e1e1e)). Keeping the control surface,
-        // the CSS fallback and the first frame all dark-aligned means the dark theme
-        // never flashes, and the light theme only has a brief dark first frame that is
-        // corrected as soon as NavigationCompleted applies the real tokens. This is
-        // fixed (not theme-aware) on purpose: the CSS fallback is static, so the native
-        // background must match it to avoid a mismatched flash.
-        PluginBrowser.DefaultBackgroundColor = System.Drawing.Color.FromArgb(30, 30, 30);
+        PluginBrowser.DefaultBackgroundColor = System.Drawing.Color.Transparent;
 
         DataContextChanged += OnDataContextChanged;
         Loaded += OnLoaded;
@@ -131,7 +124,25 @@ public partial class NodePluginDetailView : UserControl
         PluginBrowser.NavigationCompleted += PluginBrowserOnNavigationCompleted;
         PluginBrowser.CoreWebView2.WebMessageReceived -= PluginBrowserOnWebMessageReceived;
         PluginBrowser.CoreWebView2.WebMessageReceived += PluginBrowserOnWebMessageReceived;
-        PluginBrowser.Source = BuildPluginEntryUri(entryPath);
+
+        // Navigate to the theme-specific HTML variant (index.dark.html / index.light.html)
+        // which has the CSS variables inlined at copy time. This guarantees the variables
+        // exist at first paint — no flash, no per-navigation file rewriting.
+        var themedPath = ResolveThemedEntryPath(entryPath);
+        PluginBrowser.Source = BuildPluginEntryUri(themedPath);
+    }
+
+    /// <summary>
+    /// Returns the path to the theme-specific HTML variant for the given entry path,
+    /// e.g. ".../index.html" + Dark → ".../index.dark.html". Falls back to the
+    /// original path if the themed variant does not exist.
+    /// </summary>
+    private string ResolveThemedEntryPath(string entryPath)
+    {
+        var dir = Path.GetDirectoryName(entryPath);
+        var themedName = WebThemeTokens.ThemeHtmlFileName(Path.GetFileName(entryPath), themeService.CurrentTheme);
+        var themedPath = Path.Combine(dir ?? "", themedName);
+        return File.Exists(themedPath) ? themedPath : entryPath;
     }
 
     /// <summary>
@@ -225,14 +236,7 @@ public partial class NodePluginDetailView : UserControl
             return;
         }
 
-        // Inject theme tokens as early as reliably possible. ExecuteScriptAsync is
-        // the first dependable injection point (AddScriptToExecuteOnDocumentCreated
-        // was found not to fire reliably on first navigation).
-        if (PluginBrowser.CoreWebView2 != null)
-        {
-            await PluginBrowser.CoreWebView2.ExecuteScriptAsync(
-                BuildThemeBootstrapScript(themeService.CurrentTheme));
-        }
+
 
         SendInitializeMessage();
         SendSearchMessage();
@@ -449,9 +453,8 @@ public partial class NodePluginDetailView : UserControl
         Dispatcher.Invoke(() =>
         {
             // Re-apply CSS variables on the already-loaded page (DOM exists, so
-            // ExecuteScriptAsync is reliable). DefaultBackgroundColor stays fixed
-            // dark on purpose (matches every plugin's CSS fallback); the token
-            // swap below recolors the actual content.
+            // ExecuteScriptAsync is reliable). The next navigation will automatically
+            // pick the correct index.{theme}.html variant via ResolveThemedEntryPath.
             if (browserReady && PluginBrowser.CoreWebView2 != null)
             {
                 _ = PluginBrowser.CoreWebView2.ExecuteScriptAsync(BuildThemeBootstrapScript(e.CurrentTheme));

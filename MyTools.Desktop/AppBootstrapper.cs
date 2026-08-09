@@ -105,6 +105,8 @@ public class AppBootstrapper : IDisposable
         {
             return;
         }
+
+        return;
         
         MoveDirection[] downRight = [MoveDirection.Down, MoveDirection.Right];
         gestureRegistry.RegisterGesture(downRight, _ => KeyboardHelper.SimulateKeyPress(ModifierKeys.Control, Key.W), "Close Tab");
@@ -227,6 +229,29 @@ public class AppBootstrapper : IDisposable
             {
                 var targetPluginDirectory = Path.Combine(pluginTargetPath, Path.GetFileName(sourcePluginDirectory));
                 SyncDirectory(GetExamplePluginSourceDirectory(sourcePluginDirectory), targetPluginDirectory);
+                GenerateThemeHtmlFiles(targetPluginDirectory);
+            }
+        }
+    }
+
+    /// <summary>
+    /// For every index.html under the plugin directory, generate a theme-specific
+    /// variant (index.dark.html, index.light.html) with inline CSS variable
+    /// definitions. The runtime selects the right one based on the active theme,
+    /// so the variables exist at first paint — no flash.
+    /// </summary>
+    private static void GenerateThemeHtmlFiles(string pluginDirectory)
+    {
+        foreach (var htmlFile in Directory.GetFiles(pluginDirectory, "index.html", SearchOption.AllDirectories))
+        {
+            var html = File.ReadAllText(htmlFile);
+            var dir = Path.GetDirectoryName(htmlFile)!;
+
+            foreach (var theme in Enum.GetValues<ThemeKind>())
+            {
+                var themed = WebThemeTokens.InjectThemeStyle(html, theme);
+                var themedPath = Path.Combine(dir, WebThemeTokens.ThemeHtmlFileName("index.html", theme));
+                File.WriteAllText(themedPath, themed);
             }
         }
     }
