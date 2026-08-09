@@ -16,9 +16,9 @@
             <converters:IconTemplateSelector x:Key="IconTemplateSelector">
                 <converters:IconTemplateSelector.StringIconTemplate>
                     <DataTemplate>
-                        <TextBlock Text="{Binding Emoji}"  
+                        <TextBlock Text="{Binding Emoji}"
                                    Margin="0,0,8,0"
-                                   Foreground="White"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontSize="20"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center"
@@ -51,7 +51,7 @@
                                         <Thumb>
                                             <Thumb.Template>
                                                 <ControlTemplate TargetType="Thumb">
-                                                    <Border Background="#666666" 
+                                                    <Border Background="{DynamicResource TextDisabledBrush}"
                                                             CornerRadius="2"
                                                             BorderThickness="0"/>
                                                 </ControlTemplate>
@@ -86,13 +86,13 @@
                                      Value="True">
                                 <Setter TargetName="Border"
                                         Property="Background"
-                                        Value="#3a3a3a"/>
+                                        Value="{DynamicResource SurfaceHoverBrush}"/>
                             </Trigger>
                             <Trigger Property="IsMouseOver"
                                      Value="True">
                                 <Setter TargetName="Border"
                                         Property="Background"
-                                        Value="#3a3a3a"/>
+                                        Value="{DynamicResource SurfaceHoverBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -100,10 +100,10 @@
             </Setter>
         </Style>
         <Style TargetType="ToolTip">
-            <Setter Property="Background" Value="#FF333333"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
             <Setter Property="Padding" Value="10"/>
-            <Setter Property="BorderBrush" Value="#FF888888"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="Template">
@@ -134,7 +134,7 @@
                  Margin="0,0,0,10"
                  Background="Transparent"
                  BorderThickness="0"
-                 Foreground="White"
+                 Foreground="{DynamicResource TextPrimaryBrush}"
                  ItemContainerStyle="{StaticResource ResultItemStyle}"
                  ItemsSource="{Binding SearchResults}"
                  SelectedItem="{Binding SelectedResult, Mode=TwoWay}"
@@ -167,18 +167,18 @@
                         <Grid>
                             <!-- 数字标签 -->
                             <Border  Grid.ZIndex="1"
-                                     BorderBrush="Gray" 
-                                     BorderThickness="1" 
-                                     Background="#FF000000" 
-                                     CornerRadius="2" 
+                                     BorderBrush="{DynamicResource BorderSubtleBrush}"
+                                     BorderThickness="1"
+                                     Background="{DynamicResource SurfaceAltBrush}"
+                                     CornerRadius="2"
                                      Padding="0"
-                                     Width="25" 
+                                     Width="25"
                                      Height="25"
                                      VerticalAlignment="Top"
                                      HorizontalAlignment="Left"
                                      Visibility="{Binding DataContext.IsCtrlPressed, ElementName=root, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <TextBlock Text="{Binding NumberLabel}"
-                                           Foreground="#ffffff"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
                                            FontSize="16"
                                            VerticalAlignment="Center"
                                            HorizontalAlignment="Center"
@@ -203,7 +203,7 @@
 
                             <!-- 内容 -->
                             <TextBlock TextWrapping="Wrap"
-                                       Foreground="White"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        FontSize="16"
                                        ToolTip="{Binding Title}"
                                        >
@@ -215,7 +215,7 @@
                             </TextBlock>
                             <TextBlock Grid.Row="1"
                                        TextWrapping="Wrap"
-                                       Foreground="#aaaaaa"
+                                       Foreground="{DynamicResource TextTertiaryBrush}"
                                        FontSize="12"
                                        Margin="0,2,0,0">
                                 <TextBlock.Text>

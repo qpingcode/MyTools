@@ -26,6 +26,11 @@ public enum SettingValueTypes
     Language,
 
     /// <summary>
+    /// 应用主题（白天/黑夜）
+    /// </summary>
+    Theme,
+
+    /// <summary>
     /// 日志级别
     /// </summary>
     LogLevel,

@@ -109,4 +109,7 @@ _ReSharper*/
 *.swp
 *.*~
 project.lock.json
-.DS_Store 
+.DS_Store
+
+# ZCode agent session files
+.zcode/ 

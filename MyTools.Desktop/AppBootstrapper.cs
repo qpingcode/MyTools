@@ -5,9 +5,11 @@ using MyTools.Common.Config;
 using MyTools.Common.Config.Interfaces;
 using MyTools.Common.Config.Enums;
 using MyTools.Common.Localization;
+using MyTools.Common.Theming;
 using MyTools.Desktop.Models;
 using MyTools.Desktop.Services;
 using MyTools.Desktop.Services.WindowNativeHandler;
+using MyTools.Desktop.Themes;
 using MyTools.Desktop.Utils;
 using MyTools.Plugins;
 using MyTools.Plugins.NodePlugins;
@@ -31,6 +33,7 @@ public class AppBootstrapper : IDisposable
     private readonly NodePluginDetailNavigator nodePluginDetailNavigator;
     private readonly IConfigurationRegistry registry;
     private readonly ILocalizationService localization;
+    private readonly IThemeService themeService;
 
     public AppBootstrapper(
         AppConfigService appConfigService,
@@ -45,7 +48,8 @@ public class AppBootstrapper : IDisposable
         LogLevelService logLevelService,
         NodePluginDetailNavigator nodePluginDetailNavigator,
         IConfigurationRegistry registry,
-        ILocalizationService localization)
+        ILocalizationService localization,
+        IThemeService themeService)
     {
         this.appConfigService = appConfigService;
         this.messageOnlyWindow = messageOnlyWindow;
@@ -60,6 +64,7 @@ public class AppBootstrapper : IDisposable
         this.nodePluginDetailNavigator = nodePluginDetailNavigator;
         this.registry = registry;
         this.localization = localization;
+        this.themeService = themeService;
     }
 
     public void Init()
@@ -78,6 +83,15 @@ public class AppBootstrapper : IDisposable
         RegisterGlobalHotKey(appConfig.SearchHotKey);
         EnableGestureDetection(appConfig.EnableGesture);
         LoadPlugins();
+
+        // Apply the user-configured theme and keep WPF in sync on hot-swap.
+        ThemeManager.ApplyTheme(themeService.CurrentTheme);
+        themeService.ThemeChanged += OnThemeChanged;
+    }
+
+    private static void OnThemeChanged(object? sender, ThemeChangedEventArgs e)
+    {
+        ThemeManager.ApplyTheme(e.CurrentTheme);
     }
     
     private void EnsureMessageOnlyWindow()
@@ -256,6 +270,12 @@ public class AppBootstrapper : IDisposable
                 localization.CurrentLocale,
                 options: SettingOptions.RequiresRestart,
                 valueType: SettingValueTypes.Language);
+
+            registry.AddSetting(generalCategory, "Theme",
+                localization.GetCaption("Configuration.General.Theme.Title", "Theme"),
+                localization.GetCaption("Configuration.General.Theme.Description", "Choose the application color theme"),
+                themeService.CurrentTheme.ToWireString(),
+                valueType: SettingValueTypes.Theme);
             
             registry.AddSetting(generalCategory, "AutoStart",
                 localization.GetCaption("Configuration.General.AutoStart.Title", "Auto start"),
@@ -302,6 +322,9 @@ public class AppBootstrapper : IDisposable
             registry.Reload();
             // AppConfigService is authoritative for the locale. Ignore a stale legacy copy in Settings.json.
             languageSetting.InitValueWithoutNotify(localization.CurrentLocale);
+            // AppConfigService is authoritative for the theme as well.
+            registry.FindSetting(ThemeService.ThemeSettingPath)?
+                .InitValueWithoutNotify(themeService.CurrentTheme.ToWireString());
         }
         catch (Exception ex)
         {
@@ -347,6 +370,7 @@ public class AppBootstrapper : IDisposable
 
     public void Dispose()
     {
+        themeService.ThemeChanged -= OnThemeChanged;
         hotKeyManager?.UnregisterAllHotKeys();
     }
 }

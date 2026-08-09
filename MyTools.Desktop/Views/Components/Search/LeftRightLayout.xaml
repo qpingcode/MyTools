@@ -15,10 +15,10 @@
         <converters:BooleanToScrollBarVisibilityConverter x:Key="BooleanToScrollBarVisibilityConverter"/>
         
         <Style x:Key="ModernToggleButton" TargetType="ToggleButton">
-            <Setter Property="Background" Value="#333333"/>
-            <Setter Property="Foreground" Value="#cccccc"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="#555555"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}"/>
             <Setter Property="Padding" Value="8,4"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Template">
@@ -34,13 +34,13 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#3a3a3a"/>
-                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="Background" Value="{DynamicResource SurfaceHoverBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter Property="Background" Value="#4a4a4a"/>
-                                <Setter Property="BorderBrush" Value="#666666"/>
-                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="Background" Value="{DynamicResource SurfaceHoverBrush}"/>
+                                <Setter Property="BorderBrush" Value="{DynamicResource TextDisabledBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -60,7 +60,7 @@
                                     <Thumb>
                                         <Thumb.Template>
                                             <ControlTemplate TargetType="Thumb">
-                                                <Border Background="#666666" 
+                                                <Border Background="{DynamicResource TextDisabledBrush}"
                                                         CornerRadius="2"
                                                         BorderThickness="0"/>
                                             </ControlTemplate>
@@ -100,15 +100,15 @@
              </Grid.ColumnDefinitions>
             
             <!-- 左侧TextArea -->
-             <Border Grid.Column="0" 
-                     Background="#1a1a1a" 
-                     CornerRadius="8" 
+             <Border Grid.Column="0"
+                     Background="{DynamicResource SurfaceBrush}"
+                     CornerRadius="8"
                      Padding="10">
                 <TextBox Text="{Binding LeftTextArea, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                          TextWrapping="{Binding IsWordWrapEnabled, Converter={StaticResource BooleanToTextWrappingConverter}}"
                          HorizontalScrollBarVisibility="{Binding IsWordWrapEnabled, Converter={StaticResource BooleanToScrollBarVisibilityConverter}}"
-                         Background="#222222"
-                         Foreground="White"
+                         Background="{DynamicResource SurfaceAltBrush}"
+                         Foreground="{DynamicResource TextPrimaryBrush}"
                          BorderThickness="0"
                          Padding="10"
                          FontSize="14"
@@ -118,8 +118,8 @@
              </Border>
             
             <!-- 可拖动的分隔线 -->
-             <GridSplitter Grid.Column="1" 
-                           Background="#444444"
+             <GridSplitter Grid.Column="1"
+                           Background="{DynamicResource BorderBrush}"
                            HorizontalAlignment="Center"
                            Width="2"
                            ResizeDirection="Columns"
@@ -129,7 +129,7 @@
                      <Style TargetType="GridSplitter">
                          <Style.Triggers>
                              <Trigger Property="IsMouseOver" Value="True">
-                                 <Setter Property="Background" Value="#666666"/>
+                                 <Setter Property="Background" Value="{DynamicResource TextDisabledBrush}"/>
                                  <Setter Property="Cursor" Value="SizeWE"/>
                              </Trigger>
                          </Style.Triggers>
@@ -137,15 +137,15 @@
                  </GridSplitter.Style>
              </GridSplitter>
             
-             <Border Grid.Column="2" 
-                     Background="#1a1a1a" 
-                     CornerRadius="8" 
+             <Border Grid.Column="2"
+                     Background="{DynamicResource SurfaceBrush}"
+                     CornerRadius="8"
                      Padding="10">
                 <TextBox Text="{Binding SelectedResult.Title, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                          TextWrapping="{Binding IsWordWrapEnabled, Converter={StaticResource BooleanToTextWrappingConverter}}"
                          HorizontalScrollBarVisibility="{Binding IsWordWrapEnabled, Converter={StaticResource BooleanToScrollBarVisibilityConverter}}"
-                         Background="#222222"
-                         Foreground="White"
+                         Background="{DynamicResource SurfaceAltBrush}"
+                         Foreground="{DynamicResource TextPrimaryBrush}"
                          BorderThickness="0"
                          Padding="10"
                          FontSize="14"

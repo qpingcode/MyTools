@@ -4,6 +4,7 @@ declare var MyToolsEventSubjects: {
     readonly search: "mytools.host.search";
     readonly key: "mytools.host.key";
     readonly languageChanged: "mytools.host.language-changed";
+    readonly themeChanged: "mytools.host.theme-changed";
   };
 };
 
@@ -20,6 +21,8 @@ interface MyToolsHostInitializePayload {
   fallbackLocale: string;
   translationRevision: string;
   messages: Record<string, string>;
+  theme?: string;
+  themeTokens?: Record<string, string>;
 }
 
 interface MyToolsLanguageChangedPayload {
@@ -27,6 +30,11 @@ interface MyToolsLanguageChangedPayload {
   fallbackLocale: string;
   translationRevision: string;
   messages: Record<string, string>;
+}
+
+interface MyToolsThemeChangedPayload {
+  theme: string;
+  themeTokens: Record<string, string>;
 }
 
 interface MyToolsHostSearchPayload {
@@ -42,6 +50,7 @@ interface MyToolsEventPayloadMap {
   "mytools.host.search": MyToolsHostSearchPayload;
   "mytools.host.key": MyToolsHostKeyPayload;
   "mytools.host.language-changed": MyToolsLanguageChangedPayload;
+  "mytools.host.theme-changed": MyToolsThemeChangedPayload;
 }
 
 type MyToolsEventPayload<TSubject extends string> =
@@ -70,6 +79,10 @@ interface MyToolsTool {
     readonly language: string;
     t(key: string, options: Record<string, unknown> & { defaultValue: string; translatorComment?: string }): string;
     apply(root?: ParentNode): void;
+  };
+  theme: {
+    current: string;
+    apply(payload: { theme?: string; themeTokens?: Record<string, string> }): void;
   };
 }
 

@@ -12,7 +12,8 @@
         Title="{loc:Loc Configuration.Title, DefaultValue=Settings}" Height="600" Width="900"
         d:DataContext="{d:DesignInstance viewModels:ConfigurationViewModel, IsDesignTimeCreatable=false}"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="CanResize">
+        ResizeMode="CanResize"
+        Background="{DynamicResource WindowBackgroundBrush}">
 
     <Window.Resources>
         <ResourceDictionary>
@@ -21,6 +22,7 @@
                 <ResourceDictionary Source="/MyTools.Desktop;component/Views/Templates/IntegerSettingTemplate.xaml" />
                 <ResourceDictionary Source="/MyTools.Desktop;component/Views/Templates/StringSettingTemplate.xaml" />
                 <ResourceDictionary Source="/MyTools.Desktop;component/Views/Templates/LanguageSettingTemplate.xaml" />
+                <ResourceDictionary Source="/MyTools.Desktop;component/Views/Templates/ThemeSettingTemplate.xaml" />
                 <ResourceDictionary Source="/MyTools.Desktop;component/Views/Templates/LogLevelSettingTemplate.xaml" />
                 <ResourceDictionary Source="/MyTools.Desktop;component/Views/Templates/DoubleSettingTemplate.xaml" />
                 <ResourceDictionary Source="/MyTools.Desktop;component/Views/Templates/CustomSettingTemplate.xaml" />
@@ -33,19 +35,19 @@
 
             <!-- 样式 -->
             <Style x:Key="PrimaryButtonStyle" TargetType="Button">
-                <Setter Property="Background" Value="#007ACC" />
-                <Setter Property="Foreground" Value="White" />
+                <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                 <Setter Property="BorderThickness" Value="0" />
                 <Setter Property="Padding" Value="15,8" />
                 <Setter Property="FontSize" Value="14" />
                 <Setter Property="Cursor" Value="Hand" />
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="#005A9E" />
+                        <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}" />
                     </Trigger>
                     <Trigger Property="IsEnabled" Value="False">
-                        <Setter Property="Background" Value="#CCCCCC" />
-                        <Setter Property="Foreground" Value="#999999" />
+                        <Setter Property="Background" Value="{DynamicResource BorderSubtleBrush}" />
+                        <Setter Property="Foreground" Value="{DynamicResource TextDisabledBrush}" />
                         <Setter Property="Cursor" Value="Arrow" />
                     </Trigger>
                 </Style.Triggers>
@@ -69,7 +71,7 @@
                                     <!-- 折叠状态：> 的两条线（右角） -->
                                     <Path x:Name="RightAngle"
                                           Data="M6,4 L10,8 M10,8 L6,12"
-                                          Stroke="#666666"
+                                          Stroke="{DynamicResource TextDisabledBrush}"
                                           StrokeThickness="1.5"
                                           StrokeLineJoin="Round"
                                           Visibility="Visible" />
@@ -77,7 +79,7 @@
                                     <!-- 展开状态：∨ 的两条线（下角） -->
                                     <Path x:Name="DownAngle"
                                           Data="M6,6 L10,10 M10,10 L14,6"
-                                          Stroke="#666666"
+                                          Stroke="{DynamicResource TextDisabledBrush}"
                                           StrokeThickness="1.5"
                                           StrokeLineJoin="Round"
                                           Visibility="Collapsed" />
@@ -92,8 +94,8 @@
 
                                 <!-- 鼠标悬停：颜色变深 -->
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="RightAngle" Property="Stroke" Value="#333333" />
-                                    <Setter TargetName="DownAngle" Property="Stroke" Value="#333333" />
+                                    <Setter TargetName="RightAngle" Property="Stroke" Value="{DynamicResource TextPrimaryBrush}" />
+                                    <Setter TargetName="DownAngle" Property="Stroke" Value="{DynamicResource TextPrimaryBrush}" />
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -103,7 +105,7 @@
 
             <!-- 配置项样式 -->
             <Style x:Key="SettingItemStyle" TargetType="Border">
-                <Setter Property="BorderBrush" Value="#DDDDDD" />
+                <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
                 <Setter Property="BorderThickness" Value="0,0,0,1" />
                 <Setter Property="Padding" Value="10" />
                 <Setter Property="Margin" Value="0,0,0,5" />
@@ -127,8 +129,8 @@
 
             <!-- 搜索栏 -->
             <Border Grid.Row="0"
-                    Background="#F5F5F5"
-                    BorderBrush="#DDDDDD"
+                    Background="{DynamicResource SurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,0,0,1"
                     Padding="10">
                 <TextBox x:Name="SearchTextBox"
@@ -136,8 +138,8 @@
                          FontSize="14"
                          Padding="5"
                          VerticalContentAlignment="Center"
-                         Background="White"
-                         BorderBrush="#CCCCCC"
+                         Background="{DynamicResource WindowBackgroundBrush}"
+                         BorderBrush="{DynamicResource BorderSubtleBrush}"
                          BorderThickness="1"
                          TextChanged="SearchTextBox_TextChanged"
                          PreviewKeyDown="SearchTextBox_PreviewKeyDown" />
@@ -148,7 +150,7 @@
                       x:Name="CategoryTreeView"
                       ItemsSource="{Binding FilteredCategories}"
                       SelectedItemChanged="CategoryTreeView_SelectedItemChanged"
-                      Background="White"
+                      Background="{DynamicResource WindowBackgroundBrush}"
                       BorderThickness="0">
                 <TreeView.ItemContainerStyle>
                     <Style TargetType="TreeViewItem">
@@ -158,7 +160,7 @@
                         <Setter Property="Background" Value="Transparent" />
                         <Setter Property="BorderBrush" Value="Transparent" />
                         <Setter Property="BorderThickness" Value="0" />
-                        <Setter Property="Foreground" Value="Black" />
+                        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
 
                         <!-- 重写ControlTemplate，确保选中状态样式生效 -->
                         <Setter Property="Template">
@@ -206,7 +208,7 @@
                                                            Grid.Column="1"
                                                            Text="🔒"
                                                            FontSize="10"
-                                                           Foreground="Gray"
+                                                           Foreground="{DynamicResource TextTertiaryBrush}"
                                                            VerticalAlignment="Center"
                                                            HorizontalAlignment="Right"
                                                            Margin="0,0,5,0"
@@ -233,8 +235,8 @@
                                                 <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource Self}}" Value="True" />
                                             </MultiDataTrigger.Conditions>
                                             <MultiDataTrigger.Setters>
-                                                <Setter TargetName="Bd" Property="Background" Value="#FAFAFA"/>
-                                                <Setter TargetName="Bd" Property="BorderBrush" Value="#D1D5DB"/>
+                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SurfaceHoverBrush}"/>
+                                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
                                             </MultiDataTrigger.Setters>
                                         </MultiDataTrigger>
 
@@ -262,8 +264,8 @@
                                     <Style.Triggers>
                                         <!-- 鼠标悬停时只影响当前节点 -->
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="#F9FAFB" />
-                                            <Setter Property="BorderBrush" Value="#E5E7EB" />
+                                            <Setter Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
+                                            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
                                         </Trigger>
                                     </Style.Triggers>
                                 </Style>
@@ -305,7 +307,7 @@
 
         <!-- 中间竖线分隔 -->
         <Border Grid.Column="1"
-                Background="#DDDDDD"
+                Background="{DynamicResource BorderBrush}"
                 HorizontalAlignment="Stretch" />
 
         <!-- 右侧面板：配置项编辑 -->
@@ -318,8 +320,8 @@
 
             <!-- 当前分类标题 -->
             <Border Grid.Row="0"
-                    Background="#F5F5F5"
-                    BorderBrush="#DDDDDD"
+                    Background="{DynamicResource SurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,0,0,1"
                     Padding="15,10">
                 <StackPanel>
@@ -377,7 +379,7 @@
                                                                    HighlightedText="{Binding Description}"
                                                                    HighlightText="{Binding DataContext.SearchText, RelativeSource={RelativeSource AncestorType=Window}}"
                                                                    FontSize="12"
-                                                                   Foreground="Gray"
+                                                                   Foreground="{DynamicResource TextTertiaryBrush}"
                                                                    Margin="0,5,0,0" />
 
                                     <!-- 配置项选项 -->
@@ -406,8 +408,8 @@
 
             <!-- 底部按钮栏 -->
             <Border Grid.Row="2"
-                    Background="#F5F5F5"
-                    BorderBrush="#DDDDDD"
+                    Background="{DynamicResource SurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,1,0,0"
                     Padding="15,10">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">

@@ -28,6 +28,7 @@ public class SettingTypeToTemplateConverter : IValueConverter
                 SettingValueTypes.Integer => "IntegerSettingTemplate",
                 SettingValueTypes.String => "StringSettingTemplate",
                 SettingValueTypes.Language => "LanguageSettingTemplate",
+                SettingValueTypes.Theme => "ThemeSettingTemplate",
                 SettingValueTypes.LogLevel => "LogLevelSettingTemplate",
                 SettingValueTypes.Double => "DoubleSettingTemplate",
                 SettingValueTypes.Custom => "CustomSettingTemplate",

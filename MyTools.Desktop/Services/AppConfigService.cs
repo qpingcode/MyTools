@@ -83,4 +83,10 @@ public class AppConfigService
         AppConfig.Language = cultureName;
         SaveConfig(AppConfig);
     }
+
+    public void SetTheme(string theme)
+    {
+        AppConfig.Theme = theme;
+        SaveConfig(AppConfig);
+    }
 }

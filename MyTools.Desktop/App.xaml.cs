@@ -10,7 +10,9 @@ using Hardcodet.Wpf.TaskbarNotification.Interop;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MyTools.Common.Config;
+using MyTools.Common.Config.Interfaces;
 using MyTools.Common.DependencyInjection;
+using MyTools.Common.Theming;
 using MyTools.Desktop.Services;
 using MyTools.Desktop.Utils;
 using MyTools.Desktop.Views;
@@ -54,10 +56,30 @@ public partial class App
 
         appBootstrapper = serviceProvider.GetRequiredService<AppBootstrapper>();
         appBootstrapper.Init();
-        
+
         InitializeNotifyIcon();
-        
+
+        // Keep the tray menu and the General.Theme setting in sync with theme changes,
+        // regardless of whether the change originated from the tray or the settings UI.
+        var themeService = ServiceLocator.GetRequiredService<IThemeService>();
+        themeService.ThemeChanged += OnThemeChanged;
+
         base.OnStartup(e);
+    }
+
+    private static void OnThemeChanged(object? sender, ThemeChangedEventArgs e)
+    {
+        // Refresh the tray menu checkmarks.
+        if (Current is App app)
+        {
+            app.UpdateNotifyIconMenu();
+        }
+
+        // Mirror the new theme into the General.Theme setting so the settings window
+        // shows the current selection (the setting is otherwise only written on Save).
+        var registry = ServiceLocator.GetRequiredService<IConfigurationRegistry>();
+        registry.FindSetting(ThemeService.ThemeSettingPath)?
+            .InitValueWithoutNotify(e.CurrentTheme.ToWireString());
     }
 
     private void App_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
@@ -159,6 +181,20 @@ public partial class App
         
         _notifyIcon.ContextMenu.Items.Add(languageMenu);
 
+        var themeService = ServiceLocator.GetRequiredService<IThemeService>();
+        var themeMenu = new MenuItem();
+        themeMenu.Header = GetCaption("Theme", "Theme");
+        foreach (var theme in new[] { ThemeKind.Light, ThemeKind.Dark })
+        {
+            var themeItem = new MenuItem();
+            themeItem.Header = GetCaption($"Theme.{theme.ToWireString()}", theme.ToString());
+            themeItem.IsChecked = themeService.CurrentTheme == theme;
+            themeItem.Click += ChangeTheme_Click;
+            themeItem.Tag = theme;
+            themeMenu.Items.Add(themeItem);
+        }
+        _notifyIcon.ContextMenu.Items.Add(themeMenu);
+
         var exitItem = new MenuItem { Header = GetCaption("Exit", "Exit") };
         exitItem.Click += (_, _) => Current.Shutdown();
         _notifyIcon.ContextMenu.Items.Add(exitItem);
@@ -244,6 +280,18 @@ public partial class App
         }
 
         UpdateNotifyIconMenu();
+    }
+
+    private void ChangeTheme_Click(object? sender, EventArgs e)
+    {
+        if (sender is not MenuItem { Tag: ThemeKind theme })
+        {
+            return;
+        }
+
+        var themeService = ServiceLocator.GetRequiredService<IThemeService>();
+        themeService.SetTheme(theme);
+        // Tray menu refresh is handled centrally by OnThemeChanged.
     }
 
     public void Restart()

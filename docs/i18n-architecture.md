@@ -11,7 +11,9 @@ MyTools 是一个 WPF 宿主，同时支持内置 .NET 插件、Node 后端和 W
 1. MyTools 宿主及其内置 WPF/.NET 文案：`.resx`。
 2. 插件（Node、HTML、JavaScript）文案：JSON。
 3. JavaScript/Node 使用 `i18next`；调用必须提供稳定 key 和英文 `defaultValue`。
-4. MyTools 负责提取、缓存和补齐插件缺失语言；插件作者不必在每次发布时提供所有语言。 //QQ: 仅支持node web插件,即html/js/ts
+4. MyTools 负责提取、缓存和补齐插件缺失语言；插件作者不必在每次发布时提供所有语言。
+
+> 注：本架构仅适用于 Node/Web 插件（即 HTML/JS/TS），不覆盖纯 .NET 内置插件的自有 JSON 资源——内置 .NET 插件复用宿主 `.resx`。
 
 本设计只处理面向最终用户的文本。诊断日志、异常堆栈和开发者日志默认不要求本地化；若日志内容会直接展示给用户，必须转化为本地化用户消息。
 
@@ -37,16 +39,24 @@ MyTools 是一个 WPF 宿主，同时支持内置 .NET 插件、Node 后端和 W
 
 ---
 
-## 3. 当前状态与需要解决的问题
+## 3. 当前状态
 
-当前桌面端使用 `MyTools.Desktop/Resources/Strings.en-US.xaml`、`Strings.zh-CN.xaml` 和 `LanguageService.RefreshResourceDictionaries()` 替换 WPF `ResourceDictionary`。这只解决了部分 XAML 字符串，仍存在以下问题：
+本文档描述的架构大部分已落地：
 
-1. `LanguageService`、`AppConfigService`、ViewModel、窗口 code-behind、动作执行逻辑和内置插件中仍存在硬编码用户文本。
-2. `LanguageService.GetCaption` 直接依赖 `Application.Current.Resources`，无法被非 WPF 后端、内置插件或第三方运行时自然复用。
-3. 现有 `Result.ErrorMessage`、`ActionResult.Message`、`ResultItem.Title/SubTitle` 主要传递最终字符串，缺少稳定的本地化语义。
-4. `PluginBase.Name` 当前参与配置分类和设置完整路径；若直接将其翻译，会改变 `Plugins.{Name}.{Setting}` 的持久化路径。
-5. Node RPC 的 `search`、`invokeAction`、`detailEvent` 参数未携带 locale；WebView2 的 `initialize-detail` 消息也未携带 locale 或翻译资源。
-6. HTML 示例存在裸文本节点和 JS 硬编码字符串，无法稳定提取，也无法在语言切换后同步更新。
+1. **宿主 RESX 与 `ILocalizationService` 已实现**：`MyTools.Common/Localization/ILocalizationService.cs` 定义了不依赖 WPF 的本地化抽象；`MyTools.Desktop/Services/LanguageService.cs` 实现该接口，通过 `ResourceManager` 读取 `MyTools.Desktop/Localization/HostStrings.resx` / `HostStrings.zh-CN.resx` / `HostStrings.fr-FR.resx`。`LanguageService` 不再依赖 `Application.Current.Resources`，旧 `RefreshResourceDictionaries()` 实现已删除。
+2. **旧 XAML 资源字典已退役**：`Strings.en-US.xaml`、`Strings.zh-CN.xaml` 已删除，`App.xaml` 的 `Application.Resources` 为空字典；XAML 文案改由 `LocExtension`（`MyTools.Desktop/Localization/LocExtension.cs`）经 `ILocalizationService` 解析并随 `LocaleChanged` 自动刷新。
+3. **`LocalizedMessage` 已进入跨层模型**：`Result.LocalizedErrorMessage`、`ActionResult.LocalizedMessage`、`ResultItem.LocalizedTitle/LocalizedSubTitle` 已存在；调用方可在解析时通过 `LocalizedMessage.Resolve(ILocalizationService)` 得到当前语言文本。
+4. **配置路径已基于稳定 `PluginId`**：`PluginBase.PluginId`（默认为类型名去掉 `Plugin` 后缀，可覆盖）作为 `Plugins.{PluginId}.{Setting}` 配置路径的来源；`Name`/`Description` 仅用于展示，可自由本地化而不影响持久化路径。
+5. **Node RPC 已透传 locale**：`NodePluginProcessHost` 的 `initialize`、`search`、`invokeAction`、`detailEvent`、`detailCall` 全部携带 `locale` 与 `fallbackLocale`；`initialize` 还携带合并后的 `messages`。
+6. **WebView2 详情页已下发语言上下文**：`NodePluginDetailView` 的初始化消息（subject `mytools.host.initialize`）携带 `locale`、`fallbackLocale`、`translationRevision`、`messages`；并实现 `language-changed` 消息用于运行时切换。
+7. **插件 SDK 与示例已落地**：`MyTools.Plugins/Examples/common/` 提供 `web-tool.ts`、`events.ts`、`i18n.ts`（基于 `i18next` 的 `mytoolsI18n` 包装）；示例插件 HTML 使用 `data-i18n` + `data-i18n-default-value`；`plugin.json` 已声明 `i18n` 块（`defaultLocale`、`catalog`、`localesPath`、`supportedLocales`）。
+
+仍待实现 / 需要关注的问题：
+
+1. **提取器与 CI 静态分析未实现**：尚无 C# Roslyn / JS-TS AST / HTML 解析器提取器，无法在构建期校验 key 冲突、缺失 `defaultValue`、占位符一致性或裸 HTML 文案。
+2. **翻译协调器与 AI 缓存未实现**：按需 AI 翻译、`sourceHash` 失效、术语表、翻译记忆、来源可视化等均未落地；当前仅依赖宿主 `.resx` 人工翻译与插件自带 JSON 翻译。
+3. **部分用户可见文本可能仍有硬编码**：迁移基本完成，但缺少 CI 扫描兜底，新增硬编码文本存在回归风险。
+4. **`LanguageService` 静态 `GetCaption` 仍存在**：为兼容旧调用保留了 `static GetCaption(...)`（经 `ServiceLocator`），应逐步迁移到注入式 `ILocalizationService`。
 
 ---
 
@@ -99,10 +109,10 @@ MyTools Locale Service ──> Node RPC locale 上下文
 为防止不同插件 key 冲突，所有翻译均位于作用域内：
 
 1. `host`：MyTools 宿主及内置 .NET 功能。
-2. `builtin:{pluginId}`：内置插件；建议仍可由宿主 `.resx` 提供人工翻译。
-3. `plugin:{pluginId}`：第三方插件；每个插件独立 JSON namespace。
+2. `builtin:{pluginId}`：内置 .NET 插件；复用宿主 `.resx`，key 使用 `Plugin.{PluginId}.*` 前缀。
+3. `plugin:{pluginId}`：Node/Web 插件；每个插件独立 JSON namespace。
 
-插件 ID 必须稳定且不可翻译，例如 `hello-search`、`dll-interface-reader`。
+插件 ID 必须稳定且不可翻译。当前实际示例：`hello-search`、`deepseek-chat`、`deepseek-translator`（Node/Web 插件，kebab-case）；`DllInterfaceReader`（内置 .NET 插件，PascalCase）。
 
 ---
 
@@ -110,15 +120,17 @@ MyTools Locale Service ──> Node RPC locale 上下文
 
 ### 6.1 运行时语义
 
-所有语言运行时均表达相同的消息语义：
+所有语言运行时均表达相同的消息语义。C# 侧由 `MyTools.Common/Localization/LocalizedMessage.cs` 实现：
 
 ```text
 MessageDescriptor
 - key: string                 // 稳定且唯一的语义键
 - defaultValue: string        // 英文 fallback，必须存在
 - values/args: object?        // 命名动态参数，可选
-- context: string?            // 消歧上下文，可选，通常供提取/翻译使用
+- translatorComment: string?  // 翻译注释 / 消歧说明，可选，仅供提取/翻译使用
 ```
+
+> 命名说明：本设计早期草稿使用 `context` 字段名，但在 i18next 中 `context` 是运行时按 context 后缀查找资源的语法（如 `key_male`），并非纯元数据。为避免歧义，C# 描述符与 `ILocalizationService.GetCaption` 已采用 `translatorComment`，仅承载翻译注释；i18next 的 grammatical `context` 语义不在本字段范围内。插件 SDK 包装器在调用 i18next 前应剥离该字段。
 
 `key` 不是展示文本，不能随语言、产品文案调整或重构而改变。修改 `defaultValue` 时必须使源文本 hash 变化，以触发 AI 缓存失效和重新翻译。
 
@@ -158,65 +170,65 @@ Plugin.HelloSearch.Detail.Refresh
 
 ### 7.1 资源组织
 
-MyTools 宿主使用独立 RESX 资源。建议目录：
+MyTools 宿主使用独立 RESX 资源，当前目录结构：
 
 ```text
 MyTools.Desktop/
   Localization/
-    HostStrings.resx              # 默认英文（en-US）
+    HostStrings.resx              # 默认英文（en-US），fallback 真源
     HostStrings.zh-CN.resx
     HostStrings.fr-FR.resx
-    HostStrings.fr.resx           # 可选中性语言覆盖
+    LocExtension.cs
 ```
-//QQ: 内置插件使用宿主resx,但是key前缀必须位 Plugin.{PluginId}.，后期可能大部分内置插件都会改为web node插件, 便于后期提取到插件目录
-内置插件可以根据规模选择：
-1. 小型插件使用宿主 `HostStrings*.resx` 的 `Plugin.{PluginId}.*` key；或
-2. 大型独立插件使用自己的 `.resx`，但必须通过同一个 `ILocalizationService` 和 stable scope 解析。
+
+内置 .NET 插件复用宿主 RESX，但其 key 必须使用 `Plugin.{PluginId}.*` 前缀（例如 `Plugin.DllInterfaceReader.Name`），以便未来在大部分内置插件迁移为 Node/Web 插件时，能干净地拆分到独立插件目录。大型独立插件亦可使用自己的 `.resx`，但必须通过同一个 `ILocalizationService` 解析。
 
 `.resx` 默认资源文件必须是英文 fallback 真源。其资源名称与第 6 节 key 一致。
 
 ### 7.2 服务边界
-// ILocalizationService 是给 内置插件和host 使用的, 都是从host的 resx中获取翻译, 所以不需要传入scope
-在 `MyTools.Common`（或未来独立契约项目）定义不依赖 WPF 的本地化抽象，例如：
+
+`ILocalizationService` 服务于宿主与内置 .NET 插件，统一从宿主 RESX 取翻译，因此**不传入 scope**——scope 隐含在 key 前缀中（`Plugin.{PluginId}.*` 或 `Host.*`）。该抽象定义于 `MyTools.Common`，不依赖 WPF：
 
 ```csharp
 public interface ILocalizationService
 {
     string CurrentLocale { get; }
-    string GetCaption(string key, string defaultValue, object? values = null, string? context = null);
+
+    string GetCaption(
+        string key,
+        string defaultValue,
+        object? values = null,
+        string? translatorComment = null);
+
     event EventHandler<LocaleChangedEventArgs>? LocaleChanged;
 }
 ```
 
 说明：
 
-1. 具体 C# 方法名可以是 `GetCaption`，但语义必须等同于插件端 `i18next.t(key, { defaultValue, ... })`。
+1. `GetCaption` 语义等同于插件端 `i18next.t(key, { defaultValue, ...values })`。
 2. `ILocalizationService` 不得依赖 `Application.Current`、`ResourceDictionary`、WPF 控件或 WebView2。
-3. WPF 适配器使用 `ResourceManager` 和当前 `CultureInfo` 读取 `.resx`。
-4. `LanguageService` 演进为语言状态协调器：验证 locale、保存设置、切换 `CultureInfo`、通知 `ILocalizationService`、通知 Web 插件。它不再负责替换 `Strings.{locale}.xaml`。
+3. WPF 适配器使用 `ResourceManager` 和当前 `CultureInfo` 读取 `.resx`（已在 `LanguageService` 实现）。
+4. `LanguageService` 作为语言状态协调器：验证 locale、保存设置、切换 `CultureInfo`、触发 `LocaleChanged`、通知 Web 插件。它不再负责替换 `Strings.{locale}.xaml`（旧机制已删除）。
+5. `LanguageService` 提供两条切换路径：`ChangeLanguage(code)` 立即生效并触发事件；`SetLanguageForNextStartup(code)` 仅写入配置、提示下次启动生效。当前设置页采用后者（见 14.1）。
 
 ### 7.3 WPF 使用方式
 
-WPF 不要求所有调用在语法上写成完全相同的函数形式，但必须调用统一服务语义：
+WPF 调用统一服务语义（已实现）：
 
-1. XAML：提供 `LocExtension`/绑定代理，将 `key` 和 `defaultValue` 交给 `ILocalizationService`；语言变更时自动刷新。
+1. XAML：通过 `LocExtension`（`{loc:Loc Key, DefaultValue=...}`）将 `key` 和 `defaultValue` 交给 `ILocalizationService`；订阅 `LocaleChanged` 自动刷新绑定。
 2. ViewModel、服务、code-behind：注入 `ILocalizationService` 后调用 `GetCaption`。
 3. `MessageBox` 标题、状态栏、托盘菜单、模板文本、窗口标题均使用本地化服务或 `LocExtension`。
-4. `Result.ErrorMessage`、`ActionResult.Message` 等跨层模型应逐步支持 `LocalizedMessage`，以保留 key/defaultValue/args，而非只在后端过早固化字符串。
+4. `Result.ErrorMessage`、`ActionResult.Message`、`ResultItem.Title/SubTitle` 等跨层模型支持 `LocalizedMessage`（`LocalizedErrorMessage`/`LocalizedMessage`/`LocalizedTitle`/`LocalizedSubTitle`），保留 key/defaultValue/args，由调用方在展示层 `Resolve`。
 
-### 7.4 迁移与退役旧 XAML 字典
+### 7.4 旧 XAML 字典的退役（已完成）
 
-现有 `Resources/Strings.en-US.xaml`、`Strings.zh-CN.xaml` 和 `LanguageService.RefreshResourceDictionaries()` 是过渡实现，不能与 RESX 长期作为两个独立真源。
+`Resources/Strings.en-US.xaml`、`Strings.zh-CN.xaml` 和 `LanguageService.RefreshResourceDictionaries()` 已删除；`App.xaml` 不再合并这些字典。`LanguageService` 不再依赖 `Application.Current.Resources`。
 
-迁移规则：
+后续维护要求：
 
-1. 将现有 key 和英文/中文内容迁入 `HostStrings.resx` / `HostStrings.zh-CN.resx`；修正重复、失效或未使用 key。
-2. 对每个 XAML 文案引用和 `LanguageService.GetCaption` 调用改用新的 RESX 适配器。
-3. 清理 WPF XAML、code-behind、ViewModel、服务层及内置插件中所有用户可见硬编码文本；注释和日志不在强制范围。
-4. 建立扫描/测试，禁止新增裸露的用户可见字符串。
-5. 仅当所有调用点迁移、资源覆盖测试通过、动态切语言验证完成后，删除旧 `Strings.*.xaml`、`App.xaml` 中的合并字典和 `RefreshResourceDictionaries()`。
-
-特别注意：`PluginBase.Name`、`ConfigurationCategory.Name`、`ConfigurationSetting.Name` 当前参与配置路径。迁移时必须新增或明确稳定的 `PluginId`/`ConfigurationKey`，而不是将本地化显示名写回这些 Name 字段。
+1. 新增用户可见文案必须经 `ILocalizationService` / `LocExtension` / `LocalizedMessage`，禁止新增裸露字符串（待 CI 扫描强制，见第 10、13 节）。
+2. 配置路径基于稳定 `PluginId`（`Plugins.{PluginId}.{Setting}`）；`PluginBase.Name`、`ConfigurationCategory.Name`、`ConfigurationSetting.Name` 仅作显示用，可自由本地化，不会写回持久化路径。
 
 ---
 
@@ -249,7 +261,7 @@ my-plugin/
 {
   "Plugin.HelloSearch.Name": "Hello Search",
   "Plugin.HelloSearch.Detail.Refresh": "Request refresh from Node runtime",
-  "Plugin.HelloSearch.Result.Found": "Found {{count}} matching results" //QQ: 
+  "Plugin.HelloSearch.Result.Found": "Found {{count}} matching results"
 }
 ```
 
@@ -319,11 +331,17 @@ document.querySelector("#refresh").textContent = i18next.t(
 
 ---
 
-## 9. 插件协议与语言同步
+## 9. 插件协议与语言同步（已实现）
 
 ### 9.1 Node RPC
 
-现有 JSON-RPC 请求的参数增加兼容字段：
+`NodePluginProcessHost` 在每个 JSON-RPC 请求中携带 `locale` 与 `fallbackLocale`（`fallbackLocale` 取自插件 manifest 的 `defaultLocale`）。已覆盖：
+
+1. `initialize`（同时携带合并后的 `messages`）
+2. `search`
+3. `invokeAction`
+4. `detailEvent`
+5. `detailCall`
 
 ```json
 {
@@ -332,19 +350,9 @@ document.querySelector("#refresh").textContent = i18next.t(
 }
 ```
 
-以下请求都必须支持该上下文：
-
-1. `search`
-2. `invokeAction`
-3. `detailEvent`
-4. `initialize`（新增或扩展）
-
-//QQ: 不用考虑兼容旧插件, 软件还未发布
-协议新增字段必须可选，以兼容旧插件；旧插件仍可运行，但将只能显示其自身默认语言或英文 fallback。
-
 ### 9.2 WebView2 详情页
 
-`initialize-detail` 的 payload 增加：
+`NodePluginDetailView` 通过 subject 为 `mytools.host.initialize` 的初始化消息下发：
 
 ```json
 {
@@ -356,8 +364,8 @@ document.querySelector("#refresh").textContent = i18next.t(
   }
 }
 ```
-//QQ: 是不是哪里要传入参数scope?
-`messages` 是宿主按来源优先级合并后的有效字典，可只包含当前插件/页面 namespace。插件页面将其加载到 i18next，再渲染 DOM。
+
+`messages` 是宿主按来源优先级（见 5.1）合并后的**有效字典**，已限定在当前插件/页面 namespace 内——因此协议**不需要单独传 scope**，scope 在宿主合并阶段就已收敛。插件页面将其加载到 i18next 再渲染 DOM。
 
 当用户在 MyTools 中切换语言时，宿主向已加载的 WebView2 页面发送：
 
@@ -373,11 +381,11 @@ document.querySelector("#refresh").textContent = i18next.t(
 }
 ```
 
-页面必须切换 i18next language，并重新应用 `data-i18n` 和动态视图状态。宿主同时将新的 locale 传递给仍在运行的 Node 插件；必要时重载其语言资源，但不得因语言切换丢失搜索状态。
+页面切换 i18next language，重新应用 `data-i18n` 与动态视图状态。宿主同时重新调用 `context.Plugin.InitializeAsync()` 把新 locale 传递给仍在运行的 Node 插件；不因语言切换丢失搜索状态。
 
-### 9.3 Manifest 建议扩展
+### 9.3 Manifest 扩展（已落地）
 
-`plugin.json` 可增加：
+`plugin.json` 的 `i18n` 块已被 `NodePluginCatalog` 解析：
 
 ```json
 {
@@ -390,7 +398,7 @@ document.querySelector("#refresh").textContent = i18next.t(
 }
 ```
 
-`defaultLocale` 和 `catalog` 对采用新 i18n SDK 的插件应为必填。`supportedLocales` 表示作者提供的人工包，不表示 MyTools 不可为其他语言生成 AI 缓存。
+`defaultLocale` 和 `catalog` 对采用 i18n SDK 的插件为必填。`supportedLocales` 表示作者提供的人工包，不排除 MyTools 后续为其他语言生成 AI 缓存。
 
 ---
 
@@ -433,16 +441,16 @@ document.querySelector("#refresh").textContent = i18next.t(
 
 1. `key`、`defaultValue`、`sourceHash`、`references` 必填。
 2. `filePath` 相对插件根目录或仓库根目录，不能包含用户机器绝对路径。
-3. `pluginId` 对插件必须存在；宿主文本使用 `host` scope。 //QQ: pluginId 是否改成scope,帮我先确认哪个好
+3. 同时保留 `pluginId`（稳定插件标识）与 `scope`（命名空间，如 `plugin:hello-search` / `host`）：`pluginId` 用于缓存键、版本、术语归属；`scope` 用于翻译查找与 key 隔离。两者都必填（宿主文本 `pluginId` 留空、`scope` 为 `host`）。
 4. `symbol` 是类/方法/函数/DOM selector 等可读定位信息；无法识别时使用空字符串。
-5. `comment` 为作者可选消歧注释，提取器应尽可能读取临近注释或显式 `context`。
+5. `comment` 为作者可选消歧注释，提取器应尽可能读取临近注释或显式 `translatorComment`。
 6. `existingTranslations` 收集插件自带翻译，供 AI 避免重复翻译和术语学习。
 
-### 10.2 提取器实现边界
-1. **C#**：使用 Roslyn 语法树识别 `ILocalizationService.GetCaption`、`LocalizedMessage` 和指定 `LocExtension`；只接受常量 key/defaultValue。
-2. **JS/TS**：使用 AST 识别 `i18next.t` 和 MyTools SDK 包装函数；校验 options 中的静态 `defaultValue`。
+### 10.2 提取器实现边界（待实现）
+1. **C#**：使用 Roslyn 语法树识别 `ILocalizationService.GetCaption`、`LocalizedMessage` 和 `LocExtension`；只接受常量 key/defaultValue。
+2. **JS/TS**：使用 AST 识别 `i18next.t` 和 MyTools SDK 包装函数（`mytoolsI18n.t`）；校验 options 中的静态 `defaultValue`。
 3. **HTML**：使用 HTML 解析器识别 `data-i18n` 和 `data-i18n-default-value`；不得依赖正则扫描整个 HTML。
-4. **XAML**：迁移期识别旧资源引用并统计，目标状态识别 `LocExtension` 的 key/defaultValue。
+4. **XAML**：识别 `LocExtension` 的 key/defaultValue；旧 `Strings.*.xaml` 引用已不存在，无需处理。
 5. 发现动态 key、缺失 defaultValue、重复 key 对应不同 fallback、非法占位符或裸 HTML 静态文本时，构建必须报错或至少在严格 CI 模式失败。
 
 ### 10.3 短文本歧义处理
@@ -452,34 +460,39 @@ document.querySelector("#refresh").textContent = i18next.t(
 1. `filePath`
 2. `pluginId`/scope
 3. 类、方法、函数或 DOM 位置（`symbol`）
-4. 作者提供的 `comment`/`context`
+4. 作者提供的 `translatorComment`
 5. 相同 key 的既有其他语言翻译
 6. 领域术语表命中项
-//QQ: 在 i18next 中，context 是运行时选择机制，通常会查找带 context 后缀的资源 key，并非纯元数据. (确认这点对吗,查询官网), 将翻译注释改名为 translatorComment、description 或 meaning；SDK wrapper 在调用 i18next 前移除该字段；context 保留给真正的 i18next grammatical context；提取器分别处理“运行时 context”和“翻译注释”。
-推荐对歧义高的文案强制要求 `context`，例如：
+
+> **i18next `context` 语义澄清**：在 i18next 中，`context` 是**运行时资源选择机制**——它会查找带 context 后缀的 key（如 `key_open`），并非纯元数据。因此本架构**不**用 `context` 承载翻译注释。翻译注释统一使用 `translatorComment`（C# 已落地，见 `ILocalizationService.GetCaption` / `LocalizedMessage`）；SDK 包装器在调用 i18next 前必须剥离该字段，避免被 i18next 误当作 grammatical context。i18next 原生的 grammatical `context` 保留给真正的语法上下文用途；提取器需分别处理「运行时 context」和「翻译注释」。
+
+推荐对歧义高的文案强制要求 `translatorComment`，例如：
 
 ```js
-i18next.t("Plugin.Example.Action.OpenFile", {
+mytoolsI18n.t("Plugin.Example.Action.OpenFile", {
   defaultValue: "Open",
-  context: "Verb: open the selected file in the operating system"
+  translatorComment: "Verb: open the selected file in the operating system"
 });
 ```
 
-`context` 不应改变 i18next key 或最终显示值；它是提取、审核和 AI 翻译提示的一部分。
+`translatorComment` 不应改变 i18next key 或最终显示值；它是提取、审核和 AI 翻译提示的一部分。
 
 ---
 
-## 11. 自动翻译、术语与质量控制
+## 11. 自动翻译、术语与质量控制（待实现）
+
+> 本节描述的翻译协调器、AI 缓存、术语表与翻译记忆均**尚未实现**。当前阶段宿主只依赖 `.resx` 人工翻译与插件自带 JSON 翻译，缺失语言回退到英文 fallback。本节作为后续迭代的设计基线。
 
 ### 11.1 触发时机
 
-翻译协调器支持以下触发方式：
+翻译协调器支持的触发方式（已确定的产品行为）：
 
 1. **构建/发布预提取**：生成或校验 catalog，不强制翻译全部目标语言。
-2. **插件安装/升级**：导入 catalog，比较 sourceHash，标记缺失。 // 安装后不自动翻译, 仅标记缺失, 用户可在设置页手动触发AI翻译
-3. **首次切换到某 locale**：仅翻译当前插件/宿主缺失且用户实际需要的条目。 //QQ: 首次切换如果发现部分未翻译,提示用户是否使用AI翻译,用户同意后进入locale 翻译界面, 定位到那个语言的条目, 用户点击 AI 翻译后执行翻译
-4. **后台批处理**：在用户允许的前提下，增量补齐常用语言。 //QQ: 暂时不做后台批处理
-5. **管理员或用户手动触发**：重新生成指定插件、语言或 key。
+2. **插件安装/升级**：导入 catalog、比较 sourceHash、**仅标记缺失，不自动翻译**。用户可在设置页手动触发 AI 翻译。
+3. **首次切换到某 locale**：若发现部分条目未翻译，**提示用户是否使用 AI 翻译**；用户同意后进入该 locale 的翻译界面，定位到对应语言条目，用户点击「AI 翻译」后才执行——不静默翻译。
+4. **管理员或用户手动触发**：重新生成指定插件、语言或 key。
+
+> 明确不做：**不实现后台批处理自动补齐**（早期草稿曾列入，已决定移除）。所有 AI 翻译都是用户显式触发。
 
 第三方作者仅需维护英文 fallback 和可选部分人工翻译；无需在每次发布时支持所有 MyTools 语言。
 
@@ -490,7 +503,7 @@ i18next.t("Plugin.Example.Action.OpenFile", {
 1. source locale 与 target locale。
 2. key 与英文 defaultValue。
 3. 占位符集合及“不得修改占位符”的硬约束。
-4. `filePath`、`pluginId`、`symbol`、`comment/context`。
+4. `filePath`、`pluginId`、`symbol`、`translatorComment`。
 5. 同 scope 下相关人工译文和 `existingTranslations`。
 6. 匹配的术语表条目。
 7. 所需输出 JSON schema；模型只返回译文，不返回解释。
@@ -516,7 +529,7 @@ AI 输出写入缓存前必须自动校验：
 MyTools 维护两类共享资产：
 
 1. **Glossary（术语表）**：例如 `Plugin`、`Keyword`、`Action`、`Table Code`、`Interface` 的目标语言约定，以及是否禁止翻译的产品名/技术名。
-2. **Translation Memory（翻译记忆）**：以 `(scope, key, sourceHash, locale)` 和可复用的 `(defaultValue, context, locale)` 保存审核过的译文。
+2. **Translation Memory（翻译记忆）**：以 `(scope, key, sourceHash, locale)` 和可复用的 `(defaultValue, translatorComment, locale)` 保存审核过的译文。
 
 术语表优先于 AI 自由生成；翻译记忆可减少重复调用并提高同一术语在不同插件中的一致性。不同第三方插件不得在未授权的情况下共享敏感文本；公共翻译记忆只保存可共享的通用短语。
 
@@ -547,59 +560,61 @@ MyTools 维护两类共享资产：
 4. 第三方插件 catalog 被视为不可信输入：限制文件大小、条目数、文本长度、locale 数量和 JSON 解析深度。
 5. HTML 插件传入的 `messages` 必须按普通文本处理；禁止把翻译文本作为 HTML 注入，避免 XSS。
 6. 用户可查看某条译文的来源（人工/插件/AI/fallback），并可报告或覆盖错误翻译。
-7. 插件只能声明自己 scope 下的 key；禁止插件覆盖 host 或其他插件 namespace；
-8. catalog、localesPath 必须限制在插件根目录；防止 ..、绝对路径、符号链接逃逸；
-9. 
+7. 插件只能声明自己 scope 下的 key；禁止插件覆盖 host 或其他插件 namespace。
+8. catalog、localesPath 必须限制在插件根目录；防止 ..、绝对路径、符号链接逃逸。
 
 ---
 
 ## 13. 迁移计划
 
-### Phase 0：规范和基线
+> 状态标注基于当前代码实际落地情况。Phase 0–3、6 已完成；Phase 4、5 待实现。
+
+### Phase 0：规范和基线 ✅
 
 1. 批准本文的 key、locale、默认英文、命名占位符和优先级规则。
-2. 盘点 `Strings.*.xaml`、XAML、C#、内置插件、Node 示例和 HTML 中用户可见硬编码。
-3. 为所有内置插件定义稳定 `PluginId`；将其与显示名、配置路径和搜索历史标识解耦。
+2. 为所有内置插件定义稳定 `PluginId`（`PluginBase.PluginId`，可覆盖）；配置路径基于 `PluginId` 而非显示名。
 
-### Phase 1：宿主 RESX 基础
+### Phase 1：宿主 RESX 基础 ✅
 
-1. 新建 `HostStrings.resx` 和已有语言对应的 `.resx`。
-2. 新建无 WPF 依赖的 `ILocalizationService`、RESX 适配器和 locale 协调器。
-3. 为 WPF 实现 `LocExtension` 或等价可刷新绑定。
+1. 新建 `HostStrings.resx`、`HostStrings.zh-CN.resx`、`HostStrings.fr-FR.resx`。
+2. 新建无 WPF 依赖的 `ILocalizationService`（`MyTools.Common`）、RESX 适配器（`LanguageService` 经 `ResourceManager`）。
+3. 为 WPF 实现 `LocExtension`，订阅 `LocaleChanged` 自动刷新。
 4. 迁移宿主公共 UI、状态栏、错误弹窗、配置页和 code-behind 文案。
-5. 加入 resource completeness 测试：默认 RESX 是 key 真源，目标语言允许缺失但需报告。
+5. 加入 resource completeness 测试（`HostResourcesTest.cs`）。
 
-### Phase 2：内置插件与结果模型
+### Phase 2：内置插件与结果模型 ✅
 
-1. 迁移内置插件的名称、描述、动作、设置标题/描述、结果固定前缀和用户可见错误。
-2. 将配置持久化路径迁移到稳定 ID/Key，避免使用本地化显示名。
-3. 为 `Result`、`ActionResult` 等跨层用户消息引入 `LocalizedMessage` 或等价描述符；保留字符串兼容层，逐步替换。
+1. 内置 .NET 插件文案走宿主 RESX（`Plugin.{PluginId}.*` key）。
+2. 配置持久化路径基于 `PluginId`（`Plugins.{PluginId}.{Setting}`），与本地化显示名解耦。
+3. `Result.LocalizedErrorMessage`、`ActionResult.LocalizedMessage`、`ResultItem.LocalizedTitle/LocalizedSubTitle` 已落地；保留字符串兼容字段并存。
 
-### Phase 3：插件 SDK、Catalog 和协议
+### Phase 3：插件 SDK、Catalog 和协议 ✅
 
-1. 定义 `plugin.json.i18n`，实现 catalog 装载和 locale JSON 合并。
-2. 在 Node RPC 和 WebView2 `initialize-detail` 增加可选 locale 字段，并实现 `language-changed`。
-3. 发布 Node/JS SDK：初始化 i18next、`defaultValue` 约束、HTML `data-i18n` 初始化工具。
-4. 将 `hello-search` 示例迁移为规范参考实现。
+1. `plugin.json.i18n` 已定义；`NodePluginCatalog` 装载 catalog 与 locale JSON 合并。
+2. Node RPC（`initialize`/`search`/`invokeAction`/`detailEvent`/`detailCall`）与 WebView2 初始化消息携带 `locale`/`fallbackLocale`/`messages`；实现 `language-changed`。
+3. Node/JS SDK（`Examples/common/web-tool.ts`、`events.ts`、`i18n.ts`）：初始化 i18next、`defaultValue` 约束、HTML `data-i18n` 应用工具。
+4. `hello-search`、`deepseek-chat`、`deepseek-translator` 示例均为规范参考实现。
 
-### Phase 4：提取与 CI
+### Phase 4：提取与 CI ⏳（待实现）
 
 1. 实现 C# Roslyn、JS/TS AST、HTML 解析器提取器。
 2. 生成标准 catalog；验证 key 冲突、defaultValue、占位符和裸 HTML 文案。
 3. 先以 warning 运行，完成现有代码清理后在 CI 中升级为 error。
 
-### Phase 5：翻译协调器与 AI 缓存
+### Phase 5：翻译协调器与 AI 缓存 ⏳（待实现）
 
 1. 导入人工覆盖、插件 locale 和 catalog。
-2. 实现按需翻译、缓存、sourceHash 失效和校验。
+2. 实现用户手动触发的按需翻译、缓存、sourceHash 失效和校验（不做后台批处理，见 11.1）。
 3. 接入术语表、翻译记忆、隐私开关和来源可视化。
 4. 先在非关键示例插件和单一目标语言灰度验证，再扩展至所有插件和语言。
 
-### Phase 6：退役旧实现
+### Phase 6：退役旧实现 ✅
 
-1. 确认所有 WPF 页面和代码均使用 RESX 本地化服务。
-2. 删除 `Strings.*.xaml`、`App.xaml` 中对应合并字典、`LanguageService.RefreshResourceDictionaries()` 和基于 `Application.Current.Resources` 的 `GetCaption` 实现。
-3. 不用保留旧插件协议兼容分支
+1. 所有 WPF 页面和代码均使用 RESX 本地化服务。
+2. 已删除 `Strings.*.xaml`、`App.xaml` 中对应合并字典、`LanguageService.RefreshResourceDictionaries()` 和基于 `Application.Current.Resources` 的 `GetCaption` 实现（`Application.Resources` 为空字典）。
+3. 不保留旧插件协议兼容分支。
+
+> 遗留清理项：`LanguageService` 仍保留静态 `GetCaption(...)`（经 `ServiceLocator`）与 `[Obsolete] ResourceDictionaryChanged` 事件作为兼容层，后续应逐步移除。
 
 ---
 
@@ -607,36 +622,41 @@ MyTools 维护两类共享资产：
 
 ### 14.1 宿主
 
-1. `en-US`、`zh-CN`、`fr-FR` 之间切换时，允许提示用户重启应用；重启后 WPF 窗口、托盘、配置页、状态栏、弹窗和内置 Actions 必须统一使用所选语言，不要求当前进程动态刷新全部界面。
-2. 宿主用户可见文本不再依赖旧 `Strings.*.xaml`；旧资源文件已删除或不再被编译/加载。
-3. 新增用户可见 C# 文案未通过 `ILocalizationService`/`LocalizedMessage` 时，CI 能检测并报告。
+1. ✅ `en-US`、`zh-CN`、`fr-FR` 之间切换时（当前走 `SetLanguageForNextStartup`），允许提示用户重启应用；重启后 WPF 窗口、托盘、配置页、状态栏、弹窗和内置 Actions 必须统一使用所选语言。
+2. ✅ 宿主用户可见文本不再依赖旧 `Strings.*.xaml`；旧资源文件已删除，`App.xaml` 不再合并它们。
+3. ⏳ 新增用户可见 C# 文案未通过 `ILocalizationService`/`LocalizedMessage` 时，CI 能检测并报告（待提取器/CI 实现，见 Phase 4）。
 
 ### 14.2 插件
 
-1. 仅提供英文 catalog 的插件在切换到 `fr-FR` 时，能够从 AI 缓存得到已校验的法语；AI 不可用时稳定回退英文。
-2. 插件提供 `zh-CN` 时，该人工插件翻译优先于 AI 缓存。
-3. 用户/管理员人工覆盖优先于插件翻译。
-4. HTML 页面收到 `language-changed` 后重新渲染静态和动态文案；Node 后端后续返回文本与当前 locale 一致。
-5. 旧插件未声明 i18n 时仍能加载，不因新增协议字段失败。
+1. ⏳ 仅提供英文 catalog 的插件在切换到 `fr-FR` 时，能够从 AI 缓存得到已校验的法语；AI 不可用时稳定回退英文（待翻译协调器实现）。
+2. ✅ 插件提供 `zh-CN` 时，该人工插件翻译优先；当前已通过 locale JSON 合并实现。
+3. ⏳ 用户/管理员人工覆盖优先于插件翻译（待人工覆盖入口实现）。
+4. ✅ HTML 页面收到 `language-changed` 后重新渲染静态和动态文案；Node 后端后续返回文本与当前 locale 一致。
+5. ✅ 旧插件未声明 i18n 时仍能加载，不因新增协议字段失败。
 
 ### 14.3 质量与安全
 
-1. 任意翻译结果若丢失、增加或重命名占位符，不得进入有效缓存。
-2. 相同 `scope + key` 出现不同英文 fallback 时，构建失败。
-3. 翻译缓存能在插件升级或 sourceHash 变化后正确失效。
-4. 禁用云翻译后不发生外部文本发送，且产品仍可用。
-5. 翻译文本通过安全的文本渲染路径显示，不产生 HTML 注入。
+1. ⏳ 任意翻译结果若丢失、增加或重命名占位符，不得进入有效缓存（待 AI 缓存与校验实现）。
+2. ⏳ 相同 `scope + key` 出现不同英文 fallback 时，构建失败（待提取器实现）。
+3. ⏳ 翻译缓存能在插件升级或 sourceHash 变化后正确失效（待实现）。
+4. ⏳ 禁用云翻译后不发生外部文本发送，且产品仍可用（待实现）。
+5. ✅ 翻译文本通过安全的文本渲染路径显示，不产生 HTML 注入（`messages` 作普通文本处理）。
 
 ---
 
 ## 15. 待决策项
 
+> 已解决的决策（保留作为记录）：
+> - ~~`LocalizedMessage` 是否进入 `Result`/`ActionResult` 公共 API~~ —— 已进入（`LocalizedErrorMessage`/`LocalizedMessage`/`LocalizedTitle` 等）。
+> - ~~C# 与 i18next 占位符统一表示~~ —— 规范层统一命名参数 `{{name}}`（`LocalizedMessage.Format` 已实现该正则），边界由 SDK 适配。
+> - ~~`context` 字段语义~~ —— 采用 `translatorComment` 承载翻译注释，避免与 i18next grammatical `context` 冲突。
+
+仍未决：
+
 1. 默认是否启用云 AI 翻译，还是必须显式 opt-in。
-2. 首批支持的目标语言及是否提供中性语言包（如 `fr`）。
+2. 首批支持的目标语言及是否提供中性语言包（如 `fr`）。当前 RESX 已提供 `zh-CN`、`fr-FR`、`en-US`。
 3. 人工覆盖的管理入口：仅官方、管理员配置，还是允许终端用户编辑。
-4. `LocalizedMessage` 是否在第一阶段进入 `Result`/`ActionResult` 公共 API，或先通过适配层渐进引入。
-5. C# 与 i18next 占位符的最终统一表示：建议规范层采用命名参数，边界适配 i18next 的 `{{name}}`；需在 SDK 中固定实现。
-6. 提取器的发布形态：独立 CLI、MSBuild/Roslyn Analyzer、Node CLI，或三者组合。
+4. 提取器的发布形态：独立 CLI、MSBuild/Roslyn Analyzer、Node CLI，或三者组合。
 
 ---
 
@@ -649,7 +669,7 @@ MyTools 维护两类共享资产：
 3. Node/JS 使用 i18next，并且每次 `t` 调用都提供 `defaultValue`。
 4. HTML 静态文本使用 `data-i18n` + `data-i18n-default-value`，或通过规范 JS 调用设置。
 5. 打包 catalog；可选提供任意数量的人工 JSON locale 文件。
-6. 为含糊短文本提供 `context`/注释。
+6. 为含糊短文本提供 `translatorComment`/注释。
 7. 不动态构造 key/defaultValue，不修改占位符语义。
 
 作者**不需要**：

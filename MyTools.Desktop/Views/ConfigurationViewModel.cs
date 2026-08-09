@@ -207,6 +207,9 @@ public partial class ConfigurationViewModel : ObservableRecipient
             // Apply the log level immediately if it was changed.
             ServiceLocator.GetRequiredService<LogLevelService>().ApplyFromSettings(_registry);
 
+            // Apply the theme immediately (hot-swap, no restart).
+            ServiceLocator.GetRequiredService<ThemeService>().ApplyFromSettings(_registry);
+
             var languageChanged = requestedLocale != null
                                   && languageService.SetLanguageForNextStartup(requestedLocale);
             OnPropertyChanged(nameof(HasUnsavedChanges));

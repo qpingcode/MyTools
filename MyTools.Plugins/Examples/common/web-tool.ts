@@ -1,6 +1,41 @@
 import { MyToolsEventSubjects } from "./events.js";
 import { mytoolsI18n } from "./i18n.js";
 
+type ThemePayload = {
+    theme?: string;
+    themeTokens?: Record<string, string>;
+};
+
+/**
+ * Minimal theme helper: applies the host-provided CSS custom properties to
+ * <code>:root</code>. The bootstrap script injected before first frame already
+ * does this for the initial render; this re-applies on <code>initialize</code>
+ * and <code>theme-changed</code> so plugin JS can also read the active theme.
+ */
+const mytoolsTheme = {
+    current: "dark",
+    apply(payload: ThemePayload): void {
+        if (typeof payload.theme === "string") {
+            this.current = payload.theme;
+        }
+        const root = typeof document !== "undefined" ? document.documentElement : null;
+        if (!root) {
+            return;
+        }
+        if (typeof payload.theme === "string") {
+            root.setAttribute("data-theme", payload.theme);
+            root.style.colorScheme = payload.theme;
+        }
+        if (payload.themeTokens) {
+            for (const [key, value] of Object.entries(payload.themeTokens)) {
+                if (typeof value === "string") {
+                    root.style.setProperty(key, value);
+                }
+            }
+        }
+    }
+};
+
 type PendingCall = {
     resolve: (value: unknown) => void;
     reject: (reason?: unknown) => void;
@@ -140,6 +175,7 @@ function handleEvent(message: Record<string, unknown>): void {
     if (subjectId === events.host.initialize && isRecord(message.payload)) {
         mytoolsI18n.configure(message.payload);
         mytoolsI18n.apply();
+        mytoolsTheme.apply(message.payload);
     }
     var callbacks = subscriptions.get(subjectId);
     if (!callbacks) {
@@ -178,6 +214,16 @@ function dispatch(message: unknown): void {
         });
         return;
     }
+
+    if (message.type === "theme-changed" && isRecord(message.payload)) {
+        mytoolsTheme.apply(message.payload);
+        handleEvent({
+            type: "tool-event",
+            subjectId: events.host.themeChanged,
+            payload: message.payload
+        });
+        return;
+    }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -195,5 +241,6 @@ export const tool: MyToolsTool = {
     subscribe: subscribe,
     events: events,
     ready: ready,
-    i18n: mytoolsI18n
+    i18n: mytoolsI18n,
+    theme: mytoolsTheme
 };

@@ -18,6 +18,9 @@ namespace MyTools.Desktop
         [JsonProperty("Language")]
         public string Language { get; set; } = "en-US";
 
+        [JsonProperty("Theme")]
+        public string Theme { get; set; } = "dark";
+
         [JsonProperty("EnableGesture")]
         public bool EnableGesture { get; set; } = false;
 

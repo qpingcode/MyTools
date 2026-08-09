@@ -8,7 +8,7 @@
              d:DesignHeight="300"
              d:DesignWidth="300">
     <Grid>
-        <Border Background="#292929"
+        <Border Background="{DynamicResource SurfaceBrush}"
                 CornerRadius="8">
             <wv2:WebView2 x:Name="PluginBrowser" />
         </Border>

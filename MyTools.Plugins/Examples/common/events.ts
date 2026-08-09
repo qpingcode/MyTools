@@ -4,5 +4,6 @@ export const MyToolsEventSubjects = {
     search: "mytools.host.search",
     key: "mytools.host.key",
     languageChanged: "mytools.host.language-changed",
+    themeChanged: "mytools.host.theme-changed",
   },
 } as const;

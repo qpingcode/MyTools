@@ -64,6 +64,9 @@
         <Page Update="Views\Templates\LanguageSettingTemplate.xaml">
           <Generator>MSBuild:Compile</Generator>
         </Page>
+        <Page Update="Views\Templates\ThemeSettingTemplate.xaml">
+          <Generator>MSBuild:Compile</Generator>
+        </Page>
         <Page Update="Views\Templates\StringSettingTemplate.xaml">
           <Generator>MSBuild:Compile</Generator>
         </Page>
@@ -71,6 +74,15 @@
           <Generator>MSBuild:Compile</Generator>
         </Page>
         <Page Update="Views\Templates\CustomSettingTemplate.xaml">
+          <Generator>MSBuild:Compile</Generator>
+        </Page>
+        <Page Update="Themes\Dark.xaml">
+          <Generator>MSBuild:Compile</Generator>
+        </Page>
+        <Page Update="Themes\Light.xaml">
+          <Generator>MSBuild:Compile</Generator>
+        </Page>
+        <Page Update="Themes\Shared.xaml">
           <Generator>MSBuild:Compile</Generator>
         </Page>
     </ItemGroup>
