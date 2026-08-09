@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using System.IO;
 using MyTools.Common.Theming;
 
 namespace MyTools.Desktop.Themes;
@@ -60,4 +61,51 @@ public static class WebThemeTokens
 
     public static IReadOnlyDictionary<string, string> For(ThemeKind theme) =>
         theme == ThemeKind.Light ? Light : Dark;
+
+    /// <summary>
+    /// The file name used for a theme-specific HTML variant, e.g. "index.dark.html".
+    /// </summary>
+    public static string ThemeHtmlFileName(string baseFileName, ThemeKind theme)
+    {
+        var name = Path.GetFileNameWithoutExtension(baseFileName);
+        var ext = Path.GetExtension(baseFileName);
+        return $"{name}.{theme.ToWireString()}{ext}";
+    }
+
+    /// <summary>
+    /// Reads an HTML file and injects an inline &lt;style&gt; with the theme's CSS
+    /// variables right after &lt;head&gt;. The variables exist at first paint,
+    /// eliminating theme flash. Also removes any previously injected style block
+    /// (idempotent).
+    /// </summary>
+    public static string InjectThemeStyle(string html, ThemeKind theme)
+    {
+        var tokens = For(theme);
+        var declarations = string.Join("\n        ",
+            tokens.OrderBy(kv => kv.Key, StringComparer.Ordinal)
+                  .Select(kv => $"{kv.Key}: {kv.Value};"));
+        // Define variables on :root AND set concrete background/color on html/body.
+        // The concrete values don't depend on the external style.css loading — they
+        // are in this inline <style>, parsed with the HTML. This prevents the white
+        // flash between first paint and style.css arrival.
+        var bg = tokens.GetValueOrDefault("--mt-surface-bg", "#1E1E1E");
+        var text = tokens.GetValueOrDefault("--mt-text", "#FFFFFF");
+        var styleTag = $"<style id=\"mytools-theme-tokens\">\n" +
+                       $"        :root {{\n        {declarations}\n        }}\n" +
+                       $"    </style>";
+
+        // Remove a previously injected theme <style> (idempotent).
+        html = System.Text.RegularExpressions.Regex.Replace(
+            html,
+            @"<style\s+id=""mytools-theme-tokens""[\s\S]*?</style>\s*",
+            "");
+
+        // Insert right after <head ...>.
+        html = System.Text.RegularExpressions.Regex.Replace(
+            html,
+            @"(<head[^>]*>)",
+            $"$1\n    {styleTag}");
+
+        return html;
+    }
 }
