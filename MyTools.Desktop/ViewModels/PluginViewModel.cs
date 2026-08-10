@@ -23,6 +23,9 @@ public partial class PluginViewModel : ObservableObject, ISearchViewModelCallbac
     private string? pluginName;
 
     [ObservableProperty]
+    private string? pluginVersion;
+
+    [ObservableProperty]
     private UpdateStatus status = UpdateStatus.Idle;
 
     [ObservableProperty]
@@ -53,6 +56,7 @@ public partial class PluginViewModel : ObservableObject, ISearchViewModelCallbac
     public void SetPlugin(NodePlugin plugin, NodePluginDetailContext? context)
     {
         PluginName = plugin.Name;
+        PluginVersion = string.IsNullOrWhiteSpace(context?.Version) ? null : context.Version;
         CurrentNodePluginDetailId = context?.PluginId;
         detailViewModel.SetContext(context);
     }

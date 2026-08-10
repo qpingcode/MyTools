@@ -1,0 +1,22 @@
+{
+  "Plugin.XmlFormatter.Name": "XML Formatter",
+  "Plugin.XmlFormatter.Result.Title": "Format XML",
+  "Plugin.XmlFormatter.Result.Subtitle": "Format and validate XML",
+  "Plugin.XmlFormatter.Action.Open.Title": "Open Formatter",
+  "Plugin.XmlFormatter.Action.Open.Description": "Open the XML formatter",
+  "Plugin.XmlFormatter.Action.Open.Success": "Opened XML formatter",
+  "Plugin.XmlFormatter.Detail.Input": "Input",
+  "Plugin.XmlFormatter.Detail.Output": "Output",
+  "Plugin.XmlFormatter.Detail.InputPlaceholder": "Paste XML here",
+  "Plugin.XmlFormatter.Detail.EmptyOutput": "(no output)",
+  "Plugin.XmlFormatter.Detail.Indent2": "2 spaces",
+  "Plugin.XmlFormatter.Detail.Indent4": "4 spaces",
+  "Plugin.XmlFormatter.Detail.IndentTab": "Tab",
+  "Plugin.XmlFormatter.Detail.Format": "Format",
+  "Plugin.XmlFormatter.Detail.Copy": "Copy",
+  "Plugin.XmlFormatter.Detail.Copied": "Copied",
+  "Plugin.XmlFormatter.Detail.Clear": "Clear",
+  "Plugin.XmlFormatter.Detail.CollapseAll": "Collapse All",
+  "Plugin.XmlFormatter.Detail.ExpandAll": "Expand All",
+  "Plugin.XmlFormatter.Error.InvalidXml": "Invalid XML: {{message}}"
+}

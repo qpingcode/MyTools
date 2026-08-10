@@ -13,6 +13,7 @@ type MyToolsEvents = typeof MyToolsEventSubjects;
 interface MyToolsHostInitializePayload {
   protocolVersion: string;
   pluginId: string;
+  version?: string;
   itemId: string;
   query: string;
   keyword: string;

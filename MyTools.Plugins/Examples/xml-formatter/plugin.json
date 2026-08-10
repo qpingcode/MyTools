@@ -1,0 +1,25 @@
+{
+  "id": "xml-formatter",
+  "name": "XML Formatter",
+  "version": "0.0.4",
+  "runtime": "node",
+  "protocolVersion": "2.0",
+  "i18n": {
+    "defaultLocale": "en-US",
+    "catalog": "i18n/catalog.en-US.json",
+    "localesPath": "i18n/locales",
+    "supportedLocales": ["en-US", "zh-CN"]
+  },
+  "entries": [
+    {
+      "id": "xml-formatter",
+      "name": "XML Formatter",
+      "entry": "backend/index.mjs",
+      "keywords": ["xml"],
+      "detail": {
+        "type": "web",
+        "entry": "web/index.html"
+      }
+    }
+  ]
+}

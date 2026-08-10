@@ -416,6 +416,7 @@ public partial class NodePluginDetailView : UserControl
             {
                 protocolVersion = viewModel.CurrentContext.ProtocolVersion,
                 pluginId = viewModel.CurrentContext.PluginId,
+                version = viewModel.CurrentContext.Version,
                 itemId = viewModel.CurrentContext.ItemId,
                 query = viewModel.CurrentQuery,
                 keyword = viewModel.CurrentContext.Keyword,
