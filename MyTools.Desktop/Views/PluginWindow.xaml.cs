@@ -58,6 +58,10 @@ public partial class PluginWindow
 
         Activate();
         Focus();
+
+        // 与 SearchWindow.FocusNodePluginPrimaryInputAsync 一致：等待 dispatcher 空闲，
+        // 让 WebView2 初始化 / 导航有机会完成后再聚焦。
+        await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
         await viewModel.FocusPrimaryInputAsync(PluginContentView);
     }
 

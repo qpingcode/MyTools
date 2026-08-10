@@ -42,9 +42,7 @@ public partial class App
             Current.Shutdown();
             return;
         }
-        
-        DispatcherUnhandledException += App_DispatcherUnhandledException;
-        
+
         var services = new ServiceCollection();
         services.AddApplicationServices();
         serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions
@@ -53,6 +51,11 @@ public partial class App
             ValidateScopes = true
         });
         ServiceLocator.ServiceProvider = serviceProvider;
+
+        // 注册全局异常钩子（Dispatcher / AppDomain / UnobservedTask），
+        // 统一记录日志并弹出 ErrorDialog 显示完整堆栈。
+        var globalExceptionHandler = serviceProvider.GetRequiredService<GlobalExceptionHandler>();
+        globalExceptionHandler.Register();
 
         appBootstrapper = serviceProvider.GetRequiredService<AppBootstrapper>();
         appBootstrapper.Init();
@@ -80,13 +83,6 @@ public partial class App
         var registry = ServiceLocator.GetRequiredService<IConfigurationRegistry>();
         registry.FindSetting(ThemeService.ThemeSettingPath)?
             .InitValueWithoutNotify(e.CurrentTheme.ToWireString());
-    }
-
-    private void App_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
-    {
-        var logger = ServiceLocator.GetRequiredService<ILogger<App>>();
-        logger.LogError(e.Exception, "Unhandled exception");
-        e.Handled = true;
     }
 
     private void InitializeNotifyIcon()

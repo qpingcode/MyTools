@@ -60,6 +60,7 @@ public static class DesktopServiceCollectionExtensions
         serviceCollection.AddSingleton<MouseHelper>();
         serviceCollection.AddSingleton<NodePluginDetailNavigator>();
         serviceCollection.AddSingleton<INodePluginDetailNavigator>(sp => sp.GetRequiredService<NodePluginDetailNavigator>());
+        serviceCollection.AddSingleton<GlobalExceptionHandler>();
         serviceCollection.AddSingleton<HotKeyManager>();
         serviceCollection.AddSingleton<HotKeyMessageHandler>();
         serviceCollection.AddSingleton<IGlobal, Global>();
