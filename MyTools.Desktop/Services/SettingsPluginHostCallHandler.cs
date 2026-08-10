@@ -5,6 +5,8 @@ using Microsoft.Extensions.Logging;
 using MyTools.Common.Config.Enums;
 using MyTools.Common.Config.Interfaces;
 using MyTools.Common.Config.Models;
+using MyTools.Desktop.Models;
+using MyTools.Desktop.Utils;
 using MyTools.Plugins;
 using MyTools.Plugins.NodePlugins;
 using Serilog.Events;
@@ -24,6 +26,9 @@ public sealed class SettingsPluginHostCallHandler
     private readonly AutoStartService autoStartService;
     private readonly KeymapService keymapService;
     private readonly KeymapOverrideProvider keymapOverrideProvider;
+    private readonly GestureConfigProvider gestureConfigProvider;
+    private readonly GestureRegistry gestureRegistry;
+    private readonly MouseHelper mouseHelper;
     private readonly PluginLoader pluginLoader;
     private readonly HotKeyManager hotKeyManager;
     private readonly ILogger<SettingsPluginHostCallHandler> logger;
@@ -42,6 +47,9 @@ public sealed class SettingsPluginHostCallHandler
         AutoStartService autoStartService,
         KeymapService keymapService,
         KeymapOverrideProvider keymapOverrideProvider,
+        GestureConfigProvider gestureConfigProvider,
+        GestureRegistry gestureRegistry,
+        MouseHelper mouseHelper,
         PluginLoader pluginLoader,
         HotKeyManager hotKeyManager,
         ILogger<SettingsPluginHostCallHandler> logger)
@@ -53,6 +61,9 @@ public sealed class SettingsPluginHostCallHandler
         this.autoStartService = autoStartService;
         this.keymapService = keymapService;
         this.keymapOverrideProvider = keymapOverrideProvider;
+        this.gestureConfigProvider = gestureConfigProvider;
+        this.gestureRegistry = gestureRegistry;
+        this.mouseHelper = mouseHelper;
         this.pluginLoader = pluginLoader;
         this.hotKeyManager = hotKeyManager;
         this.logger = logger;
@@ -70,6 +81,10 @@ public sealed class SettingsPluginHostCallHandler
                 "getKeymap" => GetKeymap(),
                 "saveKeymap" => SaveKeymap(request.Params),
                 "validateKeymap" => ValidateKeymap(request.Params),
+                "getGestures" => GetGestures(),
+                "saveGestures" => SaveGestures(request.Params),
+                "suspendGestures" => SuspendGestures(),
+                "resumeGestures" => ResumeGestures(),
                 "suspendHotkeys" => SuspendHotkeys(),
                 "resumeHotkeys" => ResumeHotkeys(),
                 "restart" => Restart(),
@@ -196,8 +211,51 @@ public sealed class SettingsPluginHostCallHandler
             requiresRestart = languageService.SetLanguageForNextStartup(currentLanguage);
         }
 
+        // 其他标记了 RequiresRestart 的 setting 变化也需要提示重启
+        if (!requiresRestart)
+        {
+            foreach (var change in request.Changes)
+            {
+                var setting = registry.FindSetting(change.FullPath);
+                if (setting != null && (setting.Options & SettingOptions.RequiresRestart) != 0)
+                {
+                    requiresRestart = true;
+                    break;
+                }
+            }
+        }
+
         return JsonSerializer.SerializeToElement(
             new SaveConfigurationResult { RequiresRestart = requiresRestart }, JsonCamelCaseOptions);
+    }
+
+    private JsonElement GetGestures()
+    {
+        var gestures = gestureConfigProvider.GetAll();
+        return JsonSerializer.SerializeToElement(new GesturesDto { Gestures = gestures }, JsonCamelCaseOptions);
+    }
+
+    private JsonElement SaveGestures(JsonElement payload)
+    {
+        var request = payload.Deserialize<GesturesSaveRequest>(JsonCamelCaseOptions);
+        var gestures = request?.Gestures ?? new List<GestureConfig>();
+
+        // 为缺少 Id 的手势生成一个
+        foreach (var g in gestures)
+        {
+            if (string.IsNullOrEmpty(g.Id))
+            {
+                g.Id = Guid.NewGuid().ToString("N");
+            }
+        }
+
+        gestureConfigProvider.Save(gestures);
+
+        // 热应用：在手势检测线程上重新注册。GestureRegistry 的字典操作和
+        // StartListening 是线程安全的（检测线程只读字典），可以在任意线程写入。
+        gestureRegistry.ReloadFromConfigs(gestures, mouseHelper);
+
+        return JsonSerializer.SerializeToElement(new { success = true }, JsonCamelCaseOptions);
     }
 
     private JsonElement GetKeymap()
@@ -321,6 +379,18 @@ public sealed class SettingsPluginHostCallHandler
         pwm.ShowOrFocus(plugin, context);
     }
 
+    private JsonElement SuspendGestures()
+    {
+        gestureRegistry.SuspendDetection();
+        return JsonSerializer.SerializeToElement(new { }, JsonCamelCaseOptions);
+    }
+
+    private JsonElement ResumeGestures()
+    {
+        gestureRegistry.ResumeDetection();
+        return JsonSerializer.SerializeToElement(new { }, JsonCamelCaseOptions);
+    }
+
     private JsonElement SuspendHotkeys()
     {
         System.Windows.Application.Current.Dispatcher.Invoke(() => hotKeyManager.SuspendAllHotKeys());
@@ -406,4 +476,16 @@ public sealed class KeymapConflictDto
     public string Field { get; init; } = "";
     public string Value { get; init; } = "";
     public string ConflictsWith { get; init; } = "";
+}
+
+// ── Gestures DTO ──
+
+public sealed class GesturesDto
+{
+    public List<GestureConfig> Gestures { get; init; } = new();
+}
+
+public sealed class GesturesSaveRequest
+{
+    public List<GestureConfig> Gestures { get; init; } = new();
 }

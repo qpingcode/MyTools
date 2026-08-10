@@ -105,6 +105,17 @@ html, body {
     pointer-events: none;
 }
 
+.category-divider {
+    list-style: none;
+    margin: 8px 0;
+}
+
+.category-divider hr {
+    border: none;
+    border-top: 1px solid var(--mt-border, #3a3a3a);
+    margin: 0;
+}
+
 /* ── 分割线 ── */
 .divider {
     width: 1px;
@@ -139,11 +150,12 @@ html, body {
 
 .settings-scroll {
     flex: 1;
-    overflow-y: auto;
+    overflow: auto;
     padding: 0 24px;
 }
 
 .settings-list {
+    min-width: 1024px;
     padding-bottom: 16px;
 }
 
@@ -334,6 +346,7 @@ mark {
 .sidebar::-webkit-scrollbar,
 .settings-scroll::-webkit-scrollbar {
     width: 6px;
+    height: 6px;
 }
 
 .sidebar::-webkit-scrollbar-thumb,
@@ -474,4 +487,161 @@ mark {
     display: flex;
     justify-content: flex-end;
     padding: 16px 0;
+}
+
+/* ── Gestures 表格 ── */
+
+.gesture-header,
+.gesture-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.gesture-header {
+    padding: 8px 0;
+    border-bottom: 2px solid var(--mt-border, #3a3a3a);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--mt-text-tertiary, #888);
+}
+
+.gesture-row {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--mt-border-subtle, #2e2e2e);
+}
+
+.gesture-col-name {
+    width: 130px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.gesture-conflict-icon {
+    color: #f44336;
+    font-size: 16px;
+    cursor: help;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.gesture-col-gesture {
+    width: 150px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.gesture-col-trigger {
+    flex: 1;
+    min-width: 160px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.gesture-col-process {
+    width: 160px;
+    flex-shrink: 0;
+}
+
+.gesture-col-enabled {
+    width: 60px;
+    flex-shrink: 0;
+    text-align: center;
+}
+
+.gesture-col-actions {
+    width: 30px;
+    flex-shrink: 0;
+    text-align: center;
+}
+
+.gesture-display {
+    font-size: 16px;
+    font-family: "Cascadia Code", "Consolas", monospace;
+    color: var(--mt-text, #e0e0e0);
+    min-width: 48px;
+    line-height: 1.5;
+}
+
+.gesture-display-empty {
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--mt-text-tertiary, #888);
+    font-style: italic;
+}
+
+.gesture-record-btn {
+    padding: 3px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.gesture-type-select {
+    width: auto;
+    max-width: 120px;
+}
+
+.gesture-trigger-value {
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.gesture-trigger-value .setting-select {
+    width: 100%;
+    max-width: none;
+}
+
+.gesture-delete-btn {
+    font-size: 18px;
+}
+
+.gesture-add-bar {
+    display: flex;
+    padding: 16px 0;
+}
+
+.gesture-add-btn {
+    padding: 6px 16px;
+    font-size: 13px;
+}
+
+/* ── 手势录制覆盖层 ── */
+
+.gesture-record-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: crosshair;
+    user-select: none;
+}
+
+.gesture-record-hint {
+    color: #fff;
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 20px;
+    padding: 12px 28px;
+    background: var(--mt-surface, #2a2a2a);
+    border: 1px solid var(--mt-accent, #4a9eff);
+    border-radius: 10px;
+}
+
+.gesture-record-trail {
+    color: var(--mt-accent, #4a9eff);
+    font-size: 48px;
+    font-family: "Cascadia Code", "Consolas", monospace;
+    letter-spacing: 8px;
+    min-height: 64px;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }

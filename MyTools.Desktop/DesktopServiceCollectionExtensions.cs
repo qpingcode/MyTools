@@ -63,6 +63,7 @@ public static class DesktopServiceCollectionExtensions
         serviceCollection.AddSingleton<GlobalExceptionHandler>();
         serviceCollection.AddSingleton<SettingsPluginHostCallHandler>();
         serviceCollection.AddSingleton<KeymapOverrideProvider>();
+        serviceCollection.AddSingleton<GestureConfigProvider>();
         serviceCollection.AddSingleton<KeymapService>();
         serviceCollection.AddSingleton<HotKeyManager>();
         serviceCollection.AddSingleton<HotKeyMessageHandler>();

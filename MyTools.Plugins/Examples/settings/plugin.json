@@ -1,7 +1,7 @@
 {
   "id": "settings",
   "name": "Settings",
-  "version": "0.1.0",
+  "version": "0.0.6",
   "runtime": "node",
   "protocolVersion": "2.0",
   "i18n": {
@@ -14,7 +14,7 @@
     {
       "id": "main",
       "entry": "backend/index.mjs",
-      "keywords": ["settings", "config", "设置", "配置"],
+      "keywords": ["settings", "config"],
       "hotKey": "Alt+S",
       "detail": {
         "type": "web",

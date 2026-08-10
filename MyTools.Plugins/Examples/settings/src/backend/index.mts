@@ -46,6 +46,19 @@ tool
     var params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
     return await tool.hostCall("validateKeymap", params);
   })
+  .handle("getGestures", async () => {
+    return await tool.hostCall("getGestures");
+  })
+  .handle("saveGestures", async (payload) => {
+    var params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
+    return await tool.hostCall("saveGestures", params);
+  })
+  .handle("suspendGestures", async () => {
+    return await tool.hostCall("suspendGestures");
+  })
+  .handle("resumeGestures", async () => {
+    return await tool.hostCall("resumeGestures");
+  })
   .handle("suspendHotkeys", async () => {
     return await tool.hostCall("suspendHotkeys");
   })

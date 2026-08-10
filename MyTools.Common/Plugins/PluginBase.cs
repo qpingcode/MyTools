@@ -66,15 +66,19 @@ public abstract class PluginBase : IPlugin
 
     public void RegisterSettings(IConfigurationRegistry configurationRegistry)
     {
-        var pluginsCategory = configurationRegistry.FindCategory("Plugins");
-        var thisPluginCategory = configurationRegistry.AddCategory(PluginId, Name, Description, pluginsCategory);
+        // 插件设置分类作为顶层分类（不再嵌套在 Plugins 下），呈扁平列表展示。
+        var thisPluginCategory = configurationRegistry.AddCategory(PluginId, Name, Description);
         AddPluginSettings(thisPluginCategory, configurationRegistry);
 
-        // 如果插件没有注册任何额外设置项，则从 Plugins 树中移除这个空子分类。
-        // 插件启用状态统一在 Plugins 分类（keymap 页面）中管理，不再作为单独设置项。
+        // 如果插件没有注册任何额外设置项，则移除这个空分类，不在侧栏中显示。
         if (thisPluginCategory.Settings.Count == 0)
         {
-            pluginsCategory.Children.Remove(thisPluginCategory);
+            var rootCategories = configurationRegistry.GetRootCategories().ToList();
+            var parent = thisPluginCategory.Parent;
+            if (parent != null)
+            {
+                parent.Children.Remove(thisPluginCategory);
+            }
         }
     }
 

@@ -195,6 +195,238 @@
       "references": [],
       "existingTranslations": { "zh-CN": "检测到冲突，请先解决冲突再保存。" },
       "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.RestartPrompt",
+      "defaultValue": "Some changes require a restart to take effect. Restart now?",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "部分设置需要重启才能生效，是否立即重启？" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Category.Gestures",
+      "defaultValue": "Mouse Gestures",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "鼠标手势" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.HeaderAction",
+      "defaultValue": "Action Name",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "动作名称" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.HeaderActionTip",
+      "defaultValue": "The name of this gesture action.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "该手势动作的名称。" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.HeaderGesture",
+      "defaultValue": "Trigger Gesture",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "触发手势" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.HeaderGestureTip",
+      "defaultValue": "The mouse movement pattern to record. Hold the right mouse button and draw.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "要录制的鼠标移动轨迹。按住鼠标右键画出方向。" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.HeaderTrigger",
+      "defaultValue": "Action",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "操作" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.HeaderTriggerTip",
+      "defaultValue": "What happens when the gesture is triggered — simulate a keyboard shortcut or a mouse button.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "手势触发时执行的操作——模拟键盘快捷键或鼠标按键。" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.HeaderProcess",
+      "defaultValue": "Target Process",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "触发进程" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.HeaderProcessTip",
+      "defaultValue": "Only trigger this gesture in the specified processes. Leave empty to apply to all processes.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "仅在指定进程中触发该手势。留空则对所有进程生效。" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.HeaderEnabled",
+      "defaultValue": "Enabled",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "启用" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.HeaderEnabledTip",
+      "defaultValue": "Enable or disable this gesture.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "启用或禁用该手势。" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.Add",
+      "defaultValue": "Add Gesture",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "添加手势" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.Record",
+      "defaultValue": "Record",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "录制" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.Recording",
+      "defaultValue": "Hold right button to draw...",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "按住右键画手势..." },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.Delete",
+      "defaultValue": "Delete",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "删除" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.NamePlaceholder",
+      "defaultValue": "e.g. Close Tab",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "如：关闭标签页" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.ProcessPlaceholder",
+      "defaultValue": "Any",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "任意" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.ProcessHint",
+      "defaultValue": "Comma-separated process names",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "逗号分隔的进程名" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.TriggerHotkey",
+      "defaultValue": "Hotkey",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "快捷键" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.TriggerMouse",
+      "defaultValue": "Mouse Button",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "鼠标按键" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.MouseBack",
+      "defaultValue": "Back (XButton1)",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "后退 (XButton1)" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.MouseForward",
+      "defaultValue": "Forward (XButton2)",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "前进 (XButton2)" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.Empty",
+      "defaultValue": "No gestures configured",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "暂无手势配置" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.NoGesture",
+      "defaultValue": "Not set",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "未设置" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.Saved",
+      "defaultValue": "Gestures saved and applied.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "手势已保存并应用。" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.ConflictWins",
+      "defaultValue": "Conflicts with \"{{name}}\". This one takes priority.",
+      "placeholders": ["name"],
+      "references": [],
+      "existingTranslations": { "zh-CN": "与「{{name}}」冲突。此项会优先执行。" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.ConflictLose",
+      "defaultValue": "Conflicts with \"{{name}}\", which will take priority.",
+      "placeholders": ["name"],
+      "references": [],
+      "existingTranslations": { "zh-CN": "与「{{name}}」冲突，对方会优先执行。" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.Unnamed",
+      "defaultValue": "Unnamed",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "未命名" },
+      "sourceHash": "sha256:placeholder"
     }
   ]
 }
