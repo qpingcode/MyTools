@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using Microsoft.Extensions.Logging;
 using Microsoft.Web.WebView2.Core;
 using MyTools.Common.Config;
 using MyTools.Common.DependencyInjection;
@@ -18,6 +19,8 @@ namespace MyTools.Desktop.Components;
 
 public partial class NodePluginDetailView : UserControl
 {
+    private static readonly ILogger<NodePluginDetailView> StaticLogger =
+        ServiceLocator.GetRequiredService<ILogger<NodePluginDetailView>>();
     private static readonly Lazy<Task<CoreWebView2Environment>> WebView2Environment =
         new(CreateWebView2EnvironmentAsync);
     private const string HostInitializeSubject = "mytools.host.initialize";
@@ -455,8 +458,13 @@ public partial class NodePluginDetailView : UserControl
 
     private void OnThemeChanged(object? sender, ThemeChangedEventArgs e)
     {
+        StaticLogger.LogInformation(
+            "OnThemeChanged: previous={Previous}, current={Current}, hasContext={HasContext}, browserReady={BrowserReady}, coreWebView2={HasCoreWebView2}",
+            e.PreviousTheme, e.CurrentTheme, viewModel?.CurrentContext != null, browserReady, PluginBrowser.CoreWebView2 != null);
+
         if (viewModel?.CurrentContext == null)
         {
+            StaticLogger.LogWarning("OnThemeChanged: skipped, CurrentContext is null.");
             return;
         }
 
@@ -471,7 +479,7 @@ public partial class NodePluginDetailView : UserControl
             }
 
             // Notify plugin business logic (e.g. charts, icons that depend on theme).
-            SendMessage(JsonSerializer.Serialize(new
+            var msg = JsonSerializer.Serialize(new
             {
                 type = "theme-changed",
                 payload = new
@@ -479,7 +487,9 @@ public partial class NodePluginDetailView : UserControl
                     theme = e.CurrentTheme.ToWireString(),
                     themeTokens = WebThemeTokens.For(e.CurrentTheme)
                 }
-            }));
+            });
+            StaticLogger.LogInformation("OnThemeChanged: sending theme-changed message, browserReady={BrowserReady}.", browserReady);
+            SendMessage(msg);
         });
     }
 
@@ -505,15 +515,19 @@ public partial class NodePluginDetailView : UserControl
     {
         if (!browserReady || PluginBrowser.CoreWebView2 == null)
         {
+            StaticLogger.LogWarning("SendMessage: dropped (browserReady={BrowserReady}, coreWebView2={HasCoreWebView2}), msg={Message}",
+                browserReady, PluginBrowser.CoreWebView2 != null, messageJson[..Math.Min(120, messageJson.Length)]);
             return;
         }
 
         try
         {
+            StaticLogger.LogDebug("SendMessage: posting {Message}", messageJson[..Math.Min(120, messageJson.Length)]);
             PluginBrowser.CoreWebView2.PostWebMessageAsJson(messageJson);
         }
-        catch
+        catch (Exception ex)
         {
+            StaticLogger.LogError(ex, "SendMessage: PostWebMessageAsJson failed.");
         }
     }
 

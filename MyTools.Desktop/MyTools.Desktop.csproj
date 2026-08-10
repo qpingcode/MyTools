@@ -45,6 +45,15 @@
     </ItemGroup>
 
     <ItemGroup>
+        <EmbeddedResource Update="Localization\HostStrings.zh-CN.resx">
+            <DependentUpon>HostStrings.resx</DependentUpon>
+        </EmbeddedResource>
+        <EmbeddedResource Update="Localization\HostStrings.fr-FR.resx">
+            <DependentUpon>HostStrings.resx</DependentUpon>
+        </EmbeddedResource>
+    </ItemGroup>
+
+    <ItemGroup>
         <None Remove="Components\Search\test.png" />
         <Page Update="Views\Components\Search\BasicListView.xaml">
           <Generator>MSBuild:Compile</Generator>

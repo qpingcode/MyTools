@@ -69,19 +69,25 @@ public abstract class PluginBase : IPlugin
         var pluginsCategory = configurationRegistry.FindCategory("Plugins");
         var thisPluginCategory = configurationRegistry.AddCategory(PluginId, Name, Description, pluginsCategory);
         AddPluginSettings(thisPluginCategory, configurationRegistry);
+
+        // 如果插件没有注册任何额外设置项，则从 Plugins 树中移除这个空子分类。
+        // 插件启用状态统一在 Plugins 分类（keymap 页面）中管理，不再作为单独设置项。
+        if (thisPluginCategory.Settings.Count == 0)
+        {
+            pluginsCategory.Children.Remove(thisPluginCategory);
+        }
     }
 
     protected string GetSettingFullPath(string settingName)
     {
         return $"Plugins.{PluginId}.{settingName}";
     }
+
+    /// <summary>
+    /// 子类重写以添加插件特有的设置项。基类不再注册默认的 IsEnabled——
+    /// 启用状态统一在 Plugins 分类中管理。
+    /// </summary>
     protected virtual void AddPluginSettings(ConfigurationCategory pluginCategory, IConfigurationRegistry configurationRegistry)
     {
-        configurationRegistry.AddSetting(
-            pluginCategory,
-            "IsEnabled",
-            GetCaption("Plugin.Common.Enable.Title", "Enable plugin"),
-            GetCaption("Plugin.Common.Enable.Description", "Enable or disable this plugin"),
-            true);
     }
 }

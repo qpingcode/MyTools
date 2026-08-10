@@ -1,7 +1,7 @@
-﻿{
-  "id": "hello-search",
-  "name": "Hello Search",
-  "version": "0.2.0",
+{
+  "id": "settings",
+  "name": "Settings",
+  "version": "0.1.0",
   "runtime": "node",
   "protocolVersion": "2.0",
   "i18n": {
@@ -12,10 +12,10 @@
   },
   "entries": [
     {
-      "id": "hello",
-      "name": "Hello Search",
+      "id": "main",
       "entry": "backend/index.mjs",
-      "keywords": [],
+      "keywords": ["settings", "config", "设置", "配置"],
+      "hotKey": "Alt+S",
       "detail": {
         "type": "web",
         "entry": "web/index.html"

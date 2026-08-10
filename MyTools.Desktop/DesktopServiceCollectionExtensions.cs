@@ -61,6 +61,9 @@ public static class DesktopServiceCollectionExtensions
         serviceCollection.AddSingleton<NodePluginDetailNavigator>();
         serviceCollection.AddSingleton<INodePluginDetailNavigator>(sp => sp.GetRequiredService<NodePluginDetailNavigator>());
         serviceCollection.AddSingleton<GlobalExceptionHandler>();
+        serviceCollection.AddSingleton<SettingsPluginHostCallHandler>();
+        serviceCollection.AddSingleton<KeymapOverrideProvider>();
+        serviceCollection.AddSingleton<KeymapService>();
         serviceCollection.AddSingleton<HotKeyManager>();
         serviceCollection.AddSingleton<HotKeyMessageHandler>();
         serviceCollection.AddSingleton<IGlobal, Global>();

@@ -11,6 +11,7 @@ internal sealed class NodePluginProcessHost : IDisposable
     private readonly NodePluginManifest manifest;
     private readonly ILogger<NodePluginProcessHost> logger;
     private readonly SemaphoreSlim startLock = new(1, 1);
+    private readonly SemaphoreSlim writeLock = new(1, 1);
     private readonly ConcurrentDictionary<string, TaskCompletionSource<string>> pendingRequests = new();
     private Process? process;
     private Task? stdoutTask;
@@ -18,10 +19,40 @@ internal sealed class NodePluginProcessHost : IDisposable
 
     public event EventHandler<NodePluginEventReceivedEventArgs>? EventReceived;
 
+    /// <summary>
+    /// 宿主能力回调。Node 插件通过 hostCall 向宿主发起请求时调用。
+    /// 为 null 表示该插件没有注册宿主能力（如普通搜索/翻译插件）。
+    /// </summary>
+    public Func<HostCallRequest, CancellationToken, Task<JsonElement>>? HostCallHandler { get; set; }
+
     public NodePluginProcessHost(NodePluginManifest manifest, ILogger<NodePluginProcessHost> logger)
     {
         this.manifest = manifest;
         this.logger = logger;
+    }
+
+    /// <summary>
+    /// 向 Node 进程的 stdin 写入一行 JSON。所有写入必须经过此方法以确保互斥，
+    /// 避免宿主请求（SendRequestAsync）和 hostCall 响应（HandleHostCallAsync）
+    /// 并发写同一个 StreamWriter 导致 "stream is currently in use" 异常。
+    /// </summary>
+    private async Task WriteToProcessAsync(string json)
+    {
+        if (process == null)
+        {
+            return;
+        }
+
+        await writeLock.WaitAsync();
+        try
+        {
+            await process.StandardInput.WriteLineAsync(json);
+            await process.StandardInput.FlushAsync();
+        }
+        finally
+        {
+            writeLock.Release();
+        }
     }
 
     public Task<JsonElement> InitializeAsync(
@@ -132,8 +163,7 @@ internal sealed class NodePluginProcessHost : IDisposable
             @params = parameters
         });
 
-        await process.StandardInput.WriteLineAsync(requestJson);
-        await process.StandardInput.FlushAsync();
+        await WriteToProcessAsync(requestJson);
 
         var responseJson = await completionSource.Task;
         using var document = JsonDocument.Parse(responseJson);
@@ -236,9 +266,31 @@ internal sealed class NodePluginProcessHost : IDisposable
 
                 using var document = JsonDocument.Parse(line);
                 var root = document.RootElement;
+
+                // Node → 宿主的消息分三类：
+                // 1. 有 method 无 id → 通知（publish），走 HandleNotification
+                // 2. 有 method 有 id → 请求（hostCall），宿主处理后写回响应
+                // 3. 无 method 有 id → 宿主之前发起的请求的响应
+                if (root.TryGetProperty("method", out var methodElement))
+                {
+                    var methodName = methodElement.GetString();
+                    var messageId = root.TryGetProperty("id", out var reqIdElement)
+                        ? reqIdElement.GetString()
+                        : null;
+
+                    if (string.Equals(methodName, "hostCall", StringComparison.OrdinalIgnoreCase)
+                        && !string.IsNullOrWhiteSpace(messageId))
+                    {
+                        _ = HandleHostCallAsync(root, messageId!);
+                        continue;
+                    }
+
+                    HandleNotification(root, line);
+                    continue;
+                }
+
                 if (!root.TryGetProperty("id", out var idElement))
                 {
-                    HandleNotification(root, line);
                     continue;
                 }
 
@@ -298,6 +350,61 @@ internal sealed class NodePluginProcessHost : IDisposable
             {
                 completionSource.TrySetException(exception);
             }
+        }
+    }
+
+    private async Task HandleHostCallAsync(JsonElement root, string id)
+    {
+        if (process == null)
+        {
+            return;
+        }
+
+        string responseJson;
+        try
+        {
+            if (HostCallHandler == null)
+            {
+                throw new InvalidOperationException("No host call handler registered for this plugin.");
+            }
+
+            var callMethod = root.TryGetProperty("params", out var paramsElement)
+                             && paramsElement.TryGetProperty("method", out var innerMethod)
+                ? innerMethod.GetString() ?? ""
+                : "";
+            var callParams = paramsElement.ValueKind == JsonValueKind.Object
+                             && paramsElement.TryGetProperty("params", out var innerParams)
+                             && innerParams.ValueKind == JsonValueKind.Object
+                ? innerParams.Clone()
+                : JsonSerializer.SerializeToElement(new { });
+
+            var result = await HostCallHandler(new HostCallRequest(callMethod, callParams), CancellationToken.None);
+
+            responseJson = JsonSerializer.Serialize(new
+            {
+                jsonrpc = "2.0",
+                id,
+                result,
+            });
+        }
+        catch (Exception ex)
+        {
+            responseJson = JsonSerializer.Serialize(new
+            {
+                jsonrpc = "2.0",
+                id,
+                error = new { code = -32000, message = ex.Message },
+            });
+            logger.LogError(ex, "HostCall failed for plugin {PluginName}.", manifest.Name);
+        }
+
+        try
+        {
+            await WriteToProcessAsync(responseJson);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to write hostCall response for plugin {PluginName}.", manifest.Name);
         }
     }
 

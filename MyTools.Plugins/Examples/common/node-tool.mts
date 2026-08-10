@@ -1,4 +1,5 @@
 import readline from "node:readline";
+import crypto from "node:crypto";
 
 type JsonRpcId = string | number | null;
 
@@ -25,6 +26,7 @@ export class NodeTool {
   #actionHandler: NodeToolHostHandler | null = null;
   #initializeHandler: NodeToolHostHandler | null = null;
   #started = false;
+  #hostCallPending = new Map<string, { resolve: (value: unknown) => void; reject: (reason: unknown) => void; timer: ReturnType<typeof setTimeout> }>();
 
   initialize(handler: NodeToolHostHandler): this {
     this.#initializeHandler = handler;
@@ -69,6 +71,34 @@ export class NodeTool {
     });
   }
 
+  /**
+   * 向宿主发起能力请求（hostCall），等待宿主写回响应。
+   * 仅对注册了 HostCallHandler 的插件有效（如 settings 插件）。
+   */
+  hostCall(method: string, params: Record<string, unknown> = {}): Promise<unknown> {
+    if (!method || typeof method !== "string") {
+      return Promise.reject(new Error("tool.hostCall requires a method name."));
+    }
+
+    const id = crypto.randomUUID();
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        if (this.#hostCallPending.delete(id)) {
+          reject(new Error(`hostCall "${method}" timed out after 30s.`));
+        }
+      }, 30000);
+
+      this.#hostCallPending.set(id, { resolve, reject, timer });
+
+      writeMessage({
+        jsonrpc: "2.0",
+        id,
+        method: "hostCall",
+        params: { method, params },
+      });
+    });
+  }
+
   start(): void {
     if (this.#started) {
       return;
@@ -90,11 +120,35 @@ export class NodeTool {
       return;
     }
 
+    let raw: Record<string, unknown>;
+    try {
+      raw = JSON.parse(line.replace(/^\uFEFF/, "")) as Record<string, unknown>;
+    } catch (error) {
+      writeError(null, -32700, error instanceof Error ? error.message : String(error));
+      return;
+    }
+
+    // 宿主写回的 hostCall 响应：有 id 无 method，可能是 result 或 error。
+    const rawId = typeof raw.id === "string" ? raw.id : null;
+    if (rawId && !raw.method && this.#hostCallPending.has(rawId)) {
+      const pending = this.#hostCallPending.get(rawId)!;
+      this.#hostCallPending.delete(rawId);
+      clearTimeout(pending.timer);
+
+      const error = raw.error as { message?: string } | undefined;
+      if (error) {
+        pending.reject(new Error(error.message ?? "hostCall error"));
+      } else {
+        pending.resolve(raw.result);
+      }
+      return;
+    }
+
     let message: JsonRpcRequest;
     try {
       message = parseRequest(line);
     } catch (error) {
-      writeError(null, -32700, error instanceof Error ? error.message : String(error));
+      writeError(rawId, -32700, error instanceof Error ? error.message : String(error));
       return;
     }
 

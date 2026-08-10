@@ -221,8 +221,7 @@ public partial class App
     {
         try
         {
-            var settingsWindow = new ConfigurationWindow();
-            settingsWindow.Show();
+            appBootstrapper?.OpenSettings();
         }
         catch (Exception ex)
         {

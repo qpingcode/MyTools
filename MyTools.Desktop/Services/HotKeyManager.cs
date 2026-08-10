@@ -62,5 +62,15 @@ namespace MyTools.Desktop.Services
         {
             _hotKeyMessageHandler.UnregisterAllCallback();
         }
+
+        public void SuspendAllHotKeys()
+        {
+            _hotKeyMessageHandler.SuspendAll();
+        }
+
+        public void ResumeAllHotKeys()
+        {
+            _hotKeyMessageHandler.ResumeAll();
+        }
     }
 }

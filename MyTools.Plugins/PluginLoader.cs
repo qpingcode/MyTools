@@ -95,6 +95,11 @@ public class PluginLoader(ILogger<PluginLoader> logger, IKeywordRegistry keyword
         return plugins.Concat(dynamicPlugins);
     }
 
+    /// <summary>
+    /// 获取当前已加载的全部插件（含内置插件和动态加载的 Node 插件）。
+    /// </summary>
+    public IReadOnlyList<IPlugin> LoadedPlugins => GetAllPlugins().ToList();
+
     public void Dispose()
     {
         if (disposed)

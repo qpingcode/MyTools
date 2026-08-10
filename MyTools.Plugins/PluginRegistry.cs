@@ -24,7 +24,20 @@ public class PluginRegistry : IKeywordRegistry, IGlobalSearchRegistry, IActionRe
         ArgumentNullException.ThrowIfNull(keyword);
         ArgumentNullException.ThrowIfNull(plugin);
         ArgumentNullException.ThrowIfNull(plugin.Actions);
-        _keywordMap.Add(keyword, plugin);
+        _keywordMap[keyword] = plugin;
+    }
+
+    void IKeywordRegistry.Unregister(string keyword)
+    {
+        if (!string.IsNullOrEmpty(keyword))
+        {
+            _keywordMap.Remove(keyword);
+        }
+    }
+
+    void IKeywordRegistry.Clear()
+    {
+        _keywordMap.Clear();
     }
 
     bool IKeywordRegistry.TryFindPlugin(string searchText, [NotNullWhen(true)] out string searchTextWithoutPrefix, [NotNullWhen(true)] out IPlugin plugin)

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="settings-app" id="settingsApp">
+        <!-- 搜索框 -->
+        <div class="search-bar">
+            <input type="text"
+                   id="searchInput"
+                   class="search-input"
+                   data-i18n="[placeholder]Plugin.Settings.Search.Placeholder"
+                   data-i18n-default-value="Search settings..."
+                   autocomplete="off">
+        </div>
+
+        <!-- 主体: 左侧分类 + 右侧设置 -->
+        <div class="settings-body">
+            <!-- 左侧分类树 -->
+            <div class="sidebar" id="sidebar">
+                <ul class="category-tree" id="categoryTree"></ul>
+                <div class="no-results" id="noResults" hidden
+                     data-i18n="Plugin.Settings.NoResults"
+                     data-i18n-default-value="No matching settings found"></div>
+            </div>
+
+            <!-- 分割线 -->
+            <div class="divider"></div>
+
+            <!-- 右侧设置面板 -->
+            <div class="content-panel">
+                <div class="content-header">
+                    <h2 id="categoryTitle"></h2>
+                    <p id="categoryDescription"></p>
+                </div>
+                <div class="settings-scroll">
+                    <div class="settings-list" id="settingsList"></div>
+                </div>
+                <div class="action-bar">
+                    <button id="saveButton" class="btn btn-primary"
+                            data-i18n="Plugin.Settings.Save"
+                            data-i18n-default-value="Save"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 消息 -->
+    <div class="toast" id="toast" hidden></div>
+
+    <!-- 重启确认弹窗 -->
+    <div class="modal-overlay" id="restartModal" hidden>
+        <div class="modal">
+            <p class="modal-message"
+               data-i18n="Plugin.Settings.RestartPrompt"
+               data-i18n-default-value="Language changed. Restart to apply?"></p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="restartCancel"
+                        data-i18n="Plugin.Settings.Cancel"
+                        data-i18n-default-value="Cancel"></button>
+                <button class="btn btn-primary" id="restartConfirm"
+                        data-i18n="Plugin.Settings.Restart"
+                        data-i18n-default-value="Restart"></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>

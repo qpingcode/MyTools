@@ -34,15 +34,31 @@ public sealed class NodePlugin : IPlugin, IDisposable
         remove => processHost.EventReceived -= value;
     }
 
+    /// <summary>
+    /// 为此插件注册宿主能力回调（hostCall）。注册后，插件的 Node 后端可以通过
+    /// <c>tool.hostCall(method, params)</c> 向宿主发起请求。
+    /// 仅需要宿主能力的插件（如 settings）才注册。
+    /// </summary>
+    public void RegisterHostCallHandler(Func<HostCallRequest, CancellationToken, Task<JsonElement>> handler)
+    {
+        processHost.HostCallHandler = handler;
+    }
+
     public string Name => manifest.Name;
 
     public string PluginId => manifest.Id;
+
+    /// <summary>
+    /// 插件所属的根 ID（不含 entry 后缀）。例如 PluginId 为 "settings:main"，
+    /// ParentId 为 "settings"。用于匹配同一插件的所有 entry。
+    /// </summary>
+    public string ParentId => manifest.ParentId;
 
     public string Description => $"Node plugin: {manifest.Name}";
 
     public List<IActionWithCommand> Actions { get; } = [];
 
-    public bool IsEnabled => true;
+    public bool IsEnabled { get; set; } = true;
 
     public ViewModelType ViewModelType => ViewModelType.Basic;
 
