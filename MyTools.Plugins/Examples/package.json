@@ -5,11 +5,12 @@
   "workspaces": [
     "hello-search",
     "deepseek-chat",
-    "deepseek-translator"
+    "deepseek-translator",
+    "settings"
   ],
   "scripts": {
     "clean": "npm run clean --workspaces --if-present",
-    "build": "npm run build -w mytools-plugin-hello-search && npm run build -w mytools-plugin-deepseek-chat && npm run build -w mytools-plugin-deepseek-translator",
-    "check": "npm run check -w mytools-plugin-hello-search && npm run check -w mytools-plugin-deepseek-chat && npm run check -w mytools-plugin-deepseek-translator"
+    "build": "npm run build -w mytools-plugin-hello-search && npm run build -w mytools-plugin-deepseek-chat && npm run build -w mytools-plugin-deepseek-translator && npm run build -w mytools-plugin-settings",
+    "check": "npm run check -w mytools-plugin-hello-search && npm run check -w mytools-plugin-deepseek-chat && npm run check -w mytools-plugin-deepseek-translator && npm run check -w mytools-plugin-settings"
   }
 }

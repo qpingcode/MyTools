@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "scope": "plugin:settings",
+  "pluginId": "settings",
+  "sourceLocale": "en-US",
+  "entries": [
+    {
+      "key": "Plugin.Settings.Name",
+      "defaultValue": "Settings",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "设置" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Subtitle",
+      "defaultValue": "Application settings",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "应用设置" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Action.Open",
+      "defaultValue": "Open Settings",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "打开设置" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Search.Placeholder",
+      "defaultValue": "Search settings...",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "搜索设置..." },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Save",
+      "defaultValue": "Save",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "保存" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Saved",
+      "defaultValue": "Settings saved successfully.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "设置已保存。" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Loading",
+      "defaultValue": "Loading...",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "加载中..." },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.NoSettings",
+      "defaultValue": "No settings in this category",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "此分类没有设置项" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.NoResults",
+      "defaultValue": "No matching settings found",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "未找到匹配的设置" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.RestartPrompt",
+      "defaultValue": "Language changed. Restart to apply?",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "语言已更改，是否重启以应用？" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Restart",
+      "defaultValue": "Restart",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "重启" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Cancel",
+      "defaultValue": "Cancel",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "取消" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Restarting",
+      "defaultValue": "Please restart MyTools to apply the new language.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "请重启 MyTools 以应用新语言。" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Category.Plugins",
+      "defaultValue": "Plugins",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "插件" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Keymap.HeaderEnabled",
+      "defaultValue": "Enabled",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "启用" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Keymap.HeaderName",
+      "defaultValue": "Plugin Name",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "插件名" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Keymap.HeaderHotkey",
+      "defaultValue": "Hotkey",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "快捷键" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Keymap.HeaderKeywords",
+      "defaultValue": "Keywords",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "关键词" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Keymap.KeywordsPlaceholder",
+      "defaultValue": "Up to 3 keywords, comma separated",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "最多 3 个关键词，逗号分隔" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Keymap.NoHotkey",
+      "defaultValue": "None",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "无" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Keymap.Recording",
+      "defaultValue": "Press shortcut...",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "按下快捷键..." },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Keymap.ClearHotkey",
+      "defaultValue": "Clear hotkey",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "清除快捷键" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Keymap.ConflictsWith",
+      "defaultValue": "conflicts with",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "与" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Keymap.HasConflicts",
+      "defaultValue": "Conflicts detected. Resolve them before saving.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "检测到冲突，请先解决冲突再保存。" },
+      "sourceHash": "sha256:placeholder"
+    }
+  ]
+}

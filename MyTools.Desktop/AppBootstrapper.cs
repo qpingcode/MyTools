@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using MyTools.Common.Config;
 using MyTools.Common.Config.Interfaces;
 using MyTools.Common.Config.Enums;
+using MyTools.Common.DependencyInjection;
 using MyTools.Common.Localization;
 using MyTools.Common.Theming;
 using MyTools.Desktop.Models;
@@ -31,6 +32,7 @@ public class AppBootstrapper : IDisposable
     private readonly ILogger<AppBootstrapper> logger;
     private readonly LogLevelService logLevelService;
     private readonly PluginWindowManager pluginWindowManager;
+    private readonly KeymapService keymapService;
     private readonly IConfigurationRegistry registry;
     private readonly ILocalizationService localization;
     private readonly IThemeService themeService;
@@ -47,6 +49,7 @@ public class AppBootstrapper : IDisposable
         ILogger<AppBootstrapper> logger,
         LogLevelService logLevelService,
         PluginWindowManager pluginWindowManager,
+        KeymapService keymapService,
         IConfigurationRegistry registry,
         ILocalizationService localization,
         IThemeService themeService)
@@ -62,6 +65,7 @@ public class AppBootstrapper : IDisposable
         this.logger = logger;
         this.logLevelService = logLevelService;
         this.pluginWindowManager = pluginWindowManager;
+        this.keymapService = keymapService;
         this.registry = registry;
         this.localization = localization;
         this.themeService = themeService;
@@ -156,35 +160,30 @@ public class AppBootstrapper : IDisposable
         CopyExampleWhenConfigNotExists();
 
         nodePluginCatalog.Reload();
-        
+
         var loadedPlugins = pluginLoader.InitPlugins();
+        RegisterNodePluginHostCallHandlers(loadedPlugins.OfType<NodePlugin>());
         RegisterNodePluginHotKeys(loadedPlugins.OfType<NodePlugin>());
+    }
+
+    /// <summary>
+    /// 为需要宿主能力的 Node 插件（如 settings）注册 hostCall handler。
+    /// </summary>
+    private void RegisterNodePluginHostCallHandlers(IEnumerable<NodePlugin> nodePlugins)
+    {
+        foreach (var nodePlugin in nodePlugins)
+        {
+            if (nodePlugin.ParentId == "settings")
+            {
+                var handler = ServiceLocator.GetRequiredService<Services.SettingsPluginHostCallHandler>();
+                nodePlugin.RegisterHostCallHandler(handler.HandleAsync);
+            }
+        }
     }
 
     private void RegisterNodePluginHotKeys(IEnumerable<NodePlugin> nodePlugins)
     {
-        foreach (var nodePlugin in nodePlugins)
-        {
-            if (string.IsNullOrWhiteSpace(nodePlugin.HotKey))
-            {
-                continue;
-            }
-
-            var hotKey = new HotKeyConfig(nodePlugin.HotKey);
-            if (hotKey.Key == Key.None || hotKey.Modifiers == ModifierKeys.None)
-            {
-                continue;
-            }
-
-            try
-            {
-                hotKeyManager.RegisterHotKey(hotKey.Key, hotKey.Modifiers, () => OpenNodePluginDetail(nodePlugin));
-            }
-            catch (InvalidOperationException ex)
-            {
-                logger.LogError(ex, "Cannot register hotkey {HotKey} for node plugin {PluginName}.", nodePlugin.HotKey, nodePlugin.Name);
-            }
-        }
+        keymapService.RegisterAllHotKeys(nodePlugins, OpenNodePluginDetail);
     }
 
     private void OpenNodePluginDetail(NodePlugin nodePlugin)
@@ -198,6 +197,22 @@ public class AppBootstrapper : IDisposable
         }
 
         pluginWindowManager.ShowOrFocus(nodePlugin, context);
+    }
+
+    /// <summary>
+    /// 打开 settings 插件窗口（供托盘菜单调用）。
+    /// </summary>
+    public void OpenSettings()
+    {
+        var settingsPlugin = pluginLoader.LoadedPlugins.OfType<NodePlugin>().FirstOrDefault(p => p.ParentId == "settings");
+        if (settingsPlugin != null)
+        {
+            OpenNodePluginDetail(settingsPlugin);
+            return;
+        }
+
+        // settings 插件未加载时，退回到搜索窗口
+        WindowHelper.ShowSearchWindow();
     }
     
     private void CopyExampleWhenConfigNotExists()
@@ -330,7 +345,7 @@ public class AppBootstrapper : IDisposable
                 "Plugins",
                 localization.GetCaption("Configuration.Plugins.Name", "Plugins"),
                 localization.GetCaption("Configuration.Plugins.Description", "Plugin Settings"),
-                IsSelectable: false);
+                IsSelectable: true);
             
             foreach (var plugin in plugins)
             {

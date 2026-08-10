@@ -86,7 +86,6 @@ namespace MyTools.Plugins
         
         protected override void AddPluginSettings(ConfigurationCategory pluginCategory, IConfigurationRegistry configurationRegistry)
         {
-            base.AddPluginSettings(pluginCategory, configurationRegistry);
             var defaultPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "ILSpy", "ILSpy.exe");
             spyPathSetting = configurationRegistry.AddSetting(
                 pluginCategory,
