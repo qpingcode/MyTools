@@ -30,7 +30,7 @@ public class AppBootstrapper : IDisposable
     private readonly PluginLoader pluginLoader;
     private readonly ILogger<AppBootstrapper> logger;
     private readonly LogLevelService logLevelService;
-    private readonly NodePluginDetailNavigator nodePluginDetailNavigator;
+    private readonly PluginWindowManager pluginWindowManager;
     private readonly IConfigurationRegistry registry;
     private readonly ILocalizationService localization;
     private readonly IThemeService themeService;
@@ -46,7 +46,7 @@ public class AppBootstrapper : IDisposable
         PluginLoader pluginLoader,
         ILogger<AppBootstrapper> logger,
         LogLevelService logLevelService,
-        NodePluginDetailNavigator nodePluginDetailNavigator,
+        PluginWindowManager pluginWindowManager,
         IConfigurationRegistry registry,
         ILocalizationService localization,
         IThemeService themeService)
@@ -61,7 +61,7 @@ public class AppBootstrapper : IDisposable
         this.pluginLoader = pluginLoader;
         this.logger = logger;
         this.logLevelService = logLevelService;
-        this.nodePluginDetailNavigator = nodePluginDetailNavigator;
+        this.pluginWindowManager = pluginWindowManager;
         this.registry = registry;
         this.localization = localization;
         this.themeService = themeService;
@@ -189,21 +189,15 @@ public class AppBootstrapper : IDisposable
 
     private void OpenNodePluginDetail(NodePlugin nodePlugin)
     {
-        if (WindowHelper.TryFocusNodePluginDetail(nodePlugin))
-        {
-            return;
-        }
-
         var context = nodePlugin.CreateHotKeyDetailContext();
         if (context == null)
         {
+            // 无 detail entry，退回到搜索主窗口行为
             WindowHelper.ShowSearchWindow(nodePlugin);
             return;
         }
 
-        WindowHelper.ShowSearchWindow(text: context.SearchText);
-        nodePluginDetailNavigator.OpenDetail(context);
-        WindowHelper.FocusCurrentNodePluginDetailInput();
+        pluginWindowManager.ShowOrFocus(nodePlugin, context);
     }
     
     private void CopyExampleWhenConfigNotExists()

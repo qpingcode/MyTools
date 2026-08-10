@@ -45,32 +45,6 @@ public static class WindowHelper
         searchWindow.SearchTextBox.CaretIndex = searchText.Length;
     }
 
-    public static bool TryFocusNodePluginDetail(NodePlugin nodePlugin)
-    {
-        if (!FindExistingSearchWindow(out var existing) || existing?.CurrentNodePluginDetailId != nodePlugin.Id)
-        {
-            return false;
-        }
-
-        if (existing.WindowState == WindowState.Minimized)
-        {
-            existing.WindowState = WindowState.Normal;
-        }
-
-        existing.Activate();
-        existing.Focus();
-        _ = existing.FocusNodePluginPrimaryInputAsync();
-        return true;
-    }
-
-    public static void FocusCurrentNodePluginDetailInput()
-    {
-        if (FindExistingSearchWindow(out var existing))
-        {
-            _ = existing!.FocusNodePluginPrimaryInputAsync();
-        }
-    }
-
     static bool FindExistingSearchWindow(out SearchWindow? existingWindow)
     {
         existingWindow = Application.Current.Windows.OfType<SearchWindow>().FirstOrDefault();
