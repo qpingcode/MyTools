@@ -151,8 +151,12 @@
   <data name="LogLevel.Information" xml:space="preserve"><value>Information</value></data>
   <data name="LogLevel.Warning" xml:space="preserve"><value>Warning</value></data>
   <data name="LogLevel.Error" xml:space="preserve"><value>Error</value></data>
+  <data name="Configuration.General.Theme.Title" xml:space="preserve"><value>Theme</value></data>
   <data name="Configuration.General.Theme.Description" xml:space="preserve">
     <value>Choose the application color theme</value>
   </data>
+  <data name="Theme" xml:space="preserve"><value>Theme</value></data>
+  <data name="Theme.light" xml:space="preserve"><value>Light</value></data>
+  <data name="Theme.dark" xml:space="preserve"><value>Dark</value></data>
 </root>
 

@@ -98,13 +98,13 @@ public sealed class SettingsPluginHostCallHandler
                 .ToList(),
             SupportedThemes =
             [
-                new() { Value = "light", Label = "Light" },
-                new() { Value = "dark", Label = "Dark" }
+                new() { Value = "light", Label = languageService.GetCaption("Theme.light", "Light") },
+                new() { Value = "dark", Label = languageService.GetCaption("Theme.dark", "Dark") }
             ],
             SupportedLogLevels = Enum.GetNames<LogEventLevel>().Select(name => new OptionDto
             {
                 Value = name,
-                Label = name
+                Label = languageService.GetCaption($"LogLevel.{name}", name)
             }).ToList()
         };
 
