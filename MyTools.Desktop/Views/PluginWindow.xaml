@@ -113,12 +113,20 @@
                                  HorizontalAlignment="Left"
                                  Margin="0,5" />
 
-                        <TextBlock Grid.Column="1"
-                                   Text="{Binding PluginName}"
-                                   Foreground="{DynamicResource TextSecondaryBrush}"
-                                   Margin="8,0,0,0"
-                                   VerticalAlignment="Center"
-                                   Visibility="{Binding PluginName, Converter={StaticResource IsNullToVisibilityConverter}}" />
+                        <StackPanel Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center">
+                            <TextBlock Text="{Binding PluginName}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       Margin="8,0,0,0"
+                                       VerticalAlignment="Center"
+                                       Visibility="{Binding PluginName, Converter={StaticResource IsNullToVisibilityConverter}}" />
+                            <TextBlock Text="{Binding PluginVersion, StringFormat=v{0}}"
+                                       Foreground="{DynamicResource TextTertiaryBrush}"
+                                       Margin="8,0,0,0"
+                                       VerticalAlignment="Center"
+                                       Visibility="{Binding PluginVersion, Converter={StaticResource IsNullToVisibilityConverter}}" />
+                        </StackPanel>
 
                         <TextBlock Grid.Column="2"
                                    ToolTip="{Binding DetailedStatusText}"

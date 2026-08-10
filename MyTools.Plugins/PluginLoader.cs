@@ -56,13 +56,7 @@ public class PluginLoader(ILogger<PluginLoader> logger, IKeywordRegistry keyword
         
         var clipboard = plugins.OfType<ClipBoardPlugin>().First();
         keywordRegistry.Register(PluginConstants.ClipboardHistory, clipboard);
-        
-        var jsonFormatter = plugins.OfType<JsonFormatterPlugin>().First();
-        keywordRegistry.Register(PluginConstants.JsonFormatterKeyword, jsonFormatter);
-        
-        var xmlFormatter = plugins.OfType<XmlFormatterPlugin>().First();
-        keywordRegistry.Register(PluginConstants.XmlFormatterKeyword, xmlFormatter);
-        
+
         var uuidGenerator = plugins.OfType<UuidGeneratorPlugin>().First();
         keywordRegistry.Register(PluginConstants.UuidGeneratorKeyword, uuidGenerator);
         

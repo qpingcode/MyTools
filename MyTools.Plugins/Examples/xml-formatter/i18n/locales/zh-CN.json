@@ -1,0 +1,22 @@
+{
+  "Plugin.XmlFormatter.Name": "XML 格式化",
+  "Plugin.XmlFormatter.Result.Title": "格式化 XML",
+  "Plugin.XmlFormatter.Result.Subtitle": "格式化与校验 XML",
+  "Plugin.XmlFormatter.Action.Open.Title": "打开格式化工具",
+  "Plugin.XmlFormatter.Action.Open.Description": "打开 XML 格式化工具",
+  "Plugin.XmlFormatter.Action.Open.Success": "已打开 XML 格式化工具",
+  "Plugin.XmlFormatter.Detail.Input": "输入",
+  "Plugin.XmlFormatter.Detail.Output": "输出",
+  "Plugin.XmlFormatter.Detail.InputPlaceholder": "在此粘贴 XML",
+  "Plugin.XmlFormatter.Detail.EmptyOutput": "（无输出）",
+  "Plugin.XmlFormatter.Detail.Indent2": "2 空格",
+  "Plugin.XmlFormatter.Detail.Indent4": "4 空格",
+  "Plugin.XmlFormatter.Detail.IndentTab": "Tab",
+  "Plugin.XmlFormatter.Detail.Format": "格式化",
+  "Plugin.XmlFormatter.Detail.Copy": "复制",
+  "Plugin.XmlFormatter.Detail.Copied": "已复制",
+  "Plugin.XmlFormatter.Detail.Clear": "清空",
+  "Plugin.XmlFormatter.Detail.CollapseAll": "全部折叠",
+  "Plugin.XmlFormatter.Detail.ExpandAll": "全部展开",
+  "Plugin.XmlFormatter.Error.InvalidXml": "无效的 XML：{{message}}"
+}

@@ -207,6 +207,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
             Plugin = this,
             PluginId = manifest.Id,
             PluginName = string.IsNullOrWhiteSpace(detail?.Title) ? manifest.Name : detail.Title,
+            Version = manifest.Version,
             ProtocolVersion = manifest.ProtocolVersion,
             PluginDirectory = manifest.PluginDirectory,
             EntryFullPath = detailPath,

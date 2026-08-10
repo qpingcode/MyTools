@@ -31,7 +31,7 @@
       <Link>Examples\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </None>
     <None Remove="Examples\common\**\*" />
-    <None Include="Examples\CommandRunner.json;Examples\JsonFormatter.json;Examples\SearchEnginePlugin.json">
+    <None Include="Examples\CommandRunner.json;Examples\SearchEnginePlugin.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

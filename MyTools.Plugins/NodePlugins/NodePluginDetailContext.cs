@@ -7,6 +7,7 @@ public sealed class NodePluginDetailContext
     public required NodePlugin Plugin { get; init; }
     public required string PluginId { get; init; }
     public required string PluginName { get; init; }
+    public required string Version { get; init; }
     public required string ProtocolVersion { get; init; }
     public required string PluginDirectory { get; init; }
     public required string EntryFullPath { get; init; }

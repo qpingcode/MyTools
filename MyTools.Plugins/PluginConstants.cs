@@ -4,8 +4,6 @@ public class PluginConstants
 {
     public const string KillProcessKeyword = "kill";
     public const string ClipboardHistory = "cb";
-    public const string JsonFormatterKeyword = "json";
-    public const string XmlFormatterKeyword = "xml";
     public const string UuidGeneratorKeyword = "guid";
     public static string DllInterfaceReaderKeyword = "dll";
 
