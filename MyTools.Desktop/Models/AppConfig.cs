@@ -21,9 +21,6 @@ namespace MyTools.Desktop
         [JsonProperty("Theme")]
         public string Theme { get; set; } = "dark";
 
-        [JsonProperty("EnableGesture")]
-        public bool EnableGesture { get; set; } = false;
-
         [JsonProperty("EnableClipboardHistory")]
         public bool EnableClipboardHistory { get; set; } = true;
     }

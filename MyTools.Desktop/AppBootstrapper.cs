@@ -24,6 +24,7 @@ public class AppBootstrapper : IDisposable
     private readonly AppConfigService appConfigService;
     private readonly MessageOnlyWindow messageOnlyWindow;
     private readonly GestureRegistry gestureRegistry;
+    private readonly GestureConfigProvider gestureConfigProvider;
     private readonly MouseHelper mouseHelper;
     private readonly HotKeyManager hotKeyManager;
     private readonly IReadOnlyList<IPlugin> plugins;
@@ -41,6 +42,7 @@ public class AppBootstrapper : IDisposable
         AppConfigService appConfigService,
         MessageOnlyWindow messageOnlyWindow,
         GestureRegistry gestureRegistry,
+        GestureConfigProvider gestureConfigProvider,
         MouseHelper mouseHelper,
         HotKeyManager hotKeyManager,
         IEnumerable<IPlugin> plugins,
@@ -57,6 +59,7 @@ public class AppBootstrapper : IDisposable
         this.appConfigService = appConfigService;
         this.messageOnlyWindow = messageOnlyWindow;
         this.gestureRegistry = gestureRegistry;
+        this.gestureConfigProvider = gestureConfigProvider;
         this.mouseHelper = mouseHelper;
         this.hotKeyManager = hotKeyManager;
         this.plugins = plugins.ToArray();
@@ -85,7 +88,9 @@ public class AppBootstrapper : IDisposable
         logLevelService.ApplyFromSettings(registry);
 
         RegisterGlobalHotKey(appConfig.SearchHotKey);
-        EnableGestureDetection(appConfig.EnableGesture);
+
+        var enableGesture = registry.FindSetting("Gestures.EnableGesture")?.GetValue<bool>() ?? false;
+        EnableGestureDetection(enableGesture);
         LoadPlugins();
 
         // Apply the user-configured theme and keep WPF in sync on hot-swap.
@@ -110,36 +115,16 @@ public class AppBootstrapper : IDisposable
             return;
         }
 
-        return;
-        
-        MoveDirection[] downRight = [MoveDirection.Down, MoveDirection.Right];
-        gestureRegistry.RegisterGesture(downRight, _ => KeyboardHelper.SimulateKeyPress(ModifierKeys.Control, Key.W), "Close Tab");
-        gestureRegistry.RegisterGesture(downRight, ["rider", "rider64", "devenv"], _ => KeyboardHelper.SimulateKeyPress(ModifierKeys.Control, Key.F4), "Close Tab");
+        // 从 Gestures.json 加载用户配置的手势并注册
+        var configs = gestureConfigProvider.GetAll();
+        gestureRegistry.ReloadFromConfigs(configs, mouseHelper);
 
-        MoveDirection[] UpRight = [MoveDirection.Up, MoveDirection.Right];
-        gestureRegistry.RegisterGesture(UpRight, _ => KeyboardHelper.SimulateKeyPress(ModifierKeys.Control, Key.N), "Create New");
-        gestureRegistry.RegisterGesture(UpRight, ["chrome", "firefox", "edge"], _ => KeyboardHelper.SimulateKeyPress(ModifierKeys.Control, Key.T), "Create New Tab");
-
-        gestureRegistry.RegisterGesture(MoveDirection.Left, args => mouseHelper.XButton1Click(args.LastPoint), "Back");
-        gestureRegistry.RegisterGesture(MoveDirection.Right, args => mouseHelper.XButton2Click(args.LastPoint), "Forward");
-
-        MoveDirection[] UpDown = [MoveDirection.Up, MoveDirection.Down];
-        gestureRegistry.RegisterGesture(UpDown, ["chrome", "firefox", "edge"], _ => KeyboardHelper.SimulateKeyPress(Key.F5), "Refresh Page");
-        
-        MoveDirection[] downRightUpLeft = [MoveDirection.Down, MoveDirection.Right, MoveDirection.Up, MoveDirection.Left];
-        gestureRegistry.RegisterGesture(downRightUpLeft, args => KeyboardHelper.SimulateKeyPress(ModifierKeys.Alt | ModifierKeys.Shift, Key.O), "Close Other Tabes");
-        
-        MoveDirection[] LeftRight = [MoveDirection.Left, MoveDirection.Right];
-        MoveDirection[] RightLeft = [MoveDirection.Right, MoveDirection.Left];
-        gestureRegistry.RegisterGesture(LeftRight, ["rider", "rider64", "devenv"], rgs => KeyboardHelper.SimulateKeyPress(ModifierKeys.Control | ModifierKeys.Shift, Key.F12), "Full Screen Switch");
-        gestureRegistry.RegisterGesture(RightLeft, ["rider", "rider64", "devenv"], args => KeyboardHelper.SimulateKeyPress(ModifierKeys.Control | ModifierKeys.Shift, Key.F12), "Full Screen Switch");
-        
         var gestureThread = new Thread(() =>
         {
             gestureRegistry.StartListening();
         })
         { Name = "Gesture Thread", IsBackground = true };
-        
+
         gestureThread.SetApartmentState(ApartmentState.STA);
         gestureThread.Start();
     }
@@ -339,7 +324,20 @@ public class AppBootstrapper : IDisposable
                 localization.GetCaption("Configuration.General.LogLevel.Description", "Minimum level of messages written to the log file"),
                 "Debug",
                 valueType: SettingValueTypes.LogLevel);
-            
+
+            // Mouse Gestures category (rendered as a dedicated list editor in the settings UI)
+            var gesturesCategory = registry.AddCategory(
+                "Gestures",
+                localization.GetCaption("Configuration.Gestures.Name", "Gestures"),
+                localization.GetCaption("Configuration.Gestures.Description", "Configure mouse gesture actions"),
+                IsSelectable: true);
+
+            registry.AddSetting(gesturesCategory, "EnableGesture",
+                localization.GetCaption("Configuration.Gestures.Enable.Title", "Enable"),
+                localization.GetCaption("Configuration.Gestures.Enable.Description", "Enable right-button mouse gesture detection. Requires restart to take effect."),
+                false,
+                options: SettingOptions.RequiresRestart);
+
             // Add Plugin Settings
             registry.AddCategory(
                 "Plugins",

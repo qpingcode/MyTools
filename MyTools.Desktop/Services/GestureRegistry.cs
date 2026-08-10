@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using MyTools.Desktop.Models;
 using MyTools.Desktop.Utils;
 using MyTools.Desktop.Views;
 
@@ -35,6 +36,66 @@ public class GestureRegistry : IDisposable
     public void StartListening()
     {
         mouseGestureDetector.Start();
+    }
+
+    /// <summary>
+    /// 暂停手势检测（用于手势录入时避免干扰）。
+    /// </summary>
+    public void SuspendDetection()
+    {
+        mouseGestureDetector.Suspend();
+    }
+
+    /// <summary>
+    /// 恢复手势检测。
+    /// </summary>
+    public void ResumeDetection()
+    {
+        mouseGestureDetector.Resume();
+    }
+
+    /// <summary>
+    /// 清除所有已注册的手势。
+    /// </summary>
+    public void ClearGestures()
+    {
+        gestureActions.Clear();
+        gestureActionNames.Clear();
+    }
+
+    /// <summary>
+    /// 从配置列表重新加载全部手势（先清空再逐个注册）。
+    /// </summary>
+    public void ReloadFromConfigs(IEnumerable<GestureConfig> configs, MouseHelper mouseHelper)
+    {
+        ClearGestures();
+        foreach (var config in configs)
+        {
+            RegisterFromConfig(config, mouseHelper);
+        }
+    }
+
+    /// <summary>
+    /// 根据单个配置注册手势。
+    /// </summary>
+    public void RegisterFromConfig(GestureConfig config, MouseHelper mouseHelper)
+    {
+        if (!config.IsEnabled || config.Directions.Count == 0)
+        {
+            return;
+        }
+
+        var directions = GestureActionBuilder.ToMoveDirections(config.Directions);
+        var action = GestureActionBuilder.BuildAction(config, mouseHelper);
+
+        if (config.ProcessNames.Count == 0)
+        {
+            RegisterGesture(directions, action, config.ActionName);
+        }
+        else
+        {
+            RegisterGesture(directions, config.ProcessNames.ToArray(), action, config.ActionName);
+        }
     }
     
     public void RegisterGesture(MoveDirection gesture, Action<MouseGestureEventArgs> action, string actionName)

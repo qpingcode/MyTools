@@ -23,6 +23,7 @@ public class MouseGestureDetector : IDisposable
     private const int InitialValidMove = 5;
     private bool _initialMoveValid;
     private readonly MouseHelper _mouseHelper;
+    private volatile bool _suspended;
     private Func<string?, MoveDirection[], string?>? _findActionName;
     private Func<string?, MoveDirection[]?, int, List<PossibleGesture>>? _getPossibleGestures;
 
@@ -58,6 +59,12 @@ public class MouseGestureDetector : IDisposable
 
     private void OnMouseHookEvent(MouseHook.MouseHookEventArgs e)
     {
+        // 暂停期间不拦截任何鼠标事件，让右键菜单等正常工作
+        if (_suspended)
+        {
+            return;
+        }
+
         if (_mouseHelper.IsSimulatingInput || e.ExtraInfo == MouseHelper.SimulatedEventTag)
         {
             return;
@@ -117,6 +124,26 @@ public class MouseGestureDetector : IDisposable
     }
 
     
+    /// <summary>
+    /// 暂停手势检测：忽略所有鼠标事件，右键菜单等正常工作。
+    /// 仅在检测器已启动时有效。
+    /// </summary>
+    public void Suspend()
+    {
+        _suspended = true;
+        _isCapturing = false;
+        _logger.LogDebug("MouseGestureDetector suspended");
+    }
+
+    /// <summary>
+    /// 恢复手势检测。
+    /// </summary>
+    public void Resume()
+    {
+        _suspended = false;
+        _logger.LogDebug("MouseGestureDetector resumed");
+    }
+
     public void Start()
     {
         _mouseHook.StartListening();
