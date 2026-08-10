@@ -23,6 +23,10 @@ import { tool } from "@qping/plugin-common/web-tool";
     var conversationId = "";
     var pollTimer: number | null = null;
     var currentState: ChatState = {};
+    // 用户是否手动向上滚动离开了底部。离开后暂停自动滚动，
+    // 直到用户重新滚回底部附近才恢复，避免回答过程中把视图拉走。
+    var userScrolledUp = false;
+    var STICK_TO_BOTTOM_THRESHOLD = 24;
 
     async function callState(action: string, data: Record<string, unknown> = {}) {
         try {
@@ -83,9 +87,28 @@ import { tool } from "@qping/plugin-common/web-tool";
         }
     }
 
-    function scrollToBottom(): void {
+    function scrollToBottom(force = false): void {
+        if (!force && userScrolledUp) {
+            return;
+        }
         messagesElement.scrollTop = messagesElement.scrollHeight;
     }
+
+    function isNearBottom(): boolean {
+        return messagesElement.scrollHeight - messagesElement.scrollTop - messagesElement.clientHeight
+            <= STICK_TO_BOTTOM_THRESHOLD;
+    }
+
+    messagesElement.addEventListener("scroll", function () {
+        var nearBottom = isNearBottom();
+        if (nearBottom) {
+            userScrolledUp = false;
+        } else if (currentState.streaming === true) {
+            // 仅在流式输出期间把「离开底部」视为用户主动上滚，
+            // 避免内容初次撑高容器时被误判。
+            userScrolledUp = true;
+        }
+    });
 
     function startPolling(): void {
         if (pollTimer) {
@@ -111,6 +134,8 @@ import { tool } from "@qping/plugin-common/web-tool";
         }
 
         promptInput.value = "";
+        // 用户主动发送新消息，回到底部跟随最新回答。
+        userScrolledUp = false;
         callState("send", {
             conversationId: conversationId,
             text: text
@@ -120,6 +145,7 @@ import { tool } from "@qping/plugin-common/web-tool";
     sendButton.addEventListener("click", sendMessage);
     newChatButton.addEventListener("click", function () {
         stopPolling();
+        userScrolledUp = false;
         callState("newChat");
         promptInput.focus();
     });
