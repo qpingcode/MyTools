@@ -67,5 +67,10 @@
   <data name="Action.KillProcess.Failed" xml:space="preserve"><value>Échec de l’arrêt du processus : {{message}}</value></data>
   <data name="Action.ExecuteFailed.Title" xml:space="preserve"><value>Échec de l’action</value></data>
   <data name="Action.ExecuteFailed.Message" xml:space="preserve"><value>Impossible d’exécuter {{action}} : {{message}}</value></data>
+  <data name="Theme" xml:space="preserve"><value>Thème</value></data>
+  <data name="Theme.light" xml:space="preserve"><value>Clair</value></data>
+  <data name="Theme.dark" xml:space="preserve"><value>Sombre</value></data>
+  <data name="Configuration.General.Theme.Title" xml:space="preserve"><value>Thème</value></data>
+  <data name="Configuration.General.Theme.Description" xml:space="preserve"><value>Choisir le thème de couleur</value></data>
 </root>
 

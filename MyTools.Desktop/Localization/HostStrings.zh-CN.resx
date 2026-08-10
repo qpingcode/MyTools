@@ -151,8 +151,12 @@
   <data name="LogLevel.Information" xml:space="preserve"><value>信息</value></data>
   <data name="LogLevel.Warning" xml:space="preserve"><value>警告</value></data>
   <data name="LogLevel.Error" xml:space="preserve"><value>错误</value></data>
+  <data name="Configuration.General.Theme.Title" xml:space="preserve"><value>主题</value></data>
   <data name="Configuration.General.Theme.Description" xml:space="preserve">
     <value>选择主题颜色</value>
   </data>
+  <data name="Theme" xml:space="preserve"><value>主题</value></data>
+  <data name="Theme.light" xml:space="preserve"><value>浅色</value></data>
+  <data name="Theme.dark" xml:space="preserve"><value>深色</value></data>
 </root>
 
