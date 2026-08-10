@@ -1,0 +1,153 @@
+<Window x:Class="MyTools.Desktop.Views.PluginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MyTools.Desktop.Components"
+        xmlns:converters="clr-namespace:MyTools.Desktop.Converters"
+        xmlns:loc="clr-namespace:MyTools.Desktop.Localization"
+        mc:Ignorable="d"
+        Title="{Binding PluginName}"
+        Height="624"
+        Width="1020"
+        WindowStartupLocation="CenterScreen"
+        WindowState="Normal"
+        Background="Transparent"
+        AllowsTransparency="True"
+        WindowStyle="None"
+        Topmost="True"
+        ResizeMode="CanResizeWithGrip">
+    <Window.Resources>
+        <converters:IsNullToVisibilityConverter x:Key="IsNullToVisibilityConverter" />
+
+        <Style x:Key="ModernButton"
+               TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="StatusDotStyle" TargetType="Ellipse">
+            <Setter Property="Width" Value="8" />
+            <Setter Property="Height" Value="8" />
+            <Setter Property="Fill" Value="Gray" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Status}" Value="Success">
+                    <Setter Property="Fill" Value="Green" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="Failed">
+                    <Setter Property="Fill" Value="Red" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="Pending">
+                    <Setter Property="Fill" Value="Orange" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <DataTemplate DataType="{x:Type local:NodePluginDetailViewModel}">
+            <local:NodePluginDetailView />
+        </DataTemplate>
+    </Window.Resources>
+
+    <Border CornerRadius="12"
+            Background="{DynamicResource WindowBackgroundBrush}"
+            Opacity="0.95"
+            Margin="10">
+        <Border.Effect>
+            <DropShadowEffect ShadowDepth="3"
+                              Direction="315"
+                              Color="{DynamicResource ShadowColor}"
+                              Opacity="0.5"
+                              BlurRadius="10" />
+        </Border.Effect>
+
+        <Grid Margin="15">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- 插件内容（无顶部搜索框） -->
+            <ContentControl Content="{Binding CurrentViewModel}" x:Name="PluginContentView" Grid.Row="0" />
+
+            <!-- 状态栏 -->
+            <Grid Grid.Row="1"
+                  VerticalAlignment="Bottom"
+                  Margin="0,8,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Border Background="{DynamicResource SurfaceBrush}"
+                        CornerRadius="6"
+                        Padding="10,5">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Ellipse Style="{StaticResource StatusDotStyle}"
+                                 HorizontalAlignment="Left"
+                                 Margin="0,5" />
+
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding PluginName}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Margin="8,0,0,0"
+                                   VerticalAlignment="Center"
+                                   Visibility="{Binding PluginName, Converter={StaticResource IsNullToVisibilityConverter}}" />
+
+                        <TextBlock Grid.Column="2"
+                                   ToolTip="{Binding DetailedStatusText}"
+                                   Text="{Binding StatusText}"
+                                   Foreground="{DynamicResource TextTertiaryBrush}"
+                                   Margin="8,0,0,0"
+                                   VerticalAlignment="Center" />
+
+                        <ItemsControl Grid.Column="3"
+                                      ItemsSource="{Binding SelectedResultActions}"
+                                      VerticalAlignment="Center">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Content="{Binding Name}"
+                                            Command="{Binding DataContext.ExecuteActionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding Command}"
+                                            Style="{StaticResource ModernButton}"
+                                            Margin="10,0,0,0" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

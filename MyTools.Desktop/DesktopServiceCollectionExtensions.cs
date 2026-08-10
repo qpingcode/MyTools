@@ -44,6 +44,9 @@ public static class DesktopServiceCollectionExtensions
         // windows
         serviceCollection.AddTransient<SearchWindow>();  // 如果是 singleton的，每次打开都会闪烁
         serviceCollection.AddTransient<SearchViewModel>();
+        serviceCollection.AddTransient<PluginWindow>();
+        serviceCollection.AddTransient<PluginViewModel>();
+        serviceCollection.AddSingleton<PluginWindowManager>();
         
         // services
         serviceCollection.AddSingleton<AppConfigService>();
