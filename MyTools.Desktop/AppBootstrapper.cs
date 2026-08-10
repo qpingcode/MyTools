@@ -88,9 +88,9 @@ public class AppBootstrapper : IDisposable
         logLevelService.ApplyFromSettings(registry);
 
         RegisterGlobalHotKey(appConfig.SearchHotKey);
-
-        var enableGesture = registry.FindSetting("Gestures.EnableGesture")?.GetValue<bool>() ?? false;
-        EnableGestureDetection(enableGesture);
+        
+        InitializeGestureDetection();
+        
         LoadPlugins();
 
         // Apply the user-configured theme and keep WPF in sync on hot-swap.
@@ -108,14 +108,14 @@ public class AppBootstrapper : IDisposable
         messageOnlyWindow.Show();
     }
 
-    private void EnableGestureDetection(bool enableGesture)
+    private void InitializeGestureDetection()
     {
+        var enableGesture = registry.FindSetting("Gestures.EnableGesture")?.GetValue<bool>() ?? false;
         if (!enableGesture)
         {
             return;
         }
 
-        // 从 Gestures.json 加载用户配置的手势并注册
         var configs = gestureConfigProvider.GetAll();
         gestureRegistry.ReloadFromConfigs(configs, mouseHelper);
 
