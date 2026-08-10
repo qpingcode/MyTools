@@ -381,7 +381,6 @@ import { tool } from "@qping/plugin-common/web-tool";
             item.title = t("Plugin.DeepSeekTranslator.Detail.TranslateAgain", "Translate again");
             item.addEventListener("click", function () {
                 setInput(entry.input || "", false);
-                lastRequestedText = "";
                 translateNow();
             });
 
@@ -524,10 +523,6 @@ import { tool } from "@qping/plugin-common/web-tool";
         if (!text) {
             lastRequestedText = "";
             updateState({ status: "idle", input: "" });
-            return;
-        }
-
-        if (text === lastRequestedText) {
             return;
         }
 

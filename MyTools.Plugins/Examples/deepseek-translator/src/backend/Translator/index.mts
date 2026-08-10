@@ -598,27 +598,7 @@ function updateIsExpanded(isExpanded: unknown, state: TranslationState): Transla
   };
 }
 
-async function translate(text: unknown): Promise<TranslationState> {
-  const normalized = normalizeText(text);
-  if (!normalized) {
-    return createInitialState("", "idle");
-  }
-
-  const word = isWord(normalized);
-  const cached = getCachedTranslation(normalized, word);
-  if (cached) {
-    return cached;
-  }
-
-  if (!DEEPSEEK_API_KEY) {
-    return {
-      ...createInitialState(normalized, "error"),
-      error: mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.MissingApiKey", {
-        defaultValue: "Missing DEEPSEEK_API_KEY environment variable.",
-      }),
-    };
-  }
-
+async function callDeepSeekTranslate(text: string, word: boolean): Promise<{ parsed: JsonRecord; tokenUsage: TokenUsage | null }> {
   const response = await fetch(DEEPSEEK_API_URL, {
     method: "POST",
     headers: {
@@ -635,7 +615,7 @@ async function translate(text: unknown): Promise<TranslationState> {
         },
         {
           role: "user",
-          content: buildPrompt(normalized, word),
+          content: buildPrompt(text, word),
         },
       ],
     }),
@@ -670,6 +650,45 @@ async function translate(text: unknown): Promise<TranslationState> {
   }
 
   const parsed = JSON.parse(jsonText) as JsonRecord;
+  return { parsed, tokenUsage };
+}
+
+async function translate(text: unknown): Promise<TranslationState> {
+  const normalized = normalizeText(text);
+  if (!normalized) {
+    return createInitialState("", "idle");
+  }
+
+  const word = isWord(normalized);
+  const cached = getCachedTranslation(normalized, word);
+  if (cached) {
+    return cached;
+  }
+
+  if (!DEEPSEEK_API_KEY) {
+    return {
+      ...createInitialState(normalized, "error"),
+      error: mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.MissingApiKey", {
+        defaultValue: "Missing DEEPSEEK_API_KEY environment variable.",
+      }),
+    };
+  }
+
+  let result: { parsed: JsonRecord; tokenUsage: TokenUsage | null };
+  try {
+    result = await callDeepSeekTranslate(normalized, word);
+  } catch (error) {
+    // DeepSeek 偶尔返回非 JSON（格式错误）。检测到此类情况后重试一次，
+    // 避免把可恢复的格式问题直接暴露给用户。
+    const message = error instanceof Error ? error.message : String(error);
+    const isFormatError = message.includes("non-JSON") || message.includes("Unexpected token") || message.includes("JSON");
+    if (!isFormatError) {
+      throw error;
+    }
+    result = await callDeepSeekTranslate(normalized, word);
+  }
+
+  const { parsed, tokenUsage } = result;
   const validWord = word && parsed.isValidWord === true;
   const definitions: TranslationDefinition[] = Array.isArray(parsed.definitions)
     ? parsed.definitions.slice(0, 3).map((definition: JsonRecord) => ({
