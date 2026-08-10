@@ -10,6 +10,7 @@ using MyTools.Common.Config;
 using MyTools.Common.DependencyInjection;
 using MyTools.Common.Localization;
 using MyTools.Common.Theming;
+using MyTools.Desktop.Services;
 using MyTools.Desktop.Themes;
 using MyTools.Plugins.NodePlugins;
 
@@ -118,18 +119,27 @@ public partial class NodePluginDetailView : UserControl
     {
         browserReady = false;
         subjectSubscriptions.Clear();
-        await PluginBrowser.EnsureCoreWebView2Async(await WebView2Environment.Value);
+        try
+        {
+            await PluginBrowser.EnsureCoreWebView2Async(await WebView2Environment.Value);
 
-        PluginBrowser.NavigationCompleted -= PluginBrowserOnNavigationCompleted;
-        PluginBrowser.NavigationCompleted += PluginBrowserOnNavigationCompleted;
-        PluginBrowser.CoreWebView2.WebMessageReceived -= PluginBrowserOnWebMessageReceived;
-        PluginBrowser.CoreWebView2.WebMessageReceived += PluginBrowserOnWebMessageReceived;
+            PluginBrowser.NavigationCompleted -= PluginBrowserOnNavigationCompleted;
+            PluginBrowser.NavigationCompleted += PluginBrowserOnNavigationCompleted;
+            PluginBrowser.CoreWebView2.WebMessageReceived -= PluginBrowserOnWebMessageReceived;
+            PluginBrowser.CoreWebView2.WebMessageReceived += PluginBrowserOnWebMessageReceived;
 
-        // Navigate to the theme-specific HTML variant (index.dark.html / index.light.html)
-        // which has the CSS variables inlined at copy time. This guarantees the variables
-        // exist at first paint — no flash, no per-navigation file rewriting.
-        var themedPath = ResolveThemedEntryPath(entryPath);
-        PluginBrowser.Source = BuildPluginEntryUri(themedPath);
+            // Navigate to the theme-specific HTML variant (index.dark.html / index.light.html)
+            // which has the CSS variables inlined at copy time. This guarantees the variables
+            // exist at first paint — no flash, no per-navigation file rewriting.
+            var themedPath = ResolveThemedEntryPath(entryPath);
+            PluginBrowser.Source = BuildPluginEntryUri(themedPath);
+        }
+        catch (Exception ex)
+        {
+            // WebView2 初始化 / 导航失败（runtime 缺失、userdata 锁定等）原来会被
+            // fire-and-forget 吞掉，表现为白屏。这里主动上报到全局异常处理。
+            GlobalExceptionHandler.ReportStatic(ex, "Plugin WebView2 navigation");
+        }
     }
 
     /// <summary>

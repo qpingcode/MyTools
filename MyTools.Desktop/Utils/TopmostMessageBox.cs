@@ -52,7 +52,7 @@ public static class TopmostMessageBox
         }
     }
 
-    private static Window CreateTemporaryOwner() => new()
+    internal static Window CreateTemporaryOwner() => new()
     {
         Width = 1,
         Height = 1,
