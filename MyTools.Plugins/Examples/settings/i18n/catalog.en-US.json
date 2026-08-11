@@ -150,10 +150,10 @@
     },
     {
       "key": "Plugin.Settings.Keymap.KeywordsPlaceholder",
-      "defaultValue": "Up to 3 keywords, comma separated",
+      "defaultValue": "None",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "最多 3 个关键词，逗号分隔" },
+      "existingTranslations": { "zh-CN": "无" },
       "sourceHash": "sha256:placeholder"
     },
     {

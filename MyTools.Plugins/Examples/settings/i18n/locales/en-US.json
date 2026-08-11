@@ -17,7 +17,7 @@
   "Plugin.Settings.Keymap.HeaderName": "Plugin Name",
   "Plugin.Settings.Keymap.HeaderHotkey": "Hotkey",
   "Plugin.Settings.Keymap.HeaderKeywords": "Keywords",
-  "Plugin.Settings.Keymap.KeywordsPlaceholder": "Up to 3 keywords, comma separated",
+  "Plugin.Settings.Keymap.KeywordsPlaceholder": "None",
   "Plugin.Settings.Keymap.NoHotkey": "None",
   "Plugin.Settings.Keymap.Recording": "Press shortcut...",
   "Plugin.Settings.Keymap.ClearHotkey": "Clear hotkey",
