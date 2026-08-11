@@ -17,7 +17,7 @@
   "Plugin.Settings.Keymap.HeaderName": "插件名",
   "Plugin.Settings.Keymap.HeaderHotkey": "快捷键",
   "Plugin.Settings.Keymap.HeaderKeywords": "关键词",
-  "Plugin.Settings.Keymap.KeywordsPlaceholder": "最多 3 个关键词，逗号分隔",
+  "Plugin.Settings.Keymap.KeywordsPlaceholder": "无",
   "Plugin.Settings.Keymap.NoHotkey": "无",
   "Plugin.Settings.Keymap.Recording": "按下快捷键...",
   "Plugin.Settings.Keymap.ClearHotkey": "清除快捷键",

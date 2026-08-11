@@ -155,7 +155,7 @@ html, body {
 }
 
 .settings-list {
-    min-width: 1024px;
+    min-width: 675px;
     padding-bottom: 16px;
 }
 
@@ -203,6 +203,10 @@ html, body {
     color: var(--mt-text, #e0e0e0);
     outline: none;
     transition: border-color 0.15s;
+}
+
+.setting-input-small {
+    max-width: 120px;
 }
 
 .setting-input:focus, .setting-select:focus {

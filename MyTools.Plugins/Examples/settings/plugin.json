@@ -14,7 +14,7 @@
     {
       "id": "main",
       "entry": "backend/index.mjs",
-      "keywords": ["settings", "config"],
+      "keywords": ["settings"],
       "hotKey": "Alt+S",
       "detail": {
         "type": "web",
