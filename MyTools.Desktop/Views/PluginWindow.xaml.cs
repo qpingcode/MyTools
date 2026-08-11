@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -23,14 +22,14 @@ public partial class PluginWindow
     public PluginWindow(PluginViewModel viewModel)
     {
         InitializeComponent();
+        StateChanged += Window_OnStateChanged;
+        ApplyWindowChromeState();
 
         this.viewModel = viewModel;
         DataContext = viewModel;
 
         PreviewKeyDown += Window_PreviewKeyDown;
         Closed += Window_OnClosed;
-
-        MouseLeftButtonDown += (_, _) => DragMove();
 
         Loaded += PluginWindow_Loaded;
     }
@@ -110,6 +109,77 @@ public partial class PluginWindow
     private void Window_OnClosed(object? sender, EventArgs e)
     {
         viewModel.Dispose();
+    }
+
+    private void Window_OnStateChanged(object? sender, EventArgs e)
+    {
+        ApplyWindowChromeState();
+    }
+
+    private void TitleBarDragRegion_OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton != MouseButton.Left)
+        {
+            return;
+        }
+
+        if (e.ClickCount == 2)
+        {
+            ToggleMaximizeRestore();
+            e.Handled = true;
+            return;
+        }
+
+        try
+        {
+            DragMove();
+            e.Handled = true;
+        }
+        catch (InvalidOperationException)
+        {
+        }
+    }
+
+    private void MinimizeButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        SystemCommands.MinimizeWindow(this);
+    }
+
+    private void MaximizeRestoreButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        ToggleMaximizeRestore();
+    }
+
+    private void CloseButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        SystemCommands.CloseWindow(this);
+    }
+
+    private void ToggleMaximizeRestore()
+    {
+        if (ResizeMode is not (ResizeMode.CanResize or ResizeMode.CanResizeWithGrip))
+        {
+            return;
+        }
+
+        if (WindowState == WindowState.Maximized)
+        {
+            SystemCommands.RestoreWindow(this);
+            return;
+        }
+
+        SystemCommands.MaximizeWindow(this);
+    }
+
+    private void ApplyWindowChromeState()
+    {
+        var state = PluginWindowChromeState.From(WindowState);
+        WindowFrame.Margin = state.FrameMargin;
+        WindowFrame.CornerRadius = state.CornerRadius;
+        WindowShadow.Opacity = state.ShowShadow ? 0.5 : 0;
+        MaximizeIcon.Visibility = state.ShowRestoreIcon ? Visibility.Collapsed : Visibility.Visible;
+        RestoreIcon.Visibility = state.ShowRestoreIcon ? Visibility.Visible : Visibility.Collapsed;
+        MaximizeRestoreButton.ToolTip = state.ShowRestoreIcon ? "Restore" : "Maximize";
     }
 
     private static T? FindVisualChild<T>(DependencyObject? parent) where T : DependencyObject

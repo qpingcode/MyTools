@@ -47,6 +47,46 @@
             </Setter>
         </Style>
 
+        <Style x:Key="WindowControlButtonStyle"
+               TargetType="Button">
+            <Setter Property="Width" Value="46" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource TextTertiaryBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="IsTabStop" Value="False" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CloseWindowControlButtonStyle"
+               TargetType="Button"
+               BasedOn="{StaticResource WindowControlButtonStyle}">
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#E81123" />
+                    <Setter Property="Foreground" Value="White" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
         <Style x:Key="StatusDotStyle" TargetType="Ellipse">
             <Setter Property="Width" Value="8" />
             <Setter Property="Height" Value="8" />
@@ -69,12 +109,14 @@
         </DataTemplate>
     </Window.Resources>
 
-    <Border CornerRadius="12"
+    <Border x:Name="WindowFrame"
+            CornerRadius="12"
             Background="{DynamicResource WindowBackgroundBrush}"
             Opacity="0.95"
             Margin="10">
         <Border.Effect>
-            <DropShadowEffect ShadowDepth="3"
+            <DropShadowEffect x:Name="WindowShadow"
+                              ShadowDepth="3"
                               Direction="315"
                               Color="{DynamicResource ShadowColor}"
                               Opacity="0.5"
@@ -83,15 +125,92 @@
 
         <Grid Margin="15">
             <Grid.RowDefinitions>
+                <RowDefinition Height="34" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
+            <Grid Grid.Row="0"
+                  Height="34">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0"
+                        Background="Transparent"
+                        Padding="4,0,12,0"
+                        MouseLeftButtonDown="TitleBarDragRegion_OnMouseLeftButtonDown">
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center">
+                        <TextBlock Text="{Binding PluginName}"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center"
+                                   Visibility="{Binding PluginName, Converter={StaticResource IsNullToVisibilityConverter}}" />
+                        <TextBlock Text="{Binding PluginVersion, StringFormat=v{0}}"
+                                   Foreground="{DynamicResource TextTertiaryBrush}"
+                                   Margin="8,0,0,0"
+                                   VerticalAlignment="Center"
+                                   Visibility="{Binding PluginVersion, Converter={StaticResource IsNullToVisibilityConverter}}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="1"
+                        Background="Transparent"
+                        MouseLeftButtonDown="TitleBarDragRegion_OnMouseLeftButtonDown" />
+
+                <StackPanel Grid.Column="2"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right">
+                    <Button Style="{StaticResource WindowControlButtonStyle}"
+                            ToolTip="Minimize"
+                            Click="MinimizeButton_OnClick">
+                        <Rectangle Width="10"
+                                   Height="1"
+                                   Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                    </Button>
+
+                    <Button x:Name="MaximizeRestoreButton"
+                            Style="{StaticResource WindowControlButtonStyle}"
+                            ToolTip="Maximize"
+                            Click="MaximizeRestoreButton_OnClick">
+                        <Grid Width="12"
+                              Height="12">
+                            <Rectangle x:Name="MaximizeIcon"
+                                       Width="9"
+                                       Height="9"
+                                       Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                       StrokeThickness="1"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" />
+                            <Path x:Name="RestoreIcon"
+                                  Visibility="Collapsed"
+                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                  StrokeThickness="1"
+                                  Data="M4.5,1.5 H10.5 V7.5 M1.5,4.5 H7.5 V10.5 H1.5 Z M4.5,4.5 H10.5" />
+                        </Grid>
+                    </Button>
+
+                    <Button Style="{StaticResource CloseWindowControlButtonStyle}"
+                            ToolTip="Close"
+                            Click="CloseButton_OnClick">
+                        <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeThickness="1.2"
+                              Data="M2,2 L10,10 M10,2 L2,10" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+
             <!-- 插件内容（无顶部搜索框） -->
-            <ContentControl Content="{Binding CurrentViewModel}" x:Name="PluginContentView" Grid.Row="0" />
+            <ContentControl Content="{Binding CurrentViewModel}"
+                            x:Name="PluginContentView"
+                            Grid.Row="1"
+                            Margin="0,12,0,0" />
 
             <!-- 状态栏 -->
-            <Grid Grid.Row="1"
+            <Grid Grid.Row="2"
                   VerticalAlignment="Bottom"
                   Margin="0,8,0,0">
                 <Grid.RowDefinitions>
