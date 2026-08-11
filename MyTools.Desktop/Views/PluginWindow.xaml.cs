@@ -1,12 +1,17 @@
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
+using System.Windows.Controls.Primitives;
 using MyTools.Desktop.Components;
+using MyTools.Desktop.Services;
 using MyTools.Desktop.ViewModels;
 using MyTools.Plugins;
 using MyTools.Plugins.NodePlugins;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
+using System.Runtime.InteropServices;
 
 namespace MyTools.Desktop.Views;
 
@@ -17,7 +22,10 @@ namespace MyTools.Desktop.Views;
 /// </summary>
 public partial class PluginWindow
 {
+    private const int WmGetMinMaxInfo = 0x0024;
+    private const uint MonitorDefaultToNearest = 0x00000002;
     private readonly PluginViewModel viewModel;
+    private HwndSource? hwndSource;
 
     public PluginWindow(PluginViewModel viewModel)
     {
@@ -30,8 +38,8 @@ public partial class PluginWindow
 
         PreviewKeyDown += Window_PreviewKeyDown;
         Closed += Window_OnClosed;
-
         Loaded += PluginWindow_Loaded;
+        SourceInitialized += Window_OnSourceInitialized;
     }
 
     public string? PluginId { get; private set; }
@@ -79,13 +87,11 @@ public partial class PluginWindow
             return;
         }
 
-        if (Keyboard.Modifiers != ModifierKeys.None)
-        {
-            return;
-        }
-
-        // Tab / Enter 转发到插件详情页（与 SearchWindow 行为一致）
-        if (e.Key != Key.Tab && e.Key != Key.Enter)
+        if (!ShouldForwardPluginNavigationKey(
+                e.Key,
+                Keyboard.Modifiers,
+                Keyboard.FocusedElement,
+                PluginContentView.IsKeyboardFocusWithin))
         {
             return;
         }
@@ -106,9 +112,51 @@ public partial class PluginWindow
         detailView.SendHostKey("Enter");
     }
 
+    internal static bool ShouldForwardPluginNavigationKey(
+        Key key,
+        ModifierKeys modifiers,
+        IInputElement? focusedElement,
+        bool isPluginContentFocused)
+    {
+        if (modifiers != ModifierKeys.None)
+        {
+            return false;
+        }
+
+        if (key != Key.Tab && key != Key.Enter)
+        {
+            return false;
+        }
+
+        if (isPluginContentFocused)
+        {
+            return false;
+        }
+
+        return focusedElement is not ButtonBase;
+    }
+
     private void Window_OnClosed(object? sender, EventArgs e)
     {
+        if (hwndSource != null)
+        {
+            hwndSource.RemoveHook(WndProc);
+            hwndSource = null;
+        }
+
+        SourceInitialized -= Window_OnSourceInitialized;
+        StateChanged -= Window_OnStateChanged;
+        PreviewKeyDown -= Window_PreviewKeyDown;
+        Closed -= Window_OnClosed;
+        Loaded -= PluginWindow_Loaded;
         viewModel.Dispose();
+    }
+
+    private void Window_OnSourceInitialized(object? sender, EventArgs e)
+    {
+        var handle = new WindowInteropHelper(this).Handle;
+        hwndSource = HwndSource.FromHwnd(handle);
+        hwndSource?.AddHook(WndProc);
     }
 
     private void Window_OnStateChanged(object? sender, EventArgs e)
@@ -179,7 +227,55 @@ public partial class PluginWindow
         WindowShadow.Opacity = state.ShowShadow ? 0.5 : 0;
         MaximizeIcon.Visibility = state.ShowRestoreIcon ? Visibility.Collapsed : Visibility.Visible;
         RestoreIcon.Visibility = state.ShowRestoreIcon ? Visibility.Visible : Visibility.Collapsed;
-        MaximizeRestoreButton.ToolTip = state.ShowRestoreIcon ? "Restore" : "Maximize";
+        var maximizeRestoreCaption = state.ShowRestoreIcon
+            ? LanguageService.GetCaption("PluginWindow.Restore", "Restore")
+            : LanguageService.GetCaption("PluginWindow.Maximize", "Maximize");
+        MaximizeRestoreButton.ToolTip = maximizeRestoreCaption;
+        AutomationProperties.SetName(MaximizeRestoreButton, maximizeRestoreCaption);
+    }
+
+    private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg != WmGetMinMaxInfo)
+        {
+            return IntPtr.Zero;
+        }
+
+        handled = TryUpdateMaximizedBounds(hwnd, lParam);
+        return IntPtr.Zero;
+    }
+
+    private static bool TryUpdateMaximizedBounds(IntPtr hwnd, IntPtr lParam)
+    {
+        var monitor = MonitorFromWindow(hwnd, MonitorDefaultToNearest);
+        if (monitor == IntPtr.Zero)
+        {
+            return false;
+        }
+
+        var monitorInfo = MonitorInfo.Create();
+        if (!GetMonitorInfo(monitor, ref monitorInfo))
+        {
+            return false;
+        }
+
+        var minMaxInfo = Marshal.PtrToStructure<MinMaxInfo>(lParam);
+        var bounds = PluginWindowMaximizedBounds.FromMonitorInfo(
+            new PluginWindowNativeRect(
+                monitorInfo.MonitorArea.Left,
+                monitorInfo.MonitorArea.Top,
+                monitorInfo.MonitorArea.Right,
+                monitorInfo.MonitorArea.Bottom),
+            new PluginWindowNativeRect(
+                monitorInfo.WorkArea.Left,
+                monitorInfo.WorkArea.Top,
+                monitorInfo.WorkArea.Right,
+                monitorInfo.WorkArea.Bottom));
+
+        minMaxInfo.MaxPosition = new NativePoint(bounds.PositionX, bounds.PositionY);
+        minMaxInfo.MaxSize = new NativePoint(bounds.Width, bounds.Height);
+        Marshal.StructureToPtr(minMaxInfo, lParam, false);
+        return true;
     }
 
     private static T? FindVisualChild<T>(DependencyObject? parent) where T : DependencyObject
@@ -205,5 +301,55 @@ public partial class PluginWindow
         }
 
         return null;
+    }
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MonitorInfo lpmi);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MinMaxInfo
+    {
+        public NativePoint Reserved;
+        public NativePoint MaxSize;
+        public NativePoint MaxPosition;
+        public NativePoint MinTrackSize;
+        public NativePoint MaxTrackSize;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativePoint(int x, int y)
+    {
+        public int X = x;
+        public int Y = y;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MonitorRect
+    {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MonitorInfo
+    {
+        public uint Size;
+        public MonitorRect MonitorArea;
+        public MonitorRect WorkArea;
+        public uint Flags;
+
+        public static MonitorInfo Create()
+        {
+            return new MonitorInfo
+            {
+                Size = (uint)Marshal.SizeOf<MonitorInfo>()
+            };
+        }
     }
 }
