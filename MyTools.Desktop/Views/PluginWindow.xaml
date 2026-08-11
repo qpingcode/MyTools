@@ -54,8 +54,6 @@
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Foreground" Value="{DynamicResource TextTertiaryBrush}" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Focusable" Value="False" />
-            <Setter Property="IsTabStop" Value="False" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Template">
@@ -67,6 +65,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
                                 <Setter Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
                                 <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
@@ -165,6 +167,7 @@
                             Orientation="Horizontal"
                             HorizontalAlignment="Right">
                     <Button Style="{StaticResource WindowControlButtonStyle}"
+                            AutomationProperties.Name="{loc:Loc PluginWindow.Minimize, DefaultValue=Minimize}"
                             ToolTip="Minimize"
                             Click="MinimizeButton_OnClick">
                         <Rectangle Width="10"
@@ -174,6 +177,7 @@
 
                     <Button x:Name="MaximizeRestoreButton"
                             Style="{StaticResource WindowControlButtonStyle}"
+                            AutomationProperties.Name="Maximize"
                             ToolTip="Maximize"
                             Click="MaximizeRestoreButton_OnClick">
                         <Grid Width="12"
@@ -194,6 +198,7 @@
                     </Button>
 
                     <Button Style="{StaticResource CloseWindowControlButtonStyle}"
+                            AutomationProperties.Name="{loc:Loc PluginWindow.Close, DefaultValue=Close}"
                             ToolTip="Close"
                             Click="CloseButton_OnClick">
                         <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
