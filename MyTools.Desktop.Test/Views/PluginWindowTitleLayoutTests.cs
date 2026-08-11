@@ -86,6 +86,8 @@ public class PluginWindowTitleLayoutTests
             Assert.That(pluginNameTextBlock!.ActualWidth, Is.LessThan(MeasureUnconstrainedWidth(pluginNameTextBlock)));
             Assert.That(pluginVersionTextBlock!.ActualWidth, Is.LessThan(MeasureUnconstrainedWidth(pluginVersionTextBlock)));
             Assert.That(pluginVersionTextBlock.ActualWidth, Is.LessThanOrEqualTo(pluginVersionTextBlock.MaxWidth).Within(0.5));
+            Assert.That(MeasureRenderedTextGap(pluginNameTextBlock, pluginVersionTextBlock, titleIdentityRegion),
+                Is.EqualTo(4).Within(0.5));
             Assert.That(pluginNameTextBlock.TextWrapping, Is.EqualTo(TextWrapping.NoWrap));
             Assert.That(pluginNameTextBlock.TextTrimming, Is.EqualTo(TextTrimming.CharacterEllipsis));
             Assert.That(pluginVersionTextBlock.TextWrapping, Is.EqualTo(TextWrapping.NoWrap));
@@ -94,17 +96,17 @@ public class PluginWindowTitleLayoutTests
     }
 
     [Test]
-    public void TitleBar_CollapsesVersionTextAndExpandsNameWhenVersionMissing()
+    public void TitleBar_CollapsesVersionTextAndKeepsNameBoundedWhenVersionMissing()
     {
         var services = new ServiceCollection().BuildServiceProvider();
         var viewModel = new PluginViewModel(services)
         {
-            PluginName = "A very long plugin name that should stay on one line",
+            PluginName = "A very long plugin name that should stay bounded and leave a wide draggable title area",
             PluginVersion = null
         };
 
         var window = new PluginWindow(viewModel);
-        ArrangeWindowContent(window, PluginWindowLayoutMetrics.MinimumWindowWidth);
+        ArrangeWindowContent(window, 1020);
 
         var titleIdentityRegion = (Border?)window.FindName("TitleIdentityRegion");
         var pluginNameTextBlock = (TextBlock?)window.FindName("PluginNameTextBlock");
@@ -116,7 +118,8 @@ public class PluginWindowTitleLayoutTests
             Assert.That(pluginNameTextBlock, Is.Not.Null);
             Assert.That(pluginVersionTextBlock, Is.Not.Null);
             Assert.That(pluginVersionTextBlock!.Visibility, Is.EqualTo(Visibility.Collapsed));
-            Assert.That(pluginNameTextBlock!.ActualWidth, Is.EqualTo(PluginWindowLayoutMetrics.MinimumTitleTextWidth).Within(1.0));
+            Assert.That(pluginNameTextBlock!.ActualWidth,
+                Is.Positive.And.LessThanOrEqualTo(320));
             Assert.That(pluginNameTextBlock.TextWrapping, Is.EqualTo(TextWrapping.NoWrap));
             Assert.That(pluginNameTextBlock.TextTrimming, Is.EqualTo(TextTrimming.CharacterEllipsis));
             Assert.That(pluginNameTextBlock.ActualWidth, Is.LessThan(MeasureUnconstrainedWidth(pluginNameTextBlock)));
@@ -155,6 +158,33 @@ public class PluginWindowTitleLayoutTests
         });
     }
 
+    [Test]
+    public void TitleBar_PlacesVersionImmediatelyAfterPluginName()
+    {
+        var services = new ServiceCollection().BuildServiceProvider();
+        var viewModel = new PluginViewModel(services)
+        {
+            PluginName = "Settings",
+            PluginVersion = "1.2.3"
+        };
+
+        var window = new PluginWindow(viewModel);
+        ArrangeWindowContent(window, PluginWindowLayoutMetrics.MinimumWindowWidth);
+
+        var titleIdentityRegion = (Border?)window.FindName("TitleIdentityRegion");
+        var pluginNameTextBlock = (TextBlock?)window.FindName("PluginNameTextBlock");
+        var pluginVersionTextBlock = (TextBlock?)window.FindName("PluginVersionTextBlock");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(titleIdentityRegion, Is.Not.Null);
+            Assert.That(pluginNameTextBlock, Is.Not.Null);
+            Assert.That(pluginVersionTextBlock, Is.Not.Null);
+            Assert.That(MeasureRenderedTextGap(pluginNameTextBlock!, pluginVersionTextBlock!, titleIdentityRegion!),
+                Is.EqualTo(4).Within(0.5));
+        });
+    }
+
     private static void ArrangeWindowContent(Window window, double width)
     {
         window.Width = width;
@@ -185,6 +215,17 @@ public class PluginWindowTitleLayoutTests
 
         measurement.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         return measurement.DesiredSize.Width;
+    }
+
+    private static double MeasureRenderedTextGap(
+        TextBlock name,
+        TextBlock version,
+        FrameworkElement relativeTo)
+    {
+        var renderedNameWidth = Math.Min(name.ActualWidth, MeasureUnconstrainedWidth(name));
+        var nameRight = name.TranslatePoint(new Point(renderedNameWidth, 0), relativeTo).X;
+        var versionLeft = version.TranslatePoint(new Point(0, 0), relativeTo).X;
+        return versionLeft - nameRight;
     }
 
     private sealed class TestLocalizationService : ILocalizationService

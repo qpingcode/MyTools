@@ -157,33 +157,30 @@
                         MouseLeftButtonUp="TitleBarDragRegion_OnMouseLeftButtonUp"
                         MouseMove="TitleBarDragRegion_OnMouseMove"
                         LostMouseCapture="TitleBarDragRegion_OnLostMouseCapture">
-                    <Grid VerticalAlignment="Center"
-                          ClipToBounds="True">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <TextBlock x:Name="PluginNameTextBlock"
-                                   Grid.Column="0"
-                                   Text="{Binding PluginName}"
-                                   Foreground="{DynamicResource TextPrimaryBrush}"
-                                   FontWeight="SemiBold"
-                                   TextWrapping="NoWrap"
-                                   TextTrimming="CharacterEllipsis"
-                                   VerticalAlignment="Center"
-                                   Visibility="{Binding PluginName, Converter={StaticResource IsNullToVisibilityConverter}}" />
+                    <DockPanel HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              LastChildFill="True"
+                              ClipToBounds="True">
                         <TextBlock x:Name="PluginVersionTextBlock"
-                                   Grid.Column="1"
-                                   Text="{Binding PluginVersion, StringFormat=v{0}}"
-                                   Foreground="{DynamicResource TextTertiaryBrush}"
-                                   Margin="4,0,0,0"
+                                  DockPanel.Dock="Right"
+                                  Text="{Binding PluginVersion, StringFormat=v{0}}"
+                                  Foreground="{DynamicResource TextTertiaryBrush}"
+                                  Margin="4,0,0,0"
                                    MaxWidth="160"
                                    TextWrapping="NoWrap"
                                    TextTrimming="CharacterEllipsis"
                                    VerticalAlignment="Center"
                                    Visibility="{Binding PluginVersion, Converter={StaticResource IsNullToVisibilityConverter}}" />
-                    </Grid>
+                        <TextBlock x:Name="PluginNameTextBlock"
+                                   Text="{Binding PluginName}"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   FontWeight="SemiBold"
+                                   MaxWidth="320"
+                                   TextWrapping="NoWrap"
+                                   TextTrimming="CharacterEllipsis"
+                                   VerticalAlignment="Center"
+                                   Visibility="{Binding PluginName, Converter={StaticResource IsNullToVisibilityConverter}}" />
+                    </DockPanel>
                 </Border>
 
                 <StackPanel x:Name="CaptionButtonsPanel"
