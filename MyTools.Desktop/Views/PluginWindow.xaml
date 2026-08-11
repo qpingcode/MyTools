@@ -177,7 +177,7 @@
                                    Grid.Column="1"
                                    Text="{Binding PluginVersion, StringFormat=v{0}}"
                                    Foreground="{DynamicResource TextTertiaryBrush}"
-                                   Margin="8,0,0,0"
+                                   Margin="4,0,0,0"
                                    MaxWidth="160"
                                    TextWrapping="NoWrap"
                                    TextTrimming="CharacterEllipsis"
@@ -249,9 +249,8 @@
                 <Border Background="{DynamicResource SurfaceBrush}"
                         CornerRadius="6"
                         Padding="10,5">
-                    <Grid>
+                    <Grid x:Name="StatusBarContentGrid">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -261,31 +260,18 @@
                                  HorizontalAlignment="Left"
                                  Margin="0,5" />
 
-                        <StackPanel Grid.Column="1"
-                                    Orientation="Horizontal"
-                                    VerticalAlignment="Center">
-                            <TextBlock Text="{Binding PluginName}"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                       Margin="8,0,0,0"
-                                       VerticalAlignment="Center"
-                                       Visibility="{Binding PluginName, Converter={StaticResource IsNullToVisibilityConverter}}" />
-                            <TextBlock Text="{Binding PluginVersion, StringFormat=v{0}}"
-                                       Foreground="{DynamicResource TextTertiaryBrush}"
-                                       Margin="8,0,0,0"
-                                       VerticalAlignment="Center"
-                                       Visibility="{Binding PluginVersion, Converter={StaticResource IsNullToVisibilityConverter}}" />
-                        </StackPanel>
+                        <TextBlock x:Name="StatusTextBlock"
+                                  Grid.Column="1"
+                                  ToolTip="{Binding DetailedStatusText}"
+                                  Text="{Binding StatusText}"
+                                  Foreground="{DynamicResource TextTertiaryBrush}"
+                                  Margin="8,0,0,0"
+                                  VerticalAlignment="Center" />
 
-                        <TextBlock Grid.Column="2"
-                                   ToolTip="{Binding DetailedStatusText}"
-                                   Text="{Binding StatusText}"
-                                   Foreground="{DynamicResource TextTertiaryBrush}"
-                                   Margin="8,0,0,0"
-                                   VerticalAlignment="Center" />
-
-                        <ItemsControl Grid.Column="3"
-                                      ItemsSource="{Binding SelectedResultActions}"
-                                      VerticalAlignment="Center">
+                        <ItemsControl x:Name="StatusActions"
+                                     Grid.Column="2"
+                                     ItemsSource="{Binding SelectedResultActions}"
+                                     VerticalAlignment="Center">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <StackPanel Orientation="Horizontal" />

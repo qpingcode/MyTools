@@ -123,6 +123,38 @@ public class PluginWindowTitleLayoutTests
         });
     }
 
+    [Test]
+    public void PluginIdentity_AppearsOnlyInTitleAndUsesCompactVersionSpacing()
+    {
+        var services = new ServiceCollection().BuildServiceProvider();
+        var viewModel = new PluginViewModel(services)
+        {
+            PluginName = "Settings",
+            PluginVersion = "1.2.3"
+        };
+
+        var window = new PluginWindow(viewModel);
+        ArrangeWindowContent(window, PluginWindowLayoutMetrics.MinimumWindowWidth);
+
+        var pluginVersionTextBlock = (TextBlock?)window.FindName("PluginVersionTextBlock");
+        var statusBarContentGrid = (Grid?)window.FindName("StatusBarContentGrid");
+        var statusTextBlock = (TextBlock?)window.FindName("StatusTextBlock");
+        var statusActions = (ItemsControl?)window.FindName("StatusActions");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(pluginVersionTextBlock, Is.Not.Null);
+            Assert.That(pluginVersionTextBlock!.Margin.Left, Is.EqualTo(4));
+            Assert.That(statusBarContentGrid, Is.Not.Null);
+            Assert.That(statusBarContentGrid?.ColumnDefinitions.Count, Is.EqualTo(3));
+            Assert.That(statusBarContentGrid?.Children.OfType<StackPanel>(), Is.Empty);
+            Assert.That(statusTextBlock, Is.Not.Null);
+            Assert.That(statusTextBlock is null ? -1 : Grid.GetColumn(statusTextBlock), Is.EqualTo(1));
+            Assert.That(statusActions, Is.Not.Null);
+            Assert.That(statusActions is null ? -1 : Grid.GetColumn(statusActions), Is.EqualTo(2));
+        });
+    }
+
     private static void ArrangeWindowContent(Window window, double width)
     {
         window.Width = width;
