@@ -63,9 +63,9 @@ public partial class PluginWindow
     /// </summary>
     public async Task ActivatePluginAsync()
     {
-        if (WindowState == WindowState.Minimized)
+        if (PluginWindowActivationRestoreDecision.From(WindowState) == PluginWindowActivationRestoreAction.NativeRestore)
         {
-            WindowState = WindowState.Normal;
+            SystemCommands.RestoreWindow(this);
         }
 
         Activate();
