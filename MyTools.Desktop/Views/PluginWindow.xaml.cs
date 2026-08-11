@@ -63,9 +63,10 @@ public partial class PluginWindow
     /// </summary>
     public async Task ActivatePluginAsync()
     {
-        if (PluginWindowActivationRestoreDecision.From(WindowState) == PluginWindowActivationRestoreAction.NativeRestore)
+        if (WindowState == WindowState.Minimized)
         {
-            SystemCommands.RestoreWindow(this);
+            // Synchronous WPF restore preserves RestoreToMaximized before Activate/Focus run.
+            WindowState = WindowState.Normal;
         }
 
         Activate();
