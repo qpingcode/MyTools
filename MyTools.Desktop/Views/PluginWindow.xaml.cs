@@ -7,6 +7,7 @@ using System.Windows.Threading;
 using System.Windows.Controls.Primitives;
 using MyTools.Desktop.Components;
 using MyTools.Desktop.Services;
+using MyTools.Desktop.Utils;
 using MyTools.Desktop.ViewModels;
 using MyTools.Plugins;
 using MyTools.Plugins.NodePlugins;
@@ -317,8 +318,14 @@ public partial class PluginWindow
             return;
         }
 
+        if (!Native.GetCursorPos(out var cursorPosition))
+        {
+            return;
+        }
+
+        var lParam = new IntPtr(PluginWindowCaptionDragLParam.PackScreenCoordinates(cursorPosition.x, cursorPosition.y));
         ReleaseCapture();
-        SendMessage(handle, WmNcLButtonDown, HtCaption, IntPtr.Zero);
+        SendMessage(handle, WmNcLButtonDown, HtCaption, lParam);
     }
 
     private void ClearPendingTitleBarDrag(bool releaseMouseCapture)
