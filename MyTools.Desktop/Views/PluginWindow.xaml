@@ -132,7 +132,8 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <Grid Grid.Row="0"
+            <Grid x:Name="TitleBarGrid"
+                  Grid.Row="0"
                   Height="34">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -141,35 +142,52 @@
                 </Grid.ColumnDefinitions>
 
                 <Border Grid.Column="0"
-                        Background="Transparent"
-                        Padding="4,0,12,0"
-                        MouseLeftButtonDown="TitleBarDragRegion_OnMouseLeftButtonDown"
-                        MouseLeftButtonUp="TitleBarDragRegion_OnMouseLeftButtonUp"
-                        MouseMove="TitleBarDragRegion_OnMouseMove"
-                        LostMouseCapture="TitleBarDragRegion_OnLostMouseCapture">
-                    <StackPanel Orientation="Horizontal"
-                                VerticalAlignment="Center">
-                        <TextBlock Text="{Binding PluginName}"
-                                   Foreground="{DynamicResource TextPrimaryBrush}"
-                                   FontWeight="SemiBold"
-                                   VerticalAlignment="Center"
-                                   Visibility="{Binding PluginName, Converter={StaticResource IsNullToVisibilityConverter}}" />
-                        <TextBlock Text="{Binding PluginVersion, StringFormat=v{0}}"
-                                   Foreground="{DynamicResource TextTertiaryBrush}"
-                                   Margin="8,0,0,0"
-                                   VerticalAlignment="Center"
-                                   Visibility="{Binding PluginVersion, Converter={StaticResource IsNullToVisibilityConverter}}" />
-                    </StackPanel>
-                </Border>
-
-                <Border Grid.Column="1"
+                        Width="16"
                         Background="Transparent"
                         MouseLeftButtonDown="TitleBarDragRegion_OnMouseLeftButtonDown"
                         MouseLeftButtonUp="TitleBarDragRegion_OnMouseLeftButtonUp"
                         MouseMove="TitleBarDragRegion_OnMouseMove"
                         LostMouseCapture="TitleBarDragRegion_OnLostMouseCapture" />
 
-                <StackPanel Grid.Column="2"
+                <Border x:Name="TitleIdentityRegion"
+                        Grid.Column="1"
+                        Background="Transparent"
+                        Padding="4,0,12,0"
+                        MouseLeftButtonDown="TitleBarDragRegion_OnMouseLeftButtonDown"
+                        MouseLeftButtonUp="TitleBarDragRegion_OnMouseLeftButtonUp"
+                        MouseMove="TitleBarDragRegion_OnMouseMove"
+                        LostMouseCapture="TitleBarDragRegion_OnLostMouseCapture">
+                    <Grid VerticalAlignment="Center"
+                          ClipToBounds="True">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock x:Name="PluginNameTextBlock"
+                                   Grid.Column="0"
+                                   Text="{Binding PluginName}"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   FontWeight="SemiBold"
+                                   TextWrapping="NoWrap"
+                                   TextTrimming="CharacterEllipsis"
+                                   VerticalAlignment="Center"
+                                   Visibility="{Binding PluginName, Converter={StaticResource IsNullToVisibilityConverter}}" />
+                        <TextBlock x:Name="PluginVersionTextBlock"
+                                   Grid.Column="1"
+                                   Text="{Binding PluginVersion, StringFormat=v{0}}"
+                                   Foreground="{DynamicResource TextTertiaryBrush}"
+                                   Margin="8,0,0,0"
+                                   MaxWidth="160"
+                                   TextWrapping="NoWrap"
+                                   TextTrimming="CharacterEllipsis"
+                                   VerticalAlignment="Center"
+                                   Visibility="{Binding PluginVersion, Converter={StaticResource IsNullToVisibilityConverter}}" />
+                    </Grid>
+                </Border>
+
+                <StackPanel x:Name="CaptionButtonsPanel"
+                            Grid.Column="2"
                             Orientation="Horizontal"
                             HorizontalAlignment="Right">
                     <Button Style="{StaticResource WindowControlButtonStyle}"
