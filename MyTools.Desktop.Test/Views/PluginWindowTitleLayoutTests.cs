@@ -2,8 +2,12 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using MyTools.Common.DependencyInjection;
 using MyTools.Common.Localization;
+using MyTools.Common.Theming;
+using MyTools.Desktop.Components;
 using MyTools.Desktop.ViewModels;
 using MyTools.Desktop.Views;
 using NUnit.Framework;
@@ -31,6 +35,8 @@ public class PluginWindowTitleLayoutTests
         originalServiceProvider = (IServiceProvider?)ServiceProviderField.GetValue(null);
         var services = new ServiceCollection()
             .AddSingleton<ILocalizationService, TestLocalizationService>()
+            .AddSingleton<IThemeService, TestThemeService>()
+            .AddSingleton<ILogger<NodePluginDetailView>>(NullLogger<NodePluginDetailView>.Instance)
             .BuildServiceProvider();
         ServiceProviderField.SetValue(null, services);
     }
@@ -42,7 +48,7 @@ public class PluginWindowTitleLayoutTests
     }
 
     [Test]
-    public void TitleBar_UsesBoundedIdentityRegionAndPreservesCaptionButtons()
+    public void TitleBar_AllocatesCaptionButtonsAndBoundsLongIdentityAtMinimumWidth()
     {
         var services = new ServiceCollection().BuildServiceProvider();
         var viewModel = new PluginViewModel(services)
@@ -52,7 +58,12 @@ public class PluginWindowTitleLayoutTests
         };
 
         var window = new PluginWindow(viewModel);
+        ArrangeWindowContent(window, PluginWindowLayoutMetrics.MinimumWindowWidth);
+
         var titleBarGrid = (Grid?)window.FindName("TitleBarGrid");
+        var leadingDragRegion = titleBarGrid?.Children
+            .OfType<Border>()
+            .SingleOrDefault(child => Grid.GetColumn(child) == 0);
         var titleIdentityRegion = (Border?)window.FindName("TitleIdentityRegion");
         var pluginNameTextBlock = (TextBlock?)window.FindName("PluginNameTextBlock");
         var pluginVersionTextBlock = (TextBlock?)window.FindName("PluginVersionTextBlock");
@@ -61,27 +72,87 @@ public class PluginWindowTitleLayoutTests
         Assert.Multiple(() =>
         {
             Assert.That(titleBarGrid, Is.Not.Null);
+            Assert.That(leadingDragRegion, Is.Not.Null);
             Assert.That(titleIdentityRegion, Is.Not.Null);
             Assert.That(pluginNameTextBlock, Is.Not.Null);
             Assert.That(pluginVersionTextBlock, Is.Not.Null);
             Assert.That(captionButtonsPanel, Is.Not.Null);
-
-            Assert.That(titleBarGrid!.ColumnDefinitions.Select(column => column.Width).ToArray(), Is.EqualTo(new[]
-            {
-                GridLength.Auto,
-                new GridLength(1, GridUnitType.Star),
-                GridLength.Auto
-            }));
-
-            Assert.That(Grid.GetColumn(titleIdentityRegion!), Is.EqualTo(1));
-            Assert.That(Grid.GetColumn(captionButtonsPanel!), Is.EqualTo(2));
-
-            Assert.That(pluginNameTextBlock!.TextWrapping, Is.EqualTo(TextWrapping.NoWrap));
+            Assert.That(window.MinWidth, Is.EqualTo(PluginWindowLayoutMetrics.MinimumWindowWidth).Within(0.1));
+            Assert.That(leadingDragRegion!.ActualWidth, Is.EqualTo(PluginWindowLayoutMetrics.LeadingDragRegionWidth).Within(0.5));
+            Assert.That(captionButtonsPanel!.ActualWidth, Is.EqualTo(PluginWindowLayoutMetrics.CaptionButtonsWidth).Within(0.5));
+            Assert.That(titleIdentityRegion!.ActualWidth, Is.EqualTo(PluginWindowLayoutMetrics.MinimumTitleIdentityRegionWidth).Within(1.0));
+            Assert.That(leadingDragRegion.ActualWidth + titleIdentityRegion.ActualWidth + captionButtonsPanel.ActualWidth,
+                Is.EqualTo(titleBarGrid!.ActualWidth).Within(1.0));
+            Assert.That(pluginNameTextBlock!.ActualWidth, Is.LessThan(MeasureUnconstrainedWidth(pluginNameTextBlock)));
+            Assert.That(pluginVersionTextBlock!.ActualWidth, Is.LessThan(MeasureUnconstrainedWidth(pluginVersionTextBlock)));
+            Assert.That(pluginVersionTextBlock.ActualWidth, Is.LessThanOrEqualTo(pluginVersionTextBlock.MaxWidth).Within(0.5));
+            Assert.That(pluginNameTextBlock.TextWrapping, Is.EqualTo(TextWrapping.NoWrap));
             Assert.That(pluginNameTextBlock.TextTrimming, Is.EqualTo(TextTrimming.CharacterEllipsis));
-            Assert.That(pluginVersionTextBlock!.TextWrapping, Is.EqualTo(TextWrapping.NoWrap));
+            Assert.That(pluginVersionTextBlock.TextWrapping, Is.EqualTo(TextWrapping.NoWrap));
             Assert.That(pluginVersionTextBlock.TextTrimming, Is.EqualTo(TextTrimming.CharacterEllipsis));
-            Assert.That(pluginVersionTextBlock.MaxWidth, Is.EqualTo(160).Within(0.1));
         });
+    }
+
+    [Test]
+    public void TitleBar_CollapsesVersionTextAndExpandsNameWhenVersionMissing()
+    {
+        var services = new ServiceCollection().BuildServiceProvider();
+        var viewModel = new PluginViewModel(services)
+        {
+            PluginName = "A very long plugin name that should stay on one line",
+            PluginVersion = null
+        };
+
+        var window = new PluginWindow(viewModel);
+        ArrangeWindowContent(window, PluginWindowLayoutMetrics.MinimumWindowWidth);
+
+        var titleIdentityRegion = (Border?)window.FindName("TitleIdentityRegion");
+        var pluginNameTextBlock = (TextBlock?)window.FindName("PluginNameTextBlock");
+        var pluginVersionTextBlock = (TextBlock?)window.FindName("PluginVersionTextBlock");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(titleIdentityRegion, Is.Not.Null);
+            Assert.That(pluginNameTextBlock, Is.Not.Null);
+            Assert.That(pluginVersionTextBlock, Is.Not.Null);
+            Assert.That(pluginVersionTextBlock!.Visibility, Is.EqualTo(Visibility.Collapsed));
+            Assert.That(pluginNameTextBlock!.ActualWidth, Is.EqualTo(PluginWindowLayoutMetrics.MinimumTitleTextWidth).Within(1.0));
+            Assert.That(pluginNameTextBlock.TextWrapping, Is.EqualTo(TextWrapping.NoWrap));
+            Assert.That(pluginNameTextBlock.TextTrimming, Is.EqualTo(TextTrimming.CharacterEllipsis));
+            Assert.That(pluginNameTextBlock.ActualWidth, Is.LessThan(MeasureUnconstrainedWidth(pluginNameTextBlock)));
+        });
+    }
+
+    private static void ArrangeWindowContent(Window window, double width)
+    {
+        window.Width = width;
+        window.Height = 624;
+
+        if (window.Content is not FrameworkElement root)
+        {
+            Assert.Fail("PluginWindow content root was not a FrameworkElement.");
+            return;
+        }
+
+        root.Measure(new Size(width, window.Height));
+        root.Arrange(new Rect(0, 0, width, window.Height));
+        root.UpdateLayout();
+    }
+
+    private static double MeasureUnconstrainedWidth(TextBlock source)
+    {
+        var measurement = new TextBlock
+        {
+            FontFamily = source.FontFamily,
+            FontSize = source.FontSize,
+            FontStretch = source.FontStretch,
+            FontStyle = source.FontStyle,
+            FontWeight = source.FontWeight,
+            Text = source.Text
+        };
+
+        measurement.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        return measurement.DesiredSize.Width;
     }
 
     private sealed class TestLocalizationService : ILocalizationService
@@ -95,6 +166,21 @@ public class PluginWindowTitleLayoutTests
         {
             add { }
             remove { }
+        }
+    }
+
+    private sealed class TestThemeService : IThemeService
+    {
+        public ThemeKind CurrentTheme => ThemeKind.Dark;
+
+        public event EventHandler<ThemeChangedEventArgs>? ThemeChanged
+        {
+            add { }
+            remove { }
+        }
+
+        public void SetTheme(ThemeKind theme)
+        {
         }
     }
 }
