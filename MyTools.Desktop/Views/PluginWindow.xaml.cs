@@ -35,6 +35,7 @@ public partial class PluginWindow
     public PluginWindow(PluginViewModel viewModel)
     {
         InitializeComponent();
+        MinWidth = PluginWindowLayoutMetrics.MinimumWindowWidth;
         StateChanged += Window_OnStateChanged;
         ApplyWindowChromeState();
 
@@ -348,11 +349,11 @@ public partial class PluginWindow
             return IntPtr.Zero;
         }
 
-        handled = TryUpdateMaximizedBounds(hwnd, lParam);
+        handled = TryUpdateMinMaxInfo(hwnd, lParam);
         return IntPtr.Zero;
     }
 
-    private static bool TryUpdateMaximizedBounds(IntPtr hwnd, IntPtr lParam)
+    private bool TryUpdateMinMaxInfo(IntPtr hwnd, IntPtr lParam)
     {
         var monitor = MonitorFromWindow(hwnd, MonitorDefaultToNearest);
         if (monitor == IntPtr.Zero)
@@ -366,6 +367,7 @@ public partial class PluginWindow
             return false;
         }
 
+        var (dpiScaleX, dpiScaleY) = GetCurrentDpiScale();
         var minMaxInfo = Marshal.PtrToStructure<MinMaxInfo>(lParam);
         var bounds = PluginWindowMaximizedBounds.FromMonitorInfo(
             new PluginWindowNativeRect(
@@ -381,8 +383,27 @@ public partial class PluginWindow
 
         minMaxInfo.MaxPosition = new NativePoint(bounds.PositionX, bounds.PositionY);
         minMaxInfo.MaxSize = new NativePoint(bounds.Width, bounds.Height);
+        minMaxInfo.MinTrackSize = new NativePoint(
+            PluginWindowLayoutMetrics.DipToDevicePixels(MinWidth, dpiScaleX),
+            PluginWindowLayoutMetrics.DipToDevicePixels(MinHeight, dpiScaleY));
         Marshal.StructureToPtr(minMaxInfo, lParam, false);
         return true;
+    }
+
+    private (double X, double Y) GetCurrentDpiScale()
+    {
+        var compositionTarget = hwndSource?.CompositionTarget;
+        if (compositionTarget != null)
+        {
+            var transform = compositionTarget.TransformToDevice;
+            if (transform.M11 > 0 && transform.M22 > 0)
+            {
+                return (transform.M11, transform.M22);
+            }
+        }
+
+        var dpi = VisualTreeHelper.GetDpi(this);
+        return (dpi.DpiScaleX > 0 ? dpi.DpiScaleX : 1d, dpi.DpiScaleY > 0 ? dpi.DpiScaleY : 1d);
     }
 
     private static T? FindVisualChild<T>(DependencyObject? parent) where T : DependencyObject
