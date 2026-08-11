@@ -185,6 +185,35 @@ public class PluginWindowTitleLayoutTests
         });
     }
 
+    [Test]
+    public void TitleBar_ProvidesDragRowsAboveAndBelowCaption()
+    {
+        var services = new ServiceCollection().BuildServiceProvider();
+        var window = new PluginWindow(new PluginViewModel(services));
+        ArrangeWindowContent(window, 1020);
+
+        var topDragRegion = (Border?)window.FindName("TopDragRegion");
+        var titleBarGrid = (Grid?)window.FindName("TitleBarGrid");
+        var contentTopDragRegion = (Border?)window.FindName("ContentTopDragRegion");
+        var pluginContentView = (ContentControl?)window.FindName("PluginContentView");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(topDragRegion, Is.Not.Null);
+            Assert.That(titleBarGrid, Is.Not.Null);
+            Assert.That(contentTopDragRegion, Is.Not.Null);
+            Assert.That(pluginContentView, Is.Not.Null);
+            Assert.That(topDragRegion is null ? -1 : Grid.GetRow(topDragRegion), Is.EqualTo(0));
+            Assert.That(titleBarGrid is null ? -1 : Grid.GetRow(titleBarGrid), Is.EqualTo(1));
+            Assert.That(contentTopDragRegion is null ? -1 : Grid.GetRow(contentTopDragRegion), Is.EqualTo(2));
+            Assert.That(pluginContentView is null ? -1 : Grid.GetRow(pluginContentView), Is.EqualTo(3));
+            Assert.That(topDragRegion?.ActualHeight, Is.EqualTo(15).Within(0.5));
+            Assert.That(titleBarGrid?.ActualHeight, Is.EqualTo(34).Within(0.5));
+            Assert.That(contentTopDragRegion?.ActualHeight, Is.EqualTo(12).Within(0.5));
+            Assert.That(pluginContentView?.Margin, Is.EqualTo(new Thickness(0)));
+        });
+    }
+
     private static void ArrangeWindowContent(Window window, double width)
     {
         window.Width = width;
