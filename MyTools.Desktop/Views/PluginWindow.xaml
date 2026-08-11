@@ -125,15 +125,25 @@
                               BlurRadius="10" />
         </Border.Effect>
 
-        <Grid Margin="15">
+        <Grid Margin="15,0,15,15">
             <Grid.RowDefinitions>
+                <RowDefinition Height="15" />
                 <RowDefinition Height="34" />
+                <RowDefinition Height="12" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
+            <Border x:Name="TopDragRegion"
+                    Grid.Row="0"
+                    Background="Transparent"
+                    MouseLeftButtonDown="TitleBarDragRegion_OnMouseLeftButtonDown"
+                    MouseLeftButtonUp="TitleBarDragRegion_OnMouseLeftButtonUp"
+                    MouseMove="TitleBarDragRegion_OnMouseMove"
+                    LostMouseCapture="TitleBarDragRegion_OnLostMouseCapture" />
+
             <Grid x:Name="TitleBarGrid"
-                  Grid.Row="0"
+                  Grid.Row="1"
                   Height="34">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -229,14 +239,21 @@
                 </StackPanel>
             </Grid>
 
+            <Border x:Name="ContentTopDragRegion"
+                    Grid.Row="2"
+                    Background="Transparent"
+                    MouseLeftButtonDown="TitleBarDragRegion_OnMouseLeftButtonDown"
+                    MouseLeftButtonUp="TitleBarDragRegion_OnMouseLeftButtonUp"
+                    MouseMove="TitleBarDragRegion_OnMouseMove"
+                    LostMouseCapture="TitleBarDragRegion_OnLostMouseCapture" />
+
             <!-- 插件内容（无顶部搜索框） -->
             <ContentControl Content="{Binding CurrentViewModel}"
                             x:Name="PluginContentView"
-                            Grid.Row="1"
-                            Margin="0,12,0,0" />
+                            Grid.Row="3" />
 
             <!-- 状态栏 -->
-            <Grid Grid.Row="2"
+            <Grid Grid.Row="4"
                   VerticalAlignment="Bottom"
                   Margin="0,8,0,0">
                 <Grid.RowDefinitions>
