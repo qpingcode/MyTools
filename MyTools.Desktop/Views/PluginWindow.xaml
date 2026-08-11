@@ -143,7 +143,10 @@
                 <Border Grid.Column="0"
                         Background="Transparent"
                         Padding="4,0,12,0"
-                        MouseLeftButtonDown="TitleBarDragRegion_OnMouseLeftButtonDown">
+                        MouseLeftButtonDown="TitleBarDragRegion_OnMouseLeftButtonDown"
+                        MouseLeftButtonUp="TitleBarDragRegion_OnMouseLeftButtonUp"
+                        MouseMove="TitleBarDragRegion_OnMouseMove"
+                        LostMouseCapture="TitleBarDragRegion_OnLostMouseCapture">
                     <StackPanel Orientation="Horizontal"
                                 VerticalAlignment="Center">
                         <TextBlock Text="{Binding PluginName}"
@@ -161,7 +164,10 @@
 
                 <Border Grid.Column="1"
                         Background="Transparent"
-                        MouseLeftButtonDown="TitleBarDragRegion_OnMouseLeftButtonDown" />
+                        MouseLeftButtonDown="TitleBarDragRegion_OnMouseLeftButtonDown"
+                        MouseLeftButtonUp="TitleBarDragRegion_OnMouseLeftButtonUp"
+                        MouseMove="TitleBarDragRegion_OnMouseMove"
+                        LostMouseCapture="TitleBarDragRegion_OnLostMouseCapture" />
 
                 <StackPanel Grid.Column="2"
                             Orientation="Horizontal"

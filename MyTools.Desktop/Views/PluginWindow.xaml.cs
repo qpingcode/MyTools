@@ -23,9 +23,13 @@ namespace MyTools.Desktop.Views;
 public partial class PluginWindow
 {
     private const int WmGetMinMaxInfo = 0x0024;
+    private const int WmNcLButtonDown = 0x00A1;
+    private static readonly IntPtr HtCaption = new(0x0002);
     private const uint MonitorDefaultToNearest = 0x00000002;
     private readonly PluginViewModel viewModel;
     private HwndSource? hwndSource;
+    private Point? pendingTitleBarDragStartPoint;
+    private UIElement? pendingTitleBarDragRegion;
 
     public PluginWindow(PluginViewModel viewModel)
     {
@@ -166,26 +170,75 @@ public partial class PluginWindow
 
     private void TitleBarDragRegion_OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.ChangedButton != MouseButton.Left)
+        var isInteractiveControlSource = IsInteractiveTitleBarSource(e.OriginalSource as DependencyObject);
+        var action = PluginWindowTitleBarDragBehavior.ResolveMouseLeftButtonDownAction(
+            e.ChangedButton,
+            e.ClickCount,
+            isInteractiveControlSource);
+        if (action == PluginWindowTitleBarDragAction.ToggleMaximizeRestore)
         {
-            return;
-        }
-
-        if (e.ClickCount == 2)
-        {
+            ClearPendingTitleBarDrag(releaseMouseCapture: true);
             ToggleMaximizeRestore();
             e.Handled = true;
             return;
         }
 
-        try
+        if (sender is UIElement region
+            && PluginWindowTitleBarDragBehavior.ShouldCaptureForPotentialDrag(
+                e.ChangedButton,
+                e.ClickCount,
+                isInteractiveControlSource))
         {
-            DragMove();
-            e.Handled = true;
+            pendingTitleBarDragStartPoint = e.GetPosition(this);
+            pendingTitleBarDragRegion = region;
+            if (pendingTitleBarDragRegion.CaptureMouse())
+            {
+                e.Handled = true;
+            }
+            else
+            {
+                ClearPendingTitleBarDrag(releaseMouseCapture: false);
+            }
         }
-        catch (InvalidOperationException)
+    }
+
+    private void TitleBarDragRegion_OnMouseMove(object sender, MouseEventArgs e)
+    {
+        if (pendingTitleBarDragStartPoint is null || pendingTitleBarDragRegion == null)
         {
+            return;
         }
+
+        var action = PluginWindowTitleBarDragBehavior.ResolveMouseMoveAction(
+            pendingTitleBarDragStartPoint.Value,
+            e.GetPosition(this),
+            WindowState,
+            e.LeftButton,
+            SystemParameters.MinimumHorizontalDragDistance,
+            SystemParameters.MinimumVerticalDragDistance);
+        if (action == PluginWindowTitleBarDragAction.None)
+        {
+            if (e.LeftButton != MouseButtonState.Pressed)
+            {
+                ClearPendingTitleBarDrag(releaseMouseCapture: true);
+            }
+
+            return;
+        }
+
+        ClearPendingTitleBarDrag(releaseMouseCapture: true);
+        BeginTitleBarDrag(action);
+        e.Handled = true;
+    }
+
+    private void TitleBarDragRegion_OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        ClearPendingTitleBarDrag(releaseMouseCapture: true);
+    }
+
+    private void TitleBarDragRegion_OnLostMouseCapture(object sender, MouseEventArgs e)
+    {
+        ClearPendingTitleBarDrag(releaseMouseCapture: false);
     }
 
     private void MinimizeButton_OnClick(object sender, RoutedEventArgs e)
@@ -232,6 +285,52 @@ public partial class PluginWindow
             : LanguageService.GetCaption("PluginWindow.Maximize", "Maximize");
         MaximizeRestoreButton.ToolTip = maximizeRestoreCaption;
         AutomationProperties.SetName(MaximizeRestoreButton, maximizeRestoreCaption);
+    }
+
+    private void BeginTitleBarDrag(PluginWindowTitleBarDragAction action)
+    {
+        switch (action)
+        {
+            case PluginWindowTitleBarDragAction.NativeCaptionDrag:
+                BeginNativeCaptionDrag();
+                return;
+            case PluginWindowTitleBarDragAction.DragMove:
+                try
+                {
+                    DragMove();
+                }
+                catch (InvalidOperationException)
+                {
+                }
+
+                return;
+            default:
+                return;
+        }
+    }
+
+    private void BeginNativeCaptionDrag()
+    {
+        var handle = hwndSource?.Handle ?? new WindowInteropHelper(this).Handle;
+        if (handle == IntPtr.Zero)
+        {
+            return;
+        }
+
+        ReleaseCapture();
+        SendMessage(handle, WmNcLButtonDown, HtCaption, IntPtr.Zero);
+    }
+
+    private void ClearPendingTitleBarDrag(bool releaseMouseCapture)
+    {
+        var region = pendingTitleBarDragRegion;
+        pendingTitleBarDragStartPoint = null;
+        pendingTitleBarDragRegion = null;
+
+        if (releaseMouseCapture && region?.IsMouseCaptured == true)
+        {
+            region.ReleaseMouseCapture();
+        }
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -303,12 +402,36 @@ public partial class PluginWindow
         return null;
     }
 
+    private static bool IsInteractiveTitleBarSource(DependencyObject? source)
+    {
+        while (source != null)
+        {
+            if (source is ButtonBase)
+            {
+                return true;
+            }
+
+            source = source is Visual
+                ? VisualTreeHelper.GetParent(source)
+                : null;
+        }
+
+        return false;
+    }
+
     [DllImport("user32.dll")]
     private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool ReleaseCapture();
 
     [DllImport("user32.dll", CharSet = CharSet.Auto)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MonitorInfo lpmi);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct MinMaxInfo
