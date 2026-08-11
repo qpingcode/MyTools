@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { createTool } from "@qping/plugin-common/node-tool";
+import { createTool } from "@qping/plugin-common/server";
 import { mytoolsI18n } from "@qping/plugin-common/i18n";
 import {
   FAVORITES_PATH,

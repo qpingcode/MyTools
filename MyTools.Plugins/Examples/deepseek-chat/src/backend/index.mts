@@ -1,4 +1,4 @@
-import { createTool } from "@qping/plugin-common/node-tool";
+import { createTool } from "@qping/plugin-common/server";
 import { mytoolsI18n } from "@qping/plugin-common/i18n";
 
 const DEEPSEEK_API_URL = process.env.DEEPSEEK_API_URL || "https://api.deepseek.com/chat/completions";

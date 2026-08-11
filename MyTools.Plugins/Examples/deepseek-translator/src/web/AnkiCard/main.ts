@@ -1,4 +1,4 @@
-import { tool } from "@qping/plugin-common/web-tool";
+import { tool } from "@qping/plugin-common/client";
 
 (function () {
     type Summary = {

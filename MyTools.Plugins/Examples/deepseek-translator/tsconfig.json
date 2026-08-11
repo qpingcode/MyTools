@@ -5,7 +5,7 @@
     "moduleResolution": "NodeNext",
     "moduleDetection": "legacy",
     "lib": ["ES2024", "DOM"],
-    "types": ["node", "@qping/plugin-common"],
+    "types": ["node"],
     "strict": false,
     "noImplicitAny": true,
     "noEmitOnError": true,

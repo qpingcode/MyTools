@@ -12,12 +12,12 @@
     "noEmitOnError": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "rootDir": ".",
+    "rootDir": "src",
     "outDir": "dist"
   },
   "include": [
-    "*.ts",
-    "*.mts"
+    "src/**/*.ts",
+    "src/**/*.mts"
   ],
   "exclude": [
     "node_modules",
