@@ -1,4 +1,4 @@
-import { tool } from "@qping/plugin-common/web-tool";
+import { tool } from "@qping/plugin-common/client";
 
 export function t(key: string, defaultValue: string, values: Record<string, unknown> = {}): string {
     return tool.i18n.t(key, { defaultValue: defaultValue, ...values });

@@ -1,4 +1,4 @@
-import { tool } from "@qping/plugin-common/web-tool";
+import { tool } from "@qping/plugin-common/client";
 import type { Config } from "./types";
 import { t } from "./utils";
 import * as common from "./common";

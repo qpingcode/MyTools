@@ -71,10 +71,6 @@ export class NodeTool {
     });
   }
 
-  /**
-   * 向宿主发起能力请求（hostCall），等待宿主写回响应。
-   * 仅对注册了 HostCallHandler 的插件有效（如 settings 插件）。
-   */
   hostCall(method: string, params: Record<string, unknown> = {}): Promise<unknown> {
     if (!method || typeof method !== "string") {
       return Promise.reject(new Error("tool.hostCall requires a method name."));
@@ -128,7 +124,6 @@ export class NodeTool {
       return;
     }
 
-    // 宿主写回的 hostCall 响应：有 id 无 method，可能是 result 或 error。
     const rawId = typeof raw.id === "string" ? raw.id : null;
     if (rawId && !raw.method && this.#hostCallPending.has(rawId)) {
       const pending = this.#hostCallPending.get(rawId)!;

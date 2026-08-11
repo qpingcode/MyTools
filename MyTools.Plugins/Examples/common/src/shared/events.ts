@@ -1,3 +1,5 @@
+import type { MyToolsEvents } from "./contracts.js";
+
 export const MyToolsEventSubjects = {
   host: {
     initialize: "mytools.host.initialize",
@@ -6,4 +8,4 @@ export const MyToolsEventSubjects = {
     languageChanged: "mytools.host.language-changed",
     themeChanged: "mytools.host.theme-changed",
   },
-} as const;
+} as const satisfies MyToolsEvents;

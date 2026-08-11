@@ -105,6 +105,3 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export const mytoolsI18n = new MyToolsI18n();
-
-
-

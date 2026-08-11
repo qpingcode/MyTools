@@ -1,4 +1,4 @@
-import { tool } from "@qping/plugin-common/web-tool";
+import { tool } from "@qping/plugin-common/client";
 import type { Category, KeymapConflict, KeymapPlugin } from "./types";
 import { highlight, t } from "./utils";
 import * as common from "./common";

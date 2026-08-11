@@ -1,4 +1,4 @@
-declare var MyToolsEventSubjects: {
+export interface MyToolsEvents {
   readonly host: {
     readonly initialize: "mytools.host.initialize";
     readonly search: "mytools.host.search";
@@ -6,11 +6,9 @@ declare var MyToolsEventSubjects: {
     readonly languageChanged: "mytools.host.language-changed";
     readonly themeChanged: "mytools.host.theme-changed";
   };
-};
+}
 
-type MyToolsEvents = typeof MyToolsEventSubjects;
-
-interface MyToolsHostInitializePayload {
+export interface MyToolsHostInitializePayload {
   protocolVersion: string;
   pluginId: string;
   version?: string;
@@ -26,27 +24,27 @@ interface MyToolsHostInitializePayload {
   themeTokens?: Record<string, string>;
 }
 
-interface MyToolsLanguageChangedPayload {
+export interface MyToolsLanguageChangedPayload {
   locale: string;
   fallbackLocale: string;
   translationRevision: string;
   messages: Record<string, string>;
 }
 
-interface MyToolsThemeChangedPayload {
+export interface MyToolsThemeChangedPayload {
   theme: string;
   themeTokens: Record<string, string>;
 }
 
-interface MyToolsHostSearchPayload {
+export interface MyToolsHostSearchPayload {
   query: string;
 }
 
-interface MyToolsHostKeyPayload {
+export interface MyToolsHostKeyPayload {
   key: string;
 }
 
-interface MyToolsEventPayloadMap {
+export interface MyToolsEventPayloadMap {
   "mytools.host.initialize": MyToolsHostInitializePayload;
   "mytools.host.search": MyToolsHostSearchPayload;
   "mytools.host.key": MyToolsHostKeyPayload;
@@ -54,21 +52,32 @@ interface MyToolsEventPayloadMap {
   "mytools.host.theme-changed": MyToolsThemeChangedPayload;
 }
 
-type MyToolsEventPayload<TSubject extends string> =
+export type MyToolsEventPayload<TSubject extends string> =
   TSubject extends keyof MyToolsEventPayloadMap
     ? MyToolsEventPayloadMap[TSubject]
     : unknown;
 
-interface MyToolsEventMeta<TSubject extends string = string> {
+export interface MyToolsEventMeta<TSubject extends string = string> {
   subjectId: TSubject;
 }
 
-interface MyToolsWebView {
-  postMessage(message: unknown): void;
-  addEventListener(type: "message", listener: (event: { data: unknown }) => void): void;
+export interface MyToolsI18nApi {
+  readonly language: string;
+  t(key: string, options: Record<string, unknown> & { defaultValue: string; translatorComment?: string }): string;
+  apply(root?: ParentNode): void;
 }
 
-interface MyToolsTool {
+export interface MyToolsThemePayload {
+  theme?: string;
+  themeTokens?: Record<string, string>;
+}
+
+export interface MyToolsThemeApi {
+  current: string;
+  apply(payload: MyToolsThemePayload): void;
+}
+
+export interface MyToolsTool {
   call<T = unknown>(action: string, params?: unknown, options?: { timeout?: number }): Promise<T>;
   subscribe<TSubject extends string>(
     subjectId: TSubject,
@@ -76,22 +85,24 @@ interface MyToolsTool {
   ): () => void;
   events: MyToolsEvents;
   ready(pluginId?: string): void;
-  i18n: {
-    readonly language: string;
-    t(key: string, options: Record<string, unknown> & { defaultValue: string; translatorComment?: string }): string;
-    apply(root?: ParentNode): void;
-  };
-  theme: {
-    current: string;
-    apply(payload: { theme?: string; themeTokens?: Record<string, string> }): void;
-  };
+  i18n: MyToolsI18nApi;
+  theme: MyToolsThemeApi;
 }
 
-interface Window {
-  chrome?: {
-    webview?: MyToolsWebView;
-  };
-  DeepSeekTranslatorSpeech?: {
-    appendPhoneticRow(parent: Element, options: unknown): void;
-  };
+export interface MyToolsWebView {
+  postMessage(message: unknown): void;
+  addEventListener(type: "message", listener: (event: { data: unknown }) => void): void;
 }
+
+declare global {
+  interface Window {
+    chrome?: {
+      webview?: MyToolsWebView;
+    };
+    DeepSeekTranslatorSpeech?: {
+      appendPhoneticRow(parent: Element, options: unknown): void;
+    };
+  }
+}
+
+export {};
