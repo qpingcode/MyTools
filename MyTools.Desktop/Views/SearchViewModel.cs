@@ -5,13 +5,13 @@ using Lucene.Net.Util;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MyTools.Common;
+using MyTools.Common.Config.Interfaces;
 using MyTools.Desktop.Components;
 using MyTools.Desktop.Services;
 using MyTools.Plugins;
 using MyTools.Plugins.NodePlugins;
 using Application = System.Windows.Application;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
-using Timer = System.Timers.Timer;
 
 namespace MyTools.Desktop.ViewModels
 {
@@ -44,7 +44,7 @@ namespace MyTools.Desktop.ViewModels
         [ObservableProperty]
         private ObservableCollection<IActionWithCommand> selectedResultActions = new();
         
-        private Timer searchTimer;
+        private readonly SearchDebouncer searchDebouncer;
         private readonly IKeywordRegistry keywordRegistry;
         private readonly IServiceProvider serviceProvider;
         private readonly ILogger<SearchViewModel> logger;
@@ -56,16 +56,13 @@ namespace MyTools.Desktop.ViewModels
 
         public string? CurrentNodePluginDetailId => selectedNodeDetailContext?.PluginId;
 
-        public SearchViewModel(IKeywordRegistry keywordRegistry, IServiceProvider serviceProvider, ILogger<SearchViewModel> logger, NodePluginDetailNavigator nodePluginDetailNavigator)
+        public SearchViewModel(
+            IKeywordRegistry keywordRegistry,
+            IServiceProvider serviceProvider,
+            ILogger<SearchViewModel> logger,
+            NodePluginDetailNavigator nodePluginDetailNavigator,
+            IConfigurationRegistry configurationRegistry)
         {
-            searchTimer = new Timer(30);
-            searchTimer.AutoReset = false;
-            searchTimer.Elapsed += (s, e) =>
-            {
-                Application.Current.Dispatcher.Invoke(PerformSearch);
-            };
-            searchTimer.Start();
-            
             this.keywordRegistry = keywordRegistry ?? throw new ArgumentNullException(nameof(keywordRegistry));
             this.serviceProvider = serviceProvider;
             this.logger = logger;
@@ -73,12 +70,16 @@ namespace MyTools.Desktop.ViewModels
             this.nodePluginDetailNavigator.DetailRequested += OnNodePluginDetailRequested;
 
             CurrentViewModel = CreateViewModel<BasicListViewModel>();
+            searchDebouncer = new SearchDebouncer(
+                configurationRegistry,
+                PerformSearch,
+                action => Application.Current.Dispatcher.Invoke(action));
+            searchDebouncer.Restart();
         }
         
         partial void OnSearchTextChanged(string value)
         {
-            searchTimer.Stop();
-            searchTimer.Start();
+            searchDebouncer.Restart();
         }
         
         private void PerformSearch()
@@ -322,7 +323,7 @@ namespace MyTools.Desktop.ViewModels
         {
             disposed = true;
             nodePluginDetailNavigator.DetailRequested -= OnNodePluginDetailRequested;
-            searchTimer.Dispose();
+            searchDebouncer.Dispose();
             (CurrentViewModel as IDisposable)?.Dispose();
         }
 
