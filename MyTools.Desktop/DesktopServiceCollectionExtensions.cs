@@ -24,6 +24,11 @@ namespace MyTools.Desktop;
 
 public static class DesktopServiceCollectionExtensions
 {
+    internal const string ConsoleLogOutputTemplate =
+        "[{Timestamp:HH:mm:ss.fff} {Level:u3}] {Message:lj}{NewLine}{Exception}";
+    internal const string FileLogOutputTemplate =
+        "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}";
+
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
         services.AddSingleton<MouseGestureDetector>();
@@ -86,8 +91,12 @@ public static class DesktopServiceCollectionExtensions
         var logPath = Path.Join(ConfigPath.Base, "logs/log.txt");
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.ControlledBy(logLevelService.LevelSwitch)
-            .WriteTo.Console()
-            .WriteTo.File(logPath, rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7)
+            .WriteTo.Console(outputTemplate: ConsoleLogOutputTemplate)
+            .WriteTo.File(
+                logPath,
+                outputTemplate: FileLogOutputTemplate,
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 7)
             .CreateLogger();
 
         serviceCollection.AddSingleton(logLevelService);
