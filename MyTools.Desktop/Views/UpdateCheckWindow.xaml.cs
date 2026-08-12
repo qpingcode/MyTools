@@ -2,7 +2,9 @@ using System.ComponentModel;
 using System.Windows;
 using Microsoft.Extensions.Logging;
 using MyTools.Common.DependencyInjection;
+using MyTools.Common.Theming;
 using MyTools.Desktop.Services;
+using MyTools.Desktop.Themes;
 using static MyTools.Desktop.Services.LanguageService;
 
 namespace MyTools.Desktop.Views;
@@ -15,6 +17,7 @@ public partial class UpdateCheckWindow
 {
     private readonly IUpdateService _updateService;
     private readonly ILogger<UpdateCheckWindow> _logger;
+    private readonly IThemeService _themeService;
     private readonly CancellationTokenSource _checkCts = new();
 
     public UpdateCheckWindow(IUpdateService updateService)
@@ -23,6 +26,19 @@ public partial class UpdateCheckWindow
 
         _updateService = updateService;
         _logger = ServiceLocator.GetRequiredService<ILogger<UpdateCheckWindow>>();
+        _themeService = ServiceLocator.GetRequiredService<IThemeService>();
+        _themeService.ThemeChanged += ThemeService_ThemeChanged;
+        SourceInitialized += Window_SourceInitialized;
+    }
+
+    private void Window_SourceInitialized(object? sender, EventArgs e)
+    {
+        WindowTitleBarTheme.Apply(this, _themeService.CurrentTheme);
+    }
+
+    private void ThemeService_ThemeChanged(object? sender, ThemeChangedEventArgs e)
+    {
+        WindowTitleBarTheme.Apply(this, e.CurrentTheme);
     }
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
@@ -141,6 +157,9 @@ public partial class UpdateCheckWindow
 
     private void Window_Closing(object? sender, CancelEventArgs e)
     {
+        _themeService.ThemeChanged -= ThemeService_ThemeChanged;
+        SourceInitialized -= Window_SourceInitialized;
+
         // If the user closes the window while still checking, cancel the in-flight check.
         if (ResultState.Visibility != Visibility.Visible && DownloadingState.Visibility != Visibility.Visible)
         {

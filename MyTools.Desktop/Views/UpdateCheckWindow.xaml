@@ -14,7 +14,8 @@
         Topmost="True"
         Loaded="Window_Loaded"
         Closing="Window_Closing"
-        Background="{DynamicResource WindowBackgroundBrush}">
+        Background="{DynamicResource WindowBackgroundBrush}"
+        Foreground="{DynamicResource TextPrimaryBrush}">
     <Window.Resources>
         <Style x:Key="ModernButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
