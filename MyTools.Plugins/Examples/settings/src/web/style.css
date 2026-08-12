@@ -247,7 +247,7 @@ html, body {
 
 .btn-primary {
     background: var(--mt-accent, #4a9eff);
-    color: #fff;
+    color: var(--mt-accent-foreground, #ffffff);
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -266,7 +266,7 @@ html, body {
 /* ── 高亮 ── */
 mark {
     background: var(--mt-accent, #4a9eff);
-    color: #fff;
+    color: var(--mt-accent-foreground, #ffffff);
     border-radius: 2px;
     padding: 0 1px;
 }

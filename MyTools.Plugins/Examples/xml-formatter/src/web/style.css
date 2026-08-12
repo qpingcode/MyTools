@@ -42,13 +42,13 @@ body {
 
 .toolbar-button.primary {
     background: var(--mt-accent, #2f7cf6);
-    color: var(--mt-text, #ffffff);
+    color: var(--mt-accent-foreground, #ffffff);
     border-color: var(--mt-accent, #2f7cf6);
 }
 
 .toolbar-button.copied {
     background: var(--mt-accent, #2f7cf6);
-    color: var(--mt-text, #ffffff);
+    color: var(--mt-accent-foreground, #ffffff);
 }
 
 .panes {
