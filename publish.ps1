@@ -149,11 +149,12 @@ $currentVersion = (Get-Content -LiteralPath $versionFile -Raw).Trim()
 $releaseVersion = Get-NextPatchVersion -CurrentVersion $currentVersion
 $channel = "win"
 $frameworkDependent = $true
+$selfContained = if ($frameworkDependent) { "false" } else { "true" }
 
 Write-Host "MyTools 交互式发布"
 Write-Host "最近发布版本: $currentVersion"
 Write-Host "默认发布版本: $releaseVersion（patch + 1）"
-Write-Host "默认设置: channel=$channel, runtime=win-x64, self-contained=true"
+Write-Host "默认设置: channel=$channel, runtime=win-x64, self-contained=$selfContained"
 
 if (Read-YesNo -Prompt "是否修改默认发布设置？") {
     $releaseVersion = Read-Version -DefaultVersion $releaseVersion
@@ -161,7 +162,7 @@ if (Read-YesNo -Prompt "是否修改默认发布设置？") {
     $frameworkDependent = Read-YesNo -Prompt "是否发布为 framework-dependent（目标机需要安装 .NET Desktop Runtime）？"
 }
 
-$selfContained = if ($frameworkDependent) { "false" } else { "true" }
+
 $publishArguments = @(
     "publish",
     $projectPath,
