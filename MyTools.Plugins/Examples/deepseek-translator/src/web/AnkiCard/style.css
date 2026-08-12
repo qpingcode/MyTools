@@ -356,7 +356,7 @@ body {
 .review-actions button.selected {
     border-color: var(--mt-accent, #60a5fa);
     background: var(--mt-accent, #2563eb);
-    color: var(--mt-text, #ffffff);
+    color: var(--mt-accent-foreground, #ffffff);
     box-shadow: 0 0 0 2px var(--mt-accent, rgba(96, 165, 250, 0.25));
 }
 

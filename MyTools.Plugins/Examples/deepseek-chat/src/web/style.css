@@ -99,7 +99,7 @@ body {
     margin-left: auto;
     border-color: var(--mt-accent, rgba(96, 165, 250, 0.32));
     background: var(--mt-accent, rgba(37, 99, 235, 0.22));
-    color: var(--mt-text, #ffffff);
+    color: var(--mt-accent-foreground, #ffffff);
     border-bottom-right-radius: 4px;
 }
 
