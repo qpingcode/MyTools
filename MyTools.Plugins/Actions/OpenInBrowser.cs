@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO;
 using MyTools.Common;
 using MyTools.Common.Localization;
 
@@ -34,17 +35,49 @@ public class OpenInBrowser : IAction
         }
     }
     
-    private void OpenBrowser(string url)
+    private static void OpenBrowser(string url)
     {
-        var processStartInfo = new ProcessStartInfo
-        {
-            FileName = url,
-            UseShellExecute = true
-        };
+        using var process = Process.Start(CreateProcessStartInfo(
+            url,
+            Environment.GetFolderPath,
+            File.Exists));
+    }
 
-        using var process = new Process();
-        process.StartInfo = processStartInfo;
-        process.Start();
+    internal static ProcessStartInfo CreateProcessStartInfo(
+        string url,
+        Func<Environment.SpecialFolder, string> getFolderPath,
+        Func<string, bool> fileExists)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
+            !uri.Scheme.Equals("chrome-extension", StringComparison.OrdinalIgnoreCase))
+        {
+            return new ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true
+            };
+        }
+
+        var chromePath = new[]
+            {
+                Environment.SpecialFolder.LocalApplicationData,
+                Environment.SpecialFolder.ProgramFiles,
+                Environment.SpecialFolder.ProgramFilesX86
+            }
+            .Select(getFolderPath)
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Select(path => Path.Combine(path, "Google", "Chrome", "Application", "chrome.exe"))
+            .FirstOrDefault(fileExists)
+            ?? throw new FileNotFoundException(
+                "Google Chrome was not found. A chrome-extension link must be opened by Chrome.");
+
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = chromePath,
+            UseShellExecute = false
+        };
+        startInfo.ArgumentList.Add(url);
+        return startInfo;
     }
 
     private string[] SplitUrls(string args)
