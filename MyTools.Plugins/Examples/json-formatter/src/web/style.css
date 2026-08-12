@@ -41,13 +41,13 @@ body {
 }
 
 .toolbar-button.primary {
-    background: var(--mt-accent, #2f7cf6);
+    background: var(--mt-accent, #3F51B5);
     color: var(--mt-accent-foreground, #ffffff);
-    border-color: var(--mt-accent, #2f7cf6);
+    border-color: var(--mt-accent, #3F51B5);
 }
 
 .toolbar-button.copied {
-    background: var(--mt-accent, #2f7cf6);
+    background: var(--mt-accent, #3F51B5);
     color: var(--mt-accent-foreground, #ffffff);
 }
 

@@ -246,12 +246,12 @@ html, body {
 }
 
 .btn-primary {
-    background: var(--mt-accent, #4a9eff);
+    background: var(--mt-accent, #3F51B5);
     color: var(--mt-accent-foreground, #ffffff);
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: var(--mt-accent-hover, #5aa8ff);
+    background: var(--mt-accent-hover, #303F9F);
 }
 
 .btn-secondary {
@@ -265,7 +265,7 @@ html, body {
 
 /* ── 高亮 ── */
 mark {
-    background: var(--mt-accent, #4a9eff);
+    background: var(--mt-accent, #3F51B5);
     color: var(--mt-accent-foreground, #ffffff);
     border-radius: 2px;
     padding: 0 1px;
