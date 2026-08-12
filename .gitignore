@@ -113,3 +113,6 @@ project.lock.json
 
 # ZCode agent session files
 .zcode/ 
+
+# Local Git worktrees
+.worktrees/
