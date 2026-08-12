@@ -77,6 +77,7 @@ public class ThemeResourceKeysTest
             "TextSecondaryBrush",
             "BorderBrush",
             "AccentBrush",
+            "AccentForegroundBrush",
             "SelectionBrush",
         };
 

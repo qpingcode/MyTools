@@ -18,7 +18,7 @@
     <Window.Resources>
         <Style x:Key="ModernButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentForegroundBrush}"/>
             <Setter Property="Padding" Value="20,4"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Height" Value="28"/>

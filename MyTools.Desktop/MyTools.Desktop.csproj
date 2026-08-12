@@ -64,27 +64,6 @@
         <Page Update="Views\Components\Search\LeftRightLayout.xaml">
           <Generator>MSBuild:Compile</Generator>
         </Page>
-        <Page Update="Views\Templates\BoolSettingTemplate.xaml">
-          <Generator>MSBuild:Compile</Generator>
-        </Page>
-        <Page Update="Views\Templates\IntegerSettingTemplate.xaml">
-          <Generator>MSBuild:Compile</Generator>
-        </Page>
-        <Page Update="Views\Templates\LanguageSettingTemplate.xaml">
-          <Generator>MSBuild:Compile</Generator>
-        </Page>
-        <Page Update="Views\Templates\ThemeSettingTemplate.xaml">
-          <Generator>MSBuild:Compile</Generator>
-        </Page>
-        <Page Update="Views\Templates\StringSettingTemplate.xaml">
-          <Generator>MSBuild:Compile</Generator>
-        </Page>
-        <Page Update="Views\Templates\DoubleSettingTemplate.xaml">
-          <Generator>MSBuild:Compile</Generator>
-        </Page>
-        <Page Update="Views\Templates\CustomSettingTemplate.xaml">
-          <Generator>MSBuild:Compile</Generator>
-        </Page>
         <Page Update="Themes\Dark.xaml">
           <Generator>MSBuild:Compile</Generator>
         </Page>
