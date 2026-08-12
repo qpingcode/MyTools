@@ -1,5 +1,6 @@
 using System.IO;
 using System.Windows;
+using MyTools.Desktop.Themes;
 using NUnit.Framework;
 
 namespace MyTools.Desktop.Test.Themes;
@@ -89,5 +90,17 @@ public class ThemeResourceKeysTest
             Assert.That(light, Does.Contain(key), $"Light.xaml missing token {key}.");
             Assert.That(dark, Does.Contain(key), $"Dark.xaml missing token {key}.");
         }
+    }
+
+    [Test]
+    public void WebThemes_ExposeAccentForegroundToken()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(WebThemeTokens.Light, Contains.Key("--mt-accent-foreground"));
+            Assert.That(WebThemeTokens.Dark, Contains.Key("--mt-accent-foreground"));
+            Assert.That(WebThemeTokens.Light["--mt-accent-foreground"], Is.EqualTo("#FFFFFF"));
+            Assert.That(WebThemeTokens.Dark["--mt-accent-foreground"], Is.EqualTo("#FFFFFF"));
+        });
     }
 }

@@ -36,6 +36,7 @@ public static class WebThemeTokens
         ["--mt-accent"] = "#3F51B5",
         ["--mt-accent-hover"] = "#303F9F",
         ["--mt-accent-pressed"] = "#1A237E",
+        ["--mt-accent-foreground"] = "#FFFFFF",
         ["--mt-selection"] = "#1A3F51B5",
         ["--mt-shadow"] = "#000000",
     }.ToFrozenDictionary();
@@ -55,6 +56,7 @@ public static class WebThemeTokens
         ["--mt-accent"] = "#3F51B5",
         ["--mt-accent-hover"] = "#303F9F",
         ["--mt-accent-pressed"] = "#1A237E",
+        ["--mt-accent-foreground"] = "#FFFFFF",
         ["--mt-selection"] = "#1A3F51B5",
         ["--mt-shadow"] = "#000000",
     }.ToFrozenDictionary();
