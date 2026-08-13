@@ -142,27 +142,97 @@ Created -> Starting -> Handshaking -> Ready
 
 ### WebView 调用 Node
 
-```text
-Web SDK
-  -> WebView2Transport
-  -> MessageBus
-  -> PluginSession
-  -> NamedPipeTransport
-  -> Node SDK handler
-  -> 原路返回 response
+```mermaid
+flowchart TB
+    subgraph WEB["插件前端层 · WebView"]
+        A["1. 网页业务代码<br/>mytools.call(plugin.call.*)"]
+        B["2. Web SDK<br/>生成 messageId 和请求 Envelope"]
+        A --> B
+    end
+
+    subgraph UI["宿主 UI 适配层 · MyTools.Host.Transports"]
+        C["3. WebView2 postMessage"]
+        D["4. WebView2Transport<br/>绑定真实 pluginId 和 endpointId"]
+        C --> D
+    end
+
+    subgraph CORE["宿主核心层 · MyTools.Host.Core"]
+        E["5. MessageBus<br/>校验消息并关联请求"]
+        F["6. PluginSession<br/>定位 Node endpoint"]
+        E --> F
+    end
+
+    subgraph TRANSPORT["进程通信层 · MyTools.Host.Transports"]
+        G["7. NamedPipeTransport<br/>编码长度前缀 JSON 帧"]
+    end
+
+    subgraph RUNTIME["插件运行时层 · Node SDK"]
+        H["8. Node SDK<br/>解析协议并分发路由"]
+        I["9. Node 业务 Handler<br/>执行插件能力"]
+        H --> I
+    end
+
+    B --> C
+    D --> E
+    F --> G
+    G --> H
+
+    I -. "10. response 沿原路径返回" .-> H
+    H -.-> G
+    G -.-> F
+    F -.-> E
+    E -.-> D
+    D -.-> C
+    C -. "11. Web SDK 完成 Promise" .-> A
 ```
 
 具体 WPF 控件只负责托管 WebView2Transport，不解析插件业务 action。
 
 ### Node 调用宿主能力
 
-```text
-Node SDK
-  -> NamedPipeTransport
-  -> MessageBus
-  -> CapabilityGateway
-  -> Windows capability adapter
-  -> 原路返回 response
+当 WebView 发起的插件业务调用需要继续访问系统能力时，流程如下：
+
+```mermaid
+flowchart TB
+    subgraph WEB["插件前端层 · WebView"]
+        A["1. 网页调用<br/>plugin.call.saveSettings"]
+    end
+
+    subgraph CORE1["宿主核心层 · MyTools.Host.Core"]
+        B["2. MessageBus"]
+        C["3. PluginSession"]
+        B --> C
+    end
+
+    subgraph NODE["插件运行时层 · Node SDK"]
+        D["4. Node SDK"]
+        E["5. Node 业务 Handler"]
+        F["6. 发起 host.call.configuration.write"]
+        D --> E --> F
+    end
+
+    subgraph CORE2["宿主安全层 · MyTools.Host.Core"]
+        G["7. MessageBus 路由"]
+        H["8. CapabilityGateway<br/>检查声明、授权和参数"]
+        G --> H
+    end
+
+    subgraph WINDOWS["平台适配层 · MyTools.Host.Windows"]
+        I["9. Configuration Capability<br/>写入 Windows 配置"]
+    end
+
+    A --> B
+    C -->|"Named Pipe"| D
+    F -->|"Named Pipe"| G
+    H --> I
+
+    I -. "10. 宿主能力响应" .-> H
+    H -.-> G
+    G -.-> F
+    F -. "11. Node 业务响应" .-> D
+    D -.-> C
+    C -.-> B
+    B -. "12. 返回网页" .-> A
 ```
 
 ### Node 发布事件
