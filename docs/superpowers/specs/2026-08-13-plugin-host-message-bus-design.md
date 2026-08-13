@@ -22,7 +22,7 @@
 3. 不提供任意插件间通信；跨插件通信必须通过显式宿主能力。
 4. 不保证兼容旧版插件协议和 SDK。
 5. 本阶段不使用 AppContainer 或受限令牌隔离插件进程；操作系统级沙箱单独设计。
-6. v3 不传输二进制帧；大体积二进制数据的旁路传输在后续协议中设计。
+6. v3 不传输二进制帧，也不提供流式传输；截图、剪贴板图片和大文件内容通过后续独立旁路通道传递，不进入本期 envelope。
 
 ## 方案选择
 
@@ -41,6 +41,7 @@
 - 标准错误码
 - capability 标识和授权结果
 - 插件状态与诊断模型
+- 版本化 JSON Schema，以及由 Schema 生成 C# DTO/校验器和 TypeScript 类型/客户端校验器的构建入口
 
 该模块不依赖 WPF、Windows API、Node 或宿主容器。
 
@@ -51,6 +52,7 @@
 - `MessageBus`：endpoint 注册、请求路由、响应关联和事件订阅
 - `PluginSessionManager`：创建、查找、停止和恢复插件会话
 - `PluginSession`：插件身份、连接、进程树、授权和健康状态
+- session actor：串行化状态转换、endpoint 增删和重启决策
 - `CapabilityGateway`：声明校验、授权决策、参数校验和能力调用
 - 超时、消息大小、重启策略及诊断事件
 
@@ -71,11 +73,11 @@
 
 ### Node SDK
 
-负责命名管道连接、握手、协议编解码、请求处理、事件发布和心跳。管道断开后 SDK 取消 handler 并退出进程，由宿主创建新会话；插件业务只注册 handler，不直接操作 transport。
+负责命名管道连接、握手、协议编解码、请求处理、事件发布和心跳。SDK 使用协议包生成的类型和客户端校验器，在发送前报告结构化 `InvalidPayload`；该校验只改善开发体验，不能替代宿主校验。管道断开后 SDK 取消 handler 并退出进程，由宿主创建新会话；插件业务只注册 handler，不直接操作 transport。
 
 ### Web SDK
 
-负责通过 WebView2 transport 调用消息总线、订阅事件和处理响应。Web SDK 不感知 Node 的进程、管道或重启细节。
+负责通过 WebView2 transport 调用消息总线、订阅事件和处理响应。Web SDK 使用同一协议 Schema 生成的类型和客户端校验器，不感知 Node 的进程、管道或重启细节。
 
 ## 插件会话模型
 
@@ -108,6 +110,10 @@ Created / Starting / Handshaking / Ready / Degraded / Restarting
 - 启动或握手失败按重启策略进入 `Restarting`；不可恢复错误或超过重启次数上限进入 `Stopped`。
 - `Stopping` 表示已停止接收新请求，正在等待优雅关闭或终止进程树。
 - 超过重启次数上限后必须由用户或宿主策略重新启动。
+
+每个逻辑 entry 拥有一个串行 session actor。状态转换、endpoint 注册或注销、重启计数和当前 session 快照只能在 actor 队列中修改。actor 不能在处理消息时等待 transport、进程或 capability I/O；它先发起异步操作，操作完成后再把结果投递回队列。
+
+每次创建新的运行尝试、进入 `Starting` 前递增内部 `generation`，并生成新的 `sessionId`。所有异步回调都捕获发起时的 generation；回到 actor 后若 generation 已变化，则直接丢弃结果并记录诊断，防止旧进程的退出、握手或健康检查回调修改新会话。外部旧帧由 `sessionId` 拒绝，内部旧回调由 generation 拒绝。
 
 ## 统一消息协议
 
@@ -151,7 +157,7 @@ Created / Starting / Handshaking / Ready / Degraded / Restarting
 
 每条转发链路使用单调时钟扣减 `timeoutMs`，下游预算耗尽时返回 `RequestTimeout` 并尽力取消仍在执行的工作。预算传播只能缩小超时与副作用之间的竞态，不能撤销已经提交的外部副作用。副作用 capability 必须在提交前再次检查预算；超时后的结果可能未知，调用方不得自动重试。需要更强保证的路由必须单独定义幂等键或结果查询。
 
-命名管道采用 4 字节小端无符号长度前缀加 UTF-8 JSON 帧。`MaxFrameBytes` 默认为 4 MiB，路由可以设置更低但不能设置更高的上限。接收端必须先读取并校验长度，再分配完整缓冲区；零长度、超限、截断或非法 JSON 均视为非法帧。WebView2 transport 使用相同 envelope，但由 WebView2 提供消息边界。v3 只支持 JSON，不预留未定义的二进制帧类型。
+命名管道采用 4 字节小端无符号长度前缀加 UTF-8 JSON 帧。`MaxFrameBytes` 默认为 4 MiB，路由可以设置更低但不能设置更高的上限。接收端必须先读取并校验长度，再分配或租用完整缓冲区；零长度、超限、截断或非法 JSON 均视为非法帧。WebView2 transport 使用相同 envelope，但由 WebView2 提供消息边界。v3 只支持 JSON，不预留 `encoding` 字段或二进制帧类型，也不把大块二进制自动转为 base64 规避限制；超过路由上限的内容返回 `MessageTooLarge`。旁路和流式传输不属于 v3。
 
 握手必须协商出连接使用的唯一版本。主版本不一致时返回 `ProtocolMismatch`；主版本一致时选择双方共同支持的最高次版本，没有共同次版本则握手失败。已协商连接忽略 envelope 和 payload 中未知的可选字段，未知 route 返回 `RouteNotFound`，缺少必填字段返回 `InvalidPayload`。
 
@@ -166,6 +172,7 @@ Created / Starting / Handshaking / Ready / Degraded / Restarting
 - `bus.handshake`：连接建立前唯一允许的请求
 - `bus.cancel`：尽力取消 `correlationId` 指向的请求
 - `bus.subscribe`、`bus.unsubscribe`：管理当前 endpoint 的事件订阅
+- `bus.ping`、`bus.pong`：宿主发起的应用层心跳请求和 Node 响应
 - `diagnostics.*`：只读诊断接口
 
 消息总线按 `pluginId + entryId + sessionId + route/topic` 隔离。默认禁止跨插件路由。响应只返回发起请求的 endpoint；事件只发给同一插件会话中已订阅的 endpoint。
@@ -175,6 +182,18 @@ WebView endpoint 只能调用 `plugin.call.*` 和允许的 `bus.*` 控制路由�
 `bus.cancel` 是尽力而为语义。请求超时、WebView 关闭或用户取消时，总线向仍在运行的下游发送取消；Node SDK 将其映射为 handler 的 `AbortSignal`。取消可能与正常完成竞态，已完成或无法中断的操作不回滚。
 
 ## 核心数据流
+
+跳数只计算跨运行时或 transport 边界；同一 WPF 进程内的 WebView2Transport、MessageBus、PluginSession 和 CapabilityGateway 调用不增加跳数。支持的链路为：
+
+| 情景 | 边界 | 跳数 |
+| --- | --- | ---: |
+| 页面调用插件逻辑 | WebView → WPF → Node | 2 |
+| 宿主调用插件逻辑 | WPF → Node | 1 |
+| 插件调用宿主能力 | Node → WPF | 1 |
+| 宿主事件推送页面 | WPF → WebView | 1 |
+| 插件事件推送页面 | Node → WPF → WebView | 2 |
+
+页面直接调用宿主能力不是支持的链路；WebView 必须先调用插件 Node handler，再由 Node 调用宿主能力，因此完整业务链为 3 个前向边界：WebView → WPF → Node → WPF。响应沿相反方向返回。
 
 ### WebView 调用 Node
 
@@ -349,7 +368,7 @@ sequenceDiagram
 
 ## 故障处理
 
-- 启动、握手、请求和空闲心跳分别配置超时。
+- 启动、握手、请求和应用层心跳分别配置超时。
 - 每个协议帧和各路由 payload 设置大小上限。
 - 非法帧只关闭对应连接并记录诊断，不终止消息总线。
 - 主 Node transport 断线后，所有未完成请求返回 `TransportDisconnected`。宿主终止整个 Job Object 进程树并进入 `Restarting`，不允许旧进程使用 resume token 重连。
@@ -359,12 +378,27 @@ sequenceDiagram
 - Node stdout/stderr 不承载协议，完全作为日志流采集，并附加插件和进程身份。
 - 宿主退出时先停止接受请求，再通知会话关闭，最后在超时后终止残留进程树。
 
+### 心跳
+
+命名管道连接使用 Host 主动、Node 响应的应用层心跳，不依赖管道断开作为唯一活性信号：
+
+1. Host 周期性发送 `bus.ping` request；ping 使用普通 envelope `id`，并走保留的 control 通道。
+2. Node SDK 立即返回 `bus.pong` response，`correlationId` 指向 ping id，`traceId` 与 ping 相同。
+3. Host 使用发送和收到 pong 的单调时钟计算 RTT。连续心跳超时达到阈值时，将连接视为假死并按主 Node 断线流程重启。
+4. Node SDK 维护未收到 ping 的看门狗；超过宿主失联阈值后取消 handler 并退出，避免宿主假死时插件进程长期残留。
+5. Node 不主动发起第二套 ping，避免双心跳状态和超时竞态。
+
 ### 背压与并发
 
-- 每个 endpoint 分别限制未完成请求数、出站队列消息数和队列总字节数；默认值由 Host Core 配置，任何队列都不能无界增长。
-- 请求超过 in-flight 上限时返回 `TooManyRequests`。响应帧优先于事件帧，避免事件洪水阻塞请求完成。
-- 事件路由必须声明溢出策略：丢弃最新、丢弃最旧或按 key 合并。所有丢弃和合并都记录计数诊断，不向发布方伪装为可靠投递。
-- 总线和 transport 全异步执行，不在锁内 `await`。每个连接使用单写者保证帧顺序。
+消息方向与消息类型正交。Host → Node 和 Node → Host 两个方向都可能承载 request、response、event 和 control，不能按方向推断处理优先级。每个 Node endpoint 在每个方向都使用三类独立、有界的逻辑通道。Host → Node 的出站通道最终由该连接的单写者按优先级写入 transport；Node → Host 的入站消息由读循环分类后按相同优先级调度：
+
+1. **control/response 通道**：承载 ping/pong、取消和与现有 pending request 匹配的响应。其保留容量至少覆盖允许的最大 pending request 数。未知 `correlationId` 的响应直接丢弃并记录。匹配响应不能因事件拥塞被丢弃；若对端长期不读取导致保留通道也耗尽，则关闭连接并让 pending request 以 `TransportDisconnected` 失败，不能扩展为无界队列。
+2. **request 通道**：Host 发出的 `plugin.call.*` 与 Node 发出的 `host.call.*` 分别限制 in-flight 和待处理数量。默认每 endpoint 每方向最多 64 个 in-flight request，可由 Host Core 下调。计数在路由接受请求时增加，在响应、取消、超时或断线时减少；超限请求不进入 transport 或 handler 队列，直接返回 `TooManyRequests`。
+3. **event 通道**：承载 `plugin.event.*` 和 `host.event.*`。事件路由必须声明丢弃最新、丢弃最旧或按 key 合并的溢出策略。所有丢弃和合并都增加 `droppedEvents` 或 `coalescedEvents` 诊断计数，不向发布方伪装为可靠投递。
+
+读循环必须先校验长度前缀，拒绝超限帧后才能分配或租用缓冲区。合法帧解析后再进入对应的有界通道：入站 `host.call.*` 请求队列满时返回 `TooManyRequests`，入站事件队列满时按路由策略处理，匹配响应进入保留通道。长度前缀超过全局 `MaxFrameBytes` 时不能继续读取 payload 或构造响应，必须直接关闭连接；帧在全局上限内但超过路由 payload 上限时，返回 `MessageTooLarge` 后关闭连接。截断、非法 JSON 或非法 envelope 同样关闭连接并记录诊断。
+
+除各通道消息数上限外，每个 endpoint 还限制队列总字节数，任何队列都不能无界增长。总线和 transport 全异步执行，不在锁或 session actor 内 `await`。每个连接使用单写者保证帧顺序。
 - `WebView2Transport` 的发送操作调度到对应 UI Dispatcher。宿主 capability 不得同步阻塞等待插件响应，避免 Node 调用宿主能力时发生重入死锁。
 
 标准错误至少包括：
@@ -398,6 +432,7 @@ Host Core 记录结构化诊断事件：
 - 会话状态变化
 - transport 连接和断开
 - 请求的 `traceId`、路由、耗时和结果类型
+- 心跳 RTT、连续超时次数和假死重启原因
 - capability 授权和拒绝
 - 插件重启次数及退出码
 - 丢弃的超大或非法消息
@@ -417,7 +452,10 @@ Host Core 记录结构化诊断事件：
 - topic 订阅、快照、重放和插件隔离
 - capability 声明、授权和参数校验
 - 会话状态转换和重启上限
-- 每 endpoint 背压、响应优先级和事件溢出策略
+- session actor 串行化和旧 generation 回调丢弃
+- 每 endpoint 三类通道、双向 in-flight、响应保留容量和事件溢出策略
+- ping/pong 关联、RTT 和双方看门狗超时
+- JSON Schema 生成产物和运行时校验一致性
 
 ### 组件测试
 
@@ -428,6 +466,8 @@ Host Core 记录结构化诊断事件：
 使用真实测试 Node 插件验证命名管道握手、双向调用、事件、超大消息拒绝、进程崩溃和自动重启。安全用例覆盖管道名抢占、令牌重放、伪造 plugin/entry/session 身份、跨插件路由、WebView 冒充其他插件和未经授权的诊断连接。
 
 长稳与压力测试覆盖事件洪水下的内存上限和丢弃行为、慢 WebView、反复崩溃重启后的句柄泄漏，以及多个 Worker 并发调用。混沌测试注入响应乱序、帧分片、连接中断和重启期间的旧 session 响应。
+
+CI 从版本化 JSON Schema 重新生成 C# DTO/校验器和 TypeScript 类型/客户端校验器，并要求工作区无 diff。客户端校验失败用例验证 SDK 能提前报告 `InvalidPayload`；绕过或篡改 SDK 的用例验证 CapabilityGateway 仍会独立拒绝非法 payload。
 
 ### 端到端测试
 
