@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.Extensions.Logging.Abstractions;
+using MyTools.Common.Localization;
 using MyTools.Plugins.NodePlugins;
 using NUnit.Framework;
 
@@ -59,7 +60,7 @@ public class NodePluginEncodingTest
         var manifest = new NodePluginManifest
         {
             Id = "utf8-test",
-            Name = "UTF-8 Test",
+            NameMessage = new LocalizedMessage("utf8 key", "utf8 name"),
             Version = "0.1.0",
             Runtime = "node",
             Entry = "index.mjs",

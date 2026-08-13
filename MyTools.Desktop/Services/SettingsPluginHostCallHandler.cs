@@ -272,7 +272,7 @@ public sealed class SettingsPluginHostCallHandler
             return new KeymapPluginDto
             {
                 PluginId = pluginId,
-                Name = p.Name,
+                Name = p.GetDisplayName(),
                 DefaultHotKey = defaultHotKey,
                 CurrentHotKey = ov?.HotKey ?? defaultHotKey,
                 DefaultKeywords = defaultKeywords,

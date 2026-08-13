@@ -15,6 +15,16 @@ public sealed class NodePlugin : IPlugin, IDisposable
     private readonly NodePluginProcessHost processHost;
     private readonly ILogger<NodePlugin> logger;
     private readonly ILocalizationService localizationService;
+    private PluginLocalizationService? pluginLocalization;
+
+    /// <summary>
+    /// 插件级别的翻译服务，查询此插件自己的 locale 文件。
+    /// 首次访问时加载并缓存，之后直接返回缓存实例。
+    /// </summary>
+    public PluginLocalizationService PluginLocalization =>
+        pluginLocalization ??= new PluginLocalizationService(
+            NodePluginLocalization.LoadMessages(manifest, localizationService.CurrentLocale),
+            localizationService.CurrentLocale);
 
     internal NodePlugin(
         NodePluginManifest manifest,
@@ -44,7 +54,24 @@ public sealed class NodePlugin : IPlugin, IDisposable
         processHost.HostCallHandler = handler;
     }
 
+    /// <summary>
+    /// 未翻译的显示名称（defaultValue），fallback 到 entry id。
+    /// </summary>
     public string Name => manifest.Name;
+
+    /// <summary>
+    /// 获取当前 locale 下翻译后的名称。
+    /// 通过 NameMessage.Resolve 查找插件级翻译，找不到时回退到 defaultValue。
+    /// </summary>
+    public string GetDisplayName()
+    {
+        if (manifest.NameMessage == null)
+        {
+            return Name;
+        }
+
+        return manifest.NameMessage.Resolve(PluginLocalization);
+    }
 
     public string PluginId => manifest.Id;
 
@@ -54,7 +81,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
     /// </summary>
     public string ParentId => manifest.ParentId;
 
-    public string Description => $"Node plugin: {manifest.Name}";
+    public string Description => $"Node plugin: {Name}";
 
     public List<IActionWithCommand> Actions { get; } = [];
 
@@ -145,7 +172,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
             detail: new NodePluginDetailViewDto
             {
                 HtmlEntry = manifest.DetailEntry ?? string.Empty,
-                Title = manifest.Name,
+                Title = Name,
                 InitialState = CloneJson(BuildKeywordRouteState(query))
             });
     }
@@ -159,7 +186,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
             detail: new NodePluginDetailViewDto
             {
                 HtmlEntry = manifest.DetailEntry ?? string.Empty,
-                Title = manifest.Name,
+                Title = Name,
                 InitialState = CloneJson(BuildKeywordRouteState(string.Empty))
             });
     }
@@ -206,7 +233,6 @@ public sealed class NodePlugin : IPlugin, IDisposable
         {
             Plugin = this,
             PluginId = manifest.Id,
-            PluginName = string.IsNullOrWhiteSpace(detail?.Title) ? manifest.Name : detail.Title,
             Version = manifest.Version,
             ProtocolVersion = manifest.ProtocolVersion,
             PluginDirectory = manifest.PluginDirectory,
@@ -227,7 +253,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
 
     private ResultItem MapResultItem(NodePluginSearchItem item, string query, int index)
     {
-        var title = string.IsNullOrWhiteSpace(item.Title) ? manifest.Name : item.Title;
+        var title = string.IsNullOrWhiteSpace(item.Title) ? Name : item.Title;
         var resultItem = new ResultItem(
             MapIcon(item.Icon),
             title,

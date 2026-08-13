@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using MyTools.Common.Localization;
 using MyTools.Plugins.NodePlugins;
 using NUnit.Framework;
 
@@ -63,7 +64,7 @@ public class NodePluginKeywordRouteTest
             Id = "deepseek-translator:translator",
             ParentId = "deepseek-translator",
             EntryId = "translator",
-            Name = "DeepSeek Translator",
+            NameMessage = new LocalizedMessage("DeepSeek key", "DeepSeek Translator"),
             Version = "0.1.0",
             Runtime = "node",
             Entry = "index.mjs",

@@ -1,6 +1,5 @@
 {
   "id": "xml-formatter",
-  "name": "XML Formatter",
   "version": "0.0.4",
   "runtime": "node",
   "protocolVersion": "2.0",
@@ -13,7 +12,10 @@
   "entries": [
     {
       "id": "xml-formatter",
-      "name": "XML Formatter",
+      "name": {
+        "key": "Plugin.XmlFormatter.Name",
+        "defaultValue": "XML Formatter"
+      },
       "entry": "backend/index.mjs",
       "keywords": ["xml"],
       "detail": {
