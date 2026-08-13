@@ -1,6 +1,5 @@
-﻿{
+{
   "id": "hello-search",
-  "name": "Hello Search",
   "version": "0.2.0",
   "runtime": "node",
   "protocolVersion": "2.0",
@@ -13,7 +12,10 @@
   "entries": [
     {
       "id": "hello",
-      "name": "Hello Search",
+      "name": {
+        "key": "Plugin.HelloSearch.Name",
+        "defaultValue": "Hello Search"
+      },
       "entry": "backend/index.mjs",
       "keywords": [],
       "detail": {

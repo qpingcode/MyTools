@@ -1,3 +1,4 @@
+using MyTools.Common.Localization;
 using MyTools.Plugins.NodePlugins;
 using NUnit.Framework;
 
@@ -75,7 +76,7 @@ public class NodePluginLocalizationTest
     {
         Id = "example:main",
         ParentId = "example",
-        Name = "Example",
+        NameMessage = new LocalizedMessage("Example key", "Example"),
         DefaultLocale = "en-US",
         CatalogFullPath = catalogPath,
         LocalesDirectoryFullPath = Path.Combine(rootPath, "locales")

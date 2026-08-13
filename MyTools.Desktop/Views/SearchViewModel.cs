@@ -145,7 +145,8 @@ namespace MyTools.Desktop.ViewModels
                 nodePluginDetailViewModel.SetContext(selectedNodeDetailContext);
             }
 
-            var currentPluginName = selectedNodeDetailContext?.PluginName ?? _selectPlugin?.Name;
+            var currentPluginName = _selectPlugin is NodePlugin np ? np.GetDisplayName() : _selectPlugin?.Name;
+            
             if (currentPluginName != null)
             {
                 PluginName = currentPluginName;

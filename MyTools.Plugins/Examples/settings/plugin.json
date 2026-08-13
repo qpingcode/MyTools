@@ -1,6 +1,5 @@
 {
   "id": "settings",
-  "name": "Settings",
   "version": "0.0.6",
   "runtime": "node",
   "protocolVersion": "2.0",
@@ -13,6 +12,10 @@
   "entries": [
     {
       "id": "main",
+      "name": {
+        "key": "Plugin.Settings.Name",
+        "defaultValue": "Settings"
+      },
       "entry": "backend/index.mjs",
       "keywords": ["settings"],
       "hotKey": "Alt+S",

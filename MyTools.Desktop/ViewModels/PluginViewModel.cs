@@ -55,7 +55,7 @@ public partial class PluginViewModel : ObservableObject, ISearchViewModelCallbac
     /// </summary>
     public void SetPlugin(NodePlugin plugin, NodePluginDetailContext? context)
     {
-        PluginName = plugin.Name;
+        PluginName = plugin.GetDisplayName();
         PluginVersion = string.IsNullOrWhiteSpace(context?.Version) ? null : context.Version;
         CurrentNodePluginDetailId = context?.PluginId;
         detailViewModel.SetContext(context);

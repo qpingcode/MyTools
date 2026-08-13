@@ -2,6 +2,7 @@ using System.IO;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using MyTools.Common.Config;
+using MyTools.Common.Localization;
 
 namespace MyTools.Plugins.NodePlugins;
 
@@ -95,7 +96,9 @@ public sealed class NodePluginCatalog
                     Id = $"{fileModel.Id!}:{entryModel.Id!}",
                     ParentId = fileModel.Id!,
                     EntryId = entryModel.Id!,
-                    Name = string.IsNullOrWhiteSpace(entryModel.Name) ? $"{fileModel.Name!} {entryModel.Id}" : entryModel.Name!,
+                    NameMessage = entryModel.Name != null
+                        ? new LocalizedMessage(entryModel.Name.Key ?? "", entryModel.Name.DefaultValue ?? "")
+                        : null,
                     Version = fileModel.Version!,
                     Runtime = fileModel.Runtime!,
                     Entry = entryModel.Entry!,
@@ -157,7 +160,6 @@ public sealed class NodePluginCatalog
     private static bool IsValid(NodePluginManifestFile fileModel)
     {
         return !string.IsNullOrWhiteSpace(fileModel.Id)
-            && !string.IsNullOrWhiteSpace(fileModel.Name)
             && !string.IsNullOrWhiteSpace(fileModel.Version)
             && string.Equals(fileModel.Runtime, "node", StringComparison.OrdinalIgnoreCase)
             && !string.IsNullOrWhiteSpace(fileModel.ProtocolVersion)
@@ -185,7 +187,6 @@ public sealed class NodePluginCatalog
     private sealed class NodePluginManifestFile
     {
         public string? Id { get; init; }
-        public string? Name { get; init; }
         public string? Version { get; init; }
         public string? Runtime { get; init; }
         public string? ProtocolVersion { get; init; }
@@ -196,11 +197,21 @@ public sealed class NodePluginCatalog
     private sealed class EntryManifestFile
     {
         public string? Id { get; init; }
-        public string? Name { get; init; }
+        public LocalizedNameDto? Name { get; init; }
         public string? Entry { get; init; }
         public List<string>? Keywords { get; init; }
         public string? HotKey { get; init; }
         public DetailManifestFile? Detail { get; init; }
+    }
+
+    /// <summary>
+    /// plugin.json 中 entry.name 的反序列化 DTO。
+    /// 使用独立 DTO 避免 LocalizedMessage 多构造函数导致的 JSON 反序列化歧义。
+    /// </summary>
+    private sealed class LocalizedNameDto
+    {
+        public string? Key { get; init; }
+        public string? DefaultValue { get; init; }
     }
 
     private sealed class DetailManifestFile

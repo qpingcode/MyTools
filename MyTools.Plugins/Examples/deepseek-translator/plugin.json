@@ -1,6 +1,5 @@
 {
   "id": "deepseek-translator",
-  "name": "DeepSeek Translator",
   "version": "0.1.0",
   "runtime": "node",
   "protocolVersion": "2.0",
@@ -13,7 +12,10 @@
   "entries": [
     {
       "id": "translator",
-      "name": "DeepSeek Translator",
+      "name": {
+        "key": "Plugin.DeepSeekTranslator.Name",
+        "defaultValue": "DeepSeek Translator"
+      },
       "entry": "backend/Translator/index.mjs",
       "keywords": ["ff"],
       "hotKey": "Alt+C",
@@ -24,7 +26,10 @@
     },
     {
       "id": "ankicard",
-      "name": "DeepSeek Anki Cards",
+      "name": {
+        "key": "Plugin.DeepSeekTranslator.Anki.Name",
+        "defaultValue": "DeepSeek Anki Cards"
+      },
       "entry": "backend/AnkiCard/index.mjs",
       "keywords": ["fc"],
       "detail": {
