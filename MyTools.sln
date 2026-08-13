@@ -19,13 +19,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{CA4C57DD-2
 	ProjectSection(SolutionItems) = preProject
 		docs\auto-update-architecture.md = docs\auto-update-architecture.md
 		docs\i18n-architecture.md = docs\i18n-architecture.md
-		docs\module-boundaries.md = docs\module-boundaries.md
-		docs\node-plugin-runtime-design.md = docs\node-plugin-runtime-design.md
-		docs\plugin-mvp-design.md = docs\plugin-mvp-design.md
-		docs\plugin-platform-target-architecture.md = docs\plugin-platform-target-architecture.md
-		docs\plugin-protocol-draft.md = docs\plugin-protocol-draft.md
-		docs\refactor-and-plugin-roadmap.md = docs\refactor-and-plugin-roadmap.md
-		docs\type-migration-list.md = docs\type-migration-list.md
 	EndProjectSection
 EndProject
 Global
