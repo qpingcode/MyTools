@@ -73,4 +73,12 @@ public class NamedPipeTransportLoopbackTest
         Assert.That(received, Is.Not.Null);
         Assert.That(received!.Id, Is.EqualTo("out-1"));
     }
+
+    [Test]
+    public void CreateServerPipe_ShouldUseFirstPipeInstance()
+    {
+        var pipeName = $"mytools-acl-{System.Guid.NewGuid():N}";
+        using var first = NamedPipeTransport.CreateServerPipe(pipeName);
+        Assert.Throws<System.IO.IOException>(() => NamedPipeTransport.CreateServerPipe(pipeName));
+    }
 }

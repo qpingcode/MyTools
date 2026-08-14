@@ -17,8 +17,9 @@ export class NodeTransport {
   private disconnectHandlers = new Set<DisconnectHandler>();
   private closed = false;
 
-  onMessage(handler: MessageHandler): void {
+  onMessage(handler: MessageHandler): () => void {
     this.messageHandlers.add(handler);
+    return () => { this.messageHandlers.delete(handler); };
   }
 
   onDisconnect(handler: DisconnectHandler): void {

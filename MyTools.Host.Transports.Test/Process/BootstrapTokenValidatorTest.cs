@@ -1,5 +1,5 @@
 using System;
-using MyTools.Host.Transports.Process;
+using MyTools.Host.Core.Security;
 using NUnit.Framework;
 
 namespace MyTools.Host.Transports.Test.Process;

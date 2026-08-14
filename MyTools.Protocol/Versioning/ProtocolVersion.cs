@@ -1,9 +1,13 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace MyTools.Protocol.Versioning;
 
 /// <summary>
 /// Protocol version with frozen major/minor semantics. Major mismatch is fatal (ProtocolMismatch);
 /// minor is negotiated during handshake to the highest common value.
 /// </summary>
+[JsonConverter(typeof(ProtocolVersionJsonConverter))]
 public readonly record struct ProtocolVersion(int Major, int Minor) : IComparable<ProtocolVersion>
 {
     /// <summary>The highest version this host supports.</summary>
@@ -54,4 +58,14 @@ public readonly record struct ProtocolVersion(int Major, int Minor) : IComparabl
         }
         return new ProtocolVersion(major, minor);
     }
+}
+
+/// <summary>Wire format is the string "major.minor" (e.g. "3.0").</summary>
+public sealed class ProtocolVersionJsonConverter : JsonConverter<ProtocolVersion>
+{
+    public override ProtocolVersion Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        => ProtocolVersion.Parse(reader.GetString()!);
+
+    public override void Write(Utf8JsonWriter writer, ProtocolVersion value, JsonSerializerOptions options)
+        => writer.WriteStringValue(value.ToString());
 }

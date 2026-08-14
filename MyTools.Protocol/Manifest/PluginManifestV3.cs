@@ -14,6 +14,8 @@ public sealed class PluginManifestV3
     public string Version { get; init; } = "0.0.0";
     public required string ProtocolVersion { get; init; }
     public required IReadOnlyList<PluginEntryV3> Entries { get; init; }
+    /// <summary>Localization configuration (default locale, catalog path, supported locales).</summary>
+    public ManifestI18nV3? I18n { get; init; }
 }
 
 public sealed class PluginEntryV3
@@ -22,12 +24,34 @@ public sealed class PluginEntryV3
     public required string NodeEntry { get; init; }
     public IReadOnlyList<string> Capabilities { get; init; } = [];
     public EntryDetailV3? Detail { get; init; }
+    /// <summary>Keyword triggers that route a search to this entry.</summary>
+    public IReadOnlyList<string> Keywords { get; init; } = [];
+    /// <summary>Global hotkey (e.g. "Alt+S") that opens this entry's detail view.</summary>
+    public string? HotKey { get; init; }
+    /// <summary>Display name with i18n message key + default value.</summary>
+    public LocalizedNameV3? Name { get; init; }
 }
 
 public sealed class EntryDetailV3
 {
     public string Type { get; init; } = "web";
     public string Entry { get; init; } = "";
+}
+
+/// <summary>Localization block: default locale, catalog file, locales directory, supported locales.</summary>
+public sealed class ManifestI18nV3
+{
+    public string DefaultLocale { get; init; } = "en-US";
+    public string? Catalog { get; init; }
+    public string? LocalesPath { get; init; }
+    public IReadOnlyList<string> SupportedLocales { get; init; } = [];
+}
+
+/// <summary>A display name resolvable via i18n: a message key plus a fallback default value.</summary>
+public sealed class LocalizedNameV3
+{
+    public required string Key { get; init; }
+    public required string DefaultValue { get; init; }
 }
 
 public readonly record struct ManifestValidation(bool IsValid, BusError? Error)

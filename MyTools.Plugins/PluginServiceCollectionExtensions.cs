@@ -1,17 +1,47 @@
 using Microsoft.Extensions.DependencyInjection;
 using MyTools.Common;
+using MyTools.Host.Core.Bus;
+using MyTools.Host.Core.Capabilities;
+using MyTools.Host.Core.Sessions;
 using MyTools.Plugins.NodePlugins;
 
 namespace MyTools.Plugins;
 
 public static class PluginServiceCollectionExtensions
 {
+    /// <summary>
+    /// When true, plugins whose manifest declares protocolVersion "3.0" use the v3 named-pipe
+    /// message bus (<see cref="NodePluginBusHost"/>); v2 plugins keep using stdio. Default false
+    /// (current behavior) — flip to true once the v3 Node SDK entry is wired end-to-end.
+    /// </summary>
+    public static bool UseV3Transport { get; set; }
+
     public static IServiceCollection AddPluginServices(this IServiceCollection services)
     {
+        // v3 message-bus components (registered always; only used when UseV3Transport is true and a
+        // plugin declares protocolVersion 3.0).
+        services.AddSingleton<MessageBus>();
+        services.AddSingleton<CapabilityGateway>();
+        services.AddSingleton<INodeProcessControllerFactory, Host.Transports.Process.NodeProcessControllerFactory>();
+        services.AddSingleton<PluginSessionManager>();
+
         services.AddSingleton<SearchHistoryDbHelper>();
         services.AddSingleton<NodePluginCatalog>();
-        services.AddSingleton<NodePluginFactory>();
-        
+        services.AddSingleton<NodePluginFactory>(sp =>
+        {
+            var loggerFactory = sp.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>();
+            if (!UseV3Transport)
+            {
+                return new NodePluginFactory(loggerFactory);
+            }
+            // v3 enabled: inject the bus + session manager so v3-manifest plugins use the bus host.
+            return new NodePluginFactory(loggerFactory,
+                sp.GetService<Common.Localization.ILocalizationService>(),
+                sp.GetRequiredService<MessageBus>(),
+                sp.GetRequiredService<PluginSessionManager>(),
+                useV3Transport: true);
+        });
+
         services.AddSingleton<PluginLoader>();
         services.AddSingleton<PluginRegistry>();
         services.AddSingleton<IKeywordRegistry>(sp => sp.GetRequiredService<PluginRegistry>());
@@ -19,7 +49,7 @@ public static class PluginServiceCollectionExtensions
         services.AddSingleton<IActionRegistry>(sp => sp.GetRequiredService<PluginRegistry>());
         services.AddSingleton<Searcher>();
         services.AddSingleton<ISearcher>(sp => sp.GetRequiredService<Searcher>());
-        
+
         services.AddSingleton<IPlugin, FileSearcher>();
         services.AddSingleton<IPlugin, CommandRunner>();
         services.AddSingleton<IPlugin, SearchEnginePlugin>();
@@ -29,11 +59,11 @@ public static class PluginServiceCollectionExtensions
         services.AddSingleton<IPlugin, UuidGeneratorPlugin>();
         services.AddSingleton<IPlugin, DllInterfaceReaderPlugin>();
         services.AddSingleton<IPlugin, ChromeBookmarksPlugin>();
-        
+
         services.AddSingleton<ClipBoardPlugin>();
         services.AddSingleton<IPlugin>(sp => sp.GetRequiredService<ClipBoardPlugin>());
         services.AddSingleton<IWindowMessageHandler>(sp => sp.GetRequiredService<ClipBoardPlugin>());
-        
+
         return services;
     }
 }

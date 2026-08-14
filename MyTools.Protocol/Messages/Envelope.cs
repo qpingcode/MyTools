@@ -1,6 +1,4 @@
-using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
 using MyTools.Protocol.Errors;
 using MyTools.Protocol.Versioning;
 
@@ -14,7 +12,6 @@ namespace MyTools.Protocol.Messages;
 public sealed record class Envelope
 {
     /// <summary>Negotiated protocol major.minor version (e.g. "3.0"). Handshake messages fill the sender's highest.</summary>
-    [JsonConverter(typeof(ProtocolVersionJsonConverter))]
     public ProtocolVersion Version { get; init; }
 
     /// <summary>Globally-unique message id.</summary>
@@ -51,13 +48,4 @@ public sealed record class Envelope
 
     /// <summary>Standard error object on failure responses; null otherwise.</summary>
     public BusError? Error { get; init; }
-}
-
-file sealed class ProtocolVersionJsonConverter : JsonConverter<ProtocolVersion>
-{
-    public override ProtocolVersion Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-        => ProtocolVersion.Parse(reader.GetString()!);
-
-    public override void Write(Utf8JsonWriter writer, ProtocolVersion value, JsonSerializerOptions options)
-        => writer.WriteStringValue(value.ToString());
 }
