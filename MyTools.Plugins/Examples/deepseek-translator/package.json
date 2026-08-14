@@ -10,7 +10,8 @@
     "check": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@qping/plugin-common": "0.1.3"
+    "@qping/plugin-common": "0.1.3",
+    "@qping/plugin-bus": "0.1.0"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",

@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace MyTools.Plugins.NodePlugins;
 
-internal sealed class NodePluginProcessHost : IDisposable
+internal sealed class NodePluginProcessHost : INodePluginHost
 {
     private readonly NodePluginManifest manifest;
     private readonly ILogger<NodePluginProcessHost> logger;

@@ -1,0 +1,27 @@
+{
+  "id": "hello-search",
+  "version": "0.2.0",
+  "protocolVersion": "3.0",
+  "i18n": {
+    "defaultLocale": "en-US",
+    "catalog": "i18n/catalog.en-US.json",
+    "localesPath": "i18n/locales",
+    "supportedLocales": ["en-US", "zh-CN"]
+  },
+  "entries": [
+    {
+      "id": "hello",
+      "name": {
+        "key": "Plugin.HelloSearch.Name",
+        "defaultValue": "Hello Search"
+      },
+      "entry": "backend/index.v3.mjs",
+      "capabilities": [],
+      "keywords": [],
+      "detail": {
+        "type": "web",
+        "entry": "web/index.html"
+      }
+    }
+  ]
+}

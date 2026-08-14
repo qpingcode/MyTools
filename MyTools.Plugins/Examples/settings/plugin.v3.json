@@ -10,12 +10,12 @@
   },
   "entries": [
     {
-      "entryId": "main",
+      "id": "main",
       "name": {
         "key": "Plugin.Settings.Name",
         "defaultValue": "Settings"
       },
-      "nodeEntry": "backend/index.mjs",
+      "entry": "backend/index.v3.mjs",
       "capabilities": ["configuration.write"],
       "keywords": ["settings"],
       "hotKey": "Alt+S",

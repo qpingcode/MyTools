@@ -48,7 +48,7 @@ public class NodePluginCatalogTest
           "entries": [
             {
               "id": "hello",
-              "name": "Hello Search",
+              "name": { "key": "Plugin.HelloSearch.Name", "defaultValue": "Hello Search" },
               "entry": "backend/index.mjs",
               "keywords": ["hello"],
               "hotKey": "Alt+C",
@@ -100,7 +100,7 @@ public class NodePluginCatalogTest
           "entries": [
             {
               "id": "translator",
-              "name": "DeepSeek Translator",
+              "name": { "key": "Plugin.Translator.Name", "defaultValue": "DeepSeek Translator" },
               "entry": "backend/Translator/index.mjs",
               "keywords": ["tr", "translate"],
               "hotKey": "Alt+C",
@@ -111,7 +111,7 @@ public class NodePluginCatalogTest
             },
             {
               "id": "history",
-              "name": "DeepSeek Translation History",
+              "name": { "key": "Plugin.History.Name", "defaultValue": "DeepSeek Translation History" },
               "entry": "backend/History/index.mjs",
               "keywords": ["trh"],
               "hotKey": "Alt+V",

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 
-namespace MyTools.Host.Transports.Process;
+namespace MyTools.Host.Core.Security;
 
 /// <summary>
 /// Identity of the Node process the host expects to connect. Combines the PID, the process

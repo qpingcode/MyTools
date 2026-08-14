@@ -12,7 +12,7 @@ namespace MyTools.Plugins.NodePlugins;
 public sealed class NodePlugin : IPlugin, IDisposable
 {
     private readonly NodePluginManifest manifest;
-    private readonly NodePluginProcessHost processHost;
+    private readonly INodePluginHost processHost;
     private readonly ILogger<NodePlugin> logger;
     private readonly ILocalizationService localizationService;
     private PluginLocalizationService? pluginLocalization;
@@ -28,7 +28,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
 
     internal NodePlugin(
         NodePluginManifest manifest,
-        NodePluginProcessHost processHost,
+        INodePluginHost processHost,
         ILogger<NodePlugin> logger,
         ILocalizationService localizationService)
     {
@@ -370,6 +370,9 @@ public sealed class NodePlugin : IPlugin, IDisposable
     {
         processHost.Dispose();
     }
+
+    /// <summary>Test-only accessor for the backend host (stdio or bus).</summary>
+    internal INodePluginHost GetHostForTest() => processHost;
 }
 
 internal sealed class NodePluginInvokeAction : IAction

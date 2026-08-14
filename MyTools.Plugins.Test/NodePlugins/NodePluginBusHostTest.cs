@@ -1,0 +1,191 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
+using MyTools.Host.Core.Bus;
+using MyTools.Host.Core.Capabilities;
+using MyTools.Host.Core.Security;
+using MyTools.Host.Core.Sessions;
+using MyTools.Host.Core.Transports;
+using MyTools.Plugins.NodePlugins;
+using MyTools.Protocol.Errors;
+using MyTools.Protocol.Handshake;
+using MyTools.Protocol.Messages;
+using MyTools.Protocol.Versioning;
+using NUnit.Framework;
+
+namespace MyTools.Plugins.Test.NodePlugins;
+
+/// <summary>
+/// NodePluginBusHost tests: verifies the v3 bus runtime maps INodePluginHost methods to
+/// plugin.call.* envelopes and correlates responses, using a fake process controller so no real
+/// Node process is spawned. The "Node side" is simulated by delivering envelopes on the fake
+/// transport.
+/// </summary>
+[TestFixture]
+public class NodePluginBusHostTest
+{
+    private static NodePluginManifest Manifest() => new()
+    {
+        Id = "settings:main",
+        ParentId = "settings",
+        EntryId = "main",
+        NameMessage = new MyTools.Common.Localization.LocalizedMessage("Plugin.Settings.Name", "Settings"),
+        Version = "0.0.6",
+        Runtime = "node",
+        Entry = "backend/index.mjs",
+        ProtocolVersion = "3.0",
+        PluginDirectory = "C:/fake/settings",
+        EntryFullPath = "C:/fake/settings/backend/index.mjs",
+        Keywords = ["settings"],
+        HotKey = "Alt+S",
+    };
+
+    [Test]
+    public async Task SearchAsync_ShouldSendPluginCallSearchAndCorrelateResponse()
+    {
+        var (host, nodeT, sessionId) = await CreateStartedHostAsync();
+
+        var searchTask = host.SearchAsync("hello", "global", "en-US", "en-US", CancellationToken.None);
+        await Task.Delay(50); // let the request flow to the node transport (its Sent queue)
+
+        // The bus writes the request onto the node transport (handshake reply may already be in Sent).
+        var sentRequest = nodeT.Sent.FirstOrDefault(e => e.Route == "plugin.call.search");
+        Assert.That(sentRequest, Is.Not.Null);
+        Assert.That(sentRequest!.Kind, Is.EqualTo(MessageKind.Request));
+
+        // Node replies with a correlated response (Deliver simulates the Node side sending).
+        nodeT.Deliver(new Envelope
+        {
+            Version = ProtocolVersion.Current, Id = "resp-1", CorrelationId = sentRequest.Id,
+            TraceId = sentRequest.TraceId, SessionId = sessionId, PluginId = "settings",
+            EntryId = "main", EndpointId = "node-main", Kind = MessageKind.Response,
+            Route = "plugin.call.search",
+            Payload = JsonNode.Parse("""{"items":[{"id":"1","title":"Hi","subtitle":"","priority":0}]}"""),
+        });
+
+        var response = await searchTask;
+        Assert.That(response.Items, Has.Count.EqualTo(1));
+        Assert.That(response.Items[0].Title, Is.EqualTo("Hi"));
+    }
+
+    [Test]
+    public async Task EventReceived_ShouldFireWhenPluginPublishesAnEvent()
+    {
+        var (host, nodeT, sessionId) = await CreateStartedHostAsync();
+
+        NodePluginEventReceivedEventArgs? received = null;
+        host.EventReceived += (_, e) => received = e;
+
+        // Node publishes a plugin.event.* envelope.
+        nodeT.Deliver(new Envelope
+        {
+            Version = ProtocolVersion.Current, Id = "evt-1", TraceId = "evt-1", SessionId = sessionId,
+            PluginId = "settings", EntryId = "main", EndpointId = "node-main",
+            Kind = MessageKind.Event, Route = "plugin.event.configChanged",
+            Payload = JsonNode.Parse("""{"key":"theme"}"""),
+        });
+        await Task.Delay(50);
+
+        Assert.That(received, Is.Not.Null);
+        Assert.That(received!.SubjectId, Is.EqualTo("plugin.event.configChanged"));
+    }
+
+    [Test]
+    public async Task HostCall_ShouldReplyOnNodeTransportSoDetailCallCanComplete()
+    {
+        var (host, nodeT, sessionId) = await CreateStartedHostAsync();
+
+        host.HostCallHandler = (_, _) =>
+            Task.FromResult(JsonSerializer.SerializeToElement(new { theme = "light" }));
+
+        // Node asks for configuration while handling a detailCall.
+        nodeT.Deliver(new Envelope
+        {
+            Version = ProtocolVersion.Current, Id = "hc-1", TraceId = "hc-1", SessionId = sessionId,
+            PluginId = "settings", EntryId = "main", EndpointId = "node-main",
+            Kind = MessageKind.Request, Route = "host.call.getConfiguration", TimeoutMs = 5000,
+            Payload = JsonNode.Parse("{}"),
+        });
+
+        Envelope? reply = null;
+        for (var i = 0; i < 20 && reply is null; i++)
+        {
+            await Task.Delay(25);
+            reply = nodeT.Sent.FirstOrDefault(e =>
+                e.Kind == MessageKind.Response && e.CorrelationId == "hc-1");
+        }
+
+        Assert.That(reply, Is.Not.Null, "host must reply to host.call on the node transport");
+        Assert.That(reply!.Route, Is.EqualTo("host.call.getConfiguration"));
+        Assert.That(reply.Error, Is.Null);
+        Assert.That(reply.Payload?.ToJsonString(), Does.Contain("light"));
+    }
+
+    private static async Task<(NodePluginBusHost host, InMemoryTransport nodeT, string sessionId)>
+        CreateStartedHostAsync()
+    {
+        var bus = new MessageBus();
+        var gateway = new CapabilityGateway();
+        var factory = new FakeFactory();
+        var manager = new PluginSessionManager(bus, gateway, factory);
+        var manifest = Manifest();
+        var host = new NodePluginBusHost(manifest, manager, bus,
+            NullLogger<NodePluginBusHost>.Instance);
+
+        await host.StartAsync(nodeExePath: "node", CancellationToken.None);
+
+        // The manager registered the node endpoint; grab its transport to simulate the Node side.
+        var session = host.Session!;
+        var nodeEp = new EndpointId("settings", "main", session.SessionId, "node-main", IsNode: true);
+        // The fake controller's transport is the node-side transport the bus writes to.
+        var nodeT = (InMemoryTransport)factory.LastController!.Transport!;
+        return (host, nodeT, session.SessionId);
+    }
+
+    private sealed class FakeController : INodeProcessController
+    {
+        public IMessageTransport? Transport { get; private set; }
+        public ProcessIdentity? ObservedIdentity { get; private set; }
+
+        public Task StartAsync(
+            string pipeName,
+            string pluginId,
+            string entryId,
+            Func<ProcessIdentity, string> issueToken,
+            CancellationToken ct)
+        {
+            var transport = new InMemoryTransport();
+            Transport = transport;
+            ObservedIdentity = new ProcessIdentity(7, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                pluginId, entryId);
+            var token = issueToken(ObservedIdentity);
+            var payload = HandshakePayload.BuildNamedPipeRequest(PipeHandshake.HostSupportedVersions, token);
+            transport.Deliver(new Envelope
+            {
+                Version = ProtocolVersion.Current,
+                Id = "hs-1",
+                TraceId = "hs-1",
+                SessionId = "",
+                PluginId = pluginId,
+                EntryId = entryId,
+                EndpointId = "node-main",
+                Kind = MessageKind.Request,
+                Route = "bus.handshake",
+                TimeoutMs = 5000,
+                Payload = JsonSerializer.SerializeToNode(payload, ProtocolJsonOptions.Default),
+            });
+            return Task.CompletedTask;
+        }
+
+        public Task StopAsync() => Task.CompletedTask;
+    }
+
+    private sealed class FakeFactory : INodeProcessControllerFactory
+    {
+        public FakeController? LastController { get; private set; }
+        public INodeProcessController Create(string nodeExePath, string nodeEntryFullPath)
+            => LastController = new FakeController();
+    }
+}

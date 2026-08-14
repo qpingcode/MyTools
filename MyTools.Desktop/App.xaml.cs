@@ -44,6 +44,8 @@ public partial class App
         }
 
         var services = new ServiceCollection();
+        // Enable v3 named-pipe transport for plugins with protocolVersion "3.0".
+        MyTools.Plugins.PluginServiceCollectionExtensions.UseV3Transport = true;
         services.AddApplicationServices();
         serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions
         {

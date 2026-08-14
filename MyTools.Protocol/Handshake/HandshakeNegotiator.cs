@@ -15,10 +15,10 @@ public readonly record struct HandshakeResult(bool IsSuccess, ProtocolVersion? N
 }
 
 /// <summary>
-/// Handshake payload model. The handshake is the permanently-frozen bootstrap contract:
-/// only version, id, correlationId, kind, route, payload and error fields are used, and the
-/// payload itself only carries version information. Any future version must still be able to
-/// parse these fields and respond with ProtocolMismatch.
+/// Handshake payload model. Envelope fields used by handshake are permanently frozen
+/// (<c>version</c>, <c>id</c>, <c>correlationId</c>, <c>kind</c>, <c>route</c>, <c>payload</c>,
+/// <c>error</c>). Optional fields may be added inside the payload: named-pipe handshakes carry a
+/// one-shot <see cref="Token"/> on the request and bind identity on the success response.
 /// </summary>
 public sealed class HandshakePayload
 {
@@ -31,6 +31,21 @@ public sealed class HandshakePayload
     /// <summary>The version agreed upon (filled in a success response).</summary>
     public ProtocolVersion? NegotiatedVersion { get; init; }
 
+    /// <summary>One-shot bootstrap token presented by the Node side (named-pipe only).</summary>
+    public string? Token { get; init; }
+
+    /// <summary>Bound plugin package id returned to Node on success (for SDK identity stamping).</summary>
+    public string? PluginId { get; init; }
+
+    /// <summary>Bound entry id returned to Node on success.</summary>
+    public string? EntryId { get; init; }
+
+    /// <summary>Bound session id returned to Node on success.</summary>
+    public string? SessionId { get; init; }
+
+    /// <summary>Bound endpoint id returned to Node on success (e.g. <c>node-main</c>).</summary>
+    public string? EndpointId { get; init; }
+
     public static HandshakePayload BuildRequest(IEnumerable<ProtocolVersion> supported)
     {
         var list = supported.ToArray();
@@ -41,8 +56,34 @@ public sealed class HandshakePayload
         };
     }
 
+    public static HandshakePayload BuildNamedPipeRequest(IEnumerable<ProtocolVersion> supported, string token)
+    {
+        var list = supported.ToArray();
+        return new HandshakePayload
+        {
+            Version = list.MaxBy(v => v),
+            SupportedVersions = list,
+            Token = token,
+        };
+    }
+
     public static HandshakePayload BuildSuccessResponse(ProtocolVersion negotiated)
         => new() { NegotiatedVersion = negotiated };
+
+    public static HandshakePayload BuildSuccessResponse(
+        ProtocolVersion negotiated,
+        string pluginId,
+        string entryId,
+        string sessionId,
+        string endpointId)
+        => new()
+        {
+            NegotiatedVersion = negotiated,
+            PluginId = pluginId,
+            EntryId = entryId,
+            SessionId = sessionId,
+            EndpointId = endpointId,
+        };
 }
 
 /// <summary>

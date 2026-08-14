@@ -22,6 +22,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MyTools.Common\MyTools.Common.csproj" />
+    <ProjectReference Include="..\MyTools.Host.Core\MyTools.Host.Core.csproj" />
+    <ProjectReference Include="..\MyTools.Host.Transports\MyTools.Host.Transports.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -31,6 +33,7 @@
       <Link>Examples\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </None>
     <None Remove="Examples\common\**\*" />
+    <None Remove="Examples\sdk-v3\**\*" />
     <None Include="Examples\CommandRunner.json;Examples\SearchEnginePlugin.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

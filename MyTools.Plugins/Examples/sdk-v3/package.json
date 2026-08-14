@@ -1,0 +1,37 @@
+{
+  "name": "@qping/plugin-bus",
+  "version": "0.1.0",
+  "description": "v3 message-bus runtime for MyTools plugins (named-pipe transport).",
+  "type": "module",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "exports": {
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.mjs",
+      "default": "./dist/server.mjs"
+    },
+    "./protocol": {
+      "types": "./dist/protocol.d.ts",
+      "import": "./dist/protocol.mjs",
+      "default": "./dist/protocol.mjs"
+    },
+    "./bootstrap": {
+      "types": "./dist/bootstrap.d.ts",
+      "import": "./dist/bootstrap.mjs",
+      "default": "./dist/bootstrap.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
+    "build": "npm run clean && node build-sdk.mjs",
+    "check": "node build-sdk.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.8",
+    "typescript": "^7.0.2"
+  }
+}

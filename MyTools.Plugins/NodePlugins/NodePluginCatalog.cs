@@ -31,7 +31,11 @@ public sealed class NodePluginCatalog
         var manifests = new List<NodePluginManifest>();
         foreach (var pluginDirectory in Directory.GetDirectories(pluginRoot))
         {
-            var manifestPath = Path.Combine(pluginDirectory, "plugin.json");
+            // Prefer plugin.v3.json when present (v3 transport); fall back to plugin.json (v2 stdio).
+            var v3Path = Path.Combine(pluginDirectory, "plugin.v3.json");
+            var manifestPath = File.Exists(v3Path)
+                ? v3Path
+                : Path.Combine(pluginDirectory, "plugin.json");
             if (!File.Exists(manifestPath))
             {
                 continue;
@@ -100,7 +104,6 @@ public sealed class NodePluginCatalog
                         ? new LocalizedMessage(entryModel.Name.Key ?? "", entryModel.Name.DefaultValue ?? "")
                         : null,
                     Version = fileModel.Version!,
-                    Runtime = fileModel.Runtime!,
                     Entry = entryModel.Entry!,
                     ProtocolVersion = fileModel.ProtocolVersion!,
                     PluginDirectory = fullPluginDirectory,
@@ -161,7 +164,6 @@ public sealed class NodePluginCatalog
     {
         return !string.IsNullOrWhiteSpace(fileModel.Id)
             && !string.IsNullOrWhiteSpace(fileModel.Version)
-            && string.Equals(fileModel.Runtime, "node", StringComparison.OrdinalIgnoreCase)
             && !string.IsNullOrWhiteSpace(fileModel.ProtocolVersion)
             && fileModel.Entries is { Count: > 0 }
             && (fileModel.I18n == null
@@ -188,7 +190,6 @@ public sealed class NodePluginCatalog
     {
         public string? Id { get; init; }
         public string? Version { get; init; }
-        public string? Runtime { get; init; }
         public string? ProtocolVersion { get; init; }
         public List<EntryManifestFile>? Entries { get; init; }
         public I18nManifestFile? I18n { get; init; }

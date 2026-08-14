@@ -1,6 +1,6 @@
-using System;
-using System.IO;
 using System.IO.Pipes;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,19 +14,27 @@ namespace MyTools.Host.Transports.NamedPipe;
 /// <summary>
 /// <see cref="IMessageTransport"/> over a Windows named pipe using 4-byte little-endian
 /// length-prefixed UTF-8 JSON frames (see <see cref="FrameCodec"/>). The host side creates the
-/// pipe server (<c>isServer: true</c>); the Node side connects as a client. Frames are decoded
-/// incrementally via <see cref="FrameDecoder"/> (handles fragmentation/sticky bytes). Oversized
-/// length prefixes are rejected before allocation. A broken pipe fires <see cref="Disconnected"/>.
+/// pipe server (<c>isServer: true</c>) with <see cref="PipeOptions.FirstPipeInstance"/> and a
+/// current-user ACL before the Node client connects. Frames are decoded incrementally via
+/// <see cref="FrameDecoder"/>. Oversized length prefixes are rejected before allocation. A broken
+/// pipe fires <see cref="Disconnected"/>.
+///
+/// Inbound envelopes arriving before any <see cref="MessageReceived"/> subscriber are buffered so
+/// the host can attach a handshake waiter after <see cref="ConnectAsync"/> without racing the
+/// Node's immediate <c>bus.handshake</c> request.
 /// </summary>
 public sealed class NamedPipeTransport : IMessageTransport
 {
     private readonly string _pipeName;
     private readonly bool _isServer;
     private readonly SemaphoreSlim _writeGate = new(1, 1); // single writer for frame ordering
+    private readonly object _inboxGate = new();
+    private readonly Queue<Envelope> _inbox = new();
     private PipeStream? _stream;
     private CancellationTokenSource? _readCts;
     private Task? _readLoop;
     private bool _connected;
+    private Action<Envelope>? _messageReceived;
 
     public NamedPipeTransport(string pipeName, bool isServer)
     {
@@ -36,7 +44,32 @@ public sealed class NamedPipeTransport : IMessageTransport
 
     public bool IsConnected => _connected;
 
-    public event Action<Envelope>? MessageReceived;
+    public event Action<Envelope>? MessageReceived
+    {
+        add
+        {
+            lock (_inboxGate)
+            {
+                var hadSubscriber = _messageReceived is not null;
+                _messageReceived += value;
+                if (!hadSubscriber && _messageReceived is not null)
+                {
+                    while (_inbox.Count > 0)
+                    {
+                        _messageReceived.Invoke(_inbox.Dequeue());
+                    }
+                }
+            }
+        }
+        remove
+        {
+            lock (_inboxGate)
+            {
+                _messageReceived -= value;
+            }
+        }
+    }
+
     public event Action? Disconnected;
 
     /// <summary>Creates/connects the underlying pipe stream. Await this before sending/receiving.</summary>
@@ -44,8 +77,7 @@ public sealed class NamedPipeTransport : IMessageTransport
     {
         if (_isServer)
         {
-            var server = new NamedPipeServerStream(_pipeName, PipeDirection.InOut, 1,
-                PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+            var server = CreateServerPipe(_pipeName);
             await server.WaitForConnectionAsync(cancellationToken);
             _stream = server;
         }
@@ -60,6 +92,29 @@ public sealed class NamedPipeTransport : IMessageTransport
         _connected = true;
         _readCts = new CancellationTokenSource();
         _readLoop = ReadLoopAsync(_readCts.Token);
+    }
+
+    public static NamedPipeServerStream CreateServerPipe(string pipeName)
+    {
+        var security = new PipeSecurity();
+        var currentUser = WindowsIdentity.GetCurrent().User
+            ?? throw new InvalidOperationException("cannot resolve current Windows user SID for pipe ACL");
+        security.AddAccessRule(new PipeAccessRule(currentUser, PipeAccessRights.FullControl, AccessControlType.Allow));
+        // LocalSystem is a common service identity that may need to interact with user-session pipes.
+        security.AddAccessRule(new PipeAccessRule(
+            new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null),
+            PipeAccessRights.FullControl,
+            AccessControlType.Allow));
+
+        return NamedPipeServerStreamAcl.Create(
+            pipeName,
+            PipeDirection.InOut,
+            maxNumberOfServerInstances: 1,
+            PipeTransmissionMode.Byte,
+            PipeOptions.Asynchronous | PipeOptions.FirstPipeInstance,
+            inBufferSize: 0,
+            outBufferSize: 0,
+            pipeSecurity: security);
     }
 
     public async ValueTask SendAsync(Envelope envelope, CancellationToken cancellationToken)
@@ -133,7 +188,7 @@ public sealed class NamedPipeTransport : IMessageTransport
 
                     if (env is not null)
                     {
-                        MessageReceived?.Invoke(env);
+                        DispatchInbound(env);
                     }
 
                     // Try to surface any additional frames buffered in the decoder.
@@ -156,6 +211,22 @@ public sealed class NamedPipeTransport : IMessageTransport
         {
             OnDisconnected();
         }
+    }
+
+    private void DispatchInbound(Envelope env)
+    {
+        Action<Envelope>? handler;
+        lock (_inboxGate)
+        {
+            handler = _messageReceived;
+            if (handler is null)
+            {
+                _inbox.Enqueue(env);
+                return;
+            }
+        }
+
+        handler.Invoke(env);
     }
 
     private void OnDisconnected()

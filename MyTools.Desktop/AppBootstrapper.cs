@@ -221,6 +221,14 @@ public class AppBootstrapper : IDisposable
             Directory.CreateDirectory(pluginTargetPath);
             foreach (var sourcePluginDirectory in Directory.GetDirectories(examplePath))
             {
+                // Skip non-plugin directories (sdk-v3, common, node_modules, etc.) that have no dist.
+                var distDir = Path.Combine(sourcePluginDirectory, "dist");
+                if (!File.Exists(Path.Combine(distDir, "plugin.json")) &&
+                    !File.Exists(Path.Combine(distDir, "plugin.v3.json")))
+                {
+                    continue;
+                }
+
                 var targetPluginDirectory = Path.Combine(pluginTargetPath, Path.GetFileName(sourcePluginDirectory));
                 SyncDirectory(GetExamplePluginSourceDirectory(sourcePluginDirectory), targetPluginDirectory);
                 GenerateThemeHtmlFiles(targetPluginDirectory);
@@ -253,7 +261,12 @@ public class AppBootstrapper : IDisposable
     private static string GetExamplePluginSourceDirectory(string sourcePluginDirectory)
     {
         var distDirectory = Path.Combine(sourcePluginDirectory, "dist");
-        return File.Exists(Path.Combine(distDirectory, "plugin.json")) ? distDirectory : throw new Exception("Missing dist folder, please compile plugin first.");
+        if (File.Exists(Path.Combine(distDirectory, "plugin.json")) ||
+            File.Exists(Path.Combine(distDirectory, "plugin.v3.json")))
+        {
+            return distDirectory;
+        }
+        throw new Exception("Missing dist folder, please compile plugin first. directory: " + distDirectory);
     }
 
     private static void SyncDirectory(string sourceDirectory, string targetDirectory)
