@@ -1,0 +1,1 @@
+{"version":"3.0","id":"req-001","traceId":"trace-001","sessionId":"sess-001","pluginId":"settings","entryId":"main","endpointId":"webview-1","kind":"request","route":"plugin.call.saveConfiguration","timeoutMs":30000,"payload":{"key":"theme","value":"dark"}}

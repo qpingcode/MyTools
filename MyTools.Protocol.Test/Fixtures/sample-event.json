@@ -1,0 +1,1 @@
+{"version":"3.0","id":"evt-001","traceId":"evt-001","sessionId":"sess-001","pluginId":"settings","entryId":"main","endpointId":"node-main","kind":"event","route":"plugin.event.configChanged","payload":{"key":"theme"}}
