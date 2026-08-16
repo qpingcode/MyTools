@@ -88,7 +88,7 @@ my-plugin/
 
 | import                   | 用途                                                                           |
 | ------------------------ | ---------------------------------------------------------------------------- |
-| `@qping/plugin-bus/node` | `createPlugin()`、`PluginInitializeParams`：后端 `initialize/search/action/handle/publish/hostCall/start` |
+| `@qping/plugin-bus/node` | `createPlugin()`、`PluginInitializeParams` / `PluginSearchParams` / `PluginActionParams` |
 | `@qping/plugin-bus/web`  | `createWebBusClient()`、`HostEvents`、payload 类型                               |
 | `@qping/plugin-bus/i18n` | 后端 `mytoolsI18n`（页面用 `bus.i18n`）                                             |
 
@@ -137,7 +137,7 @@ SDK 把旧式方法名映射到 v3 路由：`initialize` → `plugin.call.initia
 ## 4. 后端（Node）
 
 ```ts
-import { createPlugin, type PluginInitializeParams } from "@qping/plugin-bus/node";
+import { createPlugin, type PluginInitializeParams, type PluginSearchParams, type PluginActionParams } from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 
 const plugin = createPlugin();
@@ -147,10 +147,10 @@ plugin
     mytoolsI18n.configure(params);
     return {};
   })
-  .search((params) => ({
-    items: [buildSearchItem(params.query || "")],
+  .search((params: PluginSearchParams) => ({
+    items: [buildSearchItem(params.query)],
   }))
-  .action((params) => ({
+  .action((params: PluginActionParams) => ({
     message: mytoolsI18n.t("Plugin.MyPlugin.Action.Open.Success", {
       defaultValue: "Opened",
     }),
@@ -159,7 +159,7 @@ plugin
       type: "web-detail",
       htmlEntry: "web/index.html",
       title: mytoolsI18n.t("Plugin.MyPlugin.Name", { defaultValue: "My Plugin" }),
-      initialState: { query: params.query || "" },
+      initialState: { query: params.query },
     },
   }))
   .handle("refresh", (payload, context) => {
@@ -184,7 +184,8 @@ plugin
 ```
 
 - `initialize` 的 params 是 `{ locale, fallbackLocale, messages, theme }`（`PluginInitializeParams`）。`theme` 为 `"light"` | `"dark"`，不含 CSS token。`mytoolsI18n.configure(params)` 装进 i18n。
-- `search` 返回 `{ items }`；`action` 返回 `{ message, actionType, detail? }`。`search` / `action` / `handle` 的 payload 同样带当前 `locale`、`fallbackLocale`、`theme`。
+- `search` 的 params 是 `{ query, mode, locale, fallbackLocale, theme }`（`PluginSearchParams`）。`mode` 为 `"global"` | `"plugin"`。返回 `{ items }`。
+- `action` 的 params 是 `{ itemId, actionId, query, locale, fallbackLocale, theme }`（`PluginActionParams`）。返回 `{ message, actionType, detail? }`。
 - `handle(name, fn)` 给详情页 `bus.call(name)` 用。`context` 有 `action / itemId / query / locale / fallbackLocale / theme`（由宿主注入，页面不必带）。
 - 纯前端工具（如 json-formatter）可以只有 `initialize/search/action`，不注册 `handle`。
 - 环境变量从 `process.env` 读。`start()` 连宿主 Named Pipe，不要自己读 stdin。

@@ -287,18 +287,27 @@ internal sealed class NodePluginBusHost : INodePluginHost
     public Task<NodePluginSearchResponse> SearchAsync(string query, string mode, string locale,
         string fallbackLocale, string theme, CancellationToken cancellationToken)
     {
-        return SendAsync<NodePluginSearchResponse>(Routes.PluginCall.Search, new
+        return SendAsync<NodePluginSearchResponse>(Routes.PluginCall.Search, new NodePluginSearchRequest
         {
-            query, mode, locale, fallbackLocale, theme,
+            Query = query,
+            Mode = mode,
+            Locale = locale,
+            FallbackLocale = fallbackLocale,
+            Theme = theme,
         }, cancellationToken);
     }
 
     public Task<NodePluginActionResponse> InvokeActionAsync(string itemId, string actionId, string query,
         string locale, string fallbackLocale, string theme, CancellationToken cancellationToken = default)
     {
-        return SendAsync<NodePluginActionResponse>(Routes.PluginCall.InvokeAction, new
+        return SendAsync<NodePluginActionResponse>(Routes.PluginCall.InvokeAction, new NodePluginActionRequest
         {
-            itemId, actionId, query, locale, fallbackLocale, theme,
+            ItemId = itemId,
+            ActionId = actionId,
+            Query = query,
+            Locale = locale,
+            FallbackLocale = fallbackLocale,
+            Theme = theme,
         }, cancellationToken);
     }
 

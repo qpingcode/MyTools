@@ -21,31 +21,47 @@ import {
   pluginEventRoute,
 } from "./protocol.ts";
 
-export type PluginContext = {
+export type PluginTheme = "light" | "dark";
+
+export type PluginHostEnv = {
+  locale: string;
+  fallbackLocale: string;
+  theme: PluginTheme;
+};
+
+export type PluginContext = PluginHostEnv & {
   action: string;
   itemId: string;
   query: string;
-  locale: string;
-  fallbackLocale: string;
-  theme: "light" | "dark";
 };
 
 /** Payload of plugin.call.initialize. Host sends locale, theme, and the resolved message bag. */
-export type PluginInitializeParams = {
-  locale: string;
-  fallbackLocale: string;
+export type PluginInitializeParams = PluginHostEnv & {
   messages: Record<string, string>;
-  theme: "light" | "dark";
+};
+
+/** Payload of plugin.call.search. */
+export type PluginSearchParams = PluginHostEnv & {
+  query: string;
+  mode: "global" | "plugin";
+};
+
+/** Payload of plugin.call.invokeAction. */
+export type PluginActionParams = PluginHostEnv & {
+  itemId: string;
+  actionId: string;
+  query: string;
 };
 
 type PluginInitializeHandler = (params: PluginInitializeParams) => unknown | Promise<unknown>;
-type PluginLifecycleHandler = (params: any) => unknown | Promise<unknown>;
+type PluginSearchHandler = (params: PluginSearchParams) => unknown | Promise<unknown>;
+type PluginActionHandler = (params: PluginActionParams) => unknown | Promise<unknown>;
 type PluginHandler = (payload: any, context: PluginContext) => unknown | Promise<unknown>;
 
 export class Plugin {
   #handlers = new Map<string, PluginHandler>();
-  #searchHandler: PluginLifecycleHandler | null = null;
-  #actionHandler: PluginLifecycleHandler | null = null;
+  #searchHandler: PluginSearchHandler | null = null;
+  #actionHandler: PluginActionHandler | null = null;
   #initializeHandler: PluginInitializeHandler | null = null;
   #runtime: PluginRuntime | null = null;
 
@@ -54,12 +70,12 @@ export class Plugin {
     return this;
   }
 
-  search(handler: PluginLifecycleHandler): this {
+  search(handler: PluginSearchHandler): this {
     this.#searchHandler = handler;
     return this;
   }
 
-  action(handler: PluginLifecycleHandler): this {
+  action(handler: PluginActionHandler): this {
     this.#actionHandler = handler;
     return this;
   }
@@ -116,12 +132,10 @@ export class Plugin {
       routes[Routes.PluginCall.Initialize] = (p) => this.#initializeHandler!(asInitializeParams(p));
     }
     if (this.#searchHandler) {
-      routes[Routes.PluginCall.Search] = (p) => this.#searchHandler!(p);
+      routes[Routes.PluginCall.Search] = (p) => this.#searchHandler!(asSearchParams(p));
     }
     if (this.#actionHandler) {
-      routes[Routes.PluginCall.InvokeAction] = (p) => {
-        return this.#actionHandler!({ ...p, itemId: p.itemId, query: p.query });
-      };
+      routes[Routes.PluginCall.InvokeAction] = (p) => this.#actionHandler!(asActionParams(p));
     }
     for (const [action, handler] of this.#handlers) {
       const route = pluginCallRoute(action);
@@ -140,17 +154,40 @@ export class Plugin {
   }
 }
 
-function asInitializeParams(p: any): PluginInitializeParams {
-  const messages = p?.messages;
+function asHostEnv(p: any): PluginHostEnv {
   return {
     locale: typeof p?.locale === "string" ? p.locale : "en-US",
     fallbackLocale: typeof p?.fallbackLocale === "string" ? p.fallbackLocale : "en-US",
-    messages: isStringRecord(messages) ? messages : {},
     theme: asTheme(p?.theme),
   };
 }
 
-function asTheme(value: unknown): "light" | "dark" {
+function asInitializeParams(p: any): PluginInitializeParams {
+  const messages = p?.messages;
+  return {
+    ...asHostEnv(p),
+    messages: isStringRecord(messages) ? messages : {},
+  };
+}
+
+function asSearchParams(p: any): PluginSearchParams {
+  return {
+    ...asHostEnv(p),
+    query: typeof p?.query === "string" ? p.query : "",
+    mode: p?.mode === "plugin" ? "plugin" : "global",
+  };
+}
+
+function asActionParams(p: any): PluginActionParams {
+  return {
+    ...asHostEnv(p),
+    itemId: typeof p?.itemId === "string" ? p.itemId : "",
+    actionId: typeof p?.actionId === "string" ? p.actionId : "",
+    query: typeof p?.query === "string" ? p.query : "",
+  };
+}
+
+function asTheme(value: unknown): PluginTheme {
   return value === "light" ? "light" : "dark";
 }
 
@@ -161,12 +198,10 @@ function isStringRecord(value: unknown): value is Record<string, string> {
 
 function extractContext(p: any, action: string): PluginContext {
   return {
+    ...asHostEnv(p),
     action,
-    itemId: p?.itemId ?? "",
-    query: p?.query ?? "",
-    locale: p?.locale ?? "en-US",
-    fallbackLocale: p?.fallbackLocale ?? "en-US",
-    theme: asTheme(p?.theme),
+    itemId: typeof p?.itemId === "string" ? p.itemId : "",
+    query: typeof p?.query === "string" ? p.query : "",
   };
 }
 
