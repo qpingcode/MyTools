@@ -48,7 +48,6 @@ test("runtime constants match the frozen wire vocabulary", () => {
   assert.equal(Routes.Bus.Ping, "bus.ping");
   assert.equal(Routes.Bus.Handshake, "bus.handshake");
   assert.equal(Routes.PluginCall.Search, "plugin.call.search");
-  assert.equal(Routes.PluginCall.DetailCall, "plugin.call.detailCall");
   assert.equal(Routes.HostEvent.Initialize, "host.event.initialize");
   assert.equal(Routes.HostEvent.LanguageChanged, "host.event.languageChanged");
 });

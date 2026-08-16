@@ -31,7 +31,7 @@ import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qp
 
     async function callState(action: string, data: Record<string, unknown> = {}) {
         try {
-            renderState(await bus.detailCall<ChatState>(action, data || {}));
+            renderState(await bus.call<ChatState>(action, data || {}));
         } catch (error) {
             renderState({
                 status: "error",

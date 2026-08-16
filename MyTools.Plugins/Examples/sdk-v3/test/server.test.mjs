@@ -90,21 +90,21 @@ test("buildRoutes maps named handler to plugin.call.<name>", async () => {
   const routes = tool.buildRoutes();
   assert.ok(routes["plugin.call.refresh"], "named route missing");
   const result = await routes["plugin.call.refresh"]({ foo: 1 });
-  assert.deepEqual(result, { echoed: { foo: 1 }, ctx: { action: "", itemId: "", query: "", locale: "en-US", fallbackLocale: "en-US" } });
+  assert.deepEqual(result, { echoed: { foo: 1 }, ctx: { action: "refresh", itemId: "", query: "", locale: "en-US", fallbackLocale: "en-US" } });
 });
 
-test("buildRoutes detailCall dispatches by action field to named handler", async () => {
+test("buildRoutes named handler uses the registered action name in context", async () => {
   const tool = mod.createTool();
-  tool.handle("save", (payload) => ({ saved: true }));
+  tool.handle("save", (payload) => ({ saved: true, payload }));
   const routes = tool.buildRoutes();
-  const result = await routes["plugin.call.detailCall"]({ action: "save", payload: { x: 1 } });
-  assert.deepEqual(result, { result: { saved: true } });
+  const result = await routes["plugin.call.save"]({ x: 1, itemId: "i1" });
+  assert.deepEqual(result, { saved: true, payload: { x: 1, itemId: "i1" } });
 });
 
-test("buildRoutes detailCall with unknown action throws", async () => {
+test("buildRoutes unknown named route is not registered", async () => {
   const tool = mod.createTool();
   const routes = tool.buildRoutes();
-  await assert.rejects(() => routes["plugin.call.detailCall"]({ action: "nope" }), /no handler registered/);
+  assert.equal(routes["plugin.call.nope"], undefined);
 });
 
 test("buildRoutes includes initialize when registered", async () => {

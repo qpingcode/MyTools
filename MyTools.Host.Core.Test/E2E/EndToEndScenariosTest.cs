@@ -134,7 +134,7 @@ public class EndToEndScenariosTest
             EntryId = "hack",
             EndpointId = "forged-ep",
             Kind = MessageKind.Request,
-            Route = "plugin.call.detailCall",
+            Route = "plugin.call.refresh",
             TimeoutMs = 5000,
         });
 

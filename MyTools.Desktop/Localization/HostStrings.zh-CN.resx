@@ -162,5 +162,8 @@
   <data name="Theme" xml:space="preserve"><value>主题</value></data>
   <data name="Theme.light" xml:space="preserve"><value>浅色</value></data>
   <data name="Theme.dark" xml:space="preserve"><value>深色</value></data>
+  <data name="PluginPage.HandshakeFailed" xml:space="preserve"><value>插件页面无法连接</value></data>
+  <data name="PluginPage.HandshakeTimeout" xml:space="preserve"><value>插件页面未完成协议握手。</value></data>
+  <data name="PluginPage.ProtocolMismatch" xml:space="preserve"><value>此插件与当前 MyTools 版本不兼容。</value></data>
 </root>
 

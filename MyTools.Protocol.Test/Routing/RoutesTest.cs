@@ -12,8 +12,6 @@ public class RoutesTest
         Assert.That(Routes.PluginCall.Initialize, Is.EqualTo("plugin.call.initialize"));
         Assert.That(Routes.PluginCall.Search, Is.EqualTo("plugin.call.search"));
         Assert.That(Routes.PluginCall.InvokeAction, Is.EqualTo("plugin.call.invokeAction"));
-        Assert.That(Routes.PluginCall.DetailEvent, Is.EqualTo("plugin.call.detailEvent"));
-        Assert.That(Routes.PluginCall.DetailCall, Is.EqualTo("plugin.call.detailCall"));
     }
 
     [Test]

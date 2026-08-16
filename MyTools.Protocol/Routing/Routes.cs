@@ -32,8 +32,6 @@ public static class Routes
         public const string Initialize = Prefix.PluginCall + "initialize";
         public const string Search = Prefix.PluginCall + "search";
         public const string InvokeAction = Prefix.PluginCall + "invokeAction";
-        public const string DetailEvent = Prefix.PluginCall + "detailEvent";
-        public const string DetailCall = Prefix.PluginCall + "detailCall";
 
         public static string Of(string method)
             => StartsWithPrefix(method, Prefix.PluginCall) ? method : Prefix.PluginCall + method;
@@ -51,7 +49,7 @@ public static class Routes
             => StartsWithPrefix(subjectId, Prefix.PluginEvent) ? subjectId : Prefix.PluginEvent + subjectId;
     }
 
-    /// <summary>Host → page events delivered over the WebView2 bus (not <c>tool-event</c>).</summary>
+    /// <summary>Host → page events delivered over the WebView2 bus.</summary>
     public static class HostEvent
     {
         public const string Initialize = Prefix.HostEvent + "initialize";

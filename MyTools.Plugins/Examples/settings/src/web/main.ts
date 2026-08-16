@@ -32,7 +32,7 @@ async function loadConfiguration(): Promise<void> {
         + t("Plugin.Settings.Loading", "Loading...")
         + "</div>";
     try {
-        common.state.config = await bus.detailCall<Config>("getConfiguration");
+        common.state.config = await bus.call<Config>("getConfiguration");
         renderCategoryTree();
         if (common.state.currentCategoryKey) {
             selectCategory(common.state.currentCategoryKey);
@@ -100,7 +100,7 @@ async function saveSettings(): Promise<void> {
                 value: value,
             }));
 
-            var result = await bus.detailCall<{ requiresRestart: boolean }>(
+            var result = await bus.call<{ requiresRestart: boolean }>(
                 "saveConfiguration",
                 { changes: changes }
             );
@@ -176,7 +176,7 @@ common.restartConfirm.addEventListener("click", async () => {
     common.restartModal.hidden = true;
     common.showToast(t("Plugin.Settings.Restarting", "Restarting..."), "success");
     try {
-        await bus.detailCall("restart");
+        await bus.call("restart");
     } catch {
         // Host restart disconnects the bridge — expected, ignore.
     }

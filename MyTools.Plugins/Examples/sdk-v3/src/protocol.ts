@@ -62,8 +62,6 @@ export const Routes = {
     Initialize: "plugin.call.initialize",
     Search: "plugin.call.search",
     InvokeAction: "plugin.call.invokeAction",
-    DetailEvent: "plugin.call.detailEvent",
-    DetailCall: "plugin.call.detailCall",
   },
   HostEvent: {
     Initialize: "host.event.initialize",

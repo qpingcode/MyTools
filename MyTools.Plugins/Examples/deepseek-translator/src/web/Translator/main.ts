@@ -481,7 +481,7 @@ import type { MyToolsHostInitializePayload, MyToolsHostKeyPayload, MyToolsHostSe
 
     async function callState(action: string, data: { text?: string; [key: string]: unknown } = {}, options?: { timeout?: number }): Promise<void> {
         try {
-            updateState(await bus.detailCall(action, data || {}, options?.timeout));
+            updateState(await bus.call(action, data || {}, options?.timeout));
         } catch (error) {
             var current = data as { text?: string };
             updateState({
@@ -495,7 +495,7 @@ import type { MyToolsHostInitializePayload, MyToolsHostKeyPayload, MyToolsHostSe
     function sendTranslateAfterPaint(text: string): void {
         window.setTimeout(async function () {
             try {
-                var state = await bus.detailCall<{ input?: string }>("translate", { text: text }, 45000);
+                var state = await bus.call<{ input?: string }>("translate", { text: text }, 45000);
                 if (normalize(state && state.input) !== normalize(lastRequestedText)) {
                     return;
                 }

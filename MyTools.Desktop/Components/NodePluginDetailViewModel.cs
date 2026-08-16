@@ -34,31 +34,6 @@ public partial class NodePluginDetailViewModel : ObservableObject, ISwitchableVi
         callback.OnUpdateStatusBar(UpdateStatus.Success, string.Empty);
     }
 
-    public async Task<string?> HandleDetailEventAsync(string eventName, string payloadJson)
-    {
-        if (CurrentContext == null)
-        {
-            return null;
-        }
-
-        JsonElement? payload = null;
-        if (!string.IsNullOrWhiteSpace(payloadJson))
-        {
-            using var document = JsonDocument.Parse(payloadJson);
-            payload = document.RootElement.Clone();
-        }
-
-        var state = await CurrentContext.Plugin.HandleDetailEventAsync(CurrentContext.ItemId, eventName, payload, CurrentQuery);
-        if (state == null)
-        {
-            return null;
-        }
-
-        var stateJson = state.Value.GetRawText();
-        CurrentStateJson = stateJson;
-        return stateJson;
-    }
-
     public ViewModelType GetViewModelType()
     {
         return ViewModelType.NodeDetail;
