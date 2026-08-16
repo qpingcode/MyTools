@@ -47,7 +47,7 @@ public class NodePluginBusHostTest
     {
         var (host, nodeT, sessionId) = await CreateStartedHostAsync();
 
-        var searchTask = host.SearchAsync("hello", "global", "en-US", "en-US", CancellationToken.None);
+        var searchTask = host.SearchAsync("hello", "global", "en-US", "en-US", "dark", CancellationToken.None);
         await Task.Delay(50);
 
         var sentRequest = nodeT.Sent.FirstOrDefault(e => e.Route == "plugin.call.search");

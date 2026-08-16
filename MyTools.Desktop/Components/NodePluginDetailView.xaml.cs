@@ -346,6 +346,7 @@ public partial class NodePluginDetailView : UserControl
         payload["query"] = viewModel?.CurrentQuery ?? ctx.Query;
         payload["locale"] = localizationService.CurrentLocale;
         payload["fallbackLocale"] = ctx.FallbackLocale;
+        payload["theme"] = themeService.CurrentTheme.ToWireString();
         return payload;
     }
 
@@ -569,6 +570,7 @@ public partial class NodePluginDetailView : UserControl
                     theme = e.CurrentTheme.ToWireString(),
                     themeTokens = WebThemeTokens.For(e.CurrentTheme)
                 });
+            _ = viewModel.CurrentContext.Plugin.InitializeAsync();
         });
     }
 

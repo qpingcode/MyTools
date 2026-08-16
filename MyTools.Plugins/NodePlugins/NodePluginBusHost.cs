@@ -272,29 +272,33 @@ internal sealed class NodePluginBusHost : INodePluginHost
     }
 
     public Task<JsonElement> InitializeAsync(string locale, string fallbackLocale,
-        IReadOnlyDictionary<string, string> messages, CancellationToken cancellationToken = default)
+        IReadOnlyDictionary<string, string> messages, string theme,
+        CancellationToken cancellationToken = default)
     {
-        return SendAndUnwrapResultAsync(Routes.PluginCall.Initialize, new
+        return SendAndUnwrapResultAsync(Routes.PluginCall.Initialize, new NodePluginInitializeRequest
         {
-            locale, fallbackLocale, messages,
+            Locale = locale,
+            FallbackLocale = fallbackLocale,
+            Messages = messages,
+            Theme = theme,
         }, cancellationToken);
     }
 
     public Task<NodePluginSearchResponse> SearchAsync(string query, string mode, string locale,
-        string fallbackLocale, CancellationToken cancellationToken)
+        string fallbackLocale, string theme, CancellationToken cancellationToken)
     {
         return SendAsync<NodePluginSearchResponse>(Routes.PluginCall.Search, new
         {
-            query, mode, locale, fallbackLocale,
+            query, mode, locale, fallbackLocale, theme,
         }, cancellationToken);
     }
 
     public Task<NodePluginActionResponse> InvokeActionAsync(string itemId, string actionId, string query,
-        string locale, string fallbackLocale, CancellationToken cancellationToken = default)
+        string locale, string fallbackLocale, string theme, CancellationToken cancellationToken = default)
     {
         return SendAsync<NodePluginActionResponse>(Routes.PluginCall.InvokeAction, new
         {
-            itemId, actionId, query, locale, fallbackLocale,
+            itemId, actionId, query, locale, fallbackLocale, theme,
         }, cancellationToken);
     }
 

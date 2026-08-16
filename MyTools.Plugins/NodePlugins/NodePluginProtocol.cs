@@ -1,6 +1,15 @@
+using System.Collections.Generic;
 using System.Text.Json;
 
 namespace MyTools.Plugins.NodePlugins;
+
+internal sealed class NodePluginInitializeRequest
+{
+    public required string Locale { get; init; }
+    public required string FallbackLocale { get; init; }
+    public required IReadOnlyDictionary<string, string> Messages { get; init; }
+    public required string Theme { get; init; }
+}
 
 internal sealed class NodePluginSearchResponse
 {

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using MyTools.Common.Localization;
+using MyTools.Common.Theming;
 using MyTools.Host.Core.Bus;
 using MyTools.Host.Core.Sessions;
 
@@ -9,6 +10,7 @@ public sealed class NodePluginFactory
 {
     private readonly ILoggerFactory loggerFactory;
     private readonly ILocalizationService localizationService;
+    private readonly IThemeService themeService;
     private readonly MessageBus bus;
     private readonly PluginSessionManager sessionManager;
 
@@ -16,10 +18,12 @@ public sealed class NodePluginFactory
         ILoggerFactory loggerFactory,
         ILocalizationService? localizationService,
         MessageBus bus,
-        PluginSessionManager sessionManager)
+        PluginSessionManager sessionManager,
+        IThemeService? themeService = null)
     {
         this.loggerFactory = loggerFactory;
         this.localizationService = localizationService ?? new InvariantLocalizationService();
+        this.themeService = themeService ?? FallbackThemeService.Instance;
         this.bus = bus;
         this.sessionManager = sessionManager;
     }
@@ -31,7 +35,9 @@ public sealed class NodePluginFactory
             {
                 INodePluginHost host = new NodePluginBusHost(
                     manifest, sessionManager, bus, loggerFactory.CreateLogger<NodePluginBusHost>());
-                return new NodePlugin(manifest, host, loggerFactory.CreateLogger<NodePlugin>(), localizationService);
+                return new NodePlugin(
+                    manifest, host, loggerFactory.CreateLogger<NodePlugin>(),
+                    localizationService, themeService);
             })
             .ToList();
     }
@@ -48,6 +54,18 @@ public sealed class NodePluginFactory
             LocalizedMessage.Format(defaultValue, LocalizedMessage.ToDictionary(values), System.Globalization.CultureInfo.InvariantCulture);
 
         public event EventHandler<LocaleChangedEventArgs>? LocaleChanged
+        {
+            add { }
+            remove { }
+        }
+    }
+
+    private sealed class FallbackThemeService : IThemeService
+    {
+        public static FallbackThemeService Instance { get; } = new();
+        public ThemeKind CurrentTheme => ThemeKind.Dark;
+        public void SetTheme(ThemeKind theme) { }
+        public event EventHandler<ThemeChangedEventArgs>? ThemeChanged
         {
             add { }
             remove { }

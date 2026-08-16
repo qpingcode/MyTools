@@ -81,7 +81,7 @@ test("buildRoutes maps named handler to plugin.call.<name>", async () => {
   const routes = plugin.buildRoutes();
   assert.ok(routes["plugin.call.refresh"], "named route missing");
   const result = await routes["plugin.call.refresh"]({ foo: 1 });
-  assert.deepEqual(result, { echoed: { foo: 1 }, ctx: { action: "refresh", itemId: "", query: "", locale: "en-US", fallbackLocale: "en-US" } });
+  assert.deepEqual(result, { echoed: { foo: 1 }, ctx: { action: "refresh", itemId: "", query: "", locale: "en-US", fallbackLocale: "en-US", theme: "dark" } });
 });
 
 test("buildRoutes named handler uses the registered action name in context", async () => {
@@ -100,9 +100,21 @@ test("buildRoutes unknown named route is not registered", async () => {
 
 test("buildRoutes includes initialize when registered", async () => {
   const plugin = mod.createPlugin();
-  plugin.initialize((p) => ({ configured: p.locale }));
+  plugin.initialize((p) => ({ configured: p.locale, keys: Object.keys(p.messages) }));
   const routes = plugin.buildRoutes();
   assert.ok(routes["plugin.call.initialize"]);
-  const result = await routes["plugin.call.initialize"]({ locale: "zh-CN" });
-  assert.deepEqual(result, { configured: "zh-CN" });
+  const result = await routes["plugin.call.initialize"]({
+    locale: "zh-CN",
+    fallbackLocale: "en-US",
+    messages: { "Plugin.Hello.Name": "你好搜索" },
+  });
+  assert.deepEqual(result, { configured: "zh-CN", keys: ["Plugin.Hello.Name"] });
+});
+
+test("initialize params default locale and empty messages when payload is sparse", async () => {
+  const plugin = mod.createPlugin();
+  plugin.initialize((p) => p);
+  const routes = plugin.buildRoutes();
+  const result = await routes["plugin.call.initialize"]({});
+  assert.deepEqual(result, { locale: "en-US", fallbackLocale: "en-US", messages: {}, theme: "dark" });
 });
