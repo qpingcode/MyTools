@@ -1,0 +1,5 @@
+{
+  "Plugin.Calculator.Name": "计算器",
+  "Plugin.Calculator.Action.Copy": "复制",
+  "Plugin.Calculator.Action.CopyDescription": "将结果复制到剪贴板"
+}

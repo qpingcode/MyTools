@@ -1,0 +1,25 @@
+{
+  "id": "uuid-generator",
+  "version": "0.1.0",
+  "protocolVersion": "3.0",
+  "i18n": {
+    "defaultLocale": "en-US",
+    "catalog": "i18n/catalog.en-US.json",
+    "localesPath": "i18n/locales",
+    "supportedLocales": ["en-US", "zh-CN"]
+  },
+  "entries": [
+    {
+      "id": "uuid-generator",
+      "name": {
+        "key": "Plugin.UuidGenerator.Name",
+        "defaultValue": "UUID/GUID Generator"
+      },
+      "entry": "backend/index.mjs",
+      "capabilities": [],
+      "keywords": ["guid"],
+      "search": { "global": false },
+      "detail": { "type": "list" }
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "Plugin.UuidGenerator.Name": "UUID/GUID 生成器",
+  "Plugin.UuidGenerator.Action.Copy": "复制",
+  "Plugin.UuidGenerator.Action.CopyDescription": "将内容复制到剪贴板",
+  "Plugin.UuidGenerator.HelpTitle": "GUID 生成器帮助",
+  "Plugin.UuidGenerator.Help": "输入任意字符开始生成。\n格式选项：\n• uppercase\n• nodash\n• braces\n• parentheses\n• base64",
+  "Plugin.UuidGenerator.ResultSubtitle": "GUID（{{format}}）"
+}

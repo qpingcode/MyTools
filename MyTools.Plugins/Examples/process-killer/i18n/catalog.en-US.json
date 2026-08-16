@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "scope": "plugin:process-killer",
+  "pluginId": "process-killer",
+  "sourceLocale": "en-US",
+  "entries": [
+    {
+      "key": "Plugin.ProcessKiller.Name",
+      "defaultValue": "Process Killer",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "进程管理"
+      },
+      "sourceHash": "sha256:afa5551fa8d8eadaefd9756e2859a23f67eb1ef220e6259894a531c8634b13ea"
+    },
+    {
+      "key": "Plugin.ProcessKiller.Action.Kill",
+      "defaultValue": "Kill Process",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "结束进程"
+      },
+      "sourceHash": "sha256:676490044955d316940381a590ad48646b1058a7351cbb23abd374390c17c88e"
+    },
+    {
+      "key": "Plugin.ProcessKiller.Action.KillDescription",
+      "defaultValue": "Terminate the selected process",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "终止所选进程"
+      },
+      "sourceHash": "sha256:9720ddc229c0d3927c42426b59e4c34243f4a47e4efc65d1e2cd902ff60cf526"
+    },
+    {
+      "key": "Plugin.ProcessKiller.User",
+      "defaultValue": "User: {{name}}",
+      "placeholders": [
+        "name"
+      ],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "用户：{{name}}"
+      },
+      "sourceHash": "sha256:587171c3daf4ea6d5dff83c61733f7c76bc6e358ae0758c818ada753c9ea742a"
+    },
+    {
+      "key": "Plugin.ProcessKiller.Port",
+      "defaultValue": "Port: {{port}}",
+      "placeholders": [
+        "port"
+      ],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "端口：{{port}}"
+      },
+      "sourceHash": "sha256:cb5a9755242079cdb3928dae384a0c7757db4205dc45861f785dd58fb633cbca"
+    }
+  ]
+}

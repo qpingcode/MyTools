@@ -7,6 +7,7 @@ using MyTools.Common.DependencyInjection;
 using MyTools.Common.Localization;
 using MyTools.Common.Plugins;
 using MyTools.Common.Theming;
+using MyTools.Plugins.Param;
 
 namespace MyTools.Plugins.NodePlugins;
 
@@ -270,17 +271,32 @@ public sealed class NodePlugin : IPlugin, IDisposable
             MapIcon(item.Icon),
             title,
             item.Subtitle ?? string.Empty,
-            new NodePluginActionArgs(item.Id, query),
+            CreateActionArgs(item, query, title),
             item.Priority)
         {
             ResultKey = string.IsNullOrWhiteSpace(item.Id) ? $"{manifest.Id}-{index}" : item.Id,
         };
 
-        resultItem.AllowedActions = BuildActions(item, query).ToList();
+        resultItem.AllowedActions = BuildActions(item).ToList();
         return resultItem;
     }
 
-    private IEnumerable<IActionWithCommand> BuildActions(NodePluginSearchItem item, string query)
+    private static IActionParams CreateActionArgs(NodePluginSearchItem item, string query, string title)
+    {
+        if (HasKind(item, "copy"))
+        {
+            return ActionStringParam.From(item.CopyText ?? title);
+        }
+
+        if (HasKind(item, "kill"))
+        {
+            return ActionStringParam.From(item.CopyText ?? item.Id);
+        }
+
+        return new NodePluginActionArgs(item.Id, query);
+    }
+
+    private IEnumerable<IActionWithCommand> BuildActions(NodePluginSearchItem item)
     {
         if (item.Actions.Count == 0)
         {
@@ -291,9 +307,25 @@ public sealed class NodePlugin : IPlugin, IDisposable
         {
             var action = item.Actions[index];
             var command = index == 0 ? Commands.DefaultCommand : $"NodeAction:{index}";
-            yield return new NodePluginInvokeAction(this, action.Id, action.Title, action.Description, action.Kind).WithCommand(command);
+            if (string.Equals(action.Kind, "copy", StringComparison.OrdinalIgnoreCase))
+            {
+                yield return WellKnownActions.Copy.WithCommand(command);
+                continue;
+            }
+
+            if (string.Equals(action.Kind, "kill", StringComparison.OrdinalIgnoreCase))
+            {
+                yield return new KillProcessAction().WithCommand(command);
+                continue;
+            }
+
+            yield return new NodePluginInvokeAction(this, action.Id, action.Title, action.Description, action.Kind)
+                .WithCommand(command);
         }
     }
+
+    private static bool HasKind(NodePluginSearchItem item, string kind) =>
+        item.Actions.Any(action => string.Equals(action.Kind, kind, StringComparison.OrdinalIgnoreCase));
 
     private string? ResolveDetailEntryFullPath(string? relativePath)
     {

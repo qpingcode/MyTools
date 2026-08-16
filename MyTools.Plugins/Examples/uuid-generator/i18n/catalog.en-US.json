@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "scope": "plugin:uuid-generator",
+  "pluginId": "uuid-generator",
+  "sourceLocale": "en-US",
+  "entries": [
+    {
+      "key": "Plugin.UuidGenerator.Name",
+      "defaultValue": "UUID/GUID Generator",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "UUID/GUID 生成器"
+      },
+      "sourceHash": "sha256:4430fd4bb20aec17dc19f56868404d1367d21b2fa1191940e53290ac1cda4a71"
+    },
+    {
+      "key": "Plugin.UuidGenerator.Action.Copy",
+      "defaultValue": "Copy",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "复制"
+      },
+      "sourceHash": "sha256:e21f935f11d7e966dbbae78da9daa378fe8142a14e7c0cd7434183005faa6c5c"
+    },
+    {
+      "key": "Plugin.UuidGenerator.Action.CopyDescription",
+      "defaultValue": "Copy the value to the clipboard",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "将内容复制到剪贴板"
+      },
+      "sourceHash": "sha256:65e436e11af1670098b4408939ce39acbfef0a9047c3e104f58d8cda30f48dd6"
+    },
+    {
+      "key": "Plugin.UuidGenerator.HelpTitle",
+      "defaultValue": "GUID Generator Help",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "GUID 生成器帮助"
+      },
+      "sourceHash": "sha256:465f81bd2f1cd9cc3de84457e90b0e6e111d3adb9219fbbb2110170d45579ad5"
+    },
+    {
+      "key": "Plugin.UuidGenerator.Help",
+      "defaultValue": "Press any character to start Generator.\nFormat Options:\n• uppercase\n• nodash\n• braces\n• parentheses\n• base64",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "输入任意字符开始生成。\n格式选项：\n• uppercase\n• nodash\n• braces\n• parentheses\n• base64"
+      },
+      "sourceHash": "sha256:713ae7dfa7b0d708151849cf727cece0c36cab5f216fe80bed8be5c71cd58ab9"
+    },
+    {
+      "key": "Plugin.UuidGenerator.ResultSubtitle",
+      "defaultValue": "GUID ({{format}})",
+      "placeholders": [
+        "format"
+      ],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "GUID（{{format}}）"
+      },
+      "sourceHash": "sha256:1cfb18897bc747f34fa9690dc59a2d816d05c4ed10ae3132ecb10fb13db4e412"
+    }
+  ]
+}

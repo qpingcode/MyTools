@@ -11,26 +11,6 @@ plugin
     mytoolsI18n.configure(params);
     return {};
   })
-  .search((_params) => ({
-    items: [
-      {
-        id: "settings:main",
-        title: mytoolsI18n.t("Plugin.Settings.Name", { defaultValue: "Settings" }),
-        subtitle: mytoolsI18n.t("Plugin.Settings.Subtitle", {
-          defaultValue: "Application settings",
-        }),
-        priority: 100,
-        icon: { kind: "emoji", value: "⚙️" },
-        actions: [
-          {
-            id: "open-detail",
-            title: mytoolsI18n.t("Plugin.Settings.Action.Open", { defaultValue: "Open Settings" }),
-            kind: "detail",
-          },
-        ],
-      },
-    ],
-  }))
   .handle("getConfiguration", async () => {
     return await plugin.hostCall("getConfiguration");
   })

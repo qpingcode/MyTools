@@ -1,0 +1,25 @@
+{
+  "id": "calculator",
+  "version": "0.1.0",
+  "protocolVersion": "3.0",
+  "i18n": {
+    "defaultLocale": "en-US",
+    "catalog": "i18n/catalog.en-US.json",
+    "localesPath": "i18n/locales",
+    "supportedLocales": ["en-US", "zh-CN"]
+  },
+  "entries": [
+    {
+      "id": "calculator",
+      "name": {
+        "key": "Plugin.Calculator.Name",
+        "defaultValue": "Calculator"
+      },
+      "entry": "backend/index.mjs",
+      "capabilities": [],
+      "keywords": [],
+      "search": { "global": true },
+      "detail": { "type": "list" }
+    }
+  ]
+}

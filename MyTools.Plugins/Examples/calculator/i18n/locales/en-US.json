@@ -1,0 +1,5 @@
+{
+  "Plugin.Calculator.Name": "Calculator",
+  "Plugin.Calculator.Action.Copy": "Copy",
+  "Plugin.Calculator.Action.CopyDescription": "Copy the result to the clipboard"
+}

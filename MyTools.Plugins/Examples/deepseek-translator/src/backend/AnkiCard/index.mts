@@ -2,31 +2,6 @@ import { buildDeckSummary, deleteCard, getCardPage, getNextDueCard, reviewCard, 
 import { createPlugin } from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 
-function buildSearchItem() {
-  return {
-    id: "deepseek-translator-anki-card",
-    title: mytoolsI18n.t("Plugin.DeepSeekTranslator.Anki.Name", { defaultValue: "DeepSeek Anki Cards" }),
-    subtitle: mytoolsI18n.t("Plugin.DeepSeekTranslator.Anki.Result.Subtitle", {
-      defaultValue: "Review generated cards with FSRS scheduling",
-    }),
-    priority: 100,
-    icon: {
-      kind: "emoji",
-      value: "🧠",
-    },
-    actions: [
-      {
-        id: "open-detail",
-        title: mytoolsI18n.t("Plugin.DeepSeekTranslator.Anki.Action.Review.Title", { defaultValue: "Review Cards" }),
-        kind: "detail",
-        description: mytoolsI18n.t("Plugin.DeepSeekTranslator.Anki.Action.Review.Description", {
-          defaultValue: "Open the Anki card review page",
-        }),
-      },
-    ],
-  };
-}
-
 function createReviewState() {
   return {
     status: "ready",
@@ -74,9 +49,6 @@ plugin
     mytoolsI18n.configure(params);
     return {};
   })
-  .search(() => ({
-    items: [buildSearchItem()],
-  }))
   .action(() => ({
     message: mytoolsI18n.t("Plugin.DeepSeekTranslator.Anki.Action.Review.Success", {
       defaultValue: "Opened Anki cards",
