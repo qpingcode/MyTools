@@ -164,54 +164,65 @@ function canSave(): boolean {
         </div>
 
         <v-dialog v-model="editorOpen" max-width="560" persistent>
-            <v-card rounded="lg">
+            <v-card rounded="lg" class="command-editor">
                 <v-card-title>
                     {{ editingIndex == null ? labels.add : labels.edit }}
                 </v-card-title>
-                <v-card-text>
-                    <v-text-field
-                        v-model="draft.name"
-                        :label="labels.name"
-                    />
-                    <v-switch
-                        v-model="draft.isBashScript"
-                        :label="labels.scriptMode"
-                        class="mb-3"
-                    />
-                    <v-textarea
-                        v-if="draft.isBashScript"
-                        v-model="scriptsText"
-                        :label="labels.scripts"
-                        :hint="labels.scriptsHint"
-                        persistent-hint
-                        auto-grow
-                        rows="6"
-                    />
+                <v-card-text class="editor-body editor-form">
+                    <div class="form-row">
+                        <div class="form-label">{{ labels.name }}</div>
+                        <v-text-field v-model="draft.name" variant="solo" hide-details />
+                    </div>
+                    <div class="form-row">
+                        <div class="form-label">{{ labels.scriptMode }}</div>
+                        <v-switch v-model="draft.isBashScript" hide-details />
+                    </div>
+                    <div v-if="draft.isBashScript" class="form-row form-row-top">
+                        <div class="form-label">
+                            <div>{{ labels.scripts }}</div>
+                            <div class="form-hint">{{ labels.scriptsHint }}</div>
+                        </div>
+                        <v-textarea
+                            v-model="scriptsText"
+                            variant="solo"
+                            hide-details
+                            auto-grow
+                            rows="4"
+                        />
+                    </div>
                     <template v-else>
-                        <v-text-field
-                            v-model="draft.command"
-                            :label="labels.command"
-                        />
-                        <v-text-field
-                            v-model="draft.args"
-                            :label="labels.args"
-                        />
+                        <div class="form-row">
+                            <div class="form-label">{{ labels.command }}</div>
+                            <v-text-field v-model="draft.command" variant="solo" hide-details />
+                        </div>
+                        <div class="form-row">
+                            <div class="form-label">{{ labels.args }}</div>
+                            <v-text-field v-model="draft.args" variant="solo" hide-details />
+                        </div>
                     </template>
-                    <v-text-field
-                        v-model="draft.workingDirectory"
-                        :label="labels.workingDirectory"
-                    />
-                    <v-switch
-                        v-model="draft.runAsAdmin"
-                        :label="labels.runAsAdmin"
-                    />
+                    <div class="form-row">
+                        <div class="form-label">{{ labels.workingDirectory }}</div>
+                        <v-text-field v-model="draft.workingDirectory" variant="solo" hide-details />
+                    </div>
+                    <div class="form-row">
+                        <div class="form-label">{{ labels.runAsAdmin }}</div>
+                        <v-switch v-model="draft.runAsAdmin" hide-details />
+                    </div>
                 </v-card-text>
-                <v-card-actions>
+                <v-card-actions class="editor-actions">
                     <v-spacer />
-                    <v-btn variant="text" rounded="lg" @click="editorOpen = false">
+                    <v-btn variant="tonal" size="default" rounded="lg" class="editor-btn" @click="editorOpen = false">
                         {{ labels.cancel }}
                     </v-btn>
-                    <v-btn color="primary" rounded="lg" :disabled="!canSave()" @click="saveEditor">
+                    <v-btn
+                        color="primary"
+                        variant="flat"
+                        size="default"
+                        rounded="lg"
+                        class="editor-btn"
+                        :disabled="!canSave()"
+                        @click="saveEditor"
+                    >
                         {{ labels.apply }}
                     </v-btn>
                 </v-card-actions>
@@ -263,7 +274,82 @@ function canSave(): boolean {
     padding: 16px 0;
 }
 
-.mb-3 {
-    margin-bottom: 12px;
+.editor-form {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    column-gap: 12px;
+    row-gap: 6px;
+    align-items: center;
+}
+
+.form-row {
+    display: contents;
+}
+
+.form-row-top .form-label {
+    align-self: start;
+    line-height: 1.35;
+}
+
+.form-label {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 32px;
+    white-space: nowrap;
+    color: var(--mt-text, #fff);
+}
+
+.form-hint {
+    margin-top: 0;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.35;
+    color: var(--mt-text-tertiary, #aaaaaa);
+}
+
+.form-row :deep(.v-input) {
+    min-width: 0;
+}
+
+.form-row :deep(.v-switch) {
+    justify-self: start;
+    width: auto;
+}
+
+.form-row :deep(.v-field) {
+    border: none;
+    box-shadow: none;
+    border-radius: 8px;
+    background: var(--mt-surface-alt, #333333);
+}
+
+.form-row :deep(.v-field__overlay) {
+    background: var(--mt-surface-alt, #333333);
+    opacity: 1;
+}
+
+.form-row :deep(.v-field__outline) {
+    display: none;
+}
+
+.form-row :deep(.v-field--focused .v-field__overlay) {
+    background: var(--mt-surface-hover, #3a3a3a);
+}
+
+.editor-body {
+    padding: 4px 16px 8px !important;
+}
+
+.editor-actions {
+    padding: 4px 16px 12px !important;
+    gap: 8px;
+}
+
+.editor-btn {
+    min-width: 80px;
+}
+
+.command-editor :deep(.v-card-title) {
+    padding: 12px 16px 4px !important;
 }
 </style>

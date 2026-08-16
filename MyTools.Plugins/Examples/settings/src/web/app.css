@@ -119,14 +119,29 @@ html, body, #app {
     font-weight: 500 !important;
 }
 
-.v-overlay .v-field {
-    border-radius: 10px !important;
-    background: var(--mt-surface, #292929) !important;
-    box-shadow: none !important;
+.v-overlay .v-btn.v-btn--size-default {
+    min-height: 36px;
+    padding-inline: 16px;
 }
 
-.v-overlay .v-field__outline {
-    display: none;
+.v-overlay .command-editor .v-field {
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 8px !important;
+    background: var(--mt-surface-alt, #333333) !important;
+}
+
+.v-overlay .command-editor .v-field__overlay {
+    background: var(--mt-surface-alt, #333333) !important;
+    opacity: 1 !important;
+}
+
+.v-overlay .command-editor .v-field__outline {
+    display: none !important;
+}
+
+.v-overlay .command-editor .v-field--focused .v-field__overlay {
+    background: var(--mt-surface-hover, #3a3a3a) !important;
 }
 
 .v-overlay .v-field,
