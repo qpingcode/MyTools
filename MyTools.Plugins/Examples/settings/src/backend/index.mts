@@ -62,15 +62,9 @@ plugin
   .handle("resumeGestures", async () => {
     return await plugin.hostCall("resumeGestures");
   })
-  .handle("suspendHotkeys", async () => {
-    return await plugin.hostCall("suspendHotkeys");
-  })
-  .handle("resumeHotkeys", async () => {
-    return await plugin.hostCall("resumeHotkeys");
-  })
-  .handle("checkHotKey", async (payload: any) => {
+  .handle("captureInputAction", async (payload: any) => {
     const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
-    return await plugin.hostCall("checkHotKey", params);
+    return await plugin.hostCall("captureInputAction", params);
   })
   .handle("restart", async () => {
     return await plugin.hostCall("restart");

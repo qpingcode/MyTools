@@ -167,5 +167,20 @@
   <data name="PluginPage.HandshakeFailed" xml:space="preserve"><value>Plugin page could not connect</value></data>
   <data name="PluginPage.HandshakeTimeout" xml:space="preserve"><value>The plugin page did not complete protocol handshake.</value></data>
   <data name="PluginPage.ProtocolMismatch" xml:space="preserve"><value>This plugin is not compatible with the current MyTools version.</value></data>
+  <data name="InputActionCapture.Title" xml:space="preserve"><value>Set shortcut</value></data>
+  <data name="InputActionCapture.TitleHotkey" xml:space="preserve"><value>Set shortcut</value></data>
+  <data name="InputActionCapture.TitleAction" xml:space="preserve"><value>Choose action</value></data>
+  <data name="InputActionCapture.TabKeyboard" xml:space="preserve"><value>Hotkey</value></data>
+  <data name="InputActionCapture.TabMouse" xml:space="preserve"><value>Mouse Button</value></data>
+  <data name="InputActionCapture.Recording" xml:space="preserve"><value>Press shortcut...</value></data>
+  <data name="InputActionCapture.RecordingMouse" xml:space="preserve"><value>Click a mouse button...</value></data>
+  <data name="InputActionCapture.Conflict" xml:space="preserve"><value>Already used by {{name}}</value></data>
+  <data name="InputActionCapture.Reserved" xml:space="preserve"><value>{{hotKey}} is a common Windows shortcut and cannot be used as a global hotkey.</value></data>
+  <data name="InputActionCapture.Reset" xml:space="preserve"><value>Reset to default</value></data>
+  <data name="InputActionCapture.MouseLeft" xml:space="preserve"><value>Left</value></data>
+  <data name="InputActionCapture.MouseRight" xml:space="preserve"><value>Right</value></data>
+  <data name="InputActionCapture.MouseMiddle" xml:space="preserve"><value>Middle</value></data>
+  <data name="InputActionCapture.MouseBack" xml:space="preserve"><value>Back (XButton1)</value></data>
+  <data name="InputActionCapture.MouseForward" xml:space="preserve"><value>Forward (XButton2)</value></data>
 </root>
 

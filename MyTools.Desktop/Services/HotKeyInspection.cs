@@ -8,6 +8,7 @@ public sealed class HotKeyInspectionRequest
     public string? SearchHotKey { get; init; }
     public string? SearchHotKeyDisplayName { get; init; }
     public bool ExcludeSearchHotKey { get; init; }
+    public bool ExcludeReservedHotKey { get; init; }
     public string? ExcludePluginId { get; init; }
     public IReadOnlyDictionary<string, string?> PluginHotKeys { get; init; }
         = new Dictionary<string, string?>();
@@ -92,7 +93,7 @@ public static class HotKeyInspector
         return new HotKeyInspection
         {
             ConflictWith = conflictWith,
-            Reserved = ReservedHotKeys.IsReserved(normalized)
+            Reserved = !request.ExcludeReservedHotKey && ReservedHotKeys.IsReserved(normalized)
         };
     }
 

@@ -3,7 +3,7 @@ import type { Category, KeymapConflict, KeymapPlugin } from "./types";
 import { highlight, t } from "./utils";
 import * as common from "./common";
 import { categorySelfMatches, findCategory } from "./config-panel";
-import { openInputActionPicker, type InputActionPickerLabels } from "./action-picker";
+import { captureInputAction } from "./capture-input-action";
 
 var keymapPlugins: KeymapPlugin[] | null = null;
 
@@ -100,19 +100,13 @@ function renderKeymapRow(plugin: KeymapPlugin): HTMLElement {
     hotKeyBtn.addEventListener("click", () => {
         var latest = common.state.keymapDirty.get(plugin.pluginId);
         var current = latest?.hotKey !== undefined ? latest.hotKey : plugin.currentHotKey;
-        void openInputActionPicker({
+        void captureInputAction({
             showKeyboard: true,
             showMouse: false,
             value: { kind: "hotkey", hotKey: current || null },
             defaultHotKey: plugin.defaultHotKey ?? "",
-            labels: keymapHotKeyPickerLabels(),
-            onSuspendHotkeys: () => { void bus.call("suspendHotkeys"); },
-            onResumeHotkeys: () => { void bus.call("resumeHotkeys"); },
-            onInspectHotKey: (hotKey) => bus.call("checkHotKey", {
-                hotKey,
-                excludePluginId: plugin.pluginId,
-                currentSearchHotKey: common.state.dirtySettings.get("General.SearchHotKey")
-            })
+            excludePluginId: plugin.pluginId,
+            currentSearchHotKey: common.state.dirtySettings.get("General.SearchHotKey")
         }).then((result) => {
             if (!result) return;
             markKeymapDirty(plugin.pluginId, { hotKey: result.hotKey || null });
@@ -193,22 +187,6 @@ function renderKeymapRow(plugin: KeymapPlugin): HTMLElement {
     row.appendChild(conflictDiv);
 
     return row;
-}
-
-function keymapHotKeyPickerLabels(): InputActionPickerLabels {
-    return {
-        title: t("Plugin.Settings.Keymap.PickerTitle", "Set plugin hotkey"),
-        tabKeyboard: t("Plugin.Settings.Gestures.TriggerHotkey", "Hotkey"),
-        tabMouse: t("Plugin.Settings.Gestures.TriggerMouse", "Mouse Button"),
-        recording: t("Plugin.Settings.Keymap.Recording", "Press shortcut..."),
-        cancel: t("Plugin.Settings.Cancel", "Cancel"),
-        reset: t("Plugin.Settings.ActionPicker.Reset", "Reset to default"),
-        ok: t("Plugin.Settings.ActionPicker.Ok", "OK"),
-        conflict: t("Plugin.Settings.ActionPicker.Conflict", "Already used by {{name}}", { name: "{{name}}" }),
-        reserved: t("Plugin.Settings.ActionPicker.Reserved",
-            "{{hotKey}} is a common shortcut (copy/paste/select all, etc.) and is not recommended as a global hotkey.",
-            { hotKey: "{{hotKey}}" })
-    };
 }
 
 function markKeymapDirty(pluginId: string, change: {

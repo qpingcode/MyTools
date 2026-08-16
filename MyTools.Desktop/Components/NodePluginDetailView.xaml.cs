@@ -7,6 +7,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Web.WebView2.Core;
 using MyTools.Common.Config;

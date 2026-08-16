@@ -15,18 +15,20 @@ public class MouseHelper
 
     public void RightClick(Point point)
     {
-        ButtonClick(MouseButton.Right, point: point);
+        Click(MouseButton.Right, point);
     }
-    
+
     public void XButton1Click(Point point)
     {
-        ButtonClick(MouseButton.XButton1, point: point );
+        Click(MouseButton.XButton1, point);
     }
 
     public void XButton2Click(Point point)
     {
-        ButtonClick(MouseButton.XButton2, point: point );
+        Click(MouseButton.XButton2, point);
     }
+
+    public void Click(MouseButton button, Point point) => ButtonClick(button, point);
 
     private void ButtonClick(MouseButton button, Point point)
     {

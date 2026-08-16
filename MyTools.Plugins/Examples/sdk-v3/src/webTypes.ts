@@ -36,6 +36,14 @@ export interface MyToolsHostKeyPayload {
   key: string;
 }
 
+export interface MyToolsInputActionCapturedPayload {
+  requestId: string;
+  cancelled?: boolean;
+  kind?: "hotkey" | "mouse";
+  hotKey?: string | null;
+  mouseButton?: string | null;
+}
+
 export interface MyToolsThemePayload {
   theme?: string;
   themeTokens?: Record<string, string>;

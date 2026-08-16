@@ -23,6 +23,7 @@ export type {
   MyToolsHostInitializePayload,
   MyToolsHostKeyPayload,
   MyToolsHostSearchPayload,
+  MyToolsInputActionCapturedPayload,
   MyToolsLanguageChangedPayload,
   MyToolsThemeChangedPayload,
   MyToolsThemePayload,

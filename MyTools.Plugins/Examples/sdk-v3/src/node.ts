@@ -109,10 +109,13 @@ export class Plugin {
     });
   }
 
-  /** Calls a host.call.<method> capability and awaits the response. */
-  hostCall(method: string, params: Record<string, unknown> = {}): Promise<unknown> {
+  /** Calls a host.call.<method> capability and awaits the response.
+   *  `timeoutMs` defaults to the remaining timeout of the inbound plugin.call
+   *  (from a page `bus.call`) when inside a handler; otherwise 30s.
+   */
+  hostCall(method: string, params: Record<string, unknown> = {}, timeoutMs?: number): Promise<unknown> {
     if (!this.#runtime) return Promise.reject(new Error("plugin not started"));
-    return this.#runtime.router.callHost(hostCallRoute(method), params);
+    return this.#runtime.router.callHost(hostCallRoute(method), params, timeoutMs);
   }
 
   /** Connects to the host pipe and begins dispatching. Must be called last. */

@@ -196,6 +196,8 @@ plugin
 
 需要宿主能力时（照 `settings`）：页面 `bus.call("getConfiguration")` → 后端 `handle` → `plugin.hostCall("getConfiguration")`。页面不能直接发 `host.call.*`。manifest 必须声明对应 capability（`getConfiguration` 等旧方法名折到 `configuration.write`）。
 
+`plugin.hostCall(method, params?, timeoutMs?)`：未传 `timeoutMs` 时，若当前正在处理页面的 `bus.call`，使用该请求的**剩余超时**；否则默认 30 秒。显式传入时不会超过剩余时间。
+
 `plugin.publish("subject", payload)` 发 `plugin.event.subject` 给同会话其他 WebView；当前示例未使用。
 
 ## 5. 详情页（Web）
@@ -245,7 +247,7 @@ import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qp
 })();
 ```
 
-`HostEvents`：`initialize` / `search` / `key` / `languageChanged` / `themeChanged`（完整路由 `host.event.*`）。
+`HostEvents`：`initialize` / `search` / `key` / `languageChanged` / `themeChanged`（完整路由 `host.event.*`）。设置页热键/鼠标捕获用长超时 `bus.call("captureInputAction")`，等宿主窗口确认或取消后在 Response 里返回结果。
 
 `bus.on(route, handler)` 按路由订阅，晚订阅会重放该路由最后一次事件。不要暴露/使用 catch-all listener。
 
@@ -259,7 +261,7 @@ import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qp
 | 方向              | 路由                                                                   |
 | --------------- | -------------------------------------------------------------------- |
 | 页面 → 后端         | `bus.call("foo")` → `plugin.call.foo`                                |
-| 宿主 → 页面         | `host.event.initialize/search/key/languageChanged/themeChanged`      |
+| 宿主 → 页面         | `host.event.initialize/search/key/languageChanged/themeChanged` |
 | 后端 → 宿主能力       | `plugin.hostCall("getConfiguration")` → `host.call.getConfiguration` |
 | 后端 → 其他 WebView | `plugin.publish("x")` → `plugin.event.x`                             |
 
