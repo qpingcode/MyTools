@@ -1,6 +1,6 @@
 {
   "id": "settings",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "protocolVersion": "3.0",
   "i18n": {
     "defaultLocale": "en-US",

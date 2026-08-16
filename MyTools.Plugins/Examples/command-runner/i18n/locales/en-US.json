@@ -1,0 +1,5 @@
+{
+  "Plugin.CommandRunner.Name": "Custom Commands",
+  "Plugin.CommandRunner.Action.Run": "Run",
+  "Plugin.CommandRunner.Action.RunDescription": "Run the selected command"
+}

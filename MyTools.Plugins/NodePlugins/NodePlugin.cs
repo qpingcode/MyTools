@@ -288,7 +288,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
             return ActionStringParam.From(item.CopyText ?? title);
         }
 
-        if (HasKind(item, "kill"))
+        if (HasKind(item, "kill") || HasKind(item, "run"))
         {
             return ActionStringParam.From(item.CopyText ?? item.Id);
         }
@@ -316,6 +316,12 @@ public sealed class NodePlugin : IPlugin, IDisposable
             if (string.Equals(action.Kind, "kill", StringComparison.OrdinalIgnoreCase))
             {
                 yield return new KillProcessAction().WithCommand(command);
+                continue;
+            }
+
+            if (string.Equals(action.Kind, "run", StringComparison.OrdinalIgnoreCase))
+            {
+                yield return new RunCommandAction().WithCommand(command);
                 continue;
             }
 

@@ -13,6 +13,8 @@ public class HostCallCapabilityMapTest
     [TestCase("host.call.suspendHotkeys", "configuration.write")]
     [TestCase("host.call.checkHotKey", "configuration.write")]
     [TestCase("host.call.captureInputAction", "configuration.write")]
+    [TestCase("host.call.getCommandRunner", "configuration.write")]
+    [TestCase("host.call.saveCommandRunner", "configuration.write")]
     public void Resolve_ShouldMapLegacyAndPassThroughCapabilityShapedRoutes(string route, string expected)
     {
         Assert.That(HostCallCapabilityMap.Resolve(route), Is.EqualTo(expected));

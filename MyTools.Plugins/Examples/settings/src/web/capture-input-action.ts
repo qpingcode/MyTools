@@ -1,5 +1,6 @@
 import { bus } from "./bus";
-import { t } from "./utils";
+import { t } from "./i18n";
+import { store } from "./store";
 
 export type InputActionKind = "hotkey" | "mouse";
 
@@ -28,59 +29,24 @@ type CaptureInputActionResult = {
     mouseButton?: string | null;
 };
 
-/** Wait while the host capture window is open. */
 const CaptureTimeoutMs = 24 * 60 * 60 * 1000;
-
-var overlay: HTMLElement | null = null;
 var captureGeneration = 0;
 
-function ensureOverlay(): HTMLElement {
-    if (overlay && overlay.isConnected) {
-        return overlay;
-    }
-
-    overlay = document.createElement("div");
-    overlay.className = "modal-overlay capture-loading-overlay";
-    overlay.hidden = true;
-    overlay.innerHTML =
-        '<div class="modal capture-loading-modal">'
-        + '<p class="modal-message" data-capture-loading-text></p>'
-        + '<div class="capture-loading-bar"></div>'
-        + "</div>";
-    document.body.appendChild(overlay);
-    return overlay;
-}
-
-function showLoading(): void {
-    var el = ensureOverlay();
-    var text = el.querySelector("[data-capture-loading-text]");
-    if (text) {
-        text.textContent = t("Plugin.Settings.Capture.Waiting", "Waiting for input...");
-    }
-    el.hidden = false;
-}
-
-function hideLoading(): void {
-    if (overlay) {
-        overlay.hidden = true;
-    }
-}
-
 export async function captureInputAction(
-    options: CaptureInputActionOptions
+    options: CaptureInputActionOptions,
 ): Promise<InputActionValue | null> {
-    var showKeyboard = options.showKeyboard !== false;
-    var showMouse = options.showMouse === true;
+    const showKeyboard = options.showKeyboard !== false;
+    const showMouse = options.showMouse === true;
     if (!showKeyboard && !showMouse) {
         return null;
     }
 
-    showLoading();
-    var generation = ++captureGeneration;
+    store.capturing = true;
+    const generation = ++captureGeneration;
     try {
-        var result = await bus.call<CaptureInputActionResult>("captureInputAction", {
-            showKeyboard: showKeyboard,
-            showMouse: showMouse,
+        const result = await bus.call<CaptureInputActionResult>("captureInputAction", {
+            showKeyboard,
+            showMouse,
             kind: options.value?.kind === "mouse" && showMouse ? "mouse" : "hotkey",
             hotKey: options.value?.hotKey ?? null,
             mouseButton: options.value?.mouseButton ?? null,
@@ -90,20 +56,23 @@ export async function captureInputAction(
             excludePluginId: options.excludePluginId,
             excludeSearchHotKey: options.excludeSearchHotKey === true,
             excludeReservedHotKey: options.excludeReservedHotKey === true,
-            currentSearchHotKey: options.currentSearchHotKey
+            currentSearchHotKey: options.currentSearchHotKey,
         }, CaptureTimeoutMs);
         if (!result || result.cancelled) {
             return null;
         }
-
         return {
             kind: result.kind === "mouse" ? "mouse" : "hotkey",
             hotKey: result.kind === "mouse" ? null : (result.hotKey ?? null),
-            mouseButton: result.kind === "mouse" ? (result.mouseButton ?? null) : null
+            mouseButton: result.kind === "mouse" ? (result.mouseButton ?? null) : null,
         };
     } finally {
         if (generation === captureGeneration) {
-            hideLoading();
+            store.capturing = false;
         }
     }
+}
+
+export function capturingHint(): string {
+    return t("Plugin.Settings.Capture.Waiting", "Waiting for input...");
 }

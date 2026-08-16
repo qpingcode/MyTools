@@ -106,8 +106,8 @@
   <data name="Plugin.ProcessKiller.Description" xml:space="preserve"><value>Search and manage running processes</value></data>
   <data name="Plugin.FileSearcher.Name" xml:space="preserve"><value>File Searcher</value></data>
   <data name="Plugin.FileSearcher.Description" xml:space="preserve"><value>Search for files and scripts</value></data>
-  <data name="Plugin.CommandRunner.Name" xml:space="preserve"><value>Command Runner</value></data>
-  <data name="Plugin.CommandRunner.Description" xml:space="preserve"><value>Run predefined commands</value></data>
+  <data name="Plugin.CommandRunner.Name" xml:space="preserve"><value>Custom Commands</value></data>
+  <data name="Plugin.CommandRunner.Description" xml:space="preserve"><value>Run custom commands from search</value></data>
   <data name="Plugin.DllInterfaceReader.Name" xml:space="preserve"><value>DLL Interface Reader</value></data>
   <data name="Plugin.DllInterfaceReader.Description" xml:space="preserve"><value>Read interfaces from a DLL and search classes, table codes, table names and fields.</value></data>
   <data name="Plugin.DllInterfaceReader.Setting.IlSpyPath.Title" xml:space="preserve"><value>ILSpy install path</value></data>
