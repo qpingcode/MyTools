@@ -6,6 +6,7 @@ using MyTools.Common.Config.Interfaces;
 using MyTools.Common.DependencyInjection;
 using MyTools.Common.Localization;
 using MyTools.Common.Plugins;
+using MyTools.Common.Theming;
 
 namespace MyTools.Plugins.NodePlugins;
 
@@ -15,6 +16,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
     private readonly INodePluginHost processHost;
     private readonly ILogger<NodePlugin> logger;
     private readonly ILocalizationService localizationService;
+    private readonly IThemeService themeService;
     private PluginLocalizationService? pluginLocalization;
 
     /// <summary>
@@ -30,12 +32,14 @@ public sealed class NodePlugin : IPlugin, IDisposable
         NodePluginManifest manifest,
         INodePluginHost processHost,
         ILogger<NodePlugin> logger,
-        ILocalizationService localizationService)
+        ILocalizationService localizationService,
+        IThemeService themeService)
     {
         this.manifest = manifest;
         this.processHost = processHost;
         this.logger = logger;
         this.localizationService = localizationService;
+        this.themeService = themeService;
     }
 
     public event EventHandler<NodePluginEventReceivedEventArgs>? EventReceived
@@ -122,6 +126,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
                 mode,
                 localizationService.CurrentLocale,
                 manifest.DefaultLocale,
+                CurrentThemeWire,
                 cancellationToken);
             var items = response.Items.Select((item, index) => MapResultItem(item, query, index)).ToList();
             return Result.CreateSuccessResult(items);
@@ -142,7 +147,8 @@ public sealed class NodePlugin : IPlugin, IDisposable
         await processHost.InitializeAsync(
             localizationService.CurrentLocale,
             manifest.DefaultLocale,
-            GetCurrentMessages());
+            GetCurrentMessages(),
+            CurrentThemeWire);
     }
 
     public void RegisterSettings(IConfigurationRegistry configurationRegistry)
@@ -207,7 +213,8 @@ public sealed class NodePlugin : IPlugin, IDisposable
     internal async Task<NodePluginActionResponse> InvokeActionAsync(string itemId, string actionId, string query)
     {
         return await processHost.InvokeActionAsync(
-            itemId, actionId, query, localizationService.CurrentLocale, manifest.DefaultLocale);
+            itemId, actionId, query, localizationService.CurrentLocale, manifest.DefaultLocale,
+            CurrentThemeWire);
     }
 
     internal NodePluginDetailContext? CreateDetailContext(string itemId, string searchText, string query, NodePluginDetailViewDto? detail)
@@ -239,6 +246,8 @@ public sealed class NodePlugin : IPlugin, IDisposable
 
     public IReadOnlyDictionary<string, string> GetCurrentMessages() =>
         NodePluginLocalization.LoadMessages(manifest, localizationService.CurrentLocale);
+
+    private string CurrentThemeWire => themeService.CurrentTheme.ToWireString();
 
     private ResultItem MapResultItem(NodePluginSearchItem item, string query, int index)
     {

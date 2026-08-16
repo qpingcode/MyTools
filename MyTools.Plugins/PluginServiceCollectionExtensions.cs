@@ -31,7 +31,8 @@ public static class PluginServiceCollectionExtensions
                 sp.GetRequiredService<ILoggerFactory>(),
                 sp.GetService<Common.Localization.ILocalizationService>(),
                 sp.GetRequiredService<MessageBus>(),
-                sp.GetRequiredService<PluginSessionManager>()));
+                sp.GetRequiredService<PluginSessionManager>(),
+                sp.GetService<Common.Theming.IThemeService>()));
 
         services.AddSingleton<PluginLoader>();
         services.AddSingleton<PluginRegistry>();

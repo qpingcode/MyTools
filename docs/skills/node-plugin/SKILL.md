@@ -8,6 +8,7 @@ description: Develop a MyTools Node plugin (backend + WebView2 detail page) on t
 MyTools Node 插件 = 独立 Node 进程里的后端 + 宿主用 WebView2 加载的 HTML 详情页。通信走 v3 消息总线（Named Pipe + WebView2 postMessage），协议版本 **3.0**。
 
 参考实现：`MyTools.Plugins/Examples/` 下的 `hello-search`（最小）、`json-formatter` / `xml-formatter`（页面自包含）、`settings`（`hostCall`）、`deepseek-chat`、`deepseek-translator`（多 entry）。SDK 源码：`MyTools.Plugins/Examples/sdk-v3`（包名 `@qping/plugin-bus`）。
+
 ## 1. 目录结构
 
 单 entry（照 `hello-search`）：
@@ -84,11 +85,13 @@ my-plugin/
 
 导出：
 
-| import | 用途 |
-|---|---|
-| `@qping/plugin-bus/node` | `createPlugin()`：后端 `initialize/search/action/handle/publish/hostCall/start` |
-| `@qping/plugin-bus/web` | `createWebBusClient()`、`HostEvents`、payload 类型 |
-| `@qping/plugin-bus/i18n` | 后端 `mytoolsI18n`（页面用 `bus.i18n`） |
+
+| import                   | 用途                                                                           |
+| ------------------------ | ---------------------------------------------------------------------------- |
+| `@qping/plugin-bus/node` | `createPlugin()`、`PluginInitializeParams`：后端 `initialize/search/action/handle/publish/hostCall/start` |
+| `@qping/plugin-bus/web`  | `createWebBusClient()`、`HostEvents`、payload 类型                               |
+| `@qping/plugin-bus/i18n` | 后端 `mytoolsI18n`（页面用 `bus.i18n`）                                             |
+
 
 SDK 把旧式方法名映射到 v3 路由：`initialize` → `plugin.call.initialize`，`search` → `plugin.call.search`，`action` → `plugin.call.invokeAction`，`handle("foo")` → `plugin.call.foo`，`publish` → `plugin.event.*`，`hostCall` → `host.call.*`。
 
@@ -134,13 +137,13 @@ SDK 把旧式方法名映射到 v3 路由：`initialize` → `plugin.call.initia
 ## 4. 后端（Node）
 
 ```ts
-import { createPlugin } from "@qping/plugin-bus/node";
+import { createPlugin, type PluginInitializeParams } from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 
 const plugin = createPlugin();
 
 plugin
-  .initialize((params) => {
+  .initialize((params: PluginInitializeParams) => {
     mytoolsI18n.configure(params);
     return {};
   })
@@ -180,8 +183,9 @@ plugin
 }
 ```
 
-- `search` 返回 `{ items }`；`action` 返回 `{ message, actionType, detail? }`。
-- `handle(name, fn)` 给详情页 `bus.call(name)` 用。`context` 有 `action / itemId / query / locale / fallbackLocale`（由宿主注入，页面不必带）。
+- `initialize` 的 params 是 `{ locale, fallbackLocale, messages, theme }`（`PluginInitializeParams`）。`theme` 为 `"light"` | `"dark"`，不含 CSS token。`mytoolsI18n.configure(params)` 装进 i18n。
+- `search` 返回 `{ items }`；`action` 返回 `{ message, actionType, detail? }`。`search` / `action` / `handle` 的 payload 同样带当前 `locale`、`fallbackLocale`、`theme`。
+- `handle(name, fn)` 给详情页 `bus.call(name)` 用。`context` 有 `action / itemId / query / locale / fallbackLocale / theme`（由宿主注入，页面不必带）。
 - 纯前端工具（如 json-formatter）可以只有 `initialize/search/action`，不注册 `handle`。
 - 环境变量从 `process.env` 读。`start()` 连宿主 Named Pipe，不要自己读 stdin。
 
@@ -246,12 +250,14 @@ import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qp
 
 通信：
 
-| 方向 | 路由 |
-|---|---|
-| 页面 → 后端 | `bus.call("foo")` → `plugin.call.foo` |
-| 宿主 → 页面 | `host.event.initialize/search/key/languageChanged/themeChanged` |
-| 后端 → 宿主能力 | `plugin.hostCall("getConfiguration")` → `host.call.getConfiguration` |
-| 后端 → 其他 WebView | `plugin.publish("x")` → `plugin.event.x` |
+
+| 方向              | 路由                                                                   |
+| --------------- | -------------------------------------------------------------------- |
+| 页面 → 后端         | `bus.call("foo")` → `plugin.call.foo`                                |
+| 宿主 → 页面         | `host.event.initialize/search/key/languageChanged/themeChanged`      |
+| 后端 → 宿主能力       | `plugin.hostCall("getConfiguration")` → `host.call.getConfiguration` |
+| 后端 → 其他 WebView | `plugin.publish("x")` → `plugin.event.x`                             |
+
 
 页面只能发 `plugin.call.*`。握手失败时宿主显示页内错误，不会下发 `initialize`。
 

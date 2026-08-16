@@ -19,13 +19,15 @@ internal interface INodePluginHost
         string locale,
         string fallbackLocale,
         IReadOnlyDictionary<string, string> messages,
+        string theme,
         CancellationToken cancellationToken = default);
 
     Task<NodePluginSearchResponse> SearchAsync(
-        string query, string mode, string locale, string fallbackLocale, CancellationToken cancellationToken);
+        string query, string mode, string locale, string fallbackLocale, string theme,
+        CancellationToken cancellationToken);
 
     Task<NodePluginActionResponse> InvokeActionAsync(
-        string itemId, string actionId, string query, string locale, string fallbackLocale,
+        string itemId, string actionId, string query, string locale, string fallbackLocale, string theme,
         CancellationToken cancellationToken = default);
 
     /// <summary>Current bus session id.</summary>
