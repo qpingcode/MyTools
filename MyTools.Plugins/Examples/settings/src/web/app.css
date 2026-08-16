@@ -1,0 +1,169 @@
+html, body, #app {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    overflow: hidden;
+    font-size: 14px;
+    line-height: 1.4;
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
+}
+
+.v-application.settings-app {
+    display: flex !important;
+    flex-direction: column;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+    font-family: inherit !important;
+    font-size: 14px !important;
+    background: var(--mt-surface-bg, #1e1e1e) !important;
+    color: var(--mt-text, #e0e0e0) !important;
+}
+
+.v-application.settings-app .v-application__wrap {
+    display: flex !important;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0 !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+}
+
+.settings-app .v-btn {
+    font-size: 13px !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    font-weight: 500 !important;
+}
+
+.settings-app .v-field {
+    border-radius: 10px !important;
+    background: var(--mt-surface, #292929) !important;
+    box-shadow: none !important;
+}
+
+.settings-app .v-field__outline {
+    display: none;
+}
+
+.settings-app .v-field,
+.settings-app .v-label,
+.settings-app .v-text-field input,
+.settings-app .v-select .v-select__selection-text,
+.settings-app .v-textarea textarea {
+    font-size: 13.5px !important;
+}
+
+.settings-app .v-field .v-icon {
+    opacity: 0.7;
+    font-size: 18px !important;
+}
+
+.settings-app .v-table {
+    font-size: 13.5px !important;
+    background: transparent !important;
+}
+
+.settings-app .v-table th {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0 !important;
+    color: var(--mt-text-tertiary, #aaaaaa) !important;
+}
+
+.settings-app .v-checkbox,
+.settings-app .v-switch {
+    margin-inline: 0;
+}
+
+.settings-app .v-selection-control {
+    min-height: 32px;
+}
+
+.settings-app .v-switch .v-switch__track {
+    opacity: 1;
+}
+
+/* v-dialog / v-overlay teleport to body, so they miss .settings-app rules. */
+.v-overlay .v-card {
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+    font-size: 14px;
+    color: var(--mt-text, #e0e0e0);
+}
+
+.v-overlay .v-card-title {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0 !important;
+    line-height: 1.4 !important;
+}
+
+.v-overlay .v-card-text,
+.v-overlay .v-card-text .v-label,
+.v-overlay .v-switch .v-label {
+    font-size: 14px !important;
+    letter-spacing: 0 !important;
+}
+
+.v-overlay .v-btn {
+    font-size: 13px !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    font-weight: 500 !important;
+}
+
+.v-overlay .v-field {
+    border-radius: 10px !important;
+    background: var(--mt-surface, #292929) !important;
+    box-shadow: none !important;
+}
+
+.v-overlay .v-field__outline {
+    display: none;
+}
+
+.v-overlay .v-field,
+.v-overlay .v-field .v-label,
+.v-overlay .v-text-field input,
+.v-overlay .v-select .v-select__selection-text,
+.v-overlay .v-textarea textarea,
+.v-overlay .v-field input::placeholder,
+.v-overlay .v-textarea textarea::placeholder {
+    font-size: 13.5px !important;
+}
+
+.v-overlay .v-messages,
+.v-overlay .v-input__details {
+    font-size: 12px !important;
+}
+
+mark {
+    background: var(--mt-accent, #3F51B5);
+    color: var(--mt-accent-foreground, #ffffff);
+    border-radius: 3px;
+    padding: 0 2px;
+}
+
+.sidebar-nav::-webkit-scrollbar,
+.settings-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb,
+.settings-scroll::-webkit-scrollbar-thumb {
+    background: var(--mt-border, #404040);
+    border-radius: 8px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track,
+.settings-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}

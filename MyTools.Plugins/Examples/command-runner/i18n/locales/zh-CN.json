@@ -1,0 +1,5 @@
+{
+  "Plugin.CommandRunner.Name": "自定义命令",
+  "Plugin.CommandRunner.Action.Run": "运行",
+  "Plugin.CommandRunner.Action.RunDescription": "运行所选命令"
+}

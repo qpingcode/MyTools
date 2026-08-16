@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "scope": "plugin:command-runner",
+  "pluginId": "command-runner",
+  "sourceLocale": "en-US",
+  "entries": [
+    {
+      "key": "Plugin.CommandRunner.Name",
+      "defaultValue": "Custom Commands",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "自定义命令"
+      },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.CommandRunner.Action.Run",
+      "defaultValue": "Run",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "运行"
+      },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.CommandRunner.Action.RunDescription",
+      "defaultValue": "Run the selected command",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "运行所选命令"
+      },
+      "sourceHash": "sha256:placeholder"
+    }
+  ]
+}

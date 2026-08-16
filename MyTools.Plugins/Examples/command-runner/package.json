@@ -1,8 +1,8 @@
 {
-  "name": "mytools-plugin-settings",
+  "name": "mytools-plugin-command-runner",
   "version": "0.1.0",
   "private": true,
-  "description": "Settings plugin for MyTools.",
+  "description": "Command runner plugin for MyTools.",
   "type": "commonjs",
   "scripts": {
     "clean": "rimraf dist",
@@ -10,19 +10,13 @@
     "check": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@mdi/font": "^7.4.47",
-    "@qping/plugin-bus": "0.1.0",
-    "vue": "^3.5.13",
-    "vuetify": "^3.7.6"
+    "@qping/plugin-bus": "0.1.0"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
-    "@vitejs/plugin-vue": "^5.2.1",
     "esbuild": "^0.25.8",
+    "esbuild-plugin-copy": "^2.1.1",
     "rimraf": "^6.0.1",
-    "sass": "^1.83.0",
-    "typescript": "^7.0.2",
-    "vite": "^6.0.7",
-    "vite-plugin-vuetify": "^2.0.4"
+    "typescript": "^7.0.2"
   }
 }

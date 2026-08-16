@@ -39,6 +39,13 @@ export type KeymapPlugin = {
     isNodePlugin: boolean;
 };
 
+export type KeymapDirty = {
+    hotKey?: string | null;
+    keywords?: string[];
+    isEnabled?: boolean;
+    includeInGlobalResults?: boolean;
+};
+
 export type KeymapConflict = {
     pluginId: string;
     field: string;
@@ -50,9 +57,23 @@ export type GestureConfig = {
     id: string;
     directions: string[];
     actionName: string;
-    actionType: string; // "hotkey" | "mouse"
+    actionType: string;
     hotKey?: string | null;
-    mouseButton?: string | null; // "Left" | "Right" | "Middle" | "XButton1" | "XButton2"
+    mouseButton?: string | null;
     processNames: string[];
     isEnabled: boolean;
 };
+
+export type CommandConfig = {
+    name: string;
+    command?: string;
+    args?: string;
+    runAsAdmin?: boolean;
+    isBashScript?: boolean;
+    scripts?: string[];
+    workingDirectory?: string;
+};
+
+export type SidebarItem =
+    | { type: "group"; label: string }
+    | { type: "category"; key: string; name: string; selectable: boolean; icon: string };

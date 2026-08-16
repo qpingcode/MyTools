@@ -595,6 +595,150 @@
       "references": [],
       "existingTranslations": { "zh-CN": "正在等待输入..." },
       "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Category.CommandRunner",
+      "defaultValue": "Custom Commands",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "自定义命令" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.CommandRunner.Empty",
+      "defaultValue": "No commands configured",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "暂无命令配置" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.CommandRunner.HeaderName",
+      "defaultValue": "Name",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "名称" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.CommandRunner.HeaderCommand",
+      "defaultValue": "Command",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "命令" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.CommandRunner.HeaderAdmin",
+      "defaultValue": "Admin",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "管理员" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.CommandRunner.Add",
+      "defaultValue": "Add command",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "添加命令" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.CommandRunner.Edit",
+      "defaultValue": "Edit command",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "编辑命令" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.CommandRunner.Delete",
+      "defaultValue": "Delete",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "删除" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.CommandRunner.Name",
+      "defaultValue": "Name",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "名称" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.CommandRunner.ScriptMode",
+      "defaultValue": "Batch script",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "批处理脚本" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.CommandRunner.Scripts",
+      "defaultValue": "Script lines",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "脚本内容" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.CommandRunner.ScriptsHint",
+      "defaultValue": "One command per line",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "每行一条命令" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.CommandRunner.Command",
+      "defaultValue": "Command / URL",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "命令 / 网址" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.CommandRunner.Args",
+      "defaultValue": "Arguments",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "参数" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.CommandRunner.WorkingDirectory",
+      "defaultValue": "Working directory",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "工作目录" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.CommandRunner.RunAsAdmin",
+      "defaultValue": "Run as administrator",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "以管理员运行" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.CommandRunner.Apply",
+      "defaultValue": "Apply",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "应用" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.CommandRunner.Saved",
+      "defaultValue": "Commands saved.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "命令已保存。" },
+      "sourceHash": "sha256:placeholder"
     }
   ]
 }

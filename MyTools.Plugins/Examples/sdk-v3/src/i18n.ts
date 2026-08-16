@@ -34,12 +34,20 @@ class MyToolsI18n {
     this.#messages = isRecord(payload.messages)
       ? Object.fromEntries(Object.entries(payload.messages).filter((entry): entry is [string, string] => typeof entry[1] === "string"))
       : {};
+    if (this.#instance.isInitialized) {
+      this.#instance.addResourceBundle(this.#locale, "translation", this.#messages, true, true);
+      void this.#instance.changeLanguage(this.#locale);
+      return;
+    }
+
     void this.#instance.init({
       lng: this.#locale,
       fallbackLng: this.#fallbackLocale,
       initImmediate: false,
       debug: false,
       showSupportNotice: false,
+      keySeparator: false,
+      nsSeparator: false,
       interpolation: { escapeValue: false },
       resources: {
         [this.#locale]: { translation: this.#messages }

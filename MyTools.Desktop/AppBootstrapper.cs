@@ -362,6 +362,12 @@ public class AppBootstrapper : IDisposable
                 localization.GetCaption("Configuration.Plugins.Name", "Plugins"),
                 localization.GetCaption("Configuration.Plugins.Description", "Plugin Settings"),
                 IsSelectable: true);
+
+            registry.AddCategory(
+                "CommandRunner",
+                localization.GetCaption("Plugin.CommandRunner.Name", "Custom Commands"),
+                localization.GetCaption("Plugin.CommandRunner.Description", "Run custom commands from search"),
+                IsSelectable: true);
             
             foreach (var plugin in plugins)
             {

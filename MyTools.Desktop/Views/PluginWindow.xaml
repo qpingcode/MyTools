@@ -184,6 +184,7 @@
                         <TextBlock x:Name="PluginNameTextBlock"
                                    Text="{Binding PluginName}"
                                    Foreground="{DynamicResource TextPrimaryBrush}"
+                                   FontSize="14"
                                    FontWeight="SemiBold"
                                    MaxWidth="320"
                                    TextWrapping="NoWrap"
