@@ -35,6 +35,19 @@ public class PluginRegistry : IKeywordRegistry, IGlobalSearchRegistry, IActionRe
         }
     }
 
+    void IKeywordRegistry.UnregisterPlugin(IPlugin plugin)
+    {
+        ArgumentNullException.ThrowIfNull(plugin);
+        var keys = _keywordMap
+            .Where(kvp => ReferenceEquals(kvp.Value, plugin))
+            .Select(kvp => kvp.Key)
+            .ToList();
+        foreach (var key in keys)
+        {
+            _keywordMap.Remove(key);
+        }
+    }
+
     void IKeywordRegistry.Clear()
     {
         _keywordMap.Clear();

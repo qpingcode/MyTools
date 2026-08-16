@@ -48,6 +48,22 @@ public class PluginRegistryTest
         Assert.That(found, Is.False);
     }
 
+    [Test]
+    public void UnregisterPlugin_ShouldRemoveOnlyThatPluginKeywords()
+    {
+        IKeywordRegistry registry = new PluginRegistry();
+        var keep = new TestPlugin();
+        var drop = new TestPlugin();
+        registry.Register("keep", keep);
+        registry.Register("drop", drop);
+
+        registry.UnregisterPlugin(drop);
+
+        Assert.That(registry.TryFindPlugin("keep ", out _, out var kept), Is.True);
+        Assert.That(kept, Is.SameAs(keep));
+        Assert.That(registry.TryFindPlugin("drop ", out _, out _), Is.False);
+    }
+
     private sealed class TestPlugin : IPlugin
     {
         public string PluginId => "test";

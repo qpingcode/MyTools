@@ -31,6 +31,8 @@ public sealed class SettingsPluginHostCallHandler
     private readonly MouseHelper mouseHelper;
     private readonly PluginLoader pluginLoader;
     private readonly HotKeyManager hotKeyManager;
+    private readonly Searcher searcher;
+    private readonly AppConfigService appConfigService;
     private readonly ILogger<SettingsPluginHostCallHandler> logger;
 
     private static readonly JsonSerializerOptions JsonCamelCaseOptions = new()
@@ -52,6 +54,8 @@ public sealed class SettingsPluginHostCallHandler
         MouseHelper mouseHelper,
         PluginLoader pluginLoader,
         HotKeyManager hotKeyManager,
+        Searcher searcher,
+        AppConfigService appConfigService,
         ILogger<SettingsPluginHostCallHandler> logger)
     {
         this.registry = registry;
@@ -66,6 +70,8 @@ public sealed class SettingsPluginHostCallHandler
         this.mouseHelper = mouseHelper;
         this.pluginLoader = pluginLoader;
         this.hotKeyManager = hotKeyManager;
+        this.searcher = searcher;
+        this.appConfigService = appConfigService;
         this.logger = logger;
     }
 
@@ -200,6 +206,8 @@ public sealed class SettingsPluginHostCallHandler
             {
                 autoStartService.AutoStart = autoStartValue.Value;
             }
+
+            ApplySearchHotKeyFromSettings();
         });
 
         // 语言需要重启：只有值真正变化（而非仅被前端回写相同的值）时才提示。
@@ -278,6 +286,8 @@ public sealed class SettingsPluginHostCallHandler
                 DefaultKeywords = defaultKeywords,
                 CurrentKeywords = ov?.Keywords ?? defaultKeywords,
                 IsEnabled = p.IsEnabled,
+                DefaultIncludeInGlobalResults = p.DefaultIncludeInGlobalResults,
+                IncludeInGlobalResults = ov?.IncludeInGlobalResults ?? p.DefaultIncludeInGlobalResults,
                 IsNodePlugin = true
             };
         }).ToList();
@@ -289,34 +299,34 @@ public sealed class SettingsPluginHostCallHandler
     private JsonElement SaveKeymap(JsonElement payload)
     {
         var request = payload.Deserialize<KeymapSaveRequest>(JsonCamelCaseOptions);
-        var newOverrides = new Dictionary<string, KeymapOverride>();
+        var merged = keymapOverrideProvider.GetAll()
+            .ToDictionary(kv => kv.Key, kv => CloneOverride(kv.Value));
 
         if (request?.Overrides != null)
         {
             foreach (var (pluginId, item) in request.Overrides)
             {
-                newOverrides[pluginId] = new KeymapOverride
+                merged[pluginId] = new KeymapOverride
                 {
                     HotKey = item.HotKey,
                     Keywords = item.Keywords,
-                    IsEnabled = item.IsEnabled
+                    IsEnabled = item.IsEnabled,
+                    IncludeInGlobalResults = item.IncludeInGlobalResults
                 };
             }
         }
 
-        keymapOverrideProvider.Save(newOverrides);
+        keymapOverrideProvider.Save(merged);
 
         // 热应用：必须在 UI 线程执行（热键注册涉及 Win32 消息）
         System.Windows.Application.Current.Dispatcher.Invoke(() =>
         {
             var nodePlugins = pluginLoader.LoadedPlugins.OfType<NodePlugin>().ToList();
 
-            // 应用启用状态覆盖
             keymapService.ApplyEnabledOverrides(nodePlugins);
-
-            // 重注册热键和关键词
             keymapService.ReRegisterAllHotKeys(nodePlugins, OpenPluginDetail);
             keymapService.ReRegisterKeywords(pluginLoader.LoadedPlugins);
+            searcher.InvalidateHomePageCache();
         });
 
         return JsonSerializer.SerializeToElement(new { success = true }, JsonCamelCaseOptions);
@@ -416,6 +426,41 @@ public sealed class SettingsPluginHostCallHandler
         return JsonSerializer.SerializeToElement(new { }, JsonCamelCaseOptions);
     }
 
+    private void ApplySearchHotKeyFromSettings()
+    {
+        var text = registry.FindSetting(AppConfigService.SearchHotKeySettingPath)?.GetValue<string>();
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            text = AppConfigService.DefaultSearchHotKey;
+        }
+
+        if (string.Equals(text, appConfigService.AppConfig.SearchHotKeyText, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        var parsed = new HotKeyConfig(text);
+        if (parsed.Key == System.Windows.Input.Key.None)
+        {
+            logger.LogWarning("Ignoring invalid search hotkey {HotKey}.", text);
+            return;
+        }
+
+        appConfigService.SetSearchHotKey(text);
+        hotKeyManager.RegisterySearchHotKey(parsed);
+    }
+
+    private static KeymapOverride CloneOverride(KeymapOverride source)
+    {
+        return new KeymapOverride
+        {
+            HotKey = source.HotKey,
+            Keywords = source.Keywords is null ? null : [.. source.Keywords],
+            IsEnabled = source.IsEnabled,
+            IncludeInGlobalResults = source.IncludeInGlobalResults
+        };
+    }
+
     private static object? ConvertValue(ConfigurationSetting setting, string? stringValue)
     {
         if (stringValue == null)
@@ -449,6 +494,8 @@ public sealed class KeymapPluginDto
     public List<string> DefaultKeywords { get; init; } = new();
     public List<string> CurrentKeywords { get; init; } = new();
     public bool IsEnabled { get; init; }
+    public bool DefaultIncludeInGlobalResults { get; init; }
+    public bool IncludeInGlobalResults { get; init; }
     public bool IsNodePlugin { get; init; }
 }
 
@@ -462,6 +509,7 @@ public sealed class KeymapOverrideItem
     public string? HotKey { get; init; }
     public List<string>? Keywords { get; init; }
     public bool? IsEnabled { get; init; }
+    public bool? IncludeInGlobalResults { get; init; }
 }
 
 public sealed class KeymapValidateRequest

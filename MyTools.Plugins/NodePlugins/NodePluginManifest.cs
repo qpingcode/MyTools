@@ -21,9 +21,14 @@ public sealed class NodePluginManifest
     public string EntryFullPath { get; init; } = string.Empty;
     public string ParentId { get; init; } = string.Empty;
     public string EntryId { get; init; } = string.Empty;
+    /// <summary>Relative web detail path when <c>detail.type</c> is <c>web</c>; otherwise null (native list).</summary>
     public string? DetailEntry { get; init; }
+    /// <summary>Absolute web detail path, or null when this entry uses the native list UI.</summary>
     public string? DetailEntryFullPath { get; init; }
+    public bool HasWebDetail => !string.IsNullOrWhiteSpace(DetailEntryFullPath);
     public IReadOnlyList<string> Keywords { get; init; } = [];
+    /// <summary>Participate in unscoped (global) search. Default false when omitted in plugin.json.</summary>
+    public bool SearchGlobal { get; init; }
     public string? HotKey { get; init; }
     /// <summary>Capability ids declared by this entry (e.g. <c>configuration.write</c>).</summary>
     public IReadOnlyList<string> Capabilities { get; init; } = [];

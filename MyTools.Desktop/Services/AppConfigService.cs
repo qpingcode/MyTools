@@ -8,6 +8,9 @@ namespace MyTools.Desktop.Services;
 
 public class AppConfigService
 {
+    public const string SearchHotKeySettingPath = "General.SearchHotKey";
+    public const string DefaultSearchHotKey = "Alt+Space";
+
     private static readonly string ConfigFilePath = Path.Combine(
         ConfigPath.Base,
         "MyToolsConfig.json");
@@ -87,6 +90,14 @@ public class AppConfigService
     public void SetTheme(string theme)
     {
         AppConfig.Theme = theme;
+        SaveConfig(AppConfig);
+    }
+
+    public void SetSearchHotKey(string hotKeyText)
+    {
+        AppConfig.SearchHotKeyText = string.IsNullOrWhiteSpace(hotKeyText)
+            ? DefaultSearchHotKey
+            : hotKeyText.Trim();
         SaveConfig(AppConfig);
     }
 }

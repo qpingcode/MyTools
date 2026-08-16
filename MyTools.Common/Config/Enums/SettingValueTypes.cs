@@ -31,6 +31,11 @@ public enum SettingValueTypes
     Theme,
 
     /// <summary>
+    /// 全局键盘快捷键（由设置页的热键选择器编辑）
+    /// </summary>
+    HotKey,
+
+    /// <summary>
     /// 日志级别
     /// </summary>
     LogLevel,

@@ -40,6 +40,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
         this.logger = logger;
         this.localizationService = localizationService;
         this.themeService = themeService;
+        IsGlobalSearchPlugin = manifest.SearchGlobal;
     }
 
     public event EventHandler<NodePluginEventReceivedEventArgs>? EventReceived
@@ -106,7 +107,10 @@ public sealed class NodePlugin : IPlugin, IDisposable
 
     public ViewModelType ViewModelType => ViewModelType.Basic;
 
-    public bool IsGlobalSearchPlugin => true;
+    /// <summary>plugin.json <c>search.global</c> default, before user override.</summary>
+    public bool DefaultIncludeInGlobalResults => manifest.SearchGlobal;
+
+    public bool IsGlobalSearchPlugin { get; set; }
 
     public IReadOnlyList<string> Keywords => manifest.Keywords;
 
@@ -169,7 +173,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
 
     public bool ShouldOpenDetailOnKeywordRoute(string searchText)
     {
-        if (string.IsNullOrWhiteSpace(manifest.DetailEntryFullPath))
+        if (!manifest.HasWebDetail)
         {
             return false;
         }
@@ -184,6 +188,11 @@ public sealed class NodePlugin : IPlugin, IDisposable
 
     public NodePluginDetailContext? CreateKeywordDetailContext(string searchText, string query)
     {
+        if (!manifest.HasWebDetail)
+        {
+            return null;
+        }
+
         return CreateDetailContext(
             itemId: $"{manifest.Id}:keyword-route",
             searchText: searchText,
@@ -198,6 +207,11 @@ public sealed class NodePlugin : IPlugin, IDisposable
 
     public NodePluginDetailContext? CreateHotKeyDetailContext()
     {
+        if (!manifest.HasWebDetail)
+        {
+            return null;
+        }
+
         return CreateDetailContext(
             itemId: $"{manifest.Id}:hotkey-route",
             searchText: string.IsNullOrWhiteSpace(PrimaryKeyword) ? string.Empty : $"{PrimaryKeyword} ",

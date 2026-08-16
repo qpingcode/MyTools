@@ -61,6 +61,11 @@ export function renderKeymap(): void {
         '<div class="keymap-col-name">' + t("Plugin.Settings.Keymap.HeaderName", "Plugin Name") + '</div>'
         + '<div class="keymap-col-hotkey">' + t("Plugin.Settings.Keymap.HeaderHotkey", "Hotkey") + '</div>'
         + '<div class="keymap-col-keywords">' + t("Plugin.Settings.Keymap.HeaderKeywords", "Keywords") + '</div>'
+        + '<div class="keymap-col-global" title="'
+            + escapeAttr(t("Plugin.Settings.Keymap.HeaderGlobalResultsTip",
+                "Include this plugin when searching without a keyword"))
+            + '">'
+            + t("Plugin.Settings.Keymap.HeaderGlobalResults", "Global results") + '</div>'
         + '<div class="keymap-col-enabled">' + t("Plugin.Settings.Keymap.HeaderEnabled", "Enabled") + '</div>';
     common.settingsList.appendChild(header);
 
@@ -130,6 +135,25 @@ function renderKeymapRow(plugin: KeymapPlugin): HTMLElement {
     });
     keywordsDiv.appendChild(keywordsInput);
     row.appendChild(keywordsDiv);
+
+    // Include in global results
+    var globalDiv = document.createElement("div");
+    globalDiv.className = "keymap-col-global";
+    var globalCheckbox = document.createElement("input");
+    globalCheckbox.type = "checkbox";
+    globalCheckbox.className = "keymap-checkbox";
+    globalCheckbox.title = t(
+        "Plugin.Settings.Keymap.HeaderGlobalResultsTip",
+        "Include this plugin when searching without a keyword");
+    globalCheckbox.checked = dirty?.includeInGlobalResults !== undefined
+        ? dirty.includeInGlobalResults
+        : plugin.includeInGlobalResults;
+    globalCheckbox.addEventListener("change", () => {
+        markKeymapDirty(plugin.pluginId, { includeInGlobalResults: globalCheckbox.checked });
+        common.updateSaveButton();
+    });
+    globalDiv.appendChild(globalCheckbox);
+    row.appendChild(globalDiv);
 
     // 启用 checkbox
     var enabledDiv = document.createElement("div");
@@ -206,11 +230,17 @@ export function startHotKeyRecording(
     document.addEventListener("keydown", handler, true);
 }
 
-function markKeymapDirty(pluginId: string, change: { hotKey?: string | null; keywords?: string[]; isEnabled?: boolean }): void {
+function markKeymapDirty(pluginId: string, change: {
+    hotKey?: string | null;
+    keywords?: string[];
+    isEnabled?: boolean;
+    includeInGlobalResults?: boolean;
+}): void {
     var existing = common.state.keymapDirty.get(pluginId) || {};
     if (change.hotKey !== undefined) existing.hotKey = change.hotKey;
     if (change.keywords !== undefined) existing.keywords = change.keywords;
     if (change.isEnabled !== undefined) existing.isEnabled = change.isEnabled;
+    if (change.includeInGlobalResults !== undefined) existing.includeInGlobalResults = change.includeInGlobalResults;
     common.state.keymapDirty.set(pluginId, existing);
     common.updateSaveButton();
 }
@@ -220,17 +250,32 @@ function markKeymapDirty(pluginId: string, change: { hotKey?: string | null; key
 export async function saveKeymapInternal(): Promise<boolean> {
     if (common.state.keymapDirty.size === 0 || !keymapPlugins) return true;
 
-    var overrides: Record<string, { hotKey?: string | null; keywords?: string[]; isEnabled?: boolean }> = {};
+    var overrides: Record<string, {
+        hotKey?: string | null;
+        keywords?: string[];
+        isEnabled?: boolean;
+        includeInGlobalResults?: boolean;
+    }> = {};
     var hotKeysToValidate: Record<string, string | null> = {};
     var keywordsToValidate: Record<string, string[] | null> = {};
 
-    for (var [pluginId, dirty] of common.state.keymapDirty) {
-        overrides[pluginId] = dirty;
+    for (var plugin of keymapPlugins) {
+        var dirty = common.state.keymapDirty.get(plugin.pluginId);
+        if (!dirty) continue;
+
+        overrides[plugin.pluginId] = {
+            hotKey: dirty.hotKey !== undefined ? dirty.hotKey : plugin.currentHotKey,
+            keywords: dirty.keywords !== undefined ? dirty.keywords : plugin.currentKeywords,
+            isEnabled: dirty.isEnabled !== undefined ? dirty.isEnabled : plugin.isEnabled,
+            includeInGlobalResults: dirty.includeInGlobalResults !== undefined
+                ? dirty.includeInGlobalResults
+                : plugin.includeInGlobalResults,
+        };
         if (dirty.hotKey !== undefined) {
-            hotKeysToValidate[pluginId] = dirty.hotKey;
+            hotKeysToValidate[plugin.pluginId] = dirty.hotKey;
         }
         if (dirty.keywords !== undefined) {
-            keywordsToValidate[pluginId] = dirty.keywords;
+            keywordsToValidate[plugin.pluginId] = dirty.keywords;
         }
     }
 
@@ -263,4 +308,8 @@ export async function saveKeymapInternal(): Promise<boolean> {
 
     await loadKeymap();
     return true;
+}
+
+function escapeAttr(text: string): string {
+    return text.replace(/"/g, "&quot;");
 }

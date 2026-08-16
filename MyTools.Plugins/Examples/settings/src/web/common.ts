@@ -26,7 +26,12 @@ export var state = {
     dirtySettings: new Map<string, string>(),
 
     // keymap dirty state (pluginId → partial overrides)
-    keymapDirty: new Map<string, { hotKey?: string | null; keywords?: string[]; isEnabled?: boolean }>(),
+    keymapDirty: new Map<string, {
+        hotKey?: string | null;
+        keywords?: string[];
+        isEnabled?: boolean;
+        includeInGlobalResults?: boolean;
+    }>(),
 
     // gestures dirty flag (whole-list replacement strategy)
     gesturesDirty: false

@@ -1,6 +1,8 @@
 import type { Category, Option, Setting } from "./types";
 import { highlight, t } from "./utils";
 import * as common from "./common";
+import { bus } from "./bus";
+import { openInputActionPicker, type InputActionPickerLabels } from "./action-picker";
 
 // ── Hooks for special-category search (keymap, gestures) ──
 // These are set by the respective panel modules to participate in search matching.
@@ -234,6 +236,9 @@ function createEditor(setting: Setting): HTMLElement {
         case "LogLevel": {
             return createSelect(setting, currentVal, dirtyVal, common.state.config?.supportedLogLevels ?? []);
         }
+        case "HotKey": {
+            return createHotKeyEditor(setting, currentVal, dirtyVal);
+        }
         case "Integer":
         case "Double": {
             var input = document.createElement("input");
@@ -280,4 +285,44 @@ function createSelect(setting: Setting, currentVal: string, dirtyVal: string | u
         common.updateSaveButton();
     });
     return select;
+}
+
+function hotKeyPickerLabels(): InputActionPickerLabels {
+    return {
+        title: t("Plugin.Settings.SearchHotKey.PickerTitle", "Set search hotkey"),
+        tabKeyboard: t("Plugin.Settings.Gestures.TriggerHotkey", "Hotkey"),
+        tabMouse: t("Plugin.Settings.Gestures.TriggerMouse", "Mouse Button"),
+        recording: t("Plugin.Settings.Keymap.Recording", "Press shortcut..."),
+        cancel: t("Plugin.Settings.Cancel", "Cancel")
+    };
+}
+
+function createHotKeyEditor(setting: Setting, currentVal: string, dirtyVal: string | undefined): HTMLElement {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "hotkey-recorder";
+    var value = dirtyVal !== undefined ? dirtyVal : currentVal;
+
+    function renderLabel(): void {
+        btn.textContent = value || t("Plugin.Settings.Keymap.NoHotkey", "None");
+    }
+
+    renderLabel();
+    btn.addEventListener("click", () => {
+        void openInputActionPicker({
+            showKeyboard: true,
+            showMouse: false,
+            value: { kind: "hotkey", hotKey: value || null },
+            labels: hotKeyPickerLabels(),
+            onSuspendHotkeys: () => { void bus.call("suspendHotkeys"); },
+            onResumeHotkeys: () => { void bus.call("resumeHotkeys"); }
+        }).then((result) => {
+            if (!result?.hotKey) return;
+            value = result.hotKey;
+            renderLabel();
+            common.state.dirtySettings.set(setting.fullPath, value);
+            common.updateSaveButton();
+        });
+    });
+    return btn;
 }

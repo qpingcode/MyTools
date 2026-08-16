@@ -74,6 +74,7 @@ public class NodePluginCatalogTest
         Assert.That(plugins[0].EntryId, Is.EqualTo("hello"));
         Assert.That(plugins[0].HotKey, Is.EqualTo("Alt+C"));
         Assert.That(plugins[0].Keywords, Is.EquivalentTo(new[] { "hello" }));
+        Assert.That(plugins[0].SearchGlobal, Is.False);
         Assert.That(plugins[0].Capabilities, Is.Empty);
         Assert.That(plugins[0].EntryFullPath, Is.EqualTo(Path.Combine(pluginPath, "backend", "index.mjs")));
         Assert.That(plugins[0].DetailEntryFullPath, Is.EqualTo(Path.Combine(pluginPath, "web", "detail.html")));
@@ -279,6 +280,74 @@ public class NodePluginCatalogTest
     }
 
     [Test]
+    public void Reload_ShouldParseExplicitSearchLevels()
+    {
+        var pluginPath = Path.Combine(rootPath, "hello-search");
+        Directory.CreateDirectory(Path.Combine(pluginPath, "backend"));
+        Directory.CreateDirectory(Path.Combine(pluginPath, "web"));
+        File.WriteAllText(Path.Combine(pluginPath, "plugin.json"), """
+        {
+          "id": "hello-search",
+          "version": "0.2.0",
+          "protocolVersion": "3.0",
+          "entries": [
+            {
+              "id": "hello",
+              "name": { "key": "Plugin.HelloSearch.Name", "defaultValue": "Hello Search" },
+              "entry": "backend/index.mjs",
+              "keywords": [],
+              "search": { "global": true },
+              "detail": {
+                "type": "web",
+                "entry": "web/index.html"
+              }
+            }
+          ]
+        }
+        """);
+        File.WriteAllText(Path.Combine(pluginPath, "backend", "index.mjs"), "console.log('ok');");
+        File.WriteAllText(Path.Combine(pluginPath, "web", "index.html"), "<html></html>");
+
+        var catalog = new NodePluginCatalog(rootPath, NullLogger<NodePluginCatalog>.Instance);
+        var plugins = catalog.Reload();
+
+        Assert.That(plugins, Has.Count.EqualTo(1));
+        Assert.That(plugins[0].SearchGlobal, Is.True);
+    }
+
+    [Test]
+    public void Reload_ShouldDefaultGlobalSearchOffWhenSearchOmitted()
+    {
+        var pluginPath = Path.Combine(rootPath, "no-kw");
+        Directory.CreateDirectory(Path.Combine(pluginPath, "backend"));
+        Directory.CreateDirectory(Path.Combine(pluginPath, "web"));
+        File.WriteAllText(Path.Combine(pluginPath, "plugin.json"), """
+        {
+          "id": "no-kw",
+          "version": "0.1.0",
+          "protocolVersion": "3.0",
+          "entries": [
+            {
+              "id": "main",
+              "entry": "backend/index.mjs",
+              "detail": {
+                "type": "web",
+                "entry": "web/index.html"
+              }
+            }
+          ]
+        }
+        """);
+        File.WriteAllText(Path.Combine(pluginPath, "backend", "index.mjs"), "console.log('ok');");
+        File.WriteAllText(Path.Combine(pluginPath, "web", "index.html"), "<html></html>");
+
+        var plugins = new NodePluginCatalog(rootPath, NullLogger<NodePluginCatalog>.Instance).Reload();
+
+        Assert.That(plugins, Has.Count.EqualTo(1));
+        Assert.That(plugins[0].SearchGlobal, Is.False);
+    }
+
+    [Test]
     public void Reload_ShouldSkipProtocolVersionOtherThan3()
     {
         var pluginPath = Path.Combine(rootPath, "old");
@@ -302,5 +371,114 @@ public class NodePluginCatalogTest
         var plugins = new NodePluginCatalog(rootPath, NullLogger<NodePluginCatalog>.Instance).Reload();
 
         Assert.That(plugins, Is.Empty);
+    }
+
+    [Test]
+    public void Reload_ShouldLoadEntryWhenDetailOmitted()
+    {
+        var pluginPath = WriteBackendOnlyPlugin("""
+        {
+          "id": "list-plugin",
+          "version": "0.1.0",
+          "protocolVersion": "3.0",
+          "entries": [
+            {
+              "id": "main",
+              "name": { "key": "Plugin.List.Name", "defaultValue": "List Plugin" },
+              "entry": "backend/index.mjs",
+              "keywords": ["list"]
+            }
+          ]
+        }
+        """);
+
+        var plugins = new NodePluginCatalog(rootPath, NullLogger<NodePluginCatalog>.Instance).Reload();
+
+        Assert.That(plugins, Has.Count.EqualTo(1));
+        Assert.That(plugins[0].Id, Is.EqualTo("list-plugin:main"));
+        Assert.That(plugins[0].DetailEntry, Is.Null);
+        Assert.That(plugins[0].DetailEntryFullPath, Is.Null);
+        Assert.That(plugins[0].HasWebDetail, Is.False);
+        Assert.That(plugins[0].EntryFullPath, Is.EqualTo(Path.Combine(pluginPath, "backend", "index.mjs")));
+    }
+
+    [Test]
+    public void Reload_ShouldLoadEntryWhenDetailTypeIsList()
+    {
+        WriteBackendOnlyPlugin("""
+        {
+          "id": "list-plugin",
+          "version": "0.1.0",
+          "protocolVersion": "3.0",
+          "entries": [
+            {
+              "id": "main",
+              "entry": "backend/index.mjs",
+              "detail": { "type": "list" }
+            }
+          ]
+        }
+        """);
+
+        var plugins = new NodePluginCatalog(rootPath, NullLogger<NodePluginCatalog>.Instance).Reload();
+
+        Assert.That(plugins, Has.Count.EqualTo(1));
+        Assert.That(plugins[0].HasWebDetail, Is.False);
+        Assert.That(plugins[0].DetailEntryFullPath, Is.Null);
+    }
+
+    [Test]
+    public void Reload_ShouldSkipBasicDetailType()
+    {
+        WriteBackendOnlyPlugin("""
+        {
+          "id": "basic-plugin",
+          "version": "0.1.0",
+          "protocolVersion": "3.0",
+          "entries": [
+            {
+              "id": "main",
+              "entry": "backend/index.mjs",
+              "detail": { "type": "basic" }
+            }
+          ]
+        }
+        """);
+
+        var plugins = new NodePluginCatalog(rootPath, NullLogger<NodePluginCatalog>.Instance).Reload();
+
+        Assert.That(plugins, Is.Empty);
+    }
+
+    [Test]
+    public void Reload_ShouldSkipWebDetailWithoutEntry()
+    {
+        WriteBackendOnlyPlugin("""
+        {
+          "id": "web-missing-entry",
+          "version": "0.1.0",
+          "protocolVersion": "3.0",
+          "entries": [
+            {
+              "id": "main",
+              "entry": "backend/index.mjs",
+              "detail": { "type": "web" }
+            }
+          ]
+        }
+        """);
+
+        var plugins = new NodePluginCatalog(rootPath, NullLogger<NodePluginCatalog>.Instance).Reload();
+
+        Assert.That(plugins, Is.Empty);
+    }
+
+    private string WriteBackendOnlyPlugin(string pluginJson)
+    {
+        var pluginPath = Path.Combine(rootPath, "list-plugin");
+        Directory.CreateDirectory(Path.Combine(pluginPath, "backend"));
+        File.WriteAllText(Path.Combine(pluginPath, "plugin.json"), pluginJson);
+        File.WriteAllText(Path.Combine(pluginPath, "backend", "index.mjs"), "console.log('ok');");
+        return pluginPath;
     }
 }

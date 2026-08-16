@@ -53,7 +53,17 @@ namespace MyTools.Desktop.Models
 
             foreach (string part in parts)
             {
-                if (Enum.TryParse(part, out ModifierKeys modifier))
+                var token = part.Trim();
+                if (token.Equals("Ctrl", StringComparison.OrdinalIgnoreCase))
+                {
+                    modifiers |= ModifierKeys.Control;
+                }
+                else if (token.Equals("Win", StringComparison.OrdinalIgnoreCase)
+                         || token.Equals("Windows", StringComparison.OrdinalIgnoreCase))
+                {
+                    modifiers |= ModifierKeys.Windows;
+                }
+                else if (Enum.TryParse(token, ignoreCase: true, out ModifierKeys modifier))
                 {
                     modifiers |= modifier;
                 }

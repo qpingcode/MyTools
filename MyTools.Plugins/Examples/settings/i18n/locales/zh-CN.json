@@ -17,6 +17,8 @@
   "Plugin.Settings.Keymap.HeaderName": "插件名",
   "Plugin.Settings.Keymap.HeaderHotkey": "快捷键",
   "Plugin.Settings.Keymap.HeaderKeywords": "关键词",
+  "Plugin.Settings.Keymap.HeaderGlobalResults": "全局结果",
+  "Plugin.Settings.Keymap.HeaderGlobalResultsTip": "无关键词时是否出现在全局搜索结果中",
   "Plugin.Settings.Keymap.KeywordsPlaceholder": "无",
   "Plugin.Settings.Keymap.NoHotkey": "无",
   "Plugin.Settings.Keymap.Recording": "按下快捷键...",
@@ -56,5 +58,6 @@
   "Plugin.Settings.Gestures.NoAction": "未设置",
   "Plugin.Settings.Gestures.MouseBackShort": "后退",
   "Plugin.Settings.Gestures.MouseForwardShort": "前进",
-  "Plugin.Settings.ActionPicker.Title": "选择操作"
+  "Plugin.Settings.ActionPicker.Title": "选择操作",
+  "Plugin.Settings.SearchHotKey.PickerTitle": "设置搜索热键"
 }

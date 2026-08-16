@@ -28,19 +28,85 @@ public sealed class PluginEntryV3
     public required string Entry { get; init; }
 
     public IReadOnlyList<string> Capabilities { get; init; } = [];
+    /// <summary>
+    /// Optional UI for this entry. Omitted (or <c>type: list</c>) means the host shows
+    /// <c>search</c> results in the native list view. <c>type: web</c> requires <c>entry</c>.
+    /// </summary>
     public EntryDetailV3? Detail { get; init; }
     /// <summary>Keyword triggers that route a search to this entry.</summary>
     public IReadOnlyList<string> Keywords { get; init; } = [];
-    /// <summary>Global hotkey (e.g. "Alt+S") that opens this entry's detail view.</summary>
+    /// <summary>Default global-search participation. Omitted means not in unscoped results.</summary>
+    public EntrySearchV3? Search { get; init; }
+    /// <summary>Global hotkey (e.g. "Alt+S") that opens this entry (web detail or native list).</summary>
     public string? HotKey { get; init; }
     /// <summary>Display name with i18n message key + default value.</summary>
     public LocalizedNameV3? Name { get; init; }
 }
 
+/// <summary>
+/// Per-entry search defaults. <c>global</c> is unscoped results; keyword search is implied by <c>keywords</c>.
+/// </summary>
+public sealed class EntrySearchV3
+{
+    public bool? Global { get; init; }
+}
+
 public sealed class EntryDetailV3
 {
-    public string Type { get; init; } = "web";
+    /// <summary><c>web</c> (WebView2 page) or <c>list</c> (native search results). Default <c>web</c> when the object is present.</summary>
+    public string Type { get; init; } = PluginDetailTypes.Web;
     public string Entry { get; init; } = "";
+}
+
+/// <summary>Allowed <c>detail.type</c> values in plugin.json.</summary>
+public static class PluginDetailTypes
+{
+    public const string Web = "web";
+    /// <summary>Native list of <c>search</c> results. Equivalent to omitting <c>detail</c>.</summary>
+    public const string List = "list";
+}
+
+/// <summary>Resolved plugin UI: native list, or a WebView2 page under <see cref="Entry"/>.</summary>
+public readonly record struct ResolvedPluginDetail(bool IsWeb, string? Entry);
+
+public static class PluginDetailResolver
+{
+    /// <summary>
+    /// Maps a plugin.json <c>detail</c> block to a UI kind.
+    /// Omitted detail, empty type without entry, and <c>type: list</c> are native list.
+    /// <c>type: web</c> (or omitted type with an entry path) requires <paramref name="entry"/>.
+    /// </summary>
+    public static ManifestValidation TryResolve(string? type, string? entry, string entryId, out ResolvedPluginDetail resolved)
+    {
+        resolved = new ResolvedPluginDetail(false, null);
+        var trimmedType = type?.Trim();
+        var hasEntry = !string.IsNullOrWhiteSpace(entry);
+
+        if (string.Equals(trimmedType, PluginDetailTypes.List, StringComparison.OrdinalIgnoreCase))
+        {
+            return ManifestValidation.Ok();
+        }
+
+        if (string.IsNullOrEmpty(trimmedType) && !hasEntry)
+        {
+            return ManifestValidation.Ok();
+        }
+
+        if (string.IsNullOrEmpty(trimmedType)
+            || string.Equals(trimmedType, PluginDetailTypes.Web, StringComparison.OrdinalIgnoreCase))
+        {
+            if (!hasEntry)
+            {
+                return ManifestValidation.Fail(
+                    $"entry '{entryId}' detail.entry is required when detail.type is '{PluginDetailTypes.Web}'");
+            }
+
+            resolved = new ResolvedPluginDetail(true, entry);
+            return ManifestValidation.Ok();
+        }
+
+        return ManifestValidation.Fail($"entry '{entryId}' has unsupported detail.type '{type}'");
+    }
 }
 
 /// <summary>Localization block: default locale, catalog file, locales directory, supported locales.</summary>
@@ -92,6 +158,12 @@ public static class PluginManifestV3Validator
             if (string.IsNullOrEmpty(e.Entry))
             {
                 return ManifestValidation.Fail($"entry '{e.Id}' is missing entry");
+            }
+
+            var detailResult = PluginDetailResolver.TryResolve(e.Detail?.Type, e.Detail?.Entry, e.Id, out _);
+            if (!detailResult.IsValid)
+            {
+                return detailResult;
             }
         }
         return ManifestValidation.Ok();
