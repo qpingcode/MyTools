@@ -34,6 +34,7 @@ public sealed class SettingDto
     public string? Description { get; init; }
     public string ValueType { get; init; } = "";
     public string? CurrentValue { get; init; }
+    public string? DefaultValue { get; init; }
     public bool RequiresRestart { get; init; }
 }
 

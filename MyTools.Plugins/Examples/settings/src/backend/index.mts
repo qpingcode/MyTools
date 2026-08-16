@@ -68,6 +68,10 @@ plugin
   .handle("resumeHotkeys", async () => {
     return await plugin.hostCall("resumeHotkeys");
   })
+  .handle("checkHotKey", async (payload: any) => {
+    const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
+    return await plugin.hostCall("checkHotKey", params);
+  })
   .handle("restart", async () => {
     return await plugin.hostCall("restart");
   })

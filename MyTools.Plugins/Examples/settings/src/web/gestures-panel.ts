@@ -41,6 +41,8 @@ function actionPickerLabels(): InputActionPickerLabels {
         tabMouse: t("Plugin.Settings.Gestures.TriggerMouse", "Mouse Button"),
         recording: t("Plugin.Settings.Keymap.Recording", "Press shortcut..."),
         cancel: t("Plugin.Settings.Cancel", "Cancel"),
+        reset: t("Plugin.Settings.ActionPicker.Reset", "Reset to default"),
+        ok: t("Plugin.Settings.ActionPicker.Ok", "OK"),
         mouseBack: t("Plugin.Settings.Gestures.MouseBack", "Back (XButton1)"),
         mouseForward: t("Plugin.Settings.Gestures.MouseForward", "Forward (XButton2)")
     };

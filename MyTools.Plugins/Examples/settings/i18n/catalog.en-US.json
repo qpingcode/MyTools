@@ -493,11 +493,51 @@
       "sourceHash": "sha256:placeholder"
     },
     {
+      "key": "Plugin.Settings.ActionPicker.Reset",
+      "defaultValue": "Reset to default",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "恢复默认" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.ActionPicker.Ok",
+      "defaultValue": "OK",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "确定" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.ActionPicker.Conflict",
+      "defaultValue": "Already used by {{name}}",
+      "placeholders": ["name"],
+      "references": [],
+      "existingTranslations": { "zh-CN": "已与「{{name}}」冲突" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.ActionPicker.Reserved",
+      "defaultValue": "{{hotKey}} is a common shortcut (copy/paste/select all, etc.) and is not recommended as a global hotkey.",
+      "placeholders": ["hotKey"],
+      "references": [],
+      "existingTranslations": { "zh-CN": "{{hotKey}} 是常用系统快捷键（复制/粘贴/全选等），不建议设为全局热键。" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
       "key": "Plugin.Settings.SearchHotKey.PickerTitle",
       "defaultValue": "Set search hotkey",
       "placeholders": [],
       "references": [],
       "existingTranslations": { "zh-CN": "设置搜索热键" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Keymap.PickerTitle",
+      "defaultValue": "Set plugin hotkey",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "设置插件热键" },
       "sourceHash": "sha256:placeholder"
     }
   ]

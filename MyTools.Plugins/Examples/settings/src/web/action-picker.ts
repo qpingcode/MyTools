@@ -11,12 +11,21 @@ export type InputActionValue = {
     mouseButton?: string | null;
 };
 
+export type HotKeyInspection = {
+    conflictWith?: string | null;
+    reserved?: boolean;
+};
+
 export type InputActionPickerLabels = {
     title: string;
     tabKeyboard: string;
     tabMouse: string;
     recording: string;
     cancel: string;
+    reset?: string;
+    ok?: string;
+    conflict?: string;
+    reserved?: string;
     mouseBack?: string;
     mouseForward?: string;
 };
@@ -27,9 +36,13 @@ export type OpenInputActionPickerOptions = {
     /** Show the mouse-button tab. Default true. */
     showMouse?: boolean;
     value?: InputActionValue | null;
+    /** Restore target for Reset. Omit to hide the Reset button. Empty string means "no hotkey". */
+    defaultHotKey?: string;
+    defaultMouseButton?: string;
     labels: InputActionPickerLabels;
     onSuspendHotkeys?: () => void;
     onResumeHotkeys?: () => void;
+    onInspectHotKey?: (hotKey: string) => Promise<HotKeyInspection>;
 };
 
 const STYLE_ID = "mt-action-picker-style";
@@ -71,6 +84,8 @@ export function openInputActionPicker(
             : MOUSE_BACK;
         var keyHandler: ((e: KeyboardEvent) => void) | null = null;
         var settled = false;
+        var inspectGeneration = 0;
+        var showReset = options.defaultHotKey !== undefined || options.defaultMouseButton !== undefined;
 
         var overlay = document.createElement("div");
         overlay.className = "mt-action-picker-overlay";
@@ -102,13 +117,39 @@ export function openInputActionPicker(
         body.className = "mt-action-picker-body";
         dialog.appendChild(body);
 
+        var message = document.createElement("div");
+        message.className = "mt-action-picker-msg";
+        message.hidden = true;
+        dialog.appendChild(message);
+
         var footer = document.createElement("div");
         footer.className = "mt-action-picker-footer";
+
+        var resetBtn: HTMLButtonElement | null = null;
+        if (showReset) {
+            resetBtn = document.createElement("button");
+            resetBtn.type = "button";
+            resetBtn.className = "mt-action-picker-btn";
+            resetBtn.textContent = labels.reset || "Reset";
+            footer.appendChild(resetBtn);
+        }
+
+        var footerEnd = document.createElement("div");
+        footerEnd.className = "mt-action-picker-footer-end";
         var cancelBtn = document.createElement("button");
         cancelBtn.type = "button";
         cancelBtn.className = "mt-action-picker-btn";
         cancelBtn.textContent = labels.cancel;
-        footer.appendChild(cancelBtn);
+        footerEnd.appendChild(cancelBtn);
+
+        var okBtn = document.createElement("button");
+        okBtn.type = "button";
+        okBtn.className = "mt-action-picker-btn mt-action-picker-btn-primary";
+        okBtn.textContent = labels.ok || "OK";
+        okBtn.hidden = true;
+        footerEnd.appendChild(okBtn);
+
+        footer.appendChild(footerEnd);
         dialog.appendChild(footer);
 
         overlay.appendChild(dialog);
@@ -137,12 +178,36 @@ export function openInputActionPicker(
             resolve(result);
         }
 
-        function applyHotkey(hotKey: string): void {
+        function applyHotkey(hotKey: string | null): void {
             finish({ kind: "hotkey", hotKey: hotKey, mouseButton: null });
         }
 
         function applyMouse(button: string): void {
             finish({ kind: "mouse", hotKey: null, mouseButton: button });
+        }
+
+        function clearMessage(): void {
+            message.hidden = true;
+            message.textContent = "";
+            message.classList.remove("is-error", "is-warn");
+            okBtn.hidden = true;
+        }
+
+        function showError(text: string): void {
+            message.hidden = false;
+            message.textContent = text;
+            message.classList.add("is-error");
+            message.classList.remove("is-warn");
+            okBtn.hidden = true;
+        }
+
+        function showWarning(text: string, confirmHotKey: string): void {
+            message.hidden = false;
+            message.textContent = text;
+            message.classList.add("is-warn");
+            message.classList.remove("is-error");
+            okBtn.hidden = false;
+            okBtn.onclick = () => applyHotkey(confirmHotKey);
         }
 
         function startHotkeyCapture(): void {
@@ -167,7 +232,7 @@ export function openInputActionPicker(
                 if (keyName === " ") keyName = "Space";
                 else if (keyName.length === 1) keyName = keyName.toUpperCase();
                 parts.push(keyName);
-                applyHotkey(parts.join("+"));
+                void inspectAndMaybeApply(parts.join("+"), true);
             };
             document.addEventListener("keydown", keyHandler, true);
         }
@@ -180,8 +245,47 @@ export function openInputActionPicker(
             }
         }
 
+        async function inspectAndMaybeApply(hotKey: string, autoApplyIfClean: boolean): Promise<void> {
+            draftHotKey = hotKey;
+            updateCaptureLabel();
+            clearMessage();
+            if (!hotKey || !options.onInspectHotKey) {
+                if (autoApplyIfClean) applyHotkey(hotKey || null);
+                return;
+            }
+
+            var generation = ++inspectGeneration;
+            try {
+                var result = await options.onInspectHotKey(hotKey);
+                if (settled || generation !== inspectGeneration) return;
+                if (result.conflictWith) {
+                    var template = labels.conflict || "Already used by {{name}}";
+                    showError(template.replace(/\{\{\s*name\s*\}\}/g, result.conflictWith));
+                    return;
+                }
+                if (result.reserved) {
+                    var reserved = labels.reserved || "{{hotKey}} is a common shortcut and is not recommended as a global hotkey.";
+                    showWarning(reserved.replace(/\{\{\s*hotKey\s*\}\}/g, hotKey), hotKey);
+                    return;
+                }
+                if (autoApplyIfClean) applyHotkey(hotKey);
+            } catch {
+                if (!settled && generation === inspectGeneration && autoApplyIfClean) {
+                    applyHotkey(hotKey);
+                }
+            }
+        }
+
+        function updateCaptureLabel(): void {
+            var capture = body.querySelector(".mt-action-picker-capture") as HTMLElement | null;
+            if (!capture) return;
+            capture.textContent = draftHotKey || labels.recording;
+            capture.classList.toggle("is-empty", !draftHotKey);
+        }
+
         function renderBody(): void {
             body.innerHTML = "";
+            clearMessage();
             if (keyboardTab && mouseTab) {
                 keyboardTab.classList.toggle("is-active", kind === "hotkey");
                 mouseTab.classList.toggle("is-active", kind === "mouse");
@@ -205,12 +309,12 @@ export function openInputActionPicker(
             body.appendChild(list);
         }
 
-        function mouseChoice(value: string, label: string): HTMLButtonElement {
+        function mouseChoice(value: string, label: string | undefined): HTMLButtonElement {
             var btn = document.createElement("button");
             btn.type = "button";
             btn.className = "mt-action-picker-choice";
             if (draftMouse === value) btn.classList.add("is-active");
-            btn.textContent = label;
+            btn.textContent = label || value;
             btn.addEventListener("click", () => applyMouse(value));
             return btn;
         }
@@ -226,6 +330,18 @@ export function openInputActionPicker(
             renderBody();
         });
         cancelBtn.addEventListener("click", () => finish(null));
+        resetBtn?.addEventListener("click", () => {
+            if (kind === "mouse") {
+                applyMouse(options.defaultMouseButton || MOUSE_BACK);
+                return;
+            }
+            var resetValue = options.defaultHotKey ?? "";
+            if (!resetValue) {
+                applyHotkey(null);
+                return;
+            }
+            void inspectAndMaybeApply(resetValue, true);
+        });
         overlay.addEventListener("mousedown", (e) => {
             if (e.target === overlay) finish(null);
         });
@@ -261,7 +377,7 @@ function ensureStyles(): void {
     justify-content: center;
 }
 .mt-action-picker {
-    width: 280px;
+    width: 320px;
     background: var(--mt-surface, #2a2a2a);
     border: 1px solid var(--mt-border, #3a3a3a);
     border-radius: 12px;
@@ -299,7 +415,7 @@ function ensureStyles(): void {
 }
 .mt-action-picker-body {
     min-height: 72px;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
 }
 .mt-action-picker-capture {
     min-height: 72px;
@@ -316,6 +432,17 @@ function ensureStyles(): void {
     color: var(--mt-text-tertiary, #888);
     font-style: italic;
     font-size: 13px;
+}
+.mt-action-picker-msg {
+    font-size: 12px;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+.mt-action-picker-msg.is-error {
+    color: var(--mt-danger, #e07070);
+}
+.mt-action-picker-msg.is-warn {
+    color: var(--mt-warning, #e0b050);
 }
 .mt-action-picker-mouse-list {
     display: flex;
@@ -339,7 +466,14 @@ function ensureStyles(): void {
 }
 .mt-action-picker-footer {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+.mt-action-picker-footer-end {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
 }
 .mt-action-picker-btn {
     padding: 6px 14px;
@@ -352,6 +486,14 @@ function ensureStyles(): void {
 }
 .mt-action-picker-btn:hover {
     color: var(--mt-text, #e0e0e0);
+}
+.mt-action-picker-btn-primary {
+    background: var(--mt-accent, #4a9eff);
+    color: #fff;
+}
+.mt-action-picker-btn-primary:hover {
+    color: #fff;
+    filter: brightness(1.05);
 }
 `;
     document.head.appendChild(style);

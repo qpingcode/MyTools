@@ -5,6 +5,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
 using System.Windows.Controls.Primitives;
+using MyTools.Common.DependencyInjection;
 using MyTools.Desktop.Components;
 using MyTools.Desktop.Services;
 using MyTools.Desktop.Utils;
@@ -344,6 +345,13 @@ public partial class PluginWindow
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
+        if (WindowSystemMenuFilter.IsCandidate(msg)
+            && WindowSystemMenuFilter.ShouldSuppress(msg, wParam, AreHotKeysSuspended()))
+        {
+            handled = true;
+            return IntPtr.Zero;
+        }
+
         if (msg != WmGetMinMaxInfo)
         {
             return IntPtr.Zero;
@@ -388,6 +396,18 @@ public partial class PluginWindow
             PluginWindowLayoutMetrics.DipToDevicePixels(MinHeight, dpiScaleY));
         Marshal.StructureToPtr(minMaxInfo, lParam, false);
         return true;
+    }
+
+    private static bool AreHotKeysSuspended()
+    {
+        try
+        {
+            return ServiceLocator.GetService<HotKeyManager>()?.AreHotKeysSuspended == true;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
     }
 
     private (double X, double Y) GetCurrentDpiScale()

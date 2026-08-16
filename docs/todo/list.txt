@@ -1,7 +1,7 @@
 ﻿待定：
-1. 配置可以设置每个插件是否在global search中使用
-2. 插件本身可以设置自身不能在global search中使用 ？
-3. settings样式调整， 减少横向滚动条， alias 界面上限制只能设置一个，减少屏幕宽度
+1. 配置可以设置每个插件是否在global search中使用 ok
+2. 插件本身可以设置自身不能在global search中使用 ok
+3. settings样式调整， 减少横向滚动条， alias 界面上限制只能设置一个，减少屏幕宽度 ok
 4. 应当支持无界面的node插件
 5. mouse gesture 增加一个嗅探功能（可以在process文本框旁边加按钮） 点击后隐藏settings窗口可以点击显示process名称， 按esc退出嗅探
   - bug: 当点击windows底部toolbar时候 如果toolbar下面有个重叠的窗口， 右击会穿透窗口，给下面的窗口发送右击事件

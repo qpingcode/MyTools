@@ -1,9 +1,12 @@
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.Messaging;
+using MyTools.Common.DependencyInjection;
 using MyTools.Desktop.Components;
+using MyTools.Desktop.Services;
 using MyTools.Desktop.ViewModels;
 using MyTools.Plugins;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
@@ -14,6 +17,7 @@ namespace MyTools.Desktop.Views
     {
         private static readonly object singletonLock = new();
         private readonly SearchViewModel viewModel;
+        private HwndSource? hwndSource;
 
         public SearchWindow(SearchViewModel searchViewModel)
         {
@@ -34,6 +38,7 @@ namespace MyTools.Desktop.Views
             PreviewKeyUp += (sender, e) => viewModel.HandlePreviewKeyUp(e);;
             KeyDown += Window_KeyDown;
             Closed += Window_OnClosed;
+            SourceInitialized += Window_OnSourceInitialized;
 
             MouseLeftButtonDown += (s, e) => DragMove();
             
@@ -72,8 +77,44 @@ namespace MyTools.Desktop.Views
         
         private void Window_OnClosed(object? sender, EventArgs e)
         {
+            if (hwndSource != null)
+            {
+                hwndSource.RemoveHook(WndProc);
+                hwndSource = null;
+            }
+
+            SourceInitialized -= Window_OnSourceInitialized;
             WeakReferenceMessenger.Default.UnregisterAll(this);
             viewModel.Dispose();
+        }
+
+        private void Window_OnSourceInitialized(object? sender, EventArgs e)
+        {
+            var handle = new WindowInteropHelper(this).Handle;
+            hwndSource = HwndSource.FromHwnd(handle);
+            hwndSource?.AddHook(WndProc);
+        }
+
+        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            if (WindowSystemMenuFilter.ShouldSuppress(msg, wParam, AreHotKeysSuspended()))
+            {
+                handled = true;
+            }
+
+            return IntPtr.Zero;
+        }
+
+        private static bool AreHotKeysSuspended()
+        {
+            try
+            {
+                return ServiceLocator.GetService<HotKeyManager>()?.AreHotKeysSuspended == true;
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
         }
         
         private void Window_KeyDown(object sender, KeyEventArgs e)

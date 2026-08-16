@@ -72,5 +72,7 @@ namespace MyTools.Desktop.Services
         {
             _hotKeyMessageHandler.ResumeAll();
         }
+
+        public bool AreHotKeysSuspended => _hotKeyMessageHandler.IsSuspended;
     }
 }

@@ -6,6 +6,7 @@ export type Setting = {
     description?: string;
     valueType: string;
     currentValue?: string;
+    defaultValue?: string;
     requiresRestart: boolean;
 };
 

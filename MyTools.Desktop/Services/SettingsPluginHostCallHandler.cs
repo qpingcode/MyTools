@@ -93,6 +93,7 @@ public sealed class SettingsPluginHostCallHandler
                 "resumeGestures" => ResumeGestures(),
                 "suspendHotkeys" => SuspendHotkeys(),
                 "resumeHotkeys" => ResumeHotkeys(),
+                "checkHotKey" => CheckHotKey(request.Params),
                 "restart" => Restart(),
                 _ => throw new NotSupportedException($"Unknown hostCall method: {request.Method}")
             };
@@ -162,6 +163,7 @@ public sealed class SettingsPluginHostCallHandler
             Description = setting.Description,
             ValueType = setting.ValueType.ToString(),
             CurrentValue = valueString,
+            DefaultValue = setting.DefaultValue?.ToString(),
             RequiresRestart = (setting.Options & SettingOptions.RequiresRestart) != 0
         };
     }
@@ -342,6 +344,10 @@ public sealed class SettingsPluginHostCallHandler
         var currentHotKeys = nodePlugins.ToDictionary(
             p => p.PluginId,
             p => (string?)(keymapOverrideProvider.GetHotKey(p.PluginId) ?? p.HotKey));
+        currentHotKeys["__search__"] = registry.FindSetting(AppConfigService.SearchHotKeySettingPath)?.CurrentValue as string
+            ?? appConfigService.AppConfig.SearchHotKeyText;
+        pluginNames["__search__"] = languageService.GetCaption(
+            "Configuration.General.SearchHotKey.Title", "Search hotkey");
         var currentKeywords = nodePlugins.ToDictionary(
             p => p.PluginId,
             p => (List<string>?)(keymapOverrideProvider.GetKeywords(p.PluginId) ?? p.Keywords.ToList()));
@@ -411,6 +417,39 @@ public sealed class SettingsPluginHostCallHandler
     {
         System.Windows.Application.Current.Dispatcher.Invoke(() => hotKeyManager.ResumeAllHotKeys());
         return JsonSerializer.SerializeToElement(new { }, JsonCamelCaseOptions);
+    }
+
+    private JsonElement CheckHotKey(JsonElement payload)
+    {
+        var request = payload.Deserialize<CheckHotKeyRequest>(JsonCamelCaseOptions) ?? new CheckHotKeyRequest();
+        var nodePlugins = pluginLoader.LoadedPlugins.OfType<NodePlugin>().ToList();
+        var pluginHotKeys = nodePlugins.ToDictionary(
+            p => p.PluginId,
+            p => (string?)(keymapOverrideProvider.GetHotKey(p.PluginId) ?? p.HotKey));
+        var pluginNames = nodePlugins.ToDictionary(p => p.PluginId, p => p.GetDisplayName());
+
+        var searchHotKey = request.CurrentSearchHotKey
+            ?? registry.FindSetting(AppConfigService.SearchHotKeySettingPath)?.CurrentValue as string
+            ?? appConfigService.AppConfig.SearchHotKeyText;
+
+        var inspection = HotKeyInspector.Inspect(request.HotKey, new HotKeyInspectionRequest
+        {
+            SearchHotKey = searchHotKey,
+            SearchHotKeyDisplayName = languageService.GetCaption(
+                "Configuration.General.SearchHotKey.Title", "Search hotkey"),
+            ExcludeSearchHotKey = request.ExcludeSearchHotKey,
+            ExcludePluginId = request.ExcludePluginId,
+            PluginHotKeys = pluginHotKeys,
+            PluginNames = pluginNames
+        });
+
+        return JsonSerializer.SerializeToElement(
+            new CheckHotKeyResult
+            {
+                ConflictWith = inspection.ConflictWith,
+                Reserved = inspection.Reserved
+            },
+            JsonCamelCaseOptions);
     }
 
     private JsonElement Restart()
@@ -524,6 +563,20 @@ public sealed class KeymapConflictDto
     public string Field { get; init; } = "";
     public string Value { get; init; } = "";
     public string ConflictsWith { get; init; } = "";
+}
+
+public sealed class CheckHotKeyRequest
+{
+    public string? HotKey { get; init; }
+    public string? ExcludePluginId { get; init; }
+    public bool ExcludeSearchHotKey { get; init; }
+    public string? CurrentSearchHotKey { get; init; }
+}
+
+public sealed class CheckHotKeyResult
+{
+    public string? ConflictWith { get; init; }
+    public bool Reserved { get; init; }
 }
 
 // ── Gestures DTO ──

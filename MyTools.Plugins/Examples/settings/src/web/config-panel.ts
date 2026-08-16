@@ -293,7 +293,13 @@ function hotKeyPickerLabels(): InputActionPickerLabels {
         tabKeyboard: t("Plugin.Settings.Gestures.TriggerHotkey", "Hotkey"),
         tabMouse: t("Plugin.Settings.Gestures.TriggerMouse", "Mouse Button"),
         recording: t("Plugin.Settings.Keymap.Recording", "Press shortcut..."),
-        cancel: t("Plugin.Settings.Cancel", "Cancel")
+        cancel: t("Plugin.Settings.Cancel", "Cancel"),
+        reset: t("Plugin.Settings.ActionPicker.Reset", "Reset to default"),
+        ok: t("Plugin.Settings.ActionPicker.Ok", "OK"),
+        conflict: t("Plugin.Settings.ActionPicker.Conflict", "Already used by {{name}}", { name: "{{name}}" }),
+        reserved: t("Plugin.Settings.ActionPicker.Reserved",
+            "{{hotKey}} is a common shortcut (copy/paste/select all, etc.) and is not recommended as a global hotkey.",
+            { hotKey: "{{hotKey}}" })
     };
 }
 
@@ -313,12 +319,17 @@ function createHotKeyEditor(setting: Setting, currentVal: string, dirtyVal: stri
             showKeyboard: true,
             showMouse: false,
             value: { kind: "hotkey", hotKey: value || null },
+            defaultHotKey: setting.defaultValue ?? "",
             labels: hotKeyPickerLabels(),
             onSuspendHotkeys: () => { void bus.call("suspendHotkeys"); },
-            onResumeHotkeys: () => { void bus.call("resumeHotkeys"); }
+            onResumeHotkeys: () => { void bus.call("resumeHotkeys"); },
+            onInspectHotKey: (hotKey) => bus.call("checkHotKey", {
+                hotKey,
+                excludeSearchHotKey: true
+            })
         }).then((result) => {
-            if (!result?.hotKey) return;
-            value = result.hotKey;
+            if (!result) return;
+            value = result.hotKey || "";
             renderLabel();
             common.state.dirtySettings.set(setting.fullPath, value);
             common.updateSaveButton();
