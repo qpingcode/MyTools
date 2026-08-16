@@ -18,7 +18,7 @@
       "entry": "backend/index.mjs",
       "capabilities": [],
       "keywords": [],
-      "search": { "global": false },
+      "search": { "global": true },
       "detail": {
         "type": "web",
         "entry": "web/index.html"
