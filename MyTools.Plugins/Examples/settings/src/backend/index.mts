@@ -1,12 +1,12 @@
-// Named-pipe backend for settings. Each handler delegates to tool.hostCall(...)
+// Named-pipe backend for settings. Each handler delegates to plugin.hostCall(...)
 // which the SDK maps to host.call.<method>.
 
-import { createTool } from "@qping/plugin-bus/server";
+import { createPlugin } from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 
-const tool = createTool();
+const plugin = createPlugin();
 
-tool
+plugin
   .initialize((params) => {
     mytoolsI18n.configure(params);
     return {};
@@ -32,43 +32,43 @@ tool
     ],
   }))
   .handle("getConfiguration", async () => {
-    return await tool.hostCall("getConfiguration");
+    return await plugin.hostCall("getConfiguration");
   })
   .handle("saveConfiguration", async (payload: any) => {
     const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
-    return await tool.hostCall("saveConfiguration", params);
+    return await plugin.hostCall("saveConfiguration", params);
   })
   .handle("getKeymap", async () => {
-    return await tool.hostCall("getKeymap");
+    return await plugin.hostCall("getKeymap");
   })
   .handle("saveKeymap", async (payload: any) => {
     const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
-    return await tool.hostCall("saveKeymap", params);
+    return await plugin.hostCall("saveKeymap", params);
   })
   .handle("validateKeymap", async (payload: any) => {
     const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
-    return await tool.hostCall("validateKeymap", params);
+    return await plugin.hostCall("validateKeymap", params);
   })
   .handle("getGestures", async () => {
-    return await tool.hostCall("getGestures");
+    return await plugin.hostCall("getGestures");
   })
   .handle("saveGestures", async (payload: any) => {
     const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
-    return await tool.hostCall("saveGestures", params);
+    return await plugin.hostCall("saveGestures", params);
   })
   .handle("suspendGestures", async () => {
-    return await tool.hostCall("suspendGestures");
+    return await plugin.hostCall("suspendGestures");
   })
   .handle("resumeGestures", async () => {
-    return await tool.hostCall("resumeGestures");
+    return await plugin.hostCall("resumeGestures");
   })
   .handle("suspendHotkeys", async () => {
-    return await tool.hostCall("suspendHotkeys");
+    return await plugin.hostCall("suspendHotkeys");
   })
   .handle("resumeHotkeys", async () => {
-    return await tool.hostCall("resumeHotkeys");
+    return await plugin.hostCall("resumeHotkeys");
   })
   .handle("restart", async () => {
-    return await tool.hostCall("restart");
+    return await plugin.hostCall("restart");
   })
   .start();

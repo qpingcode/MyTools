@@ -1,12 +1,10 @@
 /**
- * v3 server-side tool SDK: a fluent `createTool()` API that mirrors the v2 @qping/plugin-common/server
- * surface (initialize/search/action/handle/publish/hostCall/start) but runs over the v3 named-pipe
- * message bus via bootstrap.ts.
+ * Node-side plugin SDK: fluent `createPlugin()` over the v3 named-pipe message bus.
  *
- * Legacy method names map to v3 routes:
+ * Method names map to v3 routes:
  *   initialize -> plugin.call.initialize
  *   search     -> plugin.call.search
- *   invokeAction -> plugin.call.invokeAction
+ *   action     -> plugin.call.invokeAction
  *   handle(name) -> plugin.call.<name>
  *   publish    -> plugin.event.<subjectId>
  *   hostCall   -> host.call.<method>
@@ -23,7 +21,7 @@ import {
   pluginEventRoute,
 } from "./protocol.ts";
 
-type NodeToolContext = {
+export type PluginContext = {
   action: string;
   itemId: string;
   query: string;
@@ -31,37 +29,37 @@ type NodeToolContext = {
   fallbackLocale: string;
 };
 
-type NodeToolHostHandler = (params: any) => unknown | Promise<unknown>;
-type NodeToolHandler = (payload: any, context: NodeToolContext) => unknown | Promise<unknown>;
+type PluginLifecycleHandler = (params: any) => unknown | Promise<unknown>;
+type PluginHandler = (payload: any, context: PluginContext) => unknown | Promise<unknown>;
 
-export class NodeTool {
-  #handlers = new Map<string, NodeToolHandler>();
-  #searchHandler: NodeToolHostHandler | null = null;
-  #actionHandler: NodeToolHostHandler | null = null;
-  #initializeHandler: NodeToolHostHandler | null = null;
+export class Plugin {
+  #handlers = new Map<string, PluginHandler>();
+  #searchHandler: PluginLifecycleHandler | null = null;
+  #actionHandler: PluginLifecycleHandler | null = null;
+  #initializeHandler: PluginLifecycleHandler | null = null;
   #runtime: PluginRuntime | null = null;
 
-  initialize(handler: NodeToolHostHandler): this {
+  initialize(handler: PluginLifecycleHandler): this {
     this.#initializeHandler = handler;
     return this;
   }
 
-  search(handler: NodeToolHostHandler): this {
+  search(handler: PluginLifecycleHandler): this {
     this.#searchHandler = handler;
     return this;
   }
 
-  action(handler: NodeToolHostHandler): this {
+  action(handler: PluginLifecycleHandler): this {
     this.#actionHandler = handler;
     return this;
   }
 
-  handle(action: string, handler: NodeToolHandler): this {
+  handle(action: string, handler: PluginHandler): this {
     if (!action || typeof action !== "string") {
-      throw new Error("tool.handle requires an action name.");
+      throw new Error("plugin.handle requires an action name.");
     }
     if (typeof handler !== "function") {
-      throw new Error("tool.handle requires a handler.");
+      throw new Error("plugin.handle requires a handler.");
     }
     this.#handlers.set(action, handler);
     return this;
@@ -69,7 +67,7 @@ export class NodeTool {
 
   /** Publishes a plugin.event.<subjectId> event to all webviews in the session. */
   publish(subjectId: string, payload: unknown = {}): void {
-    if (!this.#runtime) throw new Error("tool not started");
+    if (!this.#runtime) throw new Error("plugin not started");
     const route = pluginEventRoute(subjectId);
     this.#runtime.transport.send({
       version: ProtocolVersion,
@@ -87,7 +85,7 @@ export class NodeTool {
 
   /** Calls a host.call.<method> capability and awaits the response. */
   hostCall(method: string, params: Record<string, unknown> = {}): Promise<unknown> {
-    if (!this.#runtime) return Promise.reject(new Error("tool not started"));
+    if (!this.#runtime) return Promise.reject(new Error("plugin not started"));
     return this.#runtime.router.callHost(hostCallRoute(method), params);
   }
 
@@ -132,7 +130,7 @@ export class NodeTool {
   }
 }
 
-function extractContext(p: any, action: string): NodeToolContext {
+function extractContext(p: any, action: string): PluginContext {
   return {
     action,
     itemId: p?.itemId ?? "",
@@ -142,7 +140,6 @@ function extractContext(p: any, action: string): NodeToolContext {
   };
 }
 
-/** Creates a v3 NodeTool. Drop-in replacement for @qping/plugin-common/server's createTool(). */
-export function createTool(): NodeTool {
-  return new NodeTool();
+export function createPlugin(): Plugin {
+  return new Plugin();
 }
