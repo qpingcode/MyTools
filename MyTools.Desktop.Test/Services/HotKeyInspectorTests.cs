@@ -61,6 +61,18 @@ public class HotKeyInspectorTests
     }
 
     [Test]
+    public void Inspect_ShouldIgnoreReservedHotKeyWhenExcluded()
+    {
+        var result = HotKeyInspector.Inspect("Ctrl+C", new HotKeyInspectionRequest
+        {
+            ExcludeReservedHotKey = true
+        });
+
+        Assert.That(result.Reserved, Is.False);
+        Assert.That(result.ConflictWith, Is.Null);
+    }
+
+    [Test]
     public void Inspect_EmptyHotKey_ShouldBeClean()
     {
         var result = HotKeyInspector.Inspect("", new HotKeyInspectionRequest

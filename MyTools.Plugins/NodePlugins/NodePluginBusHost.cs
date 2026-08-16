@@ -268,7 +268,12 @@ internal sealed class NodePluginBusHost : INodePluginHost
             throw new InvalidOperationException("No host call handler registered for this plugin.");
         }
 
-        return await HostCallHandler(new HostCallRequest(method, parameters), cancellationToken);
+        return await HostCallHandler(new HostCallRequest(
+            method,
+            parameters,
+            _manifest.ParentId,
+            _manifest.EntryId,
+            _session?.SessionId ?? ""), cancellationToken);
     }
 
     public Task<JsonElement> InitializeAsync(string locale, string fallbackLocale,

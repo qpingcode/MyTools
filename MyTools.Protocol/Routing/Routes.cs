@@ -57,6 +57,7 @@ public static class Routes
         public const string Key = Prefix.HostEvent + "key";
         public const string LanguageChanged = Prefix.HostEvent + "languageChanged";
         public const string ThemeChanged = Prefix.HostEvent + "themeChanged";
+        public const string InputActionCaptured = Prefix.HostEvent + "inputActionCaptured";
 
         public static string Of(string subject)
             => StartsWithPrefix(subject, Prefix.HostEvent) ? subject : Prefix.HostEvent + subject;

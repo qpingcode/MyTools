@@ -69,6 +69,7 @@ export const Routes = {
     Key: "host.event.key",
     LanguageChanged: "host.event.languageChanged",
     ThemeChanged: "host.event.themeChanged",
+    InputActionCaptured: "host.event.inputActionCaptured",
   },
 } as const;
 

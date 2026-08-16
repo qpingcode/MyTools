@@ -18,7 +18,7 @@ public sealed class GestureConfig
     public string ActionName { get; set; } = "";
 
     /// <summary>
-    /// 动作类型："hotkey"（模拟快捷键）或 "mouse"（模拟鼠标侧键）。
+    /// 动作类型："hotkey"（模拟快捷键）或 "mouse"（模拟鼠标按键）。
     /// </summary>
     public string ActionType { get; set; } = "hotkey";
 
@@ -28,7 +28,7 @@ public sealed class GestureConfig
     public string? HotKey { get; set; }
 
     /// <summary>
-    /// mouse 类型下要模拟的鼠标按键："XButton1"（后退）或 "XButton2"（前进）。
+    /// mouse 类型下要模拟的鼠标按键，例如 Left / Right / Middle / XButton1 / XButton2。
     /// </summary>
     public string? MouseButton { get; set; }
 

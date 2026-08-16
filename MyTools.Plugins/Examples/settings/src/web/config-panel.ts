@@ -1,8 +1,7 @@
 import type { Category, Option, Setting } from "./types";
 import { highlight, t } from "./utils";
 import * as common from "./common";
-import { bus } from "./bus";
-import { openInputActionPicker, type InputActionPickerLabels } from "./action-picker";
+import { captureInputAction } from "./capture-input-action";
 
 // ── Hooks for special-category search (keymap, gestures) ──
 // These are set by the respective panel modules to participate in search matching.
@@ -287,22 +286,6 @@ function createSelect(setting: Setting, currentVal: string, dirtyVal: string | u
     return select;
 }
 
-function hotKeyPickerLabels(): InputActionPickerLabels {
-    return {
-        title: t("Plugin.Settings.SearchHotKey.PickerTitle", "Set search hotkey"),
-        tabKeyboard: t("Plugin.Settings.Gestures.TriggerHotkey", "Hotkey"),
-        tabMouse: t("Plugin.Settings.Gestures.TriggerMouse", "Mouse Button"),
-        recording: t("Plugin.Settings.Keymap.Recording", "Press shortcut..."),
-        cancel: t("Plugin.Settings.Cancel", "Cancel"),
-        reset: t("Plugin.Settings.ActionPicker.Reset", "Reset to default"),
-        ok: t("Plugin.Settings.ActionPicker.Ok", "OK"),
-        conflict: t("Plugin.Settings.ActionPicker.Conflict", "Already used by {{name}}", { name: "{{name}}" }),
-        reserved: t("Plugin.Settings.ActionPicker.Reserved",
-            "{{hotKey}} is a common shortcut (copy/paste/select all, etc.) and is not recommended as a global hotkey.",
-            { hotKey: "{{hotKey}}" })
-    };
-}
-
 function createHotKeyEditor(setting: Setting, currentVal: string, dirtyVal: string | undefined): HTMLElement {
     var btn = document.createElement("button");
     btn.type = "button";
@@ -315,18 +298,12 @@ function createHotKeyEditor(setting: Setting, currentVal: string, dirtyVal: stri
 
     renderLabel();
     btn.addEventListener("click", () => {
-        void openInputActionPicker({
+        void captureInputAction({
             showKeyboard: true,
             showMouse: false,
             value: { kind: "hotkey", hotKey: value || null },
             defaultHotKey: setting.defaultValue ?? "",
-            labels: hotKeyPickerLabels(),
-            onSuspendHotkeys: () => { void bus.call("suspendHotkeys"); },
-            onResumeHotkeys: () => { void bus.call("resumeHotkeys"); },
-            onInspectHotKey: (hotKey) => bus.call("checkHotKey", {
-                hotKey,
-                excludeSearchHotKey: true
-            })
+            excludeSearchHotKey: true
         }).then((result) => {
             if (!result) return;
             value = result.hotKey || "";

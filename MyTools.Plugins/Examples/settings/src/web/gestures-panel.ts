@@ -3,7 +3,7 @@ import type { Category, GestureConfig } from "./types";
 import { highlight, t } from "./utils";
 import * as common from "./common";
 import { categorySelfMatches, renderSettingItem } from "./config-panel";
-import { formatMouseButtonLabel, openInputActionPicker, type InputActionPickerLabels } from "./action-picker";
+import { captureInputAction } from "./capture-input-action";
 
 var gestureConfigs: GestureConfig[] | null = null;
 
@@ -34,29 +34,30 @@ function formatGestureDisplay(directions: string[]): { visible: string; full: st
     };
 }
 
-function actionPickerLabels(): InputActionPickerLabels {
-    return {
-        title: t("Plugin.Settings.ActionPicker.Title", "Choose action"),
-        tabKeyboard: t("Plugin.Settings.Gestures.TriggerHotkey", "Hotkey"),
-        tabMouse: t("Plugin.Settings.Gestures.TriggerMouse", "Mouse Button"),
-        recording: t("Plugin.Settings.Keymap.Recording", "Press shortcut..."),
-        cancel: t("Plugin.Settings.Cancel", "Cancel"),
-        reset: t("Plugin.Settings.ActionPicker.Reset", "Reset to default"),
-        ok: t("Plugin.Settings.ActionPicker.Ok", "OK"),
-        mouseBack: t("Plugin.Settings.Gestures.MouseBack", "Back (XButton1)"),
-        mouseForward: t("Plugin.Settings.Gestures.MouseForward", "Forward (XButton2)")
-    };
+function formatMouseButtonLabel(mouseButton: string | null | undefined): string | null {
+    if (!mouseButton) return null;
+    if (mouseButton === "XButton2") return t("Plugin.Settings.Gestures.MouseForward", "Forward (XButton2)");
+    if (mouseButton === "XButton1") return t("Plugin.Settings.Gestures.MouseBack", "Back (XButton1)");
+    if (mouseButton === "Left") return t("Plugin.Settings.Gestures.MouseLeft", "Left");
+    if (mouseButton === "Right") return t("Plugin.Settings.Gestures.MouseRight", "Right");
+    if (mouseButton === "Middle") return t("Plugin.Settings.Gestures.MouseMiddle", "Middle");
+    return mouseButton;
+}
+
+function formatMouseButtonShort(mouseButton: string): string {
+    if (mouseButton === "XButton2") return t("Plugin.Settings.Gestures.MouseForwardShort", "Forward");
+    if (mouseButton === "XButton1") return t("Plugin.Settings.Gestures.MouseBackShort", "Back");
+    if (mouseButton === "Left") return t("Plugin.Settings.Gestures.MouseLeftShort", "Left");
+    if (mouseButton === "Right") return t("Plugin.Settings.Gestures.MouseRightShort", "Right");
+    if (mouseButton === "Middle") return t("Plugin.Settings.Gestures.MouseMiddleShort", "Middle");
+    return mouseButton;
 }
 
 function formatActionDisplay(gesture: GestureConfig): { text: string; empty: boolean; title: string } {
-    var labels = actionPickerLabels();
     if (gesture.actionType === "mouse") {
-        var mouseLabel = formatMouseButtonLabel(gesture.mouseButton, labels);
-        if (mouseLabel) {
-            var shortLabel = gesture.mouseButton === "XButton2"
-                ? t("Plugin.Settings.Gestures.MouseForwardShort", "Forward")
-                : t("Plugin.Settings.Gestures.MouseBackShort", "Back");
-            return { text: shortLabel, empty: false, title: mouseLabel };
+        var mouseLabel = formatMouseButtonLabel(gesture.mouseButton);
+        if (mouseLabel && gesture.mouseButton) {
+            return { text: formatMouseButtonShort(gesture.mouseButton), empty: false, title: mouseLabel };
         }
     } else if (gesture.hotKey) {
         return { text: gesture.hotKey, empty: false, title: gesture.hotKey };
@@ -360,7 +361,7 @@ function renderGestureRow(gesture: GestureConfig, conflictMap: Map<string, strin
     actionBtn.title = actionShown.title;
     if (actionShown.empty) actionBtn.classList.add("is-empty");
     actionBtn.addEventListener("click", () => {
-        void openInputActionPicker({
+        void captureInputAction({
             showKeyboard: true,
             showMouse: true,
             value: {
@@ -368,9 +369,7 @@ function renderGestureRow(gesture: GestureConfig, conflictMap: Map<string, strin
                 hotKey: gesture.hotKey ?? null,
                 mouseButton: gesture.mouseButton ?? null
             },
-            labels: actionPickerLabels(),
-            onSuspendHotkeys: () => { void bus.call("suspendHotkeys"); },
-            onResumeHotkeys: () => { void bus.call("resumeHotkeys"); }
+            excludeReservedHotKey: true
         }).then((result) => {
             if (!result) return;
             gesture.actionType = result.kind;

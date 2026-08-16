@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace MyTools.Desktop.Views;
 
@@ -36,4 +38,42 @@ internal static class WindowSystemMenuFilter
 
         return false;
     }
+
+    /// <summary>
+    /// Alt+Space is delivered as <c>SC_KEYMENU</c>, not a Space keydown.
+    /// Rebuild the chord from the current modifier state so the recorder can see it.
+    /// </summary>
+    public static string FormatSystemMenuChord()
+    {
+        var parts = new List<string>();
+        if (IsDown(VkControl))
+        {
+            parts.Add("Ctrl");
+        }
+
+        if (IsDown(VkShift))
+        {
+            parts.Add("Shift");
+        }
+
+        parts.Add("Alt");
+
+        if (IsDown(VkLWin) || IsDown(VkRWin))
+        {
+            parts.Add("Win");
+        }
+
+        parts.Add("Space");
+        return string.Join("+", parts);
+    }
+
+    private const int VkShift = 0x10;
+    private const int VkControl = 0x11;
+    private const int VkLWin = 0x5B;
+    private const int VkRWin = 0x5C;
+
+    private static bool IsDown(int virtualKey) => (GetKeyState(virtualKey) & 0x8000) != 0;
+
+    [DllImport("user32.dll")]
+    private static extern short GetKeyState(int nVirtKey);
 }

@@ -88,8 +88,100 @@ test("host.call client sends a request envelope and correlates the response", as
   assert.deepEqual(result, { value: "dark" });
 });
 
+test("host.call uses 30s default timeout outside a plugin.call", async () => {
+  const sent = [];
+  const router = new HandlerRouter({ send: (e) => sent.push(e) });
+
+  const pending = router.callHost("host.call.x", {});
+  assert.equal(sent[0].timeoutMs, 30_000);
+  await replyHostCall(router, sent[0]);
+  await pending;
+});
+
+test("host.call uses an explicit timeout outside a plugin.call", async () => {
+  const sent = [];
+  const router = new HandlerRouter({ send: (e) => sent.push(e) });
+
+  const pending = router.callHost("host.call.x", {}, 1200);
+  assert.equal(sent[0].timeoutMs, 1200);
+  await replyHostCall(router, sent[0]);
+  await pending;
+});
+
+test("host.call inherits remaining timeout from the inbound plugin.call", async () => {
+  const sent = [];
+  const router = new HandlerRouter({ send: (e) => sent.push(e) });
+  router.handle("plugin.call.save", async () => {
+    const pending = router.callHost("host.call.getConfiguration", {});
+    const hostReq = sent.find((e) => e.route === "host.call.getConfiguration");
+    await replyHostCall(router, hostReq);
+    await pending;
+    return { ok: true };
+  });
+
+  await router.dispatch(req("r-to", "plugin.call.save"));
+
+  const hostReq = sent.find((e) => e.route === "host.call.getConfiguration");
+  assert.ok(hostReq);
+  assert.ok(hostReq.timeoutMs <= 5000);
+  assert.ok(hostReq.timeoutMs > 4900);
+});
+
+test("host.call caps an explicit timeout by remaining inbound time", async () => {
+  const sent = [];
+  const router = new HandlerRouter({ send: (e) => sent.push(e) });
+  router.handle("plugin.call.save", async () => {
+    const pending = router.callHost("host.call.getConfiguration", {}, 30_000);
+    const hostReq = sent.find((e) => e.route === "host.call.getConfiguration");
+    await replyHostCall(router, hostReq);
+    await pending;
+    return { ok: true };
+  });
+
+  await router.dispatch(req("r-cap", "plugin.call.save"));
+
+  const hostReq = sent.find((e) => e.route === "host.call.getConfiguration");
+  assert.ok(hostReq);
+  assert.ok(hostReq.timeoutMs <= 5000);
+});
+
+test("host.call rejects immediately when inbound time has already expired", async () => {
+  const sent = [];
+  const router = new HandlerRouter({ send: (e) => sent.push(e) });
+  router.handle("plugin.call.save", async () => {
+    await new Promise((r) => setTimeout(r, 5));
+    await router.callHost("host.call.getConfiguration", {});
+    return { ok: true };
+  });
+
+  const expired = req("r-exp", "plugin.call.save");
+  expired.timeoutMs = 1;
+  await router.dispatch(expired);
+
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].kind, "response");
+  assert.equal(sent[0].error?.code, "InternalError");
+  assert.match(sent[0].error.message, /no time remaining/);
+});
+
 function captureSends(router) {
   const out = [];
   router.send = (env) => out.push(env);
   return out;
+}
+
+async function replyHostCall(router, request) {
+  await router.dispatch({
+    version: "3.0",
+    id: "host-resp",
+    correlationId: request.id,
+    traceId: request.traceId,
+    sessionId: "s",
+    pluginId: "p",
+    entryId: "e",
+    endpointId: "host",
+    kind: "response",
+    route: request.route,
+    payload: {},
+  });
 }

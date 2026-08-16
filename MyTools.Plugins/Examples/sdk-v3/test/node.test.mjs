@@ -15,8 +15,8 @@ globalThis.__stubRunPlugin = async (routes) => {
       send(env) { globalThis.__lastSent = env; },
     },
     router: {
-      callHost(route, payload) {
-        globalThis.__lastHostCall = { route, payload };
+      callHost(route, payload, timeoutMs) {
+        globalThis.__lastHostCall = { route, payload, timeoutMs };
         return Promise.resolve({ ok: true });
       },
     },

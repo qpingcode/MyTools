@@ -52,7 +52,7 @@ export type GestureConfig = {
     actionName: string;
     actionType: string; // "hotkey" | "mouse"
     hotKey?: string | null;
-    mouseButton?: string | null; // "XButton1" | "XButton2"
+    mouseButton?: string | null; // "Left" | "Right" | "Middle" | "XButton1" | "XButton2"
     processNames: string[];
     isEnabled: boolean;
 };

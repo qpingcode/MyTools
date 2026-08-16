@@ -5,7 +5,12 @@ namespace MyTools.Plugins.NodePlugins;
 /// <summary>
 /// Node 插件向宿主发起的能力请求（hostCall）。
 /// </summary>
-public sealed record HostCallRequest(string Method, JsonElement Params);
+public sealed record HostCallRequest(
+    string Method,
+    JsonElement Params,
+    string PluginId = "",
+    string EntryId = "",
+    string SessionId = "");
 
 // ── getConfiguration 响应 DTO ──
 

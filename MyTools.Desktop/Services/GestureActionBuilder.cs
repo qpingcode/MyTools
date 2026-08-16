@@ -37,12 +37,12 @@ public static class GestureActionBuilder
 
     private static Action<MouseGestureEventArgs> BuildMouseAction(GestureConfig config, MouseHelper mouseHelper)
     {
-        return config.MouseButton switch
+        if (!Enum.TryParse<MouseButton>(config.MouseButton, ignoreCase: true, out var button))
         {
-            "XButton1" => args => mouseHelper.XButton1Click(args.LastPoint),
-            "XButton2" => args => mouseHelper.XButton2Click(args.LastPoint),
-            _ => _ => { }
-        };
+            return _ => { };
+        }
+
+        return args => mouseHelper.Click(button, args.LastPoint);
     }
 
     /// <summary>

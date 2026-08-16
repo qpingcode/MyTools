@@ -397,6 +397,30 @@
       "sourceHash": "sha256:placeholder"
     },
     {
+      "key": "Plugin.Settings.Gestures.MouseLeft",
+      "defaultValue": "Left",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "左键" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.MouseRight",
+      "defaultValue": "Right",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "右键" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.MouseMiddle",
+      "defaultValue": "Middle",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "中键" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
       "key": "Plugin.Settings.Gestures.Empty",
       "defaultValue": "No gestures configured",
       "placeholders": [],
@@ -485,6 +509,30 @@
       "sourceHash": "sha256:placeholder"
     },
     {
+      "key": "Plugin.Settings.Gestures.MouseLeftShort",
+      "defaultValue": "Left",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "左键" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.MouseRightShort",
+      "defaultValue": "Right",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "右键" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.MouseMiddleShort",
+      "defaultValue": "Middle",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "中键" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
       "key": "Plugin.Settings.ActionPicker.Title",
       "defaultValue": "Choose action",
       "placeholders": [],
@@ -538,6 +586,14 @@
       "placeholders": [],
       "references": [],
       "existingTranslations": { "zh-CN": "设置插件热键" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Capture.Waiting",
+      "defaultValue": "Waiting for input...",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "正在等待输入..." },
       "sourceHash": "sha256:placeholder"
     }
   ]

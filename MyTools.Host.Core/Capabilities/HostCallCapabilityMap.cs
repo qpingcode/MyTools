@@ -20,6 +20,7 @@ public static class HostCallCapabilityMap
                 or "getGestures" or "saveGestures"
                 or "suspendGestures" or "resumeGestures"
                 or "suspendHotkeys" or "resumeHotkeys" or "checkHotKey"
+                or "captureInputAction"
                 or "restart"
                 => "configuration.write",
             _ => method,

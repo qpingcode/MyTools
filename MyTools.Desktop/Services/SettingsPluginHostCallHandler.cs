@@ -7,6 +7,7 @@ using MyTools.Common.Config.Interfaces;
 using MyTools.Common.Config.Models;
 using MyTools.Desktop.Models;
 using MyTools.Desktop.Utils;
+using MyTools.Desktop.Views;
 using MyTools.Plugins;
 using MyTools.Plugins.NodePlugins;
 using Serilog.Events;
@@ -33,6 +34,7 @@ public sealed class SettingsPluginHostCallHandler
     private readonly HotKeyManager hotKeyManager;
     private readonly Searcher searcher;
     private readonly AppConfigService appConfigService;
+    private readonly InputActionCaptureService inputActionCaptureService;
     private readonly ILogger<SettingsPluginHostCallHandler> logger;
 
     private static readonly JsonSerializerOptions JsonCamelCaseOptions = new()
@@ -56,6 +58,7 @@ public sealed class SettingsPluginHostCallHandler
         HotKeyManager hotKeyManager,
         Searcher searcher,
         AppConfigService appConfigService,
+        InputActionCaptureService inputActionCaptureService,
         ILogger<SettingsPluginHostCallHandler> logger)
     {
         this.registry = registry;
@@ -72,15 +75,20 @@ public sealed class SettingsPluginHostCallHandler
         this.hotKeyManager = hotKeyManager;
         this.searcher = searcher;
         this.appConfigService = appConfigService;
+        this.inputActionCaptureService = inputActionCaptureService;
         this.logger = logger;
     }
 
-    public Task<JsonElement> HandleAsync(HostCallRequest request, CancellationToken cancellationToken)
+    public async Task<JsonElement> HandleAsync(HostCallRequest request, CancellationToken cancellationToken)
     {
-        JsonElement result;
         try
         {
-            result = request.Method switch
+            if (request.Method == "captureInputAction")
+            {
+                return await CaptureInputActionAsync(request);
+            }
+
+            return request.Method switch
             {
                 "getConfiguration" => GetConfiguration(),
                 "saveConfiguration" => SaveConfiguration(request.Params),
@@ -103,8 +111,6 @@ public sealed class SettingsPluginHostCallHandler
             logger.LogError(ex, "SettingsPluginHostCallHandler failed for method {Method}.", request.Method);
             throw;
         }
-
-        return Task.FromResult(result);
     }
 
     private JsonElement GetConfiguration()
@@ -422,6 +428,59 @@ public sealed class SettingsPluginHostCallHandler
     private JsonElement CheckHotKey(JsonElement payload)
     {
         var request = payload.Deserialize<CheckHotKeyRequest>(JsonCamelCaseOptions) ?? new CheckHotKeyRequest();
+        var inspection = InspectHotKey(request.HotKey, request);
+        return JsonSerializer.SerializeToElement(
+            new CheckHotKeyResult
+            {
+                ConflictWith = inspection.ConflictWith,
+                Reserved = inspection.Reserved
+            },
+            JsonCamelCaseOptions);
+    }
+
+    private async Task<JsonElement> CaptureInputActionAsync(HostCallRequest hostCall)
+    {
+        var request = hostCall.Params.Deserialize<CaptureInputActionRequest>(JsonCamelCaseOptions)
+            ?? new CaptureInputActionRequest();
+        var inspectRequest = new CheckHotKeyRequest
+        {
+            ExcludePluginId = request.ExcludePluginId,
+            ExcludeSearchHotKey = request.ExcludeSearchHotKey,
+            ExcludeReservedHotKey = request.ExcludeReservedHotKey,
+            CurrentSearchHotKey = request.CurrentSearchHotKey
+        };
+        var options = new InputActionCaptureOptions
+        {
+            ShowKeyboard = request.ShowKeyboard,
+            ShowMouse = request.ShowMouse,
+            Kind = request.Kind ?? "hotkey",
+            HotKey = request.HotKey,
+            MouseButton = request.MouseButton,
+            ShowReset = request.ShowReset,
+            DefaultHotKey = request.DefaultHotKey,
+            DefaultMouseButton = request.DefaultMouseButton,
+            InspectHotKey = hotKey => InspectHotKey(hotKey, inspectRequest)
+        };
+
+        var dispatcher = System.Windows.Application.Current?.Dispatcher
+            ?? throw new InvalidOperationException("WPF dispatcher is not available.");
+        var result = dispatcher.CheckAccess()
+            ? await inputActionCaptureService.CaptureAsync(options)
+            : await dispatcher.Invoke(() => inputActionCaptureService.CaptureAsync(options));
+
+        return JsonSerializer.SerializeToElement(
+            new
+            {
+                cancelled = result == null,
+                kind = result?.Kind,
+                hotKey = result?.HotKey,
+                mouseButton = result?.MouseButton
+            },
+            JsonCamelCaseOptions);
+    }
+
+    private HotKeyInspection InspectHotKey(string? hotKey, CheckHotKeyRequest request)
+    {
         var nodePlugins = pluginLoader.LoadedPlugins.OfType<NodePlugin>().ToList();
         var pluginHotKeys = nodePlugins.ToDictionary(
             p => p.PluginId,
@@ -432,24 +491,17 @@ public sealed class SettingsPluginHostCallHandler
             ?? registry.FindSetting(AppConfigService.SearchHotKeySettingPath)?.CurrentValue as string
             ?? appConfigService.AppConfig.SearchHotKeyText;
 
-        var inspection = HotKeyInspector.Inspect(request.HotKey, new HotKeyInspectionRequest
+        return HotKeyInspector.Inspect(hotKey, new HotKeyInspectionRequest
         {
             SearchHotKey = searchHotKey,
             SearchHotKeyDisplayName = languageService.GetCaption(
                 "Configuration.General.SearchHotKey.Title", "Search hotkey"),
             ExcludeSearchHotKey = request.ExcludeSearchHotKey,
+            ExcludeReservedHotKey = request.ExcludeReservedHotKey,
             ExcludePluginId = request.ExcludePluginId,
             PluginHotKeys = pluginHotKeys,
             PluginNames = pluginNames
         });
-
-        return JsonSerializer.SerializeToElement(
-            new CheckHotKeyResult
-            {
-                ConflictWith = inspection.ConflictWith,
-                Reserved = inspection.Reserved
-            },
-            JsonCamelCaseOptions);
     }
 
     private JsonElement Restart()
@@ -570,6 +622,7 @@ public sealed class CheckHotKeyRequest
     public string? HotKey { get; init; }
     public string? ExcludePluginId { get; init; }
     public bool ExcludeSearchHotKey { get; init; }
+    public bool ExcludeReservedHotKey { get; init; }
     public string? CurrentSearchHotKey { get; init; }
 }
 
@@ -577,6 +630,22 @@ public sealed class CheckHotKeyResult
 {
     public string? ConflictWith { get; init; }
     public bool Reserved { get; init; }
+}
+
+public sealed class CaptureInputActionRequest
+{
+    public bool ShowKeyboard { get; init; } = true;
+    public bool ShowMouse { get; init; }
+    public string? Kind { get; init; }
+    public string? HotKey { get; init; }
+    public string? MouseButton { get; init; }
+    public bool ShowReset { get; init; }
+    public string? DefaultHotKey { get; init; }
+    public string? DefaultMouseButton { get; init; }
+    public string? ExcludePluginId { get; init; }
+    public bool ExcludeSearchHotKey { get; init; }
+    public bool ExcludeReservedHotKey { get; init; }
+    public string? CurrentSearchHotKey { get; init; }
 }
 
 // ── Gestures DTO ──

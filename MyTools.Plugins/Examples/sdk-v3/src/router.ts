@@ -4,6 +4,7 @@
  * and correlate their responses. Mirrors the C# MessageBus routing rules on the Node side.
  */
 
+import { AsyncLocalStorage } from "node:async_hooks";
 import { randomBytes } from "node:crypto";
 import {
   type Envelope,
@@ -22,6 +23,39 @@ interface PendingHostCall {
   resolve: (value: unknown) => void;
   reject: (err: Error) => void;
   route: string;
+}
+
+type RequestScope = { deadlineMs: number | null };
+
+const requestScope = new AsyncLocalStorage<RequestScope>();
+
+export const DefaultHostCallTimeoutMs = 30_000;
+
+/** Remaining ms of the inbound plugin.call timeout, if currently inside a request. */
+export function remainingTimeoutMs(): number | undefined {
+  const scope = requestScope.getStore();
+  if (!scope || scope.deadlineMs == null) {
+    return undefined;
+  }
+
+  return scope.deadlineMs - Date.now();
+}
+
+export function resolveHostCallTimeoutMs(explicit?: number): number {
+  const remaining = remainingTimeoutMs();
+  if (explicit != null) {
+    return remaining == null ? explicit : Math.min(explicit, remaining);
+  }
+
+  return remaining ?? DefaultHostCallTimeoutMs;
+}
+
+function deadlineFromTimeoutMs(timeoutMs: number | null | undefined): number | null {
+  if (typeof timeoutMs !== "number" || timeoutMs <= 0) {
+    return null;
+  }
+
+  return Date.now() + timeoutMs;
 }
 
 export class HandlerRouter {
@@ -71,8 +105,9 @@ export class HandlerRouter {
       return;
     }
 
+    const deadlineMs = deadlineFromTimeoutMs(env.timeoutMs);
     try {
-      const result = await handler(env.payload);
+      const result = await requestScope.run({ deadlineMs }, () => handler(env.payload));
       this.send(this.responseFor(env, result ?? {}));
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -81,7 +116,12 @@ export class HandlerRouter {
   }
 
   /** Calls a host.call.* capability and resolves with the response payload. */
-  callHost(route: string, payload: unknown, timeoutMs = 30000): Promise<unknown> {
+  callHost(route: string, payload: unknown, timeoutMs?: number): Promise<unknown> {
+    const effectiveTimeoutMs = resolveHostCallTimeoutMs(timeoutMs);
+    if (effectiveTimeoutMs <= 0) {
+      return Promise.reject(new Error(`host call ${route} timed out (no time remaining)`));
+    }
+
     return new Promise((resolve, reject) => {
       const id = randomBytesHex();
       const req: Envelope = {
@@ -94,7 +134,7 @@ export class HandlerRouter {
         endpointId: this.endpointId,
         kind: MessageKind.Request,
         route,
-        timeoutMs,
+        timeoutMs: effectiveTimeoutMs,
         payload,
       };
       const pending: PendingHostCall = { resolve, reject, route };
@@ -102,10 +142,9 @@ export class HandlerRouter {
       const timer = setTimeout(() => {
         if (this.pendingHostCalls.has(id)) {
           this.pendingHostCalls.delete(id);
-          reject(new Error(`host call ${route} timed out after ${timeoutMs}ms`));
+          reject(new Error(`host call ${route} timed out after ${effectiveTimeoutMs}ms`));
         }
-      }, timeoutMs);
-      // Clear the timer when settled.
+      }, effectiveTimeoutMs);
       const origResolve = pending.resolve;
       const origReject = pending.reject;
       pending.resolve = (v) => { clearTimeout(timer); origResolve(v); };
