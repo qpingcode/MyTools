@@ -1,4 +1,4 @@
-import { createTool } from "@qping/plugin-bus/server";
+import { createPlugin } from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 
 const DEEPSEEK_API_URL = process.env.DEEPSEEK_API_URL || "https://api.deepseek.com/chat/completions";
@@ -260,9 +260,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-const tool = createTool();
+const plugin = createPlugin();
 
-tool
+plugin
   .initialize((params) => {
     mytoolsI18n.configure(params);
     return {};

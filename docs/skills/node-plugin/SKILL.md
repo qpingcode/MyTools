@@ -1,59 +1,38 @@
 ---
 name: node-plugin
-description: Develop a MyTools Node plugin (backend + web detail page). Use whenever the user wants to create, scaffold, or edit a MyTools plugin that runs in the Node runtime with a WebView2 detail page. Covers project structure, referencing the common SDK, backend handlers, web detail page, i18n, and theming.
+description: Develop a MyTools Node plugin (backend + WebView2 detail page) on the v3 named-pipe message bus. Use whenever the user wants to create, scaffold, or edit a MyTools plugin. Covers plugin.json, @qping/plugin-bus, backend handlers, web detail page, host.call capabilities, i18n, and theming.
 ---
 
 # MyTools Node Plugin 开发
 
-MyTools Node 插件 = 一个运行在独立 Node 进程里的后端（处理搜索/动作/详情数据） + 一个由宿主用 WebView2 加载的 HTML 详情页。两者通过宿主中转通信。
+MyTools Node 插件 = 独立 Node 进程里的后端 + 宿主用 WebView2 加载的 HTML 详情页。通信走 v3 消息总线（Named Pipe + WebView2 postMessage），协议版本 **3.0**。
 
-参考实现：`MyTools.Plugins/Examples/` 下的 `hello-search`、`deepseek-chat`、`deepseek-translator`。
-
+参考实现：`MyTools.Plugins/Examples/` 下的 `hello-search`（最小）、`json-formatter` / `xml-formatter`（页面自包含）、`settings`（`hostCall`）、`deepseek-chat`、`deepseek-translator`（多 entry）。SDK 源码：`MyTools.Plugins/Examples/sdk-v3`（包名 `@qping/plugin-bus`）。
 ## 1. 目录结构
 
-单 entry 插件（最简，照 `hello-search`）：
-
-```text
-my-plugin/
-  plugin.json            # 清单（必填）
-  package.json
-  tsconfig.json
-  build-plugin.mjs       # esbuild 打包脚本
-  src/
-    backend/
-      index.mts          # 后端入口（.mts）
-    web/
-      index.html         # 详情页
-      main.ts            # 详情页脚本
-      style.css
-  i18n/
-    catalog.en-US.json   # 提取产物，随包发布（必填）
-    locales/
-      en-US.json         # 可选；通常与 defaultValue 等价
-      zh-CN.json         # 可选；作者提供的人工翻译
-```
-
-多 entry 插件（每个 entry 各自的 backend + web，照 `deepseek-translator`）：
+单 entry（照 `hello-search`）：
 
 ```text
 my-plugin/
   plugin.json
+  package.json
+  tsconfig.json
+  build-plugin.mjs
   src/
-    backend/
-      Foo/index.mts
-      Bar/index.mts
-    web/
-      Foo/{index.html, main.ts, style.css}
-      Bar/{index.html, main.ts, style.css}
+    backend/index.mts
+    web/{index.html, main.ts, style.css}
+  i18n/
+    catalog.en-US.json
+    locales/{en-US.json, zh-CN.json}
 ```
 
-构建产物输出到 `dist/`，`plugin.json` 里的路径相对 `dist` 根（如 `backend/index.mjs`、`web/index.html`）。
+多 entry（照 `deepseek-translator`）：每个 entry 各自 `src/backend/<Id>/index.mts` 和 `src/web/<Id>/{index.html, main.ts, style.css}`。
 
-## 2. 引用 common（SDK）
+构建输出到 `dist/`。`plugin.json` 里的路径相对 `dist` 根（如 `backend/index.mjs`、`web/index.html`）。
 
-公共运行时已发布到 npmjs，包名 `@qping/plugin-common`。
+## 2. SDK：`@qping/plugin-bus`
 
-`package.json`：
+仓库内示例通过 `MyTools.Plugins/Examples` workspace 引用本地 `sdk-v3`。`package.json`：
 
 ```json
 {
@@ -67,7 +46,7 @@ my-plugin/
     "check": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@qping/plugin-common": "0.1.3"
+    "@qping/plugin-bus": "0.1.0"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
@@ -79,7 +58,7 @@ my-plugin/
 }
 ```
 
-`tsconfig.json` 关键项（`types` 必须包含 `@qping/plugin-common` 以加载全局类型）：
+`tsconfig.json`（`types` 只需 `node`）：
 
 ```json
 {
@@ -89,7 +68,7 @@ my-plugin/
     "moduleResolution": "NodeNext",
     "moduleDetection": "legacy",
     "lib": ["ES2024", "DOM"],
-    "types": ["node", "@qping/plugin-common"],
+    "types": ["node"],
     "strict": false,
     "noImplicitAny": true,
     "noEmitOnError": true,
@@ -103,22 +82,23 @@ my-plugin/
 }
 ```
 
-SDK 导出（来自 `@qping/plugin-common`）：
+导出：
 
-- `node-tool` → `createTool()`、`NodeTool`：后端用，链式注册 `initialize/search/action/handle`，`start()` 后从 stdin 读 NDJSON JSON-RPC。
-- `web-tool` → `tool`：详情页用，提供 `tool.call / tool.subscribe / tool.events / tool.ready / tool.i18n / tool.theme`。
-- `i18n` → `mytoolsI18n`：后端用（详情页用 `tool.i18n`）。
-- `events` → `MyToolsEventSubjects`：host 消息 subject 常量。
+| import | 用途 |
+|---|---|
+| `@qping/plugin-bus/node` | `createPlugin()`：后端 `initialize/search/action/handle/publish/hostCall/start` |
+| `@qping/plugin-bus/web` | `createWebBusClient()`、`HostEvents`、payload 类型 |
+| `@qping/plugin-bus/i18n` | 后端 `mytoolsI18n`（页面用 `bus.i18n`） |
 
-## 3. plugin.json 清单
+SDK 把旧式方法名映射到 v3 路由：`initialize` → `plugin.call.initialize`，`search` → `plugin.call.search`，`action` → `plugin.call.invokeAction`，`handle("foo")` → `plugin.call.foo`，`publish` → `plugin.event.*`，`hostCall` → `host.call.*`。
+
+## 3. plugin.json
 
 ```json
 {
   "id": "my-plugin",
-  "name": "My Plugin",
   "version": "0.1.0",
-  "runtime": "node",
-  "protocolVersion": "2.0",
+  "protocolVersion": "3.0",
   "i18n": {
     "defaultLocale": "en-US",
     "catalog": "i18n/catalog.en-US.json",
@@ -128,9 +108,13 @@ SDK 导出（来自 `@qping/plugin-common`）：
   "entries": [
     {
       "id": "my-plugin",
-      "name": "My Plugin",
+      "name": {
+        "key": "Plugin.MyPlugin.Name",
+        "defaultValue": "My Plugin"
+      },
       "entry": "backend/index.mjs",
-      "keywords": ["kw1", "kw2"],
+      "capabilities": [],
+      "keywords": ["kw1"],
       "hotKey": "Alt+V",
       "detail": { "type": "web", "entry": "web/index.html" }
     }
@@ -139,43 +123,49 @@ SDK 导出（来自 `@qping/plugin-common`）：
 ```
 
 要点：
-- `id` 稳定、不翻译、kebab-case，用作配置路径 `Plugins.{id}.*` 和 i18n scope `plugin:{id}`。
-- 多 entry 时每个 entry 独立 `entry` + `detail.entry`。
-- `hotKey`、`keywords` 可选。
+
+- `protocolVersion` 必须是 `"3.0"`，否则宿主拒绝加载。
+- `id` 稳定、kebab-case；配置路径 `Plugins.{id}.*`，i18n scope `plugin:{id}`。
+- 每个 entry 的 `name` 是 `{ key, defaultValue }`，不是字符串。
+- `capabilities` 必填（可 `[]`）。只有声明过的能力才能 `hostCall`；`settings` 声明 `"configuration.write"`。
+- `detail.type` 必须是 `"web"`。`hotKey`、`keywords` 可选。
+- 没有顶层 `name` / `runtime`；旧的单 entry（无 `entries[]`）清单会被跳过。
 
 ## 4. 后端（Node）
 
 ```ts
-import { createTool } from "@qping/plugin-common/node-tool";
-import { mytoolsI18n } from "@qping/plugin-common/i18n";
+import { createPlugin } from "@qping/plugin-bus/node";
+import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 
-const tool = createTool();
+const plugin = createPlugin();
 
-tool
+plugin
   .initialize((params) => {
-    mytoolsI18n.configure(params);   // 必做：接收宿主下发的 locale/messages
+    mytoolsI18n.configure(params);
     return {};
   })
   .search((params) => ({
     items: [buildSearchItem(params.query || "")],
   }))
   .action((params) => ({
-    message: "Opened",                // 动作执行后的提示
+    message: mytoolsI18n.t("Plugin.MyPlugin.Action.Open.Success", {
+      defaultValue: "Opened",
+    }),
     actionType: "none",
-    detail: {                         // detail 类型动作：打开详情页
+    detail: {
       type: "web-detail",
       htmlEntry: "web/index.html",
       title: mytoolsI18n.t("Plugin.MyPlugin.Name", { defaultValue: "My Plugin" }),
       initialState: { query: params.query || "" },
     },
   }))
-  .handle("refresh", (payload, context) => {   // 详情页通过 tool.call("refresh", ...) 触发
-    return { /* 新状态 */ };
+  .handle("refresh", (payload, context) => {
+    return { query: context.query, payload };
   })
   .start();
 ```
 
-搜索结果 item 结构：
+搜索 item：
 
 ```ts
 {
@@ -186,18 +176,22 @@ tool
   icon: { kind: "emoji", value: "🌐" },
   actions: [
     { id: "open-detail", title: "Open", kind: "detail", description: "..." },
-    { id: "copy", title: "Copy", kind: "copy" /* 宿主内置动作 */ },
   ],
 }
 ```
 
-`search` 返回 `{ items: [...] }`；`action` 返回 `{ message, actionType, detail? }`；`handle(name, fn)` 注册详情页可调用的方法，返回值作为详情页状态。`context` 提供 `action / itemId / query / locale / fallbackLocale`。
+- `search` 返回 `{ items }`；`action` 返回 `{ message, actionType, detail? }`。
+- `handle(name, fn)` 给详情页 `bus.call(name)` 用。`context` 有 `action / itemId / query / locale / fallbackLocale`（由宿主注入，页面不必带）。
+- 纯前端工具（如 json-formatter）可以只有 `initialize/search/action`，不注册 `handle`。
+- 环境变量从 `process.env` 读。`start()` 连宿主 Named Pipe，不要自己读 stdin。
 
-环境变量从 `process.env` 读（如 `process.env.MY_API_KEY`），不要假设配置文件。
+需要宿主能力时（照 `settings`）：页面 `bus.call("getConfiguration")` → 后端 `handle` → `plugin.hostCall("getConfiguration")`。页面不能直接发 `host.call.*`。manifest 必须声明对应 capability（`getConfiguration` 等旧方法名折到 `configuration.write`）。
+
+`plugin.publish("subject", payload)` 发 `plugin.event.subject` 给同会话其他 WebView；当前示例未使用。
 
 ## 5. 详情页（Web）
 
-HTML：
+模块加载时立刻 `createWebBusClient()`，握手在后台进行；`bus.call()` 会等握手完成。不要等 DOM/`initialize` 再创建 client。
 
 ```html
 <!DOCTYPE html>
@@ -217,79 +211,67 @@ HTML：
 </html>
 ```
 
-main.ts：
-
 ```ts
-import { tool } from "@qping/plugin-common/web-tool";
+import { createWebBusClient, HostEvents } from "@qping/plugin-bus/web";
+import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qping/plugin-bus/web";
 
 (function () {
-  tool.subscribe(tool.events.host.initialize, (payload) => {
-    render(payload.initialState);     // 宿主下发详情页初始状态
+  const bus = createWebBusClient();
+  let currentState: unknown = {};
+
+  bus.on<MyToolsHostInitializePayload>(HostEvents.Initialize, (payload) => {
+    currentState = payload.initialState || {};
+    render(currentState);
   });
-  tool.subscribe(tool.events.host.search, (payload) => {
-    // 搜索框变化转发到详情页
+  bus.on<MyToolsHostSearchPayload>(HostEvents.Search, (payload) => {
+    // 宿主搜索框变化
   });
-  tool.subscribe(tool.events.host.languageChanged, () => {
-    render(currentState);             // 语言切换后重新渲染
+  bus.on(HostEvents.LanguageChanged, () => {
+    render(currentState);
   });
+
   document.getElementById("refresh")!.addEventListener("click", async () => {
-    render(await tool.call("refresh", { some: "param" }));  // 调后端 handler
+    render(await bus.call("refresh", { some: "param" }));
   });
-  tool.ready("my-plugin");
 })();
 ```
 
-宿主在 `initialize` 消息到达时会自动 `tool.i18n.configure()` + `tool.i18n.apply()`（应用所有 `data-i18n`）+ 应用主题 token，所以静态 DOM 文案用 `data-i18n` 即可，无需手写 `tool.i18n.t`。
+`HostEvents`：`initialize` / `search` / `key` / `languageChanged` / `themeChanged`（完整路由 `host.event.*`）。
 
-通信方向：`详情页 tool.call/handle` → 宿主中转 → 后端 `tool.handle`；`后端 detail.state` → 宿主 → 详情页 `initialize`/订阅。
+`bus.on(route, handler)` 按路由订阅，晚订阅会重放该路由最后一次事件。不要暴露/使用 catch-all listener。
+
+宿主在 `initialize` / `languageChanged` / `themeChanged` 到达时自动 `bus.i18n.configure` + `apply`（所有 `data-i18n`）以及主题 token。静态文案用 `data-i18n`；动态文案用 `bus.i18n.t`。
+
+多文件页面（`settings`）可把 `export const bus = createWebBusClient()` 放到单独模块，保证只创建一次。
+
+通信：
+
+| 方向 | 路由 |
+|---|---|
+| 页面 → 后端 | `bus.call("foo")` → `plugin.call.foo` |
+| 宿主 → 页面 | `host.event.initialize/search/key/languageChanged/themeChanged` |
+| 后端 → 宿主能力 | `plugin.hostCall("getConfiguration")` → `host.call.getConfiguration` |
+| 后端 → 其他 WebView | `plugin.publish("x")` → `plugin.event.x` |
+
+页面只能发 `plugin.call.*`。握手失败时宿主显示页内错误，不会下发 `initialize`。
 
 ## 6. i18n（必做）
 
-所有用户可见文本必须：稳定 key + 英文 `defaultValue`。key 用 PascalCase 层级，前缀 `Plugin.{PluginId}.*`。命名占位符用 `{{name}}`。
+用户可见文本：稳定 key + 英文 `defaultValue`。key 用 PascalCase，前缀 `Plugin.{PluginId}.*`。占位符 `{{name}}`。
 
-后端：
+后端：`mytoolsI18n.t("Plugin.MyPlugin.Result.Greeting", { defaultValue: "Hello {{name}}", name })`  
+页面动态：`bus.i18n.t("Plugin.MyPlugin.Detail.Empty", { defaultValue: "No results" })`  
+HTML：`data-i18n="[attr]key" data-i18n-default-value="english text"`。`[attr]` 可省略（默认 `[text]`），或 `[placeholder]` / `[title]` / `[aria-label]`。
 
-```ts
-mytoolsI18n.t("Plugin.MyPlugin.Result.Greeting", { defaultValue: "Hello {{name}}", name });
-```
+禁止：动态拼接 key、省略 `defaultValue`、用英文当 key。
 
-详情页（动态文案）：
+`i18n/locales/en-US.json` 扁平 `key → 文本`；`zh-CN.json` 可选人工翻译。`i18n/catalog.en-US.json` 是提取产物，每条至少有 `key/defaultValue/placeholders/references/sourceHash`（可从现有插件 catalog 复制后改）。`sourceHash` 是 `defaultValue` 的 sha256。
 
-```ts
-tool.i18n.t("Plugin.MyPlugin.Detail.Empty", { defaultValue: "No results" });
-```
+解析：人工翻译 > locales JSON > 英文 defaultValue > key。占位符翻译前后必须一致。缺失语言由宿主兜底。
 
-HTML 静态文案：`data-i18n="[attr]key" data-i18n-default-value="english text"`，`[attr]` 可省略（默认 `[text]`），或写 `[placeholder]`、`[title]`、`[aria-label]`。
+## 7. 主题
 
-禁止：动态拼接 key、省略 `defaultValue`、用英文文本本身当 key。
-
-i18n 文件：
-
-`i18n/locales/en-US.json`（扁平 key→文本）：
-
-```json
-{
-  "Plugin.MyPlugin.Name": "My Plugin",
-  "Plugin.MyPlugin.Result.Greeting": "Hello {{name}}"
-}
-```
-
-`i18n/locales/zh-CN.json`（可选人工翻译）：
-
-```json
-{
-  "Plugin.MyPlugin.Name": "我的插件",
-  "Plugin.MyPlugin.Result.Greeting": "你好 {{name}}"
-}
-```
-
-`i18n/catalog.en-US.json`（提取产物，每条至少有 `key/defaultValue/placeholders/references/sourceHash`；可从现有插件 catalog 复制结构后改）。`sourceHash` 是 `defaultValue` 的 sha256，改了 defaultValue 就重算。
-
-解析优先级：人工翻译 > 插件 locales JSON > 英文 defaultValue > key。占位符翻译前后必须完全一致。作者不必提供所有语言，缺失语言由宿主兜底。
-
-## 7. 主题（theme）
-
-详情页 CSS 一律用宿主下发的 CSS 变量，**并写深色 fallback**：
+CSS 一律用宿主变量，并写深色 fallback：
 
 ```css
 body {
@@ -300,23 +282,20 @@ body {
   background: var(--mt-surface, rgba(255,255,255,0.06));
   border: 1px solid var(--mt-border-subtle, rgba(255,255,255,0.08));
 }
-.refresh-button {
-  background: var(--mt-accent, #2f7cf6);
-  color: var(--mt-text, #fff);
+button {
+  background: var(--mt-accent, #3F51B5);
+  color: var(--mt-accent-foreground, #fff);
 }
 ```
 
-可用变量（均可省略用 fallback）：`--mt-surface-bg`、`--mt-surface`、`--mt-surface-alt`、`--mt-text`、`--mt-text-muted`、`--mt-text-disabled`、`--mt-border`/`--mt-border-subtle`、`--mt-accent`、`--mt-selection`。
+变量：`--mt-surface-bg` / `--mt-surface` / `--mt-surface-alt` / `--mt-surface-hover`、`--mt-text` / `--mt-text-muted` / `--mt-text-tertiary` / `--mt-text-disabled`、`--mt-border` / `--mt-border-subtle`、`--mt-accent` / `--mt-accent-hover` / `--mt-accent-pressed` / `--mt-accent-foreground`、`--mt-selection`、`--mt-shadow`。
 
-规则：
-- 禁止写死颜色字面量，必须走 `var(--mt-..., #fallback)`。
-- fallback 取深色，保证脱离宿主单独调试时也可读。
-- 首帧由宿主在 HTML 解析前注入引导脚本设置变量，无需插件处理闪烁。
-- 主题热切换由 `tool.theme` 自动处理；若 JS 需要按主题变图标/配色，订阅 `tool.events.host.themeChanged`，不要自己解析 CSS 变量做关键逻辑。
-- 后端 RPC 请求带 `theme` 字段，但多数插件可忽略；仅当「按主题返回不同数据」时才读。
+- 禁止写死颜色；必须 `var(--mt-..., #fallback)`，fallback 取深色。
+- 首帧由宿主注入变量，插件不用处理闪烁。
+- 主题热切换由 `bus.theme` 自动处理。JS 若要按主题换图标，订阅 `HostEvents.ThemeChanged`，不要自己读 CSS 变量做关键逻辑。
 
-## 8. build-plugin.mjs
+## 8. 构建
 
-打包两段：backend（`platform: "node"`, `format: "esm"`, 输出 `.mjs`），web（`format: "iife"`），并用 `esbuild-plugin-copy` 把 `plugin.json`、html、css、`i18n/**/*` 复制到 `dist/`。多 entry 时 `entryPoints` 传数组、`outbase: "src/backend"`（或 `src/web`）保持输出子目录结构。完整脚本直接照 `hello-search/build-plugin.mjs` 或 `deepseek-translator/build-plugin.mjs`。
+`build-plugin.mjs`：backend（`platform: "node"`, `format: "esm"`, 输出 `.mjs`），web（`format: "iife"`），`esbuild-plugin-copy` 把 `plugin.json`、html、css、`i18n/**/*` 拷到 `dist/`。多 entry 时 `entryPoints` 传数组，`outbase: "src/backend"`（或 `src/web`）。完整脚本照 `hello-search/build-plugin.mjs` 或 `deepseek-translator/build-plugin.mjs`。
 
-构建：`npm run build`（先 `tsc --noEmit` 检查，再 esbuild 打包到 `dist/`）。交付/安装时指向 `dist/`。
+构建：`npm run build`（先 `tsc --noEmit`，再打包到 `dist/`）。安装指向 `dist/`。在 Examples workspace 里先 `npm run build -w @qping/plugin-bus`。

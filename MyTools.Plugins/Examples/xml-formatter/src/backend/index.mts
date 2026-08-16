@@ -1,4 +1,4 @@
-import { createTool } from "@qping/plugin-bus/server";
+import { createPlugin } from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 
 function buildSearchItem(query: unknown) {
@@ -41,9 +41,9 @@ function createDetail(query: unknown) {
   };
 }
 
-const tool = createTool();
+const plugin = createPlugin();
 
-tool
+plugin
   .initialize((params) => {
     mytoolsI18n.configure(params);
     return {};
