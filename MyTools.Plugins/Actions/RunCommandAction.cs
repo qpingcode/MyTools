@@ -28,7 +28,7 @@ public class RunCommandAction : IAction
 
         try
         {
-            var config = JsonSerializer.Deserialize<CommandConfig>(stringParam.GetValue(), JsonOptions);
+            var config = JsonSerializer.Deserialize<CommandSpec>(stringParam.GetValue(), JsonOptions);
 
             ProcessStartInfo processStartInfo;
             var workDirectory = config?.WorkingDirectory
@@ -70,5 +70,20 @@ public class RunCommandAction : IAction
         {
             return ActionResult.CreateFailure($"Failed to execute command: {ex.Message}");
         }
+    }
+
+    private sealed class CommandSpec
+    {
+        public string Command { get; set; } = string.Empty;
+
+        public string Args { get; set; } = string.Empty;
+
+        public bool RunAsAdmin { get; set; }
+
+        public bool IsBashScript { get; set; }
+
+        public List<string>? Scripts { get; set; }
+
+        public string? WorkingDirectory { get; set; }
     }
 }
