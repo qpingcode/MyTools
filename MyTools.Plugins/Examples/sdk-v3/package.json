@@ -1,6 +1,6 @@
 {
   "name": "@qping/plugin-bus",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "v3 message-bus runtime for MyTools plugins (named-pipe transport).",
   "type": "module",
   "files": [

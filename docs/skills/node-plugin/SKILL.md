@@ -47,7 +47,7 @@ my-plugin/
     "check": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@qping/plugin-bus": "0.1.0"
+    "@qping/plugin-bus": "0.2.0"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
