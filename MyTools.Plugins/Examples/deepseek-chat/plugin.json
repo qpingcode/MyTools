@@ -19,6 +19,9 @@
       "capabilities": [],
       "keywords": ["chat"],
       "hotKey": "Alt+V",
+      "search": {
+        "global": false
+      },
       "detail": {
         "type": "web",
         "entry": "web/index.html"

@@ -3,6 +3,7 @@ import type { Category, KeymapConflict, KeymapPlugin } from "./types";
 import { highlight, t } from "./utils";
 import * as common from "./common";
 import { categorySelfMatches, findCategory } from "./config-panel";
+import { openInputActionPicker, type InputActionPickerLabels } from "./action-picker";
 
 var keymapPlugins: KeymapPlugin[] | null = null;
 
@@ -97,9 +98,25 @@ function renderKeymapRow(plugin: KeymapPlugin): HTMLElement {
     hotKeyBtn.textContent = hotKeyVal || t("Plugin.Settings.Keymap.NoHotkey", "None");
 
     hotKeyBtn.addEventListener("click", () => {
-        startHotKeyRecording(hotKeyBtn, (newVal) => {
-            markKeymapDirty(plugin.pluginId, { hotKey: newVal });
-            hotKeyBtn.textContent = newVal || t("Plugin.Settings.Keymap.NoHotkey", "None");
+        var latest = common.state.keymapDirty.get(plugin.pluginId);
+        var current = latest?.hotKey !== undefined ? latest.hotKey : plugin.currentHotKey;
+        void openInputActionPicker({
+            showKeyboard: true,
+            showMouse: false,
+            value: { kind: "hotkey", hotKey: current || null },
+            defaultHotKey: plugin.defaultHotKey ?? "",
+            labels: keymapHotKeyPickerLabels(),
+            onSuspendHotkeys: () => { void bus.call("suspendHotkeys"); },
+            onResumeHotkeys: () => { void bus.call("resumeHotkeys"); },
+            onInspectHotKey: (hotKey) => bus.call("checkHotKey", {
+                hotKey,
+                excludePluginId: plugin.pluginId,
+                currentSearchHotKey: common.state.dirtySettings.get("General.SearchHotKey")
+            })
+        }).then((result) => {
+            if (!result) return;
+            markKeymapDirty(plugin.pluginId, { hotKey: result.hotKey || null });
+            hotKeyBtn.textContent = result.hotKey || t("Plugin.Settings.Keymap.NoHotkey", "None");
             common.updateSaveButton();
         });
     });
@@ -178,56 +195,20 @@ function renderKeymapRow(plugin: KeymapPlugin): HTMLElement {
     return row;
 }
 
-// ── Hotkey recording (shared with gestures panel) ──
-
-export function startHotKeyRecording(
-    btn: HTMLButtonElement,
-    onCapture: (hotKey: string | null) => void
-): void {
-    var originalText = btn.textContent;
-    btn.textContent = t("Plugin.Settings.Keymap.Recording", "Press shortcut...");
-    btn.classList.add("recording");
-
-    void bus.call("suspendHotkeys");
-
-    var handler = (e: KeyboardEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (e.key === "Escape") {
-            cleanup();
-            btn.textContent = originalText;
-            btn.classList.remove("recording");
-            return;
-        }
-
-        if (["Control", "Shift", "Alt", "Meta"].includes(e.key)) {
-            return;
-        }
-
-        var parts: string[] = [];
-        if (e.ctrlKey) parts.push("Ctrl");
-        if (e.shiftKey) parts.push("Shift");
-        if (e.altKey) parts.push("Alt");
-        if (e.metaKey) parts.push("Win");
-
-        var keyName = e.key;
-        if (keyName === " ") keyName = "Space";
-        else if (keyName.length === 1) keyName = keyName.toUpperCase();
-        parts.push(keyName);
-
-        var hotKey = parts.join("+");
-        cleanup();
-        btn.classList.remove("recording");
-        onCapture(hotKey);
+function keymapHotKeyPickerLabels(): InputActionPickerLabels {
+    return {
+        title: t("Plugin.Settings.Keymap.PickerTitle", "Set plugin hotkey"),
+        tabKeyboard: t("Plugin.Settings.Gestures.TriggerHotkey", "Hotkey"),
+        tabMouse: t("Plugin.Settings.Gestures.TriggerMouse", "Mouse Button"),
+        recording: t("Plugin.Settings.Keymap.Recording", "Press shortcut..."),
+        cancel: t("Plugin.Settings.Cancel", "Cancel"),
+        reset: t("Plugin.Settings.ActionPicker.Reset", "Reset to default"),
+        ok: t("Plugin.Settings.ActionPicker.Ok", "OK"),
+        conflict: t("Plugin.Settings.ActionPicker.Conflict", "Already used by {{name}}", { name: "{{name}}" }),
+        reserved: t("Plugin.Settings.ActionPicker.Reserved",
+            "{{hotKey}} is a common shortcut (copy/paste/select all, etc.) and is not recommended as a global hotkey.",
+            { hotKey: "{{hotKey}}" })
     };
-
-    function cleanup() {
-        document.removeEventListener("keydown", handler, true);
-        void bus.call("resumeHotkeys");
-    }
-
-    document.addEventListener("keydown", handler, true);
 }
 
 function markKeymapDirty(pluginId: string, change: {

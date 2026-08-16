@@ -13,6 +13,8 @@ public class HotKeyMessageHandler: IWindowMessageHandler, IWindowHandleAware
     private static int _currentId;
     private bool _suspended;
 
+    public bool IsSuspended => _suspended;
+
     public IEnumerable<WindowsMessageType> Messages => [WindowsMessageType.HotKey];
 
     public void Handle(int msg, IntPtr wParam, IntPtr lParam, ref bool handled)

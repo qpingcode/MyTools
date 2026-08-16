@@ -19,7 +19,7 @@ public static class HostCallCapabilityMap
                 or "getKeymap" or "saveKeymap" or "validateKeymap"
                 or "getGestures" or "saveGestures"
                 or "suspendGestures" or "resumeGestures"
-                or "suspendHotkeys" or "resumeHotkeys"
+                or "suspendHotkeys" or "resumeHotkeys" or "checkHotKey"
                 or "restart"
                 => "configuration.write",
             _ => method,

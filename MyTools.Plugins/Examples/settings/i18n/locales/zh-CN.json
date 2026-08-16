@@ -59,5 +59,10 @@
   "Plugin.Settings.Gestures.MouseBackShort": "后退",
   "Plugin.Settings.Gestures.MouseForwardShort": "前进",
   "Plugin.Settings.ActionPicker.Title": "选择操作",
-  "Plugin.Settings.SearchHotKey.PickerTitle": "设置搜索热键"
+  "Plugin.Settings.ActionPicker.Reset": "恢复默认",
+  "Plugin.Settings.ActionPicker.Ok": "确定",
+  "Plugin.Settings.ActionPicker.Conflict": "已与「{{name}}」冲突",
+  "Plugin.Settings.ActionPicker.Reserved": "{{hotKey}} 是常用系统快捷键（复制/粘贴/全选等），不建议设为全局热键。",
+  "Plugin.Settings.SearchHotKey.PickerTitle": "设置搜索热键",
+  "Plugin.Settings.Keymap.PickerTitle": "设置插件热键"
 }

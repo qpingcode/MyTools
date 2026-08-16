@@ -59,5 +59,10 @@
   "Plugin.Settings.Gestures.MouseBackShort": "Back",
   "Plugin.Settings.Gestures.MouseForwardShort": "Forward",
   "Plugin.Settings.ActionPicker.Title": "Choose action",
-  "Plugin.Settings.SearchHotKey.PickerTitle": "Set search hotkey"
+  "Plugin.Settings.ActionPicker.Reset": "Reset to default",
+  "Plugin.Settings.ActionPicker.Ok": "OK",
+  "Plugin.Settings.ActionPicker.Conflict": "Already used by {{name}}",
+  "Plugin.Settings.ActionPicker.Reserved": "{{hotKey}} is a common shortcut (copy/paste/select all, etc.) and is not recommended as a global hotkey.",
+  "Plugin.Settings.SearchHotKey.PickerTitle": "Set search hotkey",
+  "Plugin.Settings.Keymap.PickerTitle": "Set plugin hotkey"
 }

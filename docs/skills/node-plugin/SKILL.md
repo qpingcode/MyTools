@@ -132,7 +132,7 @@ SDK 把旧式方法名映射到 v3 路由：`initialize` → `plugin.call.initia
 - `id` 稳定、kebab-case；配置路径 `Plugins.{id}.*`，i18n scope `plugin:{id}`。
 - 每个 entry 的 `name` 是 `{ key, defaultValue }`，不是字符串。
 - `capabilities` 必填（可 `[]`）。只有声明过的能力才能 `hostCall`；`settings` 声明 `"configuration.write"`。
-- `detail` 可选。省略（或 `"detail": { "type": "list" }`）时宿主用 `search` 的结果走原生列表（BasicListView）：关键词路由停留在列表，热键打开搜索主窗口并锁定该插件。不要写 `type: "basic"`（那是宿主 ViewModel 名，不是 plugin.json 契约）。
+- `detail` 可选。省略（或 `"detail": { "type": "list" }`）时宿主用 `search` 的结果走原生列表：关键词路由停留在列表，热键打开搜索主窗口并锁定该插件。
 - 需要自定义页面时再写 `"detail": { "type": "web", "entry": "web/index.html" }`。`hotKey`、`keywords`、`search` 可选。
 - `search.global`：出现在**无关键词**的全局搜索结果中。省略或 `false` 时不参与全局搜索（opt-in，避免设置类插件污染每次搜索）。用户可在设置 → 插件列表的 **全局结果** 中覆盖此项。
 - 有非空 `keywords` 就会注册 `keyword + 查询串` 的插件级搜索；没有 keywords 则只能靠全局搜索或热键进入。只有全局、没有关键词时（如 `hello-search`）必须设 `"search": { "global": true }`。
