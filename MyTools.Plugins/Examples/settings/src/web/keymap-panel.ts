@@ -1,4 +1,4 @@
-import { tool } from "@qping/plugin-common/client";
+import { bus } from "./bus";
 import type { Category, KeymapConflict, KeymapPlugin } from "./types";
 import { highlight, t } from "./utils";
 import * as common from "./common";
@@ -21,7 +21,7 @@ export function keymapMatchesSearch(): boolean {
 export async function loadKeymap(): Promise<void> {
     common.settingsList.innerHTML = '<div class="loading">' + t("Plugin.Settings.Loading", "Loading...") + "</div>";
     try {
-        var data = await tool.call<{ plugins: KeymapPlugin[] }>("getKeymap");
+        var data = await bus.detailCall<{ plugins: KeymapPlugin[] }>("getKeymap");
         keymapPlugins = data.plugins || [];
         common.state.keymapDirty.clear();
         renderKeymap();
@@ -164,7 +164,7 @@ export function startHotKeyRecording(
     btn.textContent = t("Plugin.Settings.Keymap.Recording", "Press shortcut...");
     btn.classList.add("recording");
 
-    void tool.call("suspendHotkeys");
+    void bus.detailCall("suspendHotkeys");
 
     var handler = (e: KeyboardEvent) => {
         e.preventDefault();
@@ -200,7 +200,7 @@ export function startHotKeyRecording(
 
     function cleanup() {
         document.removeEventListener("keydown", handler, true);
-        void tool.call("resumeHotkeys");
+        void bus.detailCall("resumeHotkeys");
     }
 
     document.addEventListener("keydown", handler, true);
@@ -234,7 +234,7 @@ export async function saveKeymapInternal(): Promise<boolean> {
         }
     }
 
-    var validateResult = await tool.call<{ conflicts: KeymapConflict[] }>("validateKeymap", {
+    var validateResult = await bus.detailCall<{ conflicts: KeymapConflict[] }>("validateKeymap", {
         hotKeys: hotKeysToValidate,
         keywords: keywordsToValidate,
     });
@@ -258,7 +258,7 @@ export async function saveKeymapInternal(): Promise<boolean> {
         return false;
     }
 
-    await tool.call("saveKeymap", { overrides: overrides });
+    await bus.detailCall("saveKeymap", { overrides: overrides });
     common.state.keymapDirty.clear();
 
     await loadKeymap();

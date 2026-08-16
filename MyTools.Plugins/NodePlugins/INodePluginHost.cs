@@ -6,10 +6,8 @@ using System.Threading.Tasks;
 namespace MyTools.Plugins.NodePlugins;
 
 /// <summary>
-/// The backend-runtime surface that <see cref="NodePlugin"/> delegates to. The legacy
-/// <see cref="NodePluginProcessHost"/> (stdio JSON-RPC) implements it; a v3 message-bus runtime
-/// can implement the same surface so that <see cref="NodePlugin"/> and all host-side consumers
-/// (windows, keymaps, detail views) work unchanged.
+/// The backend-runtime surface that <see cref="NodePlugin"/> delegates to. Implemented by
+/// <see cref="NodePluginBusHost"/> over the named-pipe message bus.
 /// </summary>
 internal interface INodePluginHost
 {
@@ -38,7 +36,7 @@ internal interface INodePluginHost
         string itemId, string action, JsonElement? payload, string query, string locale, string fallbackLocale,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Current v3 session id when running on the message bus; null for legacy stdio hosts.</summary>
+    /// <summary>Current bus session id.</summary>
     string? SessionId { get; }
 
     void Dispose();

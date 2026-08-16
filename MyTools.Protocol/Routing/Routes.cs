@@ -51,6 +51,19 @@ public static class Routes
             => StartsWithPrefix(subjectId, Prefix.PluginEvent) ? subjectId : Prefix.PluginEvent + subjectId;
     }
 
+    /// <summary>Host → page events delivered over the WebView2 bus (not <c>tool-event</c>).</summary>
+    public static class HostEvent
+    {
+        public const string Initialize = Prefix.HostEvent + "initialize";
+        public const string Search = Prefix.HostEvent + "search";
+        public const string Key = Prefix.HostEvent + "key";
+        public const string LanguageChanged = Prefix.HostEvent + "languageChanged";
+        public const string ThemeChanged = Prefix.HostEvent + "themeChanged";
+
+        public static string Of(string subject)
+            => StartsWithPrefix(subject, Prefix.HostEvent) ? subject : Prefix.HostEvent + subject;
+    }
+
     public static bool IsPing(string route) => route == Bus.Ping;
     public static bool IsHandshake(string route) => route == Bus.Handshake;
     public static bool IsHostCall(string route) => StartsWithPrefix(route, Prefix.HostCall);

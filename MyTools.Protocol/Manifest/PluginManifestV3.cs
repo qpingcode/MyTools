@@ -6,8 +6,8 @@ using MyTools.Protocol.Versioning;
 namespace MyTools.Protocol.Manifest;
 
 /// <summary>
-/// v3 plugin manifest. The key Phase-1 addition over v2 is that each entry declares its required
-/// capabilities explicitly; the capability gateway rejects undeclared calls even for trusted plugins.
+/// v3 plugin manifest. Each entry declares its required capabilities explicitly; the capability
+/// gateway rejects undeclared calls even for trusted plugins.
 /// </summary>
 public sealed class PluginManifestV3
 {
@@ -21,7 +21,7 @@ public sealed class PluginManifestV3
 
 public sealed class PluginEntryV3
 {
-    /// <summary>Entry identity. Wire name is <c>id</c>, matching v2 <c>plugin.json</c>.</summary>
+    /// <summary>Entry identity. Wire name is <c>id</c>.</summary>
     public required string Id { get; init; }
 
     /// <summary>Node backend path relative to the plugin root. Wire name is <c>entry</c>.</summary>

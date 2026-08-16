@@ -10,19 +10,9 @@ namespace MyTools.Plugins;
 
 public static class PluginServiceCollectionExtensions
 {
-    /// <summary>
-    /// When true, plugins whose manifest declares protocolVersion "3.0" use the v3 named-pipe
-    /// message bus (<see cref="NodePluginBusHost"/>); v2 plugins keep using stdio
-    /// (<see cref="NodePluginProcessHost"/>). Default true — Desktop and other hosts can still
-    /// force false for emergency rollback.
-    /// </summary>
-    public static bool UseV3Transport { get; set; } = true;
-
     public static IServiceCollection AddPluginServices(this IServiceCollection services)
     {
-        // v3 message-bus components (registered always; only used when UseV3Transport is true and a
-        // plugin declares protocolVersion 3.0). Gateway must be the same instance MessageBus uses
-        // so RegisterManifest and Authorize share state.
+        // Gateway must be the same instance MessageBus uses so RegisterManifest and Authorize share state.
         services.AddSingleton<CapabilityGateway>();
         services.AddSingleton(sp => new MessageBus(
             sp.GetRequiredService<CapabilityGateway>(),
@@ -37,19 +27,11 @@ public static class PluginServiceCollectionExtensions
         services.AddSingleton<SearchHistoryDbHelper>();
         services.AddSingleton<NodePluginCatalog>();
         services.AddSingleton<NodePluginFactory>(sp =>
-        {
-            var loggerFactory = sp.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>();
-            if (!UseV3Transport)
-            {
-                return new NodePluginFactory(loggerFactory);
-            }
-            // v3 enabled: inject the bus + session manager so v3-manifest plugins use the bus host.
-            return new NodePluginFactory(loggerFactory,
+            new NodePluginFactory(
+                sp.GetRequiredService<ILoggerFactory>(),
                 sp.GetService<Common.Localization.ILocalizationService>(),
                 sp.GetRequiredService<MessageBus>(),
-                sp.GetRequiredService<PluginSessionManager>(),
-                useV3Transport: true);
-        });
+                sp.GetRequiredService<PluginSessionManager>()));
 
         services.AddSingleton<PluginLoader>();
         services.AddSingleton<PluginRegistry>();

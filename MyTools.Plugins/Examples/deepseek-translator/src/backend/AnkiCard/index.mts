@@ -1,6 +1,6 @@
 import { buildDeckSummary, deleteCard, getCardPage, getNextDueCard, reviewCard, saveCard } from "../common/anki.mjs";
-import { createTool } from "@qping/plugin-common/server";
-import { mytoolsI18n } from "@qping/plugin-common/i18n";
+import { createTool } from "@qping/plugin-bus/server";
+import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 
 function buildSearchItem() {
   return {

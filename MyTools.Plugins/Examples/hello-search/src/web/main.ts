@@ -1,6 +1,8 @@
-import { tool } from "@qping/plugin-common/client";
+import { createWebBusClient, HostEvents } from "@qping/plugin-bus/web";
+import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qping/plugin-bus/web";
 
 (function () {
+    const bus = createWebBusClient();
     var currentState = {};
     var currentQuery = "";
 
@@ -9,11 +11,11 @@ import { tool } from "@qping/plugin-common/client";
         currentQuery = text;
         var normalized = text.length > 0
             ? text
-            : tool.i18n.t("Plugin.HelloSearch.Common.Empty", { defaultValue: "(empty)" });
+            : bus.i18n.t("Plugin.HelloSearch.Common.Empty", { defaultValue: "(empty)" });
         document.getElementById("query")!.textContent = normalized;
         document.getElementById("title")!.textContent = text.length === 0
-            ? tool.i18n.t("Plugin.HelloSearch.Detail.TypeAfterHello", { defaultValue: "Type after hello" })
-            : tool.i18n.t("Plugin.HelloSearch.Result.Greeting", { defaultValue: "Hello {{name}}", name: normalized });
+            ? bus.i18n.t("Plugin.HelloSearch.Detail.TypeAfterHello", { defaultValue: "Type after hello" })
+            : bus.i18n.t("Plugin.HelloSearch.Result.Greeting", { defaultValue: "Hello {{name}}", name: normalized });
     }
 
     function updateState(state: unknown): void {
@@ -23,22 +25,21 @@ import { tool } from "@qping/plugin-common/client";
 
     document.getElementById("refresh")!.addEventListener("click", async function () {
         try {
-            updateState(await tool.call("refresh", { currentQuery: document.getElementById("query")!.textContent }));
+            updateState(await bus.detailCall("refresh", { currentQuery: document.getElementById("query")!.textContent }));
         } catch (error) {
             updateState({ error: error instanceof Error ? error.message : String(error) });
         }
     });
 
-    tool.subscribe(tool.events.host.search, function (payload) {
+    bus.on<MyToolsHostSearchPayload>(HostEvents.Search, function (payload) {
         updateQuery(payload.query || "");
     });
-    tool.subscribe(tool.events.host.initialize, function (payload) {
+    bus.on<MyToolsHostInitializePayload>(HostEvents.Initialize, function (payload) {
         updateQuery(payload.query || "");
         updateState(payload.initialState || {});
     });
-    tool.subscribe(tool.events.host.languageChanged, function () {
+    bus.on(HostEvents.LanguageChanged, function () {
         updateQuery(currentQuery);
         updateState(currentState);
     });
-    tool.ready("hello-search");
 })();

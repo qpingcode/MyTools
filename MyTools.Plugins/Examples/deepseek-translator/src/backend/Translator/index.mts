@@ -1,6 +1,7 @@
 import fs from "node:fs";
-import { createTool } from "@qping/plugin-common/server";
-import { mytoolsI18n } from "@qping/plugin-common/i18n";
+import { createTool } from "@qping/plugin-bus/server";
+import { mytoolsI18n } from "@qping/plugin-bus/i18n";
+
 import {
   FAVORITES_PATH,
   SETTINGS_PATH,

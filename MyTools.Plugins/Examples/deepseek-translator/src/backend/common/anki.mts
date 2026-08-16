@@ -1,5 +1,5 @@
 import { ANKI_CARDS_PATH, normalizeText, readJsonFile, writeJsonFile } from "./storage.mjs";
-import { mytoolsI18n } from "@qping/plugin-common/i18n";
+import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 
 type JsonRecord = Record<string, unknown>;
 

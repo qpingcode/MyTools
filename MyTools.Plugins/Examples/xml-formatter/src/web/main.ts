@@ -1,6 +1,8 @@
-import { tool } from "@qping/plugin-common/client";
+import { createWebBusClient, HostEvents } from "@qping/plugin-bus/web";
+import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qping/plugin-bus/web";
 
 (function () {
+    const bus = createWebBusClient();
     var inputElement = document.getElementById("input") as HTMLTextAreaElement;
     var outputElement = document.getElementById("output") as HTMLElement;
     var indentSelect = document.getElementById("indent") as HTMLSelectElement;
@@ -260,7 +262,7 @@ import { tool } from "@qping/plugin-common/client";
         outputElement.replaceChildren();
         var ph = document.createElement("span");
         ph.className = "placeholder";
-        ph.textContent = tool.i18n.t("Plugin.XmlFormatter.Detail.EmptyOutput", { defaultValue: "(no output)" });
+        ph.textContent = bus.i18n.t("Plugin.XmlFormatter.Detail.EmptyOutput", { defaultValue: "(no output)" });
         outputElement.appendChild(ph);
     }
 
@@ -292,7 +294,7 @@ import { tool } from "@qping/plugin-common/client";
         } catch (error) {
             lastSerialized = null;
             showEmptyOutput();
-            showMessage("error", tool.i18n.t("Plugin.XmlFormatter.Error.InvalidXml", {
+            showMessage("error", bus.i18n.t("Plugin.XmlFormatter.Error.InvalidXml", {
                 defaultValue: "Invalid XML: {{message}}",
                 message: error instanceof Error ? error.message : String(error)
             }));
@@ -302,8 +304,8 @@ import { tool } from "@qping/plugin-common/client";
     function copyResult(): void {
         if (!lastSerialized) return;
         void navigator.clipboard.writeText(lastSerialized).then(function () {
-            var original = tool.i18n.t("Plugin.XmlFormatter.Detail.Copy", { defaultValue: "Copy" });
-            copyButton.textContent = tool.i18n.t("Plugin.XmlFormatter.Detail.Copied", { defaultValue: "Copied" });
+            var original = bus.i18n.t("Plugin.XmlFormatter.Detail.Copy", { defaultValue: "Copy" });
+            copyButton.textContent = bus.i18n.t("Plugin.XmlFormatter.Detail.Copied", { defaultValue: "Copied" });
             copyButton.classList.add("copied");
             window.setTimeout(function () {
                 copyButton.textContent = original;
@@ -357,7 +359,7 @@ import { tool } from "@qping/plugin-common/client";
         }
     });
 
-    tool.subscribe(tool.events.host.initialize, function (payload) {
+    bus.on<MyToolsHostInitializePayload>(HostEvents.Initialize, function (payload) {
         var initialState = payload && payload.initialState as { input?: string } | undefined;
         var initial = initialState && typeof initialState.input === "string" ? initialState.input : "";
         if (initial) {
@@ -368,9 +370,9 @@ import { tool } from "@qping/plugin-common/client";
         }
     });
 
-    tool.subscribe(tool.events.host.search, function (payload) {
-        var query = payload && typeof (payload as { query?: string }).query === "string"
-            ? (payload as { query: string }).query
+    bus.on<MyToolsHostSearchPayload>(HostEvents.Search, function (payload) {
+        var query = payload && typeof payload.query === "string"
+            ? payload.query
             : "";
         if (query) {
             inputElement.value = query;
@@ -378,9 +380,7 @@ import { tool } from "@qping/plugin-common/client";
         }
     });
 
-    tool.subscribe(tool.events.host.languageChanged, function () {
+    bus.on(HostEvents.LanguageChanged, function () {
         if (!lastSerialized) showEmptyOutput();
     });
-
-    tool.ready("xml-formatter");
 })();

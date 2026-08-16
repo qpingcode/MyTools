@@ -23,7 +23,7 @@ namespace MyTools.Host.Transports.WebView2;
 /// onto the UI dispatcher when one is provided.
 ///
 /// Legacy <c>tool-call</c> / <c>tool-response</c> / <c>tool-event</c> are accepted and rewritten so
-/// existing <c>@qping/plugin-common/client</c> pages keep working while the Web SDK migrates.
+/// existing tests can still exercise the rewrite path. Production pages speak envelopes.
 /// </summary>
 public sealed class WebView2Transport : IMessageTransport
 {

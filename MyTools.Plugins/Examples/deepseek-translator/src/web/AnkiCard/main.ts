@@ -1,4 +1,4 @@
-import { tool } from "@qping/plugin-common/client";
+import { createWebBusClient, HostEvents } from "@qping/plugin-bus/web";
 
 (function () {
     type Summary = {
@@ -47,7 +47,7 @@ import { tool } from "@qping/plugin-common/client";
         control: HTMLInputElement | HTMLTextAreaElement;
     };
 
-    var hostEvents = tool.events.host;
+    const bus = createWebBusClient();
     var cardHost = document.getElementById("cardHost") as HTMLElement;
     var summary = document.getElementById("summary") as HTMLElement;
     var backButton = document.getElementById("backButton") as HTMLButtonElement;
@@ -59,12 +59,12 @@ import { tool } from "@qping/plugin-common/client";
     var currentState: AnkiState = {};
 
     function t(key: string, defaultValue: string, values: Record<string, unknown> = {}): string {
-        return tool.i18n.t(key, { defaultValue: defaultValue, ...values });
+        return bus.i18n.t(key, { defaultValue: defaultValue, ...values });
     }
 
     async function callState(action: string, data: Record<string, unknown> = {}): Promise<void> {
         try {
-            renderState(await tool.call(action, data || {}));
+            renderState(await bus.detailCall(action, data || {}));
         } catch (error) {
             renderState({
                 status: "error",
@@ -589,11 +589,10 @@ import { tool } from "@qping/plugin-common/client";
     });
     setHeaderMode("review");
 
-    tool.subscribe(hostEvents.initialize, function () {
+    bus.on(HostEvents.Initialize, function () {
         requestNextCard();
     });
-    tool.subscribe(hostEvents.languageChanged, function () {
+    bus.on(HostEvents.LanguageChanged, function () {
         renderState(currentState);
     });
-    tool.ready("deepseek-translator:ankicard");
 })();

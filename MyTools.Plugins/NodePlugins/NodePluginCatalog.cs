@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using MyTools.Common.Config;
 using MyTools.Common.Localization;
+using MyTools.Protocol.Versioning;
 
 namespace MyTools.Plugins.NodePlugins;
 
@@ -31,11 +32,7 @@ public sealed class NodePluginCatalog
         var manifests = new List<NodePluginManifest>();
         foreach (var pluginDirectory in Directory.GetDirectories(pluginRoot))
         {
-            // Prefer plugin.v3.json when present (v3 transport); fall back to plugin.json (v2 stdio).
-            var v3Path = Path.Combine(pluginDirectory, "plugin.v3.json");
-            var manifestPath = File.Exists(v3Path)
-                ? v3Path
-                : Path.Combine(pluginDirectory, "plugin.json");
+            var manifestPath = Path.Combine(pluginDirectory, "plugin.json");
             if (!File.Exists(manifestPath))
             {
                 continue;
@@ -165,7 +162,7 @@ public sealed class NodePluginCatalog
     {
         return !string.IsNullOrWhiteSpace(fileModel.Id)
             && !string.IsNullOrWhiteSpace(fileModel.Version)
-            && !string.IsNullOrWhiteSpace(fileModel.ProtocolVersion)
+            && fileModel.ProtocolVersion == ProtocolVersion.CurrentWire
             && fileModel.Entries is { Count: > 0 }
             && (fileModel.I18n == null
                 || (!string.IsNullOrWhiteSpace(fileModel.I18n.DefaultLocale)

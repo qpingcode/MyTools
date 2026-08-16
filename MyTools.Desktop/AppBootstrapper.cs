@@ -223,8 +223,7 @@ public class AppBootstrapper : IDisposable
             {
                 // Skip non-plugin directories (sdk-v3, common, node_modules, etc.) that have no dist.
                 var distDir = Path.Combine(sourcePluginDirectory, "dist");
-                if (!File.Exists(Path.Combine(distDir, "plugin.json")) &&
-                    !File.Exists(Path.Combine(distDir, "plugin.v3.json")))
+                if (!File.Exists(Path.Combine(distDir, "plugin.json")))
                 {
                     continue;
                 }
@@ -261,8 +260,7 @@ public class AppBootstrapper : IDisposable
     private static string GetExamplePluginSourceDirectory(string sourcePluginDirectory)
     {
         var distDirectory = Path.Combine(sourcePluginDirectory, "dist");
-        if (File.Exists(Path.Combine(distDirectory, "plugin.json")) ||
-            File.Exists(Path.Combine(distDirectory, "plugin.v3.json")))
+        if (File.Exists(Path.Combine(distDirectory, "plugin.json")))
         {
             return distDirectory;
         }

@@ -1,4 +1,5 @@
-import { tool } from "@qping/plugin-common/client";
+import { createWebBusClient, HostEvents } from "@qping/plugin-bus/web";
+import type { MyToolsHostInitializePayload, MyToolsHostKeyPayload, MyToolsHostSearchPayload } from "@qping/plugin-bus/web";
 
 (function () {
     type TokenUsage = {
@@ -39,7 +40,7 @@ import { tool } from "@qping/plugin-common/client";
         entries?: TranslationEntry[];
     };
 
-    var hostEvents = tool.events.host;
+    const bus = createWebBusClient();
     var REALTIME_DEBOUNCE_MS = 1500;
     var sourceText = document.getElementById("sourceText") as HTMLTextAreaElement;
     var translation = document.getElementById("translation") as HTMLElement;
@@ -64,7 +65,7 @@ import { tool } from "@qping/plugin-common/client";
     }
 
     function t(key: string, defaultValue: string, values: Record<string, unknown> = {}): string {
-        return tool.i18n.t(key, { defaultValue: defaultValue, ...values });
+        return bus.i18n.t(key, { defaultValue: defaultValue, ...values });
     }
 
     function setInput(text: unknown, requestTranslation: boolean): void {
@@ -480,7 +481,7 @@ import { tool } from "@qping/plugin-common/client";
 
     async function callState(action: string, data: { text?: string; [key: string]: unknown } = {}, options?: { timeout?: number }): Promise<void> {
         try {
-            updateState(await tool.call(action, data || {}, options));
+            updateState(await bus.detailCall(action, data || {}, options?.timeout));
         } catch (error) {
             var current = data as { text?: string };
             updateState({
@@ -494,7 +495,7 @@ import { tool } from "@qping/plugin-common/client";
     function sendTranslateAfterPaint(text: string): void {
         window.setTimeout(async function () {
             try {
-                var state = await tool.call<{ input?: string }>("translate", { text: text }, { timeout: 45000 });
+                var state = await bus.detailCall<{ input?: string }>("translate", { text: text }, 45000);
                 if (normalize(state && state.input) !== normalize(lastRequestedText)) {
                     return;
                 }
@@ -668,24 +669,23 @@ import { tool } from "@qping/plugin-common/client";
         translateNow();
     }, true);
 
-    tool.subscribe(hostEvents.search, function (payload) {
+    bus.on<MyToolsHostSearchPayload>(HostEvents.Search, function (payload) {
         setInput(payload.query || "", true);
     });
-    tool.subscribe(hostEvents.initialize, function (payload) {
+    bus.on<MyToolsHostInitializePayload>(HostEvents.Initialize, function (payload) {
         setInput(payload.query || "", false);
         updateState(payload.initialState || {});
         if (normalize(payload.query || "")) {
             handleInputChanged();
         }
     });
-    tool.subscribe(hostEvents.key, function (payload) {
+    bus.on<MyToolsHostKeyPayload>(HostEvents.Key, function (payload) {
         if (payload.key === "Enter" && getSendMode() === "enter") {
             translateNow();
         }
     });
-    tool.subscribe(hostEvents.languageChanged, function () {
+    bus.on(HostEvents.LanguageChanged, function () {
         setSendMode(getSendMode());
         updateState(currentState || { status: "idle", input: sourceText.value });
     });
-    tool.ready("deepseek-translator");
 })();

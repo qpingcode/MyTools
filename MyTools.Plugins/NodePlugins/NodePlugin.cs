@@ -75,20 +75,13 @@ public sealed class NodePlugin : IPlugin, IDisposable
 
     public string PluginId => manifest.Id;
 
-    /// <summary>v3 bus session id when this plugin runs on <c>NodePluginBusHost</c>; otherwise null.</summary>
+    /// <summary>Bus session id after the Node process has been started.</summary>
     public string? BusSessionId => processHost.SessionId;
 
-    /// <summary>True when this plugin entry is backed by the v3 message bus host.</summary>
-    public bool UsesV3Bus => processHost is NodePluginBusHost;
-
-    /// <summary>Ensures the v3 Node session is Ready (starts pipe/handshake if needed).</summary>
+    /// <summary>Ensures the Node session is Ready (starts pipe/handshake if needed).</summary>
     public Task EnsureV3SessionAsync(CancellationToken cancellationToken = default)
     {
-        if (processHost is not NodePluginBusHost busHost)
-        {
-            return Task.CompletedTask;
-        }
-
+        var busHost = (NodePluginBusHost)processHost;
         return busHost.StartAsync(busHost.NodeExePath, cancellationToken);
     }
 
@@ -391,7 +384,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
         processHost.Dispose();
     }
 
-    /// <summary>Test-only accessor for the backend host (stdio or bus).</summary>
+    /// <summary>Test-only accessor for the backend host.</summary>
     internal INodePluginHost GetHostForTest() => processHost;
 }
 

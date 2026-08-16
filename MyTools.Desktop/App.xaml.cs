@@ -44,8 +44,6 @@ public partial class App
         }
 
         var services = new ServiceCollection();
-        // v3 named-pipe transport is on by default; keep explicit for clarity / easy rollback.
-        MyTools.Plugins.PluginServiceCollectionExtensions.UseV3Transport = true;
         services.AddApplicationServices();
         serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions
         {

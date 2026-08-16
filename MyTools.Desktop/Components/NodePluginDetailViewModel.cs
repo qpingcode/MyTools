@@ -59,23 +59,6 @@ public partial class NodePluginDetailViewModel : ObservableObject, ISwitchableVi
         return stateJson;
     }
 
-    public async Task<JsonElement?> HandleToolCallAsync(string action, string payloadJson)
-    {
-        if (CurrentContext == null)
-        {
-            return null;
-        }
-
-        JsonElement? payload = null;
-        if (!string.IsNullOrWhiteSpace(payloadJson))
-        {
-            using var document = JsonDocument.Parse(payloadJson);
-            payload = document.RootElement.Clone();
-        }
-
-        return await CurrentContext.Plugin.HandleDetailCallAsync(CurrentContext.ItemId, action, payload, CurrentQuery);
-    }
-
     public ViewModelType GetViewModelType()
     {
         return ViewModelType.NodeDetail;
