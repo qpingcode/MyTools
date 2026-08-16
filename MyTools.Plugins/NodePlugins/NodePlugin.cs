@@ -75,6 +75,26 @@ public sealed class NodePlugin : IPlugin, IDisposable
 
     public string PluginId => manifest.Id;
 
+    /// <summary>v3 bus session id when this plugin runs on <c>NodePluginBusHost</c>; otherwise null.</summary>
+    public string? BusSessionId => processHost.SessionId;
+
+    /// <summary>True when this plugin entry is backed by the v3 message bus host.</summary>
+    public bool UsesV3Bus => processHost is NodePluginBusHost;
+
+    /// <summary>Ensures the v3 Node session is Ready (starts pipe/handshake if needed).</summary>
+    public Task EnsureV3SessionAsync(CancellationToken cancellationToken = default)
+    {
+        if (processHost is not NodePluginBusHost busHost)
+        {
+            return Task.CompletedTask;
+        }
+
+        return busHost.StartAsync(busHost.NodeExePath, cancellationToken);
+    }
+
+    /// <summary>Entry id within the plugin package (e.g. <c>main</c>).</summary>
+    public string EntryId => manifest.EntryId;
+
     /// <summary>
     /// 插件所属的根 ID（不含 entry 后缀）。例如 PluginId 为 "settings:main"，
     /// ParentId 为 "settings"。用于匹配同一插件的所有 entry。

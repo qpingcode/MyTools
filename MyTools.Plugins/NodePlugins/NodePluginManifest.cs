@@ -25,6 +25,8 @@ public sealed class NodePluginManifest
     public string? DetailEntryFullPath { get; init; }
     public IReadOnlyList<string> Keywords { get; init; } = [];
     public string? HotKey { get; init; }
+    /// <summary>Capability ids declared by this entry (e.g. <c>configuration.write</c>).</summary>
+    public IReadOnlyList<string> Capabilities { get; init; } = [];
     public string DefaultLocale { get; init; } = "en-US";
     public string? CatalogFullPath { get; init; }
     public string? LocalesDirectoryFullPath { get; init; }

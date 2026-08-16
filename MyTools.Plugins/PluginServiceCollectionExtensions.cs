@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using MyTools.Common;
 using MyTools.Host.Core.Bus;
 using MyTools.Host.Core.Capabilities;
@@ -11,19 +12,27 @@ public static class PluginServiceCollectionExtensions
 {
     /// <summary>
     /// When true, plugins whose manifest declares protocolVersion "3.0" use the v3 named-pipe
-    /// message bus (<see cref="NodePluginBusHost"/>); v2 plugins keep using stdio. Default false
-    /// (current behavior) — flip to true once the v3 Node SDK entry is wired end-to-end.
+    /// message bus (<see cref="NodePluginBusHost"/>); v2 plugins keep using stdio
+    /// (<see cref="NodePluginProcessHost"/>). Default true — Desktop and other hosts can still
+    /// force false for emergency rollback.
     /// </summary>
-    public static bool UseV3Transport { get; set; }
+    public static bool UseV3Transport { get; set; } = true;
 
     public static IServiceCollection AddPluginServices(this IServiceCollection services)
     {
         // v3 message-bus components (registered always; only used when UseV3Transport is true and a
-        // plugin declares protocolVersion 3.0).
-        services.AddSingleton<MessageBus>();
+        // plugin declares protocolVersion 3.0). Gateway must be the same instance MessageBus uses
+        // so RegisterManifest and Authorize share state.
         services.AddSingleton<CapabilityGateway>();
+        services.AddSingleton(sp => new MessageBus(
+            sp.GetRequiredService<CapabilityGateway>(),
+            logger: sp.GetService<ILoggerFactory>()?.CreateLogger("MyTools.Host.Core.Bus.MessageBus")));
         services.AddSingleton<INodeProcessControllerFactory, Host.Transports.Process.NodeProcessControllerFactory>();
-        services.AddSingleton<PluginSessionManager>();
+        services.AddSingleton(sp => new PluginSessionManager(
+            sp.GetRequiredService<MessageBus>(),
+            sp.GetRequiredService<CapabilityGateway>(),
+            sp.GetRequiredService<INodeProcessControllerFactory>(),
+            logger: sp.GetService<ILoggerFactory>()?.CreateLogger("MyTools.Host.Core.Sessions.PluginSessionManager")));
 
         services.AddSingleton<SearchHistoryDbHelper>();
         services.AddSingleton<NodePluginCatalog>();

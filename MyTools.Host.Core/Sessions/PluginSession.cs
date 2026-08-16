@@ -31,6 +31,9 @@ public sealed class PluginSession
     /// <summary>The process controller owning the Node child process; set by the manager on start.</summary>
     public INodeProcessController? Controller { get; internal set; }
 
+    /// <summary>Disconnect handler wired by the manager; cleared on tear-down.</summary>
+    internal Action? DisconnectHandler { get; set; }
+
     internal void Transition(SessionState target)
     {
         _sm.Transition(target);

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace MyTools.Host.Transports.Process;
+namespace MyTools.Host.Core.Reliability;
 
 /// <summary>
 /// Restart backoff policy: exponential backoff with jitter, capped at <see cref="MaxDelay"/>, plus a

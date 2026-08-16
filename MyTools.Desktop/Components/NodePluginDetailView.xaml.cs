@@ -3,6 +3,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.Logging;
@@ -13,7 +14,12 @@ using MyTools.Common.Localization;
 using MyTools.Common.Theming;
 using MyTools.Desktop.Services;
 using MyTools.Desktop.Themes;
+using MyTools.Host.Core.Bus;
+using MyTools.Host.Core.Sessions;
+using MyTools.Host.Transports.WebView2;
+using MyTools.Plugins;
 using MyTools.Plugins.NodePlugins;
+using MyTools.Protocol.Identity;
 
 namespace MyTools.Desktop.Components;
 
@@ -35,11 +41,23 @@ public partial class NodePluginDetailView : UserControl
     private NodePlugin? subscribedPlugin;
     private readonly ILocalizationService localizationService;
     private readonly IThemeService themeService;
+    private readonly MessageBus? _bus;
+    private readonly PluginSessionManager? _sessionManager;
+    private readonly IIdGenerator _ids = new GuidIdGenerator();
+    private CoreWebView2MessageChannel? _webChannel;
+    private WebView2Transport? _webTransport;
+    private EndpointId? _webEndpoint;
 
     public NodePluginDetailView()
     {
         localizationService = ServiceLocator.GetRequiredService<ILocalizationService>();
         themeService = ServiceLocator.GetRequiredService<IThemeService>();
+        if (PluginServiceCollectionExtensions.UseV3Transport)
+        {
+            _bus = ServiceLocator.GetRequiredService<MessageBus>();
+            _sessionManager = ServiceLocator.GetRequiredService<PluginSessionManager>();
+        }
+
         InitializeComponent();
 
         PluginBrowser.DefaultBackgroundColor = System.Drawing.Color.Transparent;
@@ -55,6 +73,11 @@ public partial class NodePluginDetailView : UserControl
         localizationService.LocaleChanged += OnLocaleChanged;
         themeService.ThemeChanged -= OnThemeChanged;
         themeService.ThemeChanged += OnThemeChanged;
+        if (_sessionManager is not null)
+        {
+            _sessionManager.SessionReplaced -= OnSessionReplaced;
+            _sessionManager.SessionReplaced += OnSessionReplaced;
+        }
         NavigateIfNeeded();
     }
 
@@ -63,6 +86,11 @@ public partial class NodePluginDetailView : UserControl
         localizationService.LocaleChanged -= OnLocaleChanged;
         themeService.ThemeChanged -= OnThemeChanged;
         ClearPluginEventSubscription();
+        TearDownWebTransport();
+        if (_sessionManager is not null)
+        {
+            _sessionManager.SessionReplaced -= OnSessionReplaced;
+        }
     }
 
     private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -122,28 +150,34 @@ public partial class NodePluginDetailView : UserControl
     {
         browserReady = false;
         subjectSubscriptions.Clear();
+        TearDownWebTransport();
         try
         {
             await PluginBrowser.EnsureCoreWebView2Async(await WebView2Environment.Value);
 
             PluginBrowser.NavigationCompleted -= PluginBrowserOnNavigationCompleted;
             PluginBrowser.NavigationCompleted += PluginBrowserOnNavigationCompleted;
-            PluginBrowser.CoreWebView2.WebMessageReceived -= PluginBrowserOnWebMessageReceived;
-            PluginBrowser.CoreWebView2.WebMessageReceived += PluginBrowserOnWebMessageReceived;
 
-            // Navigate to the theme-specific HTML variant (index.dark.html / index.light.html)
-            // which has the CSS variables inlined at copy time. This guarantees the variables
-            // exist at first paint — no flash, no per-navigation file rewriting.
+            // v3: WebView2Transport owns WebMessageReceived via CoreWebView2MessageChannel.
+            // Legacy: DetailView parses tool-call itself.
+            PluginBrowser.CoreWebView2.WebMessageReceived -= PluginBrowserOnWebMessageReceived;
+            if (!IsV3Detail())
+            {
+                PluginBrowser.CoreWebView2.WebMessageReceived += PluginBrowserOnWebMessageReceived;
+            }
+
             var themedPath = ResolveThemedEntryPath(entryPath);
             PluginBrowser.Source = BuildPluginEntryUri(themedPath);
         }
         catch (Exception ex)
         {
-            // WebView2 初始化 / 导航失败（runtime 缺失、userdata 锁定等）原来会被
-            // fire-and-forget 吞掉，表现为白屏。这里主动上报到全局异常处理。
             GlobalExceptionHandler.ReportStatic(ex, "Plugin WebView2 navigation");
         }
     }
+
+    private bool IsV3Detail()
+        => _bus is not null
+           && viewModel?.CurrentContext?.Plugin is { UsesV3Bus: true };
 
     /// <summary>
     /// Returns the path to the theme-specific HTML variant for the given entry path,
@@ -249,7 +283,17 @@ public partial class NodePluginDetailView : UserControl
             return;
         }
 
-
+        if (IsV3Detail())
+        {
+            try
+            {
+                await AttachWebTransportAsync();
+            }
+            catch (Exception ex)
+            {
+                GlobalExceptionHandler.ReportStatic(ex, "Plugin WebView2 bus attach");
+            }
+        }
 
         SendInitializeMessage();
         SendSearchMessage();
@@ -257,6 +301,112 @@ public partial class NodePluginDetailView : UserControl
         {
             _ = FocusPrimaryInputAsync();
         }
+    }
+
+    private async Task AttachWebTransportAsync()
+    {
+        if (_bus is null || PluginBrowser.CoreWebView2 is null)
+        {
+            return;
+        }
+
+        var plugin = viewModel?.CurrentContext?.Plugin;
+        if (plugin is null || !plugin.UsesV3Bus)
+        {
+            return;
+        }
+
+        TearDownWebTransport();
+
+        await plugin.EnsureV3SessionAsync();
+        var sessionId = plugin.BusSessionId
+            ?? throw new InvalidOperationException("v3 session did not start");
+
+        var endpointLabel = $"web-{_ids.NewId()[..8]}";
+        var binding = new EndpointBinding(
+            plugin.ParentId, plugin.EntryId, sessionId, endpointLabel);
+
+        _webChannel = new CoreWebView2MessageChannel(PluginBrowser.CoreWebView2);
+        _webTransport = new WebView2Transport(
+            binding,
+            _webChannel,
+            dispatchAsync: action =>
+            {
+                var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                Dispatcher.InvokeAsync(() =>
+                {
+                    try
+                    {
+                        action();
+                        tcs.TrySetResult();
+                    }
+                    catch (Exception ex)
+                    {
+                        tcs.TrySetException(ex);
+                    }
+                });
+                return tcs.Task;
+            },
+            enrichDetailCallPayload: EnrichDetailCallPayload);
+
+        // Legacy pages do not send bus.handshake; host marks ready so tool-call shim works.
+        _webTransport.MarkHandshaken();
+
+        _webEndpoint = new EndpointId(
+            binding.PluginId, binding.EntryId, binding.SessionId, binding.EndpointId, IsNode: false);
+        _bus.RegisterEndpoint(_webEndpoint, _webTransport);
+        StaticLogger.LogInformation(
+            "Attached WebView2Transport endpoint={Endpoint} session={Session}",
+            endpointLabel, sessionId);
+    }
+
+    private JsonObject EnrichDetailCallPayload(JsonObject payload)
+    {
+        var ctx = viewModel?.CurrentContext;
+        if (ctx is null) return payload;
+
+        payload["itemId"] = ctx.ItemId;
+        payload["query"] = viewModel?.CurrentQuery ?? ctx.Query;
+        payload["locale"] = localizationService.CurrentLocale;
+        payload["fallbackLocale"] = ctx.FallbackLocale;
+        return payload;
+    }
+
+    private void TearDownWebTransport()
+    {
+        if (_webEndpoint is not null && _bus is not null)
+        {
+            _bus.UnregisterEndpoint(_webEndpoint);
+            _webEndpoint = null;
+        }
+
+        if (_webTransport is not null)
+        {
+            _webTransport.Invalidate();
+            _ = _webTransport.DisposeAsync();
+            _webTransport = null;
+        }
+
+        _webChannel?.Dispose();
+        _webChannel = null;
+    }
+
+    private void OnSessionReplaced(object? sender, PluginSessionReplacedEventArgs e)
+    {
+        var plugin = viewModel?.CurrentContext?.Plugin;
+        if (plugin is null) return;
+        if (e.PluginId != plugin.ParentId || e.EntryId != plugin.EntryId) return;
+
+        StaticLogger.LogWarning(
+            "Node session replaced for detail view {Plugin}/{Entry}; reloading page",
+            e.PluginId, e.EntryId);
+
+        _ = Dispatcher.InvokeAsync(async () =>
+        {
+            TearDownWebTransport();
+            loadedEntryPath = null;
+            NavigateIfNeeded();
+        });
     }
 
     private async void PluginBrowserOnWebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
@@ -349,6 +499,12 @@ public partial class NodePluginDetailView : UserControl
     private void UpdatePluginEventSubscription()
     {
         ClearPluginEventSubscription();
+
+        // v3: plugin.event.* is delivered by the bus to WebView2Transport (legacy tool-event rewrite).
+        if (IsV3Detail())
+        {
+            return;
+        }
 
         subscribedPlugin = viewModel?.CurrentContext?.Plugin;
         if (subscribedPlugin != null)

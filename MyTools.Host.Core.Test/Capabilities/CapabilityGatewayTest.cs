@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using MyTools.Host.Core.Capabilities;
 using MyTools.Protocol.Errors;
 using NUnit.Framework;
@@ -72,5 +73,24 @@ public class CapabilityGatewayTest
 
         Assert.That(result.IsAllowed, Is.False);
         Assert.That(result.Error!.Code, Is.EqualTo(ErrorCode.CapabilityNotDeclared));
+    }
+
+    [Test]
+    public void RegisterAndAuthorize_FromManyThreads_ShouldNotCorruptState()
+    {
+        var gw = new CapabilityGateway();
+        const int n = 64;
+        Parallel.For(0, n, i =>
+        {
+            var plugin = $"p{i}";
+            gw.RegisterManifest(new PluginManifest(plugin, "main", ["configuration.write"]));
+            var allowed = gw.Authorize(plugin, "main", "configuration.write");
+            var denied = gw.Authorize(plugin, "main", "clipboard.read");
+            Assert.That(allowed.IsAllowed, Is.True);
+            Assert.That(denied.IsAllowed, Is.False);
+            gw.UnregisterManifest(plugin, "main");
+        });
+
+        Assert.That(gw.AuditEntries, Has.Count.EqualTo(n * 2));
     }
 }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using MyTools.Protocol.Routing;
 
 namespace MyTools.Host.Core.Backpressure;
 
@@ -27,7 +28,7 @@ public sealed class PendingRequestTracker
     /// </summary>
     public bool TryReserve(string requestKey, string route = "")
     {
-        if (route == "bus.ping") return true;
+        if (Routes.IsPing(route)) return true;
         if (_inFlight.Count >= Limit) return false;
         return _inFlight.Add(requestKey);
     }
@@ -35,7 +36,7 @@ public sealed class PendingRequestTracker
     /// <summary>Releases a slot on response/timeout/disconnect. Ping release is a no-op.</summary>
     public void Release(string requestKey, string route = "")
     {
-        if (route == "bus.ping") return;
+        if (Routes.IsPing(route)) return;
         _inFlight.Remove(requestKey);
     }
 }

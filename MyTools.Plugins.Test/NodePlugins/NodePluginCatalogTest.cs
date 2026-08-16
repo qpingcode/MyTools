@@ -74,6 +74,7 @@ public class NodePluginCatalogTest
         Assert.That(plugins[0].EntryId, Is.EqualTo("hello"));
         Assert.That(plugins[0].HotKey, Is.EqualTo("Alt+C"));
         Assert.That(plugins[0].Keywords, Is.EquivalentTo(new[] { "hello" }));
+        Assert.That(plugins[0].Capabilities, Is.Empty);
         Assert.That(plugins[0].EntryFullPath, Is.EqualTo(Path.Combine(pluginPath, "backend", "index.mjs")));
         Assert.That(plugins[0].DetailEntryFullPath, Is.EqualTo(Path.Combine(pluginPath, "web", "detail.html")));
         Assert.That(plugins[0].DefaultLocale, Is.EqualTo("en-US"));
@@ -238,5 +239,42 @@ public class NodePluginCatalogTest
         var plugins = new NodePluginCatalog(rootPath, NullLogger<NodePluginCatalog>.Instance).Reload();
 
         Assert.That(plugins, Is.Empty);
+    }
+
+    [Test]
+    public void Reload_ShouldParseCapabilitiesFromPluginV3Manifest()
+    {
+        var pluginPath = Path.Combine(rootPath, "settings");
+        Directory.CreateDirectory(Path.Combine(pluginPath, "backend"));
+        Directory.CreateDirectory(Path.Combine(pluginPath, "web"));
+        File.WriteAllText(Path.Combine(pluginPath, "plugin.v3.json"), """
+        {
+          "id": "settings",
+          "version": "0.0.6",
+          "protocolVersion": "3.0",
+          "entries": [
+            {
+              "id": "main",
+              "name": { "key": "Plugin.Settings.Name", "defaultValue": "Settings" },
+              "entry": "backend/index.v3.mjs",
+              "capabilities": ["configuration.write"],
+              "keywords": ["settings"],
+              "detail": {
+                "type": "web",
+                "entry": "web/index.html"
+              }
+            }
+          ]
+        }
+        """);
+        File.WriteAllText(Path.Combine(pluginPath, "backend", "index.v3.mjs"), "console.log('ok');");
+        File.WriteAllText(Path.Combine(pluginPath, "web", "index.html"), "<html></html>");
+
+        var catalog = new NodePluginCatalog(rootPath, NullLogger<NodePluginCatalog>.Instance);
+        var plugins = catalog.Reload();
+
+        Assert.That(plugins, Has.Count.EqualTo(1));
+        Assert.That(plugins[0].Capabilities, Is.EquivalentTo(new[] { "configuration.write" }));
+        Assert.That(plugins[0].ProtocolVersion, Is.EqualTo("3.0"));
     }
 }

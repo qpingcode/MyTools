@@ -33,4 +33,12 @@ public class MessageKindTest
         Assert.That(() => JsonSerializer.Deserialize<MessageKind>("\"notification\""),
             Throws.InstanceOf<JsonException>());
     }
+
+    [Test]
+    public void WireConstants_ShouldMatchSerializedValues()
+    {
+        Assert.That(JsonSerializer.Serialize(MessageKind.Request), Is.EqualTo($"\"{MessageKindWire.Request}\""));
+        Assert.That(JsonSerializer.Serialize(MessageKind.Response), Is.EqualTo($"\"{MessageKindWire.Response}\""));
+        Assert.That(JsonSerializer.Serialize(MessageKind.Event), Is.EqualTo($"\"{MessageKindWire.Event}\""));
+    }
 }

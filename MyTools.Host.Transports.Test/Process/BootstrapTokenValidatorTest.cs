@@ -122,6 +122,20 @@ public class BootstrapTokenValidatorTest
         Assert.That(result.IsValid, Is.False);
         Assert.That(result.Reason, Does.Contain("creation"));
     }
+
+    [Test]
+    public void IssueAndValidate_FromManyThreads_ShouldKeepTokensRecognized()
+    {
+        var v = new BootstrapTokenValidator(() => BaseTime);
+        const int n = 64;
+        Parallel.For(0, n, i =>
+        {
+            var identity = new ProcessIdentity(i + 1, BaseTime, $"plugin-{i}", "main");
+            var token = v.Issue(identity, TimeSpan.FromMinutes(1));
+            var result = v.Validate(token.Value, identity);
+            Assert.That(result.IsValid, Is.True, result.Reason);
+        });
+    }
 }
 
 internal static class BootstrapTokenValidatorTestExtensions
@@ -131,5 +145,8 @@ internal static class BootstrapTokenValidatorTestExtensions
     public static void _RegisterForTest(this BootstrapTokenValidator v, BootstrapToken token)
         => v.GetType()
             .GetField("_issued", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
-            .SetValue(v, new System.Collections.Generic.Dictionary<string, BootstrapToken> { [token.Value] = token });
+            .SetValue(v, new System.Collections.Concurrent.ConcurrentDictionary<string, BootstrapToken>
+            {
+                [token.Value] = token,
+            });
 }

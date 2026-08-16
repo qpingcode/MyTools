@@ -11,6 +11,7 @@ fs.rmSync(path.join(root, "dist"), { recursive: true, force: true });
 fs.mkdirSync(path.join(root, "dist"), { recursive: true });
 
 const entryPoints = ["server", "protocol", "bootstrap"];
+const browserEntries = ["webClient"];
 
 // 1. esbuild: bundle JS runtime (.mjs) for each entry point.
 for (const entry of entryPoints) {
@@ -23,6 +24,18 @@ for (const entry of entryPoints) {
     outfile: path.join(root, `dist/${entry}.mjs`),
   });
   console.log(`esbuild: ${entry}.mjs`);
+}
+
+for (const entry of browserEntries) {
+  await build({
+    entryPoints: [path.join(root, `src/${entry}.ts`)],
+    bundle: true,
+    platform: "browser",
+    format: "esm",
+    target: "es2024",
+    outfile: path.join(root, `dist/${entry}.mjs`),
+  });
+  console.log(`esbuild: ${entry}.mjs (browser)`);
 }
 
 // 2. tsc: generate type declarations only (--declaration --emitDeclarationOnly) into dist.

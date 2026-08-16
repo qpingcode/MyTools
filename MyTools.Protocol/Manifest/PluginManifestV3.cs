@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using MyTools.Protocol.Errors;
+using MyTools.Protocol.Versioning;
 
 namespace MyTools.Protocol.Manifest;
 
@@ -20,8 +21,12 @@ public sealed class PluginManifestV3
 
 public sealed class PluginEntryV3
 {
-    public required string EntryId { get; init; }
-    public required string NodeEntry { get; init; }
+    /// <summary>Entry identity. Wire name is <c>id</c>, matching v2 <c>plugin.json</c>.</summary>
+    public required string Id { get; init; }
+
+    /// <summary>Node backend path relative to the plugin root. Wire name is <c>entry</c>.</summary>
+    public required string Entry { get; init; }
+
     public IReadOnlyList<string> Capabilities { get; init; } = [];
     public EntryDetailV3? Detail { get; init; }
     /// <summary>Keyword triggers that route a search to this entry.</summary>
@@ -64,9 +69,10 @@ public static class PluginManifestV3Validator
 {
     public static ManifestValidation Validate(PluginManifestV3 manifest)
     {
-        if (manifest.ProtocolVersion != "3.0")
+        if (manifest.ProtocolVersion != ProtocolVersion.CurrentWire)
         {
-            return ManifestValidation.Fail($"unsupported protocolVersion '{manifest.ProtocolVersion}', expected 3.0");
+            return ManifestValidation.Fail(
+                $"unsupported protocolVersion '{manifest.ProtocolVersion}', expected {ProtocolVersion.CurrentWire}");
         }
         if (manifest.Entries is null || manifest.Entries.Count == 0)
         {
@@ -75,17 +81,17 @@ public static class PluginManifestV3Validator
         var entryIds = new HashSet<string>();
         foreach (var e in manifest.Entries)
         {
-            if (string.IsNullOrEmpty(e.EntryId))
+            if (string.IsNullOrEmpty(e.Id))
             {
-                return ManifestValidation.Fail("entry is missing entryId");
+                return ManifestValidation.Fail("entry is missing id");
             }
-            if (!entryIds.Add(e.EntryId))
+            if (!entryIds.Add(e.Id))
             {
-                return ManifestValidation.Fail($"duplicate entryId '{e.EntryId}'");
+                return ManifestValidation.Fail($"duplicate id '{e.Id}'");
             }
-            if (string.IsNullOrEmpty(e.NodeEntry))
+            if (string.IsNullOrEmpty(e.Entry))
             {
-                return ManifestValidation.Fail($"entry '{e.EntryId}' is missing nodeEntry");
+                return ManifestValidation.Fail($"entry '{e.Id}' is missing entry");
             }
         }
         return ManifestValidation.Ok();

@@ -3,6 +3,7 @@ using System.Text.Json;
 using MyTools.Protocol.Errors;
 using MyTools.Protocol.Framing;
 using MyTools.Protocol.Messages;
+using MyTools.Protocol.Routing;
 
 namespace MyTools.Host.Transports.WebView2;
 
@@ -55,7 +56,7 @@ public sealed class WebView2Normalizer
 
         // Route gate: webview cannot call host capabilities directly.
         var route = env.Route ?? "";
-        if (route.StartsWith("host.call.", StringComparison.Ordinal))
+        if (Routes.IsHostCall(route))
         {
             return NormalizationResult.Reject(BusError.For(ErrorCode.CapabilityDenied,
                 "webview cannot call host.call.* directly; route through plugin.call.* to Node"));
