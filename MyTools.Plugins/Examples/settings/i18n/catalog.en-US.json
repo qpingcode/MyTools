@@ -238,10 +238,10 @@
     },
     {
       "key": "Plugin.Settings.Gestures.HeaderGestureTip",
-      "defaultValue": "The mouse movement pattern to record. Hold the right mouse button and draw.",
+      "defaultValue": "Click to re-record. Hold the right mouse button and draw.",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "要录制的鼠标移动轨迹。按住鼠标右键画出方向。" },
+      "existingTranslations": { "zh-CN": "点击可重新录制。按住鼠标右键画出方向。" },
       "sourceHash": "sha256:placeholder"
     },
     {
@@ -254,10 +254,10 @@
     },
     {
       "key": "Plugin.Settings.Gestures.HeaderTriggerTip",
-      "defaultValue": "What happens when the gesture is triggered — simulate a keyboard shortcut or a mouse button.",
+      "defaultValue": "The action to run. Click to choose a keyboard shortcut or mouse button.",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "手势触发时执行的操作——模拟键盘快捷键或鼠标按键。" },
+      "existingTranslations": { "zh-CN": "手势触发时执行的操作。点击后选择键盘快捷键或鼠标按键。" },
       "sourceHash": "sha256:placeholder"
     },
     {
@@ -426,6 +426,54 @@
       "placeholders": [],
       "references": [],
       "existingTranslations": { "zh-CN": "未命名" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.ClickToRecord",
+      "defaultValue": "Click to record",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "点击录制" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.ClickToSetAction",
+      "defaultValue": "Click to set action",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "点击设置操作" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.NoAction",
+      "defaultValue": "Not set",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "未设置" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.MouseBackShort",
+      "defaultValue": "Back",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "后退" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Gestures.MouseForwardShort",
+      "defaultValue": "Forward",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "前进" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.ActionPicker.Title",
+      "defaultValue": "Choose action",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "选择操作" },
       "sourceHash": "sha256:placeholder"
     }
   ]

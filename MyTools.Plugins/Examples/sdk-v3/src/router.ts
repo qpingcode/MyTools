@@ -30,7 +30,7 @@ export class HandlerRouter {
   private pluginId = "p";
   private entryId = "e";
   private sessionId = "s";
-  private endpointId = EndpointIds.NodeMain;
+  private endpointId: string = EndpointIds.NodeMain;
 
   /** Injected transport send fn; tests can override `router.send` directly. */
   send: Sender;
