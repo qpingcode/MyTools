@@ -83,7 +83,9 @@ jobs:
           }
 
           # Node SDK v3 unit tests (protocol codec + framing + transport + router), mirroring the C# side.
-          node --test .\MyTools.Plugins\Examples\sdk-v3\test\
+          # Glob the files: Node 22 on Windows treats `node --test path\to\dir\` as a single CJS
+          # module (`Cannot find module ...\test`) instead of expanding the directory.
+          node --test "MyTools.Plugins/Examples/sdk-v3/test/**/*.test.mjs"
           if ($LASTEXITCODE -ne 0) {
               throw "v3 Node SDK tests failed"
           }
