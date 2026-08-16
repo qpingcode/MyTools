@@ -1,5 +1,9 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using MyTools.Common.Localization;
+using MyTools.Host.Core.Bus;
+using MyTools.Host.Core.Capabilities;
+using MyTools.Host.Core.Sessions;
+using MyTools.Host.Core.Transports;
 using MyTools.Plugins.NodePlugins;
 using NUnit.Framework;
 
@@ -68,7 +72,7 @@ public class NodePluginKeywordRouteTest
             Version = "0.1.0",
             Runtime = "node",
             Entry = "index.mjs",
-            ProtocolVersion = "2.0",
+            ProtocolVersion = "3.0",
             PluginDirectory = rootPath,
             EntryFullPath = backendPath,
             DetailEntry = Path.Combine("web", "index.html"),
@@ -77,6 +81,27 @@ public class NodePluginKeywordRouteTest
             HotKey = "Alt+C"
         };
 
-        return new NodePluginFactory(NullLoggerFactory.Instance).CreatePlugins([manifest]).Single();
+        var bus = new MessageBus();
+        var manager = new PluginSessionManager(bus, new CapabilityGateway(), new NoopProcessFactory());
+        return new NodePluginFactory(NullLoggerFactory.Instance, null, bus, manager)
+            .CreatePlugins([manifest]).Single();
+    }
+
+    private sealed class NoopProcessFactory : INodeProcessControllerFactory
+    {
+        public INodeProcessController Create(string nodeExePath, string nodeEntryFullPath) => new NoopController();
+
+        private sealed class NoopController : INodeProcessController
+        {
+            public IMessageTransport? Transport { get; } = new InMemoryTransport();
+            public MyTools.Host.Core.Security.ProcessIdentity? ObservedIdentity { get; }
+
+            public Task StartAsync(
+                string pipeName, string pluginId, string entryId,
+                Func<MyTools.Host.Core.Security.ProcessIdentity, string> issueToken,
+                CancellationToken c) => Task.CompletedTask;
+
+            public Task StopAsync() => Task.CompletedTask;
+        }
     }
 }

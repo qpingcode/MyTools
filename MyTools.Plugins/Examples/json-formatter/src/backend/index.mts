@@ -1,5 +1,5 @@
-import { createTool } from "@qping/plugin-common/server";
-import { mytoolsI18n } from "@qping/plugin-common/i18n";
+import { createTool } from "@qping/plugin-bus/server";
+import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 
 function buildSearchItem(query: unknown) {
   const text = typeof query === "string" ? query.trim() : "";

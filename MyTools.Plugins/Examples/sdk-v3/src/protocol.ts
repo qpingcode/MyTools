@@ -65,6 +65,13 @@ export const Routes = {
     DetailEvent: "plugin.call.detailEvent",
     DetailCall: "plugin.call.detailCall",
   },
+  HostEvent: {
+    Initialize: "host.event.initialize",
+    Search: "host.event.search",
+    Key: "host.event.key",
+    LanguageChanged: "host.event.languageChanged",
+    ThemeChanged: "host.event.themeChanged",
+  },
 } as const;
 
 export function pluginCallRoute(method: string): string {

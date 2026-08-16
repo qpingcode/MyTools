@@ -1,5 +1,7 @@
-import { createTool } from "@qping/plugin-common/server";
-import { mytoolsI18n } from "@qping/plugin-common/i18n";
+// Named-pipe backend for hello-search.
+
+import { createTool } from "@qping/plugin-bus/server";
+import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 
 function buildItem(query: unknown) {
   const text = typeof query === "string" ? query.trim() : "";

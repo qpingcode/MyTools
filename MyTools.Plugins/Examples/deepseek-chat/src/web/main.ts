@@ -1,4 +1,5 @@
-import { tool } from "@qping/plugin-common/client";
+import { createWebBusClient, HostEvents } from "@qping/plugin-bus/web";
+import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qping/plugin-bus/web";
 
 (function () {
     type ChatMessage = {
@@ -14,7 +15,7 @@ import { tool } from "@qping/plugin-common/client";
         error?: string;
     };
 
-    var hostEvents = tool.events.host;
+    const bus = createWebBusClient();
     var POLL_INTERVAL_MS = 120;
     var messagesElement = document.getElementById("messages") as HTMLElement;
     var promptInput = document.getElementById("promptInput") as HTMLTextAreaElement;
@@ -30,7 +31,7 @@ import { tool } from "@qping/plugin-common/client";
 
     async function callState(action: string, data: Record<string, unknown> = {}) {
         try {
-            renderState(await tool.call<ChatState>(action, data || {}));
+            renderState(await bus.detailCall<ChatState>(action, data || {}));
         } catch (error) {
             renderState({
                 status: "error",
@@ -55,7 +56,7 @@ import { tool } from "@qping/plugin-common/client";
         messagesElement.className = messages.length === 0 ? "messages empty" : "messages";
 
         if (messages.length === 0) {
-            messagesElement.textContent = current.error || tool.i18n.t("Plugin.DeepSeekChat.Detail.Empty", {
+            messagesElement.textContent = current.error || bus.i18n.t("Plugin.DeepSeekChat.Detail.Empty", {
                 defaultValue: "Ask DeepSeek anything"
             });
         }
@@ -64,7 +65,7 @@ import { tool } from "@qping/plugin-common/client";
             var bubble = document.createElement("div");
             bubble.className = message.role === "user" ? "message user" : "message assistant";
             bubble.textContent = message.content || (message.role === "assistant" && current.streaming
-                ? tool.i18n.t("Plugin.DeepSeekChat.Detail.Streaming", { defaultValue: "…" })
+                ? bus.i18n.t("Plugin.DeepSeekChat.Detail.Streaming", { defaultValue: "…" })
                 : "");
             messagesElement.appendChild(bubble);
         });
@@ -158,17 +159,16 @@ import { tool } from "@qping/plugin-common/client";
         sendMessage();
     });
 
-    tool.subscribe(hostEvents.initialize, function (payload) {
+    bus.on<MyToolsHostInitializePayload>(HostEvents.Initialize, function (payload) {
         renderState(payload.initialState || {});
     });
-    tool.subscribe(hostEvents.search, function (payload) {
+    bus.on<MyToolsHostSearchPayload>(HostEvents.Search, function (payload) {
         var query = normalize(payload.query);
         if (query && !normalize(promptInput.value)) {
             promptInput.value = query;
         }
     });
-    tool.subscribe(hostEvents.languageChanged, function () {
+    bus.on(HostEvents.LanguageChanged, function () {
         renderState(currentState);
     });
-    tool.ready("deepseek-chat");
 })();

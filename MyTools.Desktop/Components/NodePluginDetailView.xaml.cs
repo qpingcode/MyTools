@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.Logging;
@@ -17,9 +18,12 @@ using MyTools.Desktop.Themes;
 using MyTools.Host.Core.Bus;
 using MyTools.Host.Core.Sessions;
 using MyTools.Host.Transports.WebView2;
-using MyTools.Plugins;
 using MyTools.Plugins.NodePlugins;
+using MyTools.Protocol.Errors;
 using MyTools.Protocol.Identity;
+using MyTools.Protocol.Messages;
+using MyTools.Protocol.Routing;
+using MyTools.Protocol.Versioning;
 
 namespace MyTools.Desktop.Components;
 
@@ -29,16 +33,11 @@ public partial class NodePluginDetailView : UserControl
         ServiceLocator.GetRequiredService<ILogger<NodePluginDetailView>>();
     private static readonly Lazy<Task<CoreWebView2Environment>> WebView2Environment =
         new(CreateWebView2EnvironmentAsync);
-    private const string HostInitializeSubject = "mytools.host.initialize";
-    private const string HostSearchSubject = "mytools.host.search";
-    private const string HostKeySubject = "mytools.host.key";
 
     private NodePluginDetailViewModel? viewModel;
     private string? loadedEntryPath;
     private bool browserReady;
     private bool focusPrimaryInputWhenReady;
-    private readonly HashSet<string> subjectSubscriptions = new(StringComparer.Ordinal);
-    private NodePlugin? subscribedPlugin;
     private readonly ILocalizationService localizationService;
     private readonly IThemeService themeService;
     private readonly MessageBus? _bus;
@@ -52,11 +51,8 @@ public partial class NodePluginDetailView : UserControl
     {
         localizationService = ServiceLocator.GetRequiredService<ILocalizationService>();
         themeService = ServiceLocator.GetRequiredService<IThemeService>();
-        if (PluginServiceCollectionExtensions.UseV3Transport)
-        {
-            _bus = ServiceLocator.GetRequiredService<MessageBus>();
-            _sessionManager = ServiceLocator.GetRequiredService<PluginSessionManager>();
-        }
+        _bus = ServiceLocator.GetRequiredService<MessageBus>();
+        _sessionManager = ServiceLocator.GetRequiredService<PluginSessionManager>();
 
         InitializeComponent();
 
@@ -85,7 +81,6 @@ public partial class NodePluginDetailView : UserControl
     {
         localizationService.LocaleChanged -= OnLocaleChanged;
         themeService.ThemeChanged -= OnThemeChanged;
-        ClearPluginEventSubscription();
         TearDownWebTransport();
         if (_sessionManager is not null)
         {
@@ -106,7 +101,6 @@ public partial class NodePluginDetailView : UserControl
             viewModel.PropertyChanged += OnViewModelPropertyChanged;
         }
 
-        UpdatePluginEventSubscription();
         NavigateIfNeeded();
         SendSearchMessage();
     }
@@ -115,8 +109,6 @@ public partial class NodePluginDetailView : UserControl
     {
         if (e.PropertyName == nameof(NodePluginDetailViewModel.CurrentContext))
         {
-            subjectSubscriptions.Clear();
-            UpdatePluginEventSubscription();
             NavigateIfNeeded();
             SendInitializeMessage();
             SendSearchMessage();
@@ -149,7 +141,6 @@ public partial class NodePluginDetailView : UserControl
     private async Task NavigateAsync(string entryPath)
     {
         browserReady = false;
-        subjectSubscriptions.Clear();
         TearDownWebTransport();
         try
         {
@@ -158,13 +149,7 @@ public partial class NodePluginDetailView : UserControl
             PluginBrowser.NavigationCompleted -= PluginBrowserOnNavigationCompleted;
             PluginBrowser.NavigationCompleted += PluginBrowserOnNavigationCompleted;
 
-            // v3: WebView2Transport owns WebMessageReceived via CoreWebView2MessageChannel.
-            // Legacy: DetailView parses tool-call itself.
-            PluginBrowser.CoreWebView2.WebMessageReceived -= PluginBrowserOnWebMessageReceived;
-            if (!IsV3Detail())
-            {
-                PluginBrowser.CoreWebView2.WebMessageReceived += PluginBrowserOnWebMessageReceived;
-            }
+            await AttachWebTransportAsync();
 
             var themedPath = ResolveThemedEntryPath(entryPath);
             PluginBrowser.Source = BuildPluginEntryUri(themedPath);
@@ -174,10 +159,6 @@ public partial class NodePluginDetailView : UserControl
             GlobalExceptionHandler.ReportStatic(ex, "Plugin WebView2 navigation");
         }
     }
-
-    private bool IsV3Detail()
-        => _bus is not null
-           && viewModel?.CurrentContext?.Plugin is { UsesV3Bus: true };
 
     /// <summary>
     /// Returns the path to the theme-specific HTML variant for the given entry path,
@@ -275,24 +256,12 @@ public partial class NodePluginDetailView : UserControl
         return CoreWebView2Environment.CreateAsync(userDataFolder: ConfigPath.WebView2UserDataPath);
     }
 
-    private async void PluginBrowserOnNavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e)
+    private void PluginBrowserOnNavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e)
     {
         browserReady = e.IsSuccess;
         if (!browserReady)
         {
             return;
-        }
-
-        if (IsV3Detail())
-        {
-            try
-            {
-                await AttachWebTransportAsync();
-            }
-            catch (Exception ex)
-            {
-                GlobalExceptionHandler.ReportStatic(ex, "Plugin WebView2 bus attach");
-            }
         }
 
         SendInitializeMessage();
@@ -311,7 +280,7 @@ public partial class NodePluginDetailView : UserControl
         }
 
         var plugin = viewModel?.CurrentContext?.Plugin;
-        if (plugin is null || !plugin.UsesV3Bus)
+        if (plugin is null)
         {
             return;
         }
@@ -348,8 +317,8 @@ public partial class NodePluginDetailView : UserControl
                 return tcs.Task;
             },
             enrichDetailCallPayload: EnrichDetailCallPayload);
-
-        // Legacy pages do not send bus.handshake; host marks ready so tool-call shim works.
+        _webTransport.LegacyShimEnabled = false;
+        // Page handshake is optional; mark ready so detailCall works if handshake is late/missed.
         _webTransport.MarkHandshaken();
 
         _webEndpoint = new EndpointId(
@@ -409,153 +378,6 @@ public partial class NodePluginDetailView : UserControl
         });
     }
 
-    private async void PluginBrowserOnWebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
-    {
-        if (viewModel?.CurrentContext == null)
-        {
-            return;
-        }
-
-        using var document = JsonDocument.Parse(e.WebMessageAsJson);
-        var root = document.RootElement;
-        if (!root.TryGetProperty("type", out var typeElement))
-        {
-            return;
-        }
-
-        var type = typeElement.GetString();
-        if (string.Equals(type, "tool-call", StringComparison.OrdinalIgnoreCase))
-        {
-            await HandleToolCallAsync(root);
-            return;
-        }
-
-        if (string.Equals(type, "tool-subscribe", StringComparison.OrdinalIgnoreCase))
-        {
-            UpdateSubscription(root, subscribe: true);
-            return;
-        }
-
-        if (string.Equals(type, "tool-unsubscribe", StringComparison.OrdinalIgnoreCase))
-        {
-            UpdateSubscription(root, subscribe: false);
-        }
-    }
-
-    private async Task HandleToolCallAsync(JsonElement root)
-    {
-        var requestId = root.TryGetProperty("requestId", out var requestIdElement)
-            ? requestIdElement.GetString()
-            : null;
-        if (string.IsNullOrWhiteSpace(requestId))
-        {
-            return;
-        }
-
-        var action = root.TryGetProperty("action", out var actionElement)
-            ? actionElement.GetString()
-            : null;
-
-        if (string.IsNullOrWhiteSpace(action))
-        {
-            SendToolResponse(requestId, null, "Missing tool action.");
-            return;
-        }
-
-        try
-        {
-            var payloadJson = root.TryGetProperty("payload", out var payloadElement)
-                ? payloadElement.GetRawText()
-                : string.Empty;
-            var result = await viewModel!.HandleToolCallAsync(action, payloadJson);
-            SendToolResponse(requestId, result, null);
-        }
-        catch (Exception ex)
-        {
-            SendToolResponse(requestId, null, ex.Message);
-        }
-    }
-
-    private void UpdateSubscription(JsonElement root, bool subscribe)
-    {
-        var subjectId = root.TryGetProperty("subjectId", out var subjectIdElement)
-            ? subjectIdElement.GetString()
-            : null;
-        if (string.IsNullOrWhiteSpace(subjectId))
-        {
-            return;
-        }
-
-        if (subscribe)
-        {
-            subjectSubscriptions.Add(subjectId);
-        }
-        else
-        {
-            subjectSubscriptions.Remove(subjectId);
-        }
-    }
-
-    private void UpdatePluginEventSubscription()
-    {
-        ClearPluginEventSubscription();
-
-        // v3: plugin.event.* is delivered by the bus to WebView2Transport (legacy tool-event rewrite).
-        if (IsV3Detail())
-        {
-            return;
-        }
-
-        subscribedPlugin = viewModel?.CurrentContext?.Plugin;
-        if (subscribedPlugin != null)
-        {
-            subscribedPlugin.EventReceived += OnPluginEventReceived;
-        }
-    }
-
-    private void ClearPluginEventSubscription()
-    {
-        if (subscribedPlugin == null)
-        {
-            return;
-        }
-
-        subscribedPlugin.EventReceived -= OnPluginEventReceived;
-        subscribedPlugin = null;
-    }
-
-    private void OnPluginEventReceived(object? sender, NodePluginEventReceivedEventArgs e)
-    {
-        if (!subjectSubscriptions.Contains(e.SubjectId))
-        {
-            return;
-        }
-
-        Dispatcher.Invoke(() => SendMessage(JsonSerializer.Serialize(new
-        {
-            type = "tool-event",
-            subjectId = e.SubjectId,
-            payload = e.Payload
-        })));
-    }
-
-    private void SendToolResponse(string requestId, JsonElement? payload, string? errorMessage)
-    {
-        SendMessage(JsonSerializer.Serialize(new
-        {
-            type = "tool-response",
-            requestId,
-            ok = string.IsNullOrWhiteSpace(errorMessage),
-            payload = payload ?? JsonSerializer.SerializeToElement(new { }),
-            error = string.IsNullOrWhiteSpace(errorMessage)
-                ? null
-                : new
-                {
-                    message = errorMessage
-                }
-        }));
-    }
-
     private void SendInitializeMessage()
     {
         if (viewModel?.CurrentContext == null)
@@ -566,8 +388,8 @@ public partial class NodePluginDetailView : UserControl
         var initialState = JsonSerializer.Deserialize<JsonElement>(viewModel.CurrentStateJson);
         var messages = viewModel.CurrentContext.Plugin.GetCurrentMessages();
         var theme = themeService.CurrentTheme;
-        var messageJson = BuildEventMessage(
-            HostInitializeSubject,
+        SendHostEvent(
+            Routes.HostEvent.Initialize,
             new
             {
                 protocolVersion = viewModel.CurrentContext.ProtocolVersion,
@@ -584,7 +406,6 @@ public partial class NodePluginDetailView : UserControl
                 theme = theme.ToWireString(),
                 themeTokens = WebThemeTokens.For(theme)
             });
-        SendMessage(messageJson);
     }
 
     private void OnLocaleChanged(object? sender, LocaleChangedEventArgs e)
@@ -598,17 +419,15 @@ public partial class NodePluginDetailView : UserControl
         {
             var context = viewModel.CurrentContext;
             var messages = context.Plugin.GetCurrentMessages();
-            SendMessage(JsonSerializer.Serialize(new
-            {
-                type = "language-changed",
-                payload = new
+            SendHostEvent(
+                Routes.HostEvent.LanguageChanged,
+                new
                 {
                     locale = e.CurrentLocale,
                     fallbackLocale = context.FallbackLocale,
                     translationRevision = BuildTranslationRevision(e.CurrentLocale, messages),
                     messages
-                }
-            }));
+                });
             _ = context.Plugin.InitializeAsync();
         });
     }
@@ -627,26 +446,19 @@ public partial class NodePluginDetailView : UserControl
 
         Dispatcher.Invoke(() =>
         {
-            // Re-apply CSS variables on the already-loaded page (DOM exists, so
-            // ExecuteScriptAsync is reliable). The next navigation will automatically
-            // pick the correct index.{theme}.html variant via ResolveThemedEntryPath.
             if (browserReady && PluginBrowser.CoreWebView2 != null)
             {
                 _ = PluginBrowser.CoreWebView2.ExecuteScriptAsync(BuildThemeBootstrapScript(e.CurrentTheme));
             }
 
-            // Notify plugin business logic (e.g. charts, icons that depend on theme).
-            var msg = JsonSerializer.Serialize(new
-            {
-                type = "theme-changed",
-                payload = new
+            StaticLogger.LogInformation("OnThemeChanged: sending themeChanged event, browserReady={BrowserReady}.", browserReady);
+            SendHostEvent(
+                Routes.HostEvent.ThemeChanged,
+                new
                 {
                     theme = e.CurrentTheme.ToWireString(),
                     themeTokens = WebThemeTokens.For(e.CurrentTheme)
-                }
-            });
-            StaticLogger.LogInformation("OnThemeChanged: sending theme-changed message, browserReady={BrowserReady}.", browserReady);
-            SendMessage(msg);
+                });
         });
     }
 
@@ -664,28 +476,35 @@ public partial class NodePluginDetailView : UserControl
             return;
         }
 
-        var messageJson = BuildEventMessage(HostSearchSubject, new { query = viewModel.CurrentQuery });
-        SendMessage(messageJson);
+        SendHostEvent(Routes.HostEvent.Search, new { query = viewModel.CurrentQuery });
     }
 
-    private void SendMessage(string messageJson)
+    private void SendHostEvent(string route, object payload)
     {
-        if (!browserReady || PluginBrowser.CoreWebView2 == null)
+        if (!browserReady || _webTransport is null)
         {
-            StaticLogger.LogWarning("SendMessage: dropped (browserReady={BrowserReady}, coreWebView2={HasCoreWebView2}), msg={Message}",
-                browserReady, PluginBrowser.CoreWebView2 != null, messageJson[..Math.Min(120, messageJson.Length)]);
+            StaticLogger.LogWarning(
+                "SendHostEvent: dropped (browserReady={BrowserReady}, transport={HasTransport}), route={Route}",
+                browserReady, _webTransport is not null, route);
             return;
         }
 
-        try
+        var binding = _webTransport.Binding;
+        var id = _ids.NewId();
+        var envelope = new Envelope
         {
-            StaticLogger.LogDebug("SendMessage: posting {Message}", messageJson[..Math.Min(120, messageJson.Length)]);
-            PluginBrowser.CoreWebView2.PostWebMessageAsJson(messageJson);
-        }
-        catch (Exception ex)
-        {
-            StaticLogger.LogError(ex, "SendMessage: PostWebMessageAsJson failed.");
-        }
+            Version = ProtocolVersion.Current,
+            Id = id,
+            TraceId = id,
+            SessionId = binding.SessionId,
+            PluginId = binding.PluginId,
+            EntryId = binding.EntryId,
+            EndpointId = binding.EndpointId,
+            Kind = MessageKind.Event,
+            Route = route,
+            Payload = JsonSerializer.SerializeToNode(payload, ProtocolJsonOptions.Default),
+        };
+        _ = _webTransport.SendAsync(envelope, CancellationToken.None);
     }
 
     public async Task FocusPrimaryInputAsync()
@@ -716,16 +535,6 @@ public partial class NodePluginDetailView : UserControl
 
     public void SendHostKey(string key)
     {
-        SendMessage(BuildEventMessage(HostKeySubject, new { key }));
-    }
-
-    private static string BuildEventMessage(string subjectId, object payload)
-    {
-        return JsonSerializer.Serialize(new
-        {
-            type = "tool-event",
-            subjectId,
-            payload
-        });
+        SendHostEvent(Routes.HostEvent.Key, new { key });
     }
 }

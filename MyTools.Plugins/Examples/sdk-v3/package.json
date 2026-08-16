@@ -28,7 +28,15 @@
       "import": "./dist/webClient.mjs",
       "default": "./dist/webClient.mjs"
     },
+    "./i18n": {
+      "types": "./dist/i18n.d.ts",
+      "import": "./dist/i18n.mjs",
+      "default": "./dist/i18n.mjs"
+    },
     "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "i18next": "^25.3.2"
   },
   "scripts": {
     "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",

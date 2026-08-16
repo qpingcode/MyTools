@@ -14,7 +14,7 @@ import { encodeFrameString, FrameDecoder } from "../src/framing.ts";
 import { canonicalStringify } from "../src/protocol.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const entryPath = join(here, "..", "..", "hello-search", "src", "backend", "index.v3.mts");
+const entryPath = join(here, "..", "..", "hello-search", "src", "backend", "index.mts");
 
 function waitFor(predicate, timeoutMs = 5000) {
   return new Promise((resolve, reject) => {

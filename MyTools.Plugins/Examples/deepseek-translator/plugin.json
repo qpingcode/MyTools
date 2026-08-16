@@ -1,8 +1,7 @@
 {
   "id": "deepseek-translator",
   "version": "0.1.0",
-  "runtime": "node",
-  "protocolVersion": "2.0",
+  "protocolVersion": "3.0",
   "i18n": {
     "defaultLocale": "en-US",
     "catalog": "i18n/catalog.en-US.json",
@@ -17,6 +16,7 @@
         "defaultValue": "DeepSeek Translator"
       },
       "entry": "backend/Translator/index.mjs",
+      "capabilities": [],
       "keywords": ["ff"],
       "hotKey": "Alt+C",
       "detail": {
@@ -31,6 +31,7 @@
         "defaultValue": "DeepSeek Anki Cards"
       },
       "entry": "backend/AnkiCard/index.mjs",
+      "capabilities": [],
       "keywords": ["fc"],
       "detail": {
         "type": "web",

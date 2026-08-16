@@ -23,7 +23,10 @@ class MyToolsI18n {
     return this.#locale;
   }
 
-  configure(payload: LocalizationPayload): void {
+  configure(payload: LocalizationPayload | Record<string, unknown> | null | undefined): void {
+    if (!payload || typeof payload !== "object") {
+      return;
+    }
     this.#locale = typeof payload.locale === "string" ? payload.locale : this.#locale;
     this.#fallbackLocale = typeof payload.fallbackLocale === "string"
       ? payload.fallbackLocale
@@ -62,8 +65,12 @@ class MyToolsI18n {
     return this.#instance.t(key, runtimeOptions);
   }
 
-  apply(root: ParentNode = document): void {
-    root.querySelectorAll<HTMLElement>("[data-i18n]").forEach((element) => {
+  apply(root?: ParentNode): void {
+    if (typeof document === "undefined") {
+      return;
+    }
+    const target = root ?? document;
+    target.querySelectorAll<HTMLElement>("[data-i18n]").forEach((element) => {
       const descriptor = element.dataset.i18n ?? "";
       const parsed = parseDescriptor(descriptor);
       const defaultValue = element.dataset.i18nDefaultValue ?? element.textContent ?? parsed.key;
@@ -76,9 +83,7 @@ class MyToolsI18n {
         }
       });
     });
-    if (typeof document !== "undefined") {
-      document.documentElement.lang = this.#locale;
-    }
+    document.documentElement.lang = this.#locale;
   }
 }
 

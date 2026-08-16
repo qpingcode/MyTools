@@ -1,8 +1,7 @@
 {
   "id": "settings",
   "version": "0.0.6",
-  "runtime": "node",
-  "protocolVersion": "2.0",
+  "protocolVersion": "3.0",
   "i18n": {
     "defaultLocale": "en-US",
     "catalog": "i18n/catalog.en-US.json",
@@ -17,6 +16,7 @@
         "defaultValue": "Settings"
       },
       "entry": "backend/index.mjs",
+      "capabilities": ["configuration.write"],
       "keywords": ["settings"],
       "hotKey": "Alt+S",
       "detail": {

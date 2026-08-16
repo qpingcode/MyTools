@@ -88,12 +88,13 @@ jobs:
               throw "v3 Node SDK tests failed"
           }
 
-          # Validate every migrated plugin.v3.json carries protocolVersion 3.0 and non-empty entries.
-          $v3Manifests = Get-ChildItem -Path .\MyTools.Plugins\Examples -Filter 'plugin.v3.json' -Recurse
-          if ($v3Manifests.Count -eq 0) {
-              Write-Host "No plugin.v3.json manifests found yet (v3 migration in progress)."
+          # Validate every example plugin.json carries protocolVersion 3.0 and non-empty entries.
+          $manifests = Get-ChildItem -Path .\MyTools.Plugins\Examples -Filter 'plugin.json' -Recurse |
+              Where-Object { $_.FullName -notmatch '\\dist\\|\\node_modules\\|\\sdk-v3\\|\\common\\' }
+          if ($manifests.Count -eq 0) {
+              throw "No plugin.json manifests found under Examples."
           }
-          foreach ($manifestFile in $v3Manifests) {
+          foreach ($manifestFile in $manifests) {
               $m = Get-Content $manifestFile.FullName -Raw | ConvertFrom-Json
               if ($m.protocolVersion -ne '3.0') {
                   throw "$($manifestFile.FullName): protocolVersion must be '3.0', got '$($m.protocolVersion)'"
@@ -103,18 +104,18 @@ jobs:
               }
               $entryIds = @()
               foreach ($entry in $m.entries) {
-                  if (-not $entry.entryId) {
-                      throw "$($manifestFile.FullName): entry missing entryId"
+                  if (-not $entry.id) {
+                      throw "$($manifestFile.FullName): entry missing id"
                   }
-                  if ($entryIds -contains $entry.entryId) {
-                      throw "$($manifestFile.FullName): duplicate entryId '$($entry.entryId)'"
+                  if ($entryIds -contains $entry.id) {
+                      throw "$($manifestFile.FullName): duplicate entry id '$($entry.id)'"
                   }
-                  $entryIds += $entry.entryId
-                  if (-not $entry.nodeEntry) {
-                      throw "$($manifestFile.FullName): entry '$($entry.entryId)' missing nodeEntry"
+                  $entryIds += $entry.id
+                  if (-not $entry.entry) {
+                      throw "$($manifestFile.FullName): entry '$($entry.id)' missing entry"
                   }
               }
-              Write-Host "Verified v3 manifest: $($manifestFile.FullName)"
+              Write-Host "Verified plugin manifest: $($manifestFile.FullName)"
           }
 
       - name: Restore dependencies and tools

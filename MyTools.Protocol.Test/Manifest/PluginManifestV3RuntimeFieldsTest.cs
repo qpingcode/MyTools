@@ -9,7 +9,7 @@ namespace MyTools.Protocol.Test.Manifest;
 
 /// <summary>
 /// Verifies the v3 manifest model carries the runtime fields the WPF app needs (keywords, hotKey,
-/// i18n, name) when deserialized from a real plugin.v3.json.
+/// i18n, name) when deserialized from a real plugin.json.
 /// </summary>
 [TestFixture]
 public class PluginManifestV3RuntimeFieldsTest
@@ -19,7 +19,7 @@ public class PluginManifestV3RuntimeFieldsTest
         var root = TestContext.CurrentContext.TestDirectory;
         for (var i = 0; i < 6 && root is not null; i++)
         {
-            var path = Path.Combine(root, "..", "MyTools.Plugins", "Examples", "settings", "plugin.v3.json");
+            var path = Path.Combine(root, "..", "MyTools.Plugins", "Examples", "settings", "plugin.json");
             path = Path.GetFullPath(path);
             if (File.Exists(path))
             {
@@ -31,14 +31,14 @@ public class PluginManifestV3RuntimeFieldsTest
         var dir = TestContext.CurrentContext.TestDirectory;
         for (var i = 0; i < 6 && dir is not null; i++)
         {
-            var candidate = Path.Combine(dir, "MyTools.Plugins", "Examples", "settings", "plugin.v3.json");
+            var candidate = Path.Combine(dir, "MyTools.Plugins", "Examples", "settings", "plugin.json");
             if (File.Exists(candidate))
             {
                 return JsonSerializer.Deserialize<PluginManifestV3>(File.ReadAllText(candidate), ProtocolJsonOptions.Default)!;
             }
             dir = Path.GetDirectoryName(dir);
         }
-        Assert.Fail("settings plugin.v3.json not found");
+        Assert.Fail("settings plugin.json not found");
         return null!;
     }
 

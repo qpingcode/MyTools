@@ -17,6 +17,18 @@ public class RoutesTest
     }
 
     [Test]
+    public void WellKnownHostEventRoutes_ShouldUseHostEventPrefix()
+    {
+        Assert.That(Routes.HostEvent.Initialize, Is.EqualTo("host.event.initialize"));
+        Assert.That(Routes.HostEvent.Search, Is.EqualTo("host.event.search"));
+        Assert.That(Routes.HostEvent.Key, Is.EqualTo("host.event.key"));
+        Assert.That(Routes.HostEvent.LanguageChanged, Is.EqualTo("host.event.languageChanged"));
+        Assert.That(Routes.HostEvent.ThemeChanged, Is.EqualTo("host.event.themeChanged"));
+        Assert.That(Routes.HostEvent.Of("tick"), Is.EqualTo("host.event.tick"));
+        Assert.That(Routes.HostEvent.Of(Routes.HostEvent.Search), Is.EqualTo(Routes.HostEvent.Search));
+    }
+
+    [Test]
     public void PluginCallOf_ShouldPrefixBareMethodAndLeaveFullRoute()
     {
         Assert.That(Routes.PluginCall.Of("echo"), Is.EqualTo("plugin.call.echo"));

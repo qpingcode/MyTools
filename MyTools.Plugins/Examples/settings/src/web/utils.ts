@@ -1,7 +1,7 @@
-import { tool } from "@qping/plugin-common/client";
+import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 
 export function t(key: string, defaultValue: string, values: Record<string, unknown> = {}): string {
-    return tool.i18n.t(key, { defaultValue: defaultValue, ...values });
+    return mytoolsI18n.t(key, { defaultValue: defaultValue, ...values });
 }
 
 export function escapeHtml(text: string): string {

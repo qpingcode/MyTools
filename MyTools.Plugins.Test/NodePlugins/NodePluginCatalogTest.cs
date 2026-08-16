@@ -38,7 +38,7 @@ public class NodePluginCatalogTest
           "name": "Hello Search",
           "version": "0.2.0",
           "runtime": "node",
-          "protocolVersion": "2.0",
+          "protocolVersion": "3.0",
           "i18n": {
             "defaultLocale": "en-US",
             "catalog": "i18n/catalog.en-US.json",
@@ -97,7 +97,7 @@ public class NodePluginCatalogTest
           "name": "DeepSeek Translator",
           "version": "0.1.0",
           "runtime": "node",
-          "protocolVersion": "2.0",
+          "protocolVersion": "3.0",
           "entries": [
             {
               "id": "translator",
@@ -157,7 +157,7 @@ public class NodePluginCatalogTest
           "name": "Hello Search",
           "version": "0.2.0",
           "runtime": "node",
-          "protocolVersion": "2.0",
+          "protocolVersion": "3.0",
           "entries": [
             {
               "id": "hello",
@@ -193,7 +193,7 @@ public class NodePluginCatalogTest
           "version": "0.2.0",
           "runtime": "node",
           "entry": "backend/index.mjs",
-          "protocolVersion": "2.0",
+          "protocolVersion": "3.0",
           "keywords": ["legacy"],
           "detail": {
             "type": "web",
@@ -223,7 +223,7 @@ public class NodePluginCatalogTest
         File.WriteAllText(Path.Combine(pluginPath, "plugin.json"), """
         {
           "id": "unsafe", "name": "Unsafe", "version": "1.0.0",
-          "runtime": "node", "protocolVersion": "2.0",
+          "runtime": "node", "protocolVersion": "3.0",
           "i18n": {
             "defaultLocale": "en-US",
             "catalog": "../outside.json",
@@ -242,12 +242,12 @@ public class NodePluginCatalogTest
     }
 
     [Test]
-    public void Reload_ShouldParseCapabilitiesFromPluginV3Manifest()
+    public void Reload_ShouldParseCapabilitiesFromPluginManifest()
     {
         var pluginPath = Path.Combine(rootPath, "settings");
         Directory.CreateDirectory(Path.Combine(pluginPath, "backend"));
         Directory.CreateDirectory(Path.Combine(pluginPath, "web"));
-        File.WriteAllText(Path.Combine(pluginPath, "plugin.v3.json"), """
+        File.WriteAllText(Path.Combine(pluginPath, "plugin.json"), """
         {
           "id": "settings",
           "version": "0.0.6",
@@ -256,7 +256,7 @@ public class NodePluginCatalogTest
             {
               "id": "main",
               "name": { "key": "Plugin.Settings.Name", "defaultValue": "Settings" },
-              "entry": "backend/index.v3.mjs",
+              "entry": "backend/index.mjs",
               "capabilities": ["configuration.write"],
               "keywords": ["settings"],
               "detail": {
@@ -267,7 +267,7 @@ public class NodePluginCatalogTest
           ]
         }
         """);
-        File.WriteAllText(Path.Combine(pluginPath, "backend", "index.v3.mjs"), "console.log('ok');");
+        File.WriteAllText(Path.Combine(pluginPath, "backend", "index.mjs"), "console.log('ok');");
         File.WriteAllText(Path.Combine(pluginPath, "web", "index.html"), "<html></html>");
 
         var catalog = new NodePluginCatalog(rootPath, NullLogger<NodePluginCatalog>.Instance);
@@ -276,5 +276,31 @@ public class NodePluginCatalogTest
         Assert.That(plugins, Has.Count.EqualTo(1));
         Assert.That(plugins[0].Capabilities, Is.EquivalentTo(new[] { "configuration.write" }));
         Assert.That(plugins[0].ProtocolVersion, Is.EqualTo("3.0"));
+    }
+
+    [Test]
+    public void Reload_ShouldSkipProtocolVersionOtherThan3()
+    {
+        var pluginPath = Path.Combine(rootPath, "old");
+        Directory.CreateDirectory(Path.Combine(pluginPath, "backend"));
+        Directory.CreateDirectory(Path.Combine(pluginPath, "web"));
+        File.WriteAllText(Path.Combine(pluginPath, "backend", "index.mjs"), "console.log('ok');");
+        File.WriteAllText(Path.Combine(pluginPath, "web", "index.html"), "<html></html>");
+        File.WriteAllText(Path.Combine(pluginPath, "plugin.json"), """
+        {
+          "id": "old",
+          "version": "0.1.0",
+          "protocolVersion": "2.0",
+          "entries": [{
+            "id": "main",
+            "entry": "backend/index.mjs",
+            "detail": { "type": "web", "entry": "web/index.html" }
+          }]
+        }
+        """);
+
+        var plugins = new NodePluginCatalog(rootPath, NullLogger<NodePluginCatalog>.Instance).Reload();
+
+        Assert.That(plugins, Is.Empty);
     }
 }

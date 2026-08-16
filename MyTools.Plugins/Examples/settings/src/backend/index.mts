@@ -1,5 +1,8 @@
-import { createTool } from "@qping/plugin-common/server";
-import { mytoolsI18n } from "@qping/plugin-common/i18n";
+// Named-pipe backend for settings. Each handler delegates to tool.hostCall(...)
+// which the SDK maps to host.call.<method>.
+
+import { createTool } from "@qping/plugin-bus/server";
+import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 
 const tool = createTool();
 
@@ -8,7 +11,7 @@ tool
     mytoolsI18n.configure(params);
     return {};
   })
-  .search((params) => ({
+  .search((_params: any) => ({
     items: [
       {
         id: "settings:main",
@@ -31,26 +34,26 @@ tool
   .handle("getConfiguration", async () => {
     return await tool.hostCall("getConfiguration");
   })
-  .handle("saveConfiguration", async (payload) => {
-    var params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
+  .handle("saveConfiguration", async (payload: any) => {
+    const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
     return await tool.hostCall("saveConfiguration", params);
   })
   .handle("getKeymap", async () => {
     return await tool.hostCall("getKeymap");
   })
-  .handle("saveKeymap", async (payload) => {
-    var params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
+  .handle("saveKeymap", async (payload: any) => {
+    const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
     return await tool.hostCall("saveKeymap", params);
   })
-  .handle("validateKeymap", async (payload) => {
-    var params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
+  .handle("validateKeymap", async (payload: any) => {
+    const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
     return await tool.hostCall("validateKeymap", params);
   })
   .handle("getGestures", async () => {
     return await tool.hostCall("getGestures");
   })
-  .handle("saveGestures", async (payload) => {
-    var params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
+  .handle("saveGestures", async (payload: any) => {
+    const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
     return await tool.hostCall("saveGestures", params);
   })
   .handle("suspendGestures", async () => {

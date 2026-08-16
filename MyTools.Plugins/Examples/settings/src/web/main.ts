@@ -1,6 +1,7 @@
-import { tool } from "@qping/plugin-common/client";
+import { HostEvents } from "@qping/plugin-bus/web";
 import type { Config } from "./types";
 import { t } from "./utils";
+import { bus } from "./bus";
 import * as common from "./common";
 import {
     findCategory,
@@ -14,8 +15,6 @@ import {
 } from "./config-panel";
 import { renderKeymap, saveKeymapInternal, keymapMatchesSearch } from "./keymap-panel";
 import { renderGestures, saveGesturesInternal, gesturesMatchesSearch } from "./gestures-panel";
-
-var hostEvents = tool.events.host;
 
 // Suppress the browser/WebView2 default context menu so it doesn't interfere
 // with right-button gesture recording on the Mouse Gestures page.
@@ -33,7 +32,7 @@ async function loadConfiguration(): Promise<void> {
         + t("Plugin.Settings.Loading", "Loading...")
         + "</div>";
     try {
-        common.state.config = await tool.call<Config>("getConfiguration");
+        common.state.config = await bus.detailCall<Config>("getConfiguration");
         renderCategoryTree();
         if (common.state.currentCategoryKey) {
             selectCategory(common.state.currentCategoryKey);
@@ -101,7 +100,7 @@ async function saveSettings(): Promise<void> {
                 value: value,
             }));
 
-            var result = await tool.call<{ requiresRestart: boolean }>(
+            var result = await bus.detailCall<{ requiresRestart: boolean }>(
                 "saveConfiguration",
                 { changes: changes }
             );
@@ -177,7 +176,7 @@ common.restartConfirm.addEventListener("click", async () => {
     common.restartModal.hidden = true;
     common.showToast(t("Plugin.Settings.Restarting", "Restarting..."), "success");
     try {
-        await tool.call("restart");
+        await bus.detailCall("restart");
     } catch {
         // Host restart disconnects the bridge — expected, ignore.
     }
@@ -185,16 +184,16 @@ common.restartConfirm.addEventListener("click", async () => {
 
 // ── Host events ──
 
-tool.subscribe(hostEvents.initialize, async () => {
+bus.on(HostEvents.Initialize, async () => {
     await loadConfiguration();
 });
 
-tool.subscribe(hostEvents.languageChanged, async () => {
-    tool.i18n.apply(document);
+bus.on(HostEvents.LanguageChanged, async () => {
+    bus.i18n.apply(document);
     await loadConfiguration();
 });
 
-tool.subscribe("mytools.host.theme-changed", () => {
+bus.on(HostEvents.ThemeChanged, () => {
     if (common.state.currentCategoryKey === "Plugins") {
         renderKeymap();
     } else if (common.state.currentCategoryKey === "Gestures") {
@@ -204,5 +203,3 @@ tool.subscribe("mytools.host.theme-changed", () => {
         if (cat) renderSettings(cat);
     }
 });
-
-tool.ready("settings");

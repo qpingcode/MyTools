@@ -19,12 +19,11 @@ using MyTools.Protocol.Versioning;
 namespace MyTools.Plugins.NodePlugins;
 
 /// <summary>
-/// v3 message-bus runtime for a Node plugin entry, implementing the same <see cref="INodePluginHost"/>
-/// surface as the legacy <see cref="NodePluginProcessHost"/> but over the v3 named-pipe bus. Each
-/// legacy method (<c>search</c>, <c>detailCall</c>, …) is mapped to a <c>plugin.call.&lt;method&gt;</c>
-/// envelope; responses are correlated by request id via a registered host endpoint on the bus.
-/// Inbound <c>plugin.event.*</c> envelopes raise <see cref="EventReceived"/>; <c>host.call.*</c> is
-/// handled by the <see cref="MessageBus"/> through <see cref="HostCallHandler"/>.
+/// Message-bus runtime for a Node plugin entry. Each host method (<c>search</c>, <c>detailCall</c>, …)
+/// is mapped to a <c>plugin.call.&lt;method&gt;</c> envelope; responses are correlated by request id
+/// via a registered host endpoint on the bus. Inbound <c>plugin.event.*</c> envelopes raise
+/// <see cref="EventReceived"/>; <c>host.call.*</c> is handled by the <see cref="MessageBus"/> through
+/// <see cref="HostCallHandler"/>.
 /// </summary>
 internal sealed class NodePluginBusHost : INodePluginHost
 {
