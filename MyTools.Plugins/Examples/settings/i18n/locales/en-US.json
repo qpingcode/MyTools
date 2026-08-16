@@ -27,9 +27,9 @@
   "Plugin.Settings.Gestures.HeaderAction": "Action Name",
   "Plugin.Settings.Gestures.HeaderActionTip": "The name of this gesture action.",
   "Plugin.Settings.Gestures.HeaderGesture": "Trigger Gesture",
-  "Plugin.Settings.Gestures.HeaderGestureTip": "The mouse movement pattern to record. Hold the right mouse button and draw.",
+  "Plugin.Settings.Gestures.HeaderGestureTip": "Click to re-record. Hold the right mouse button and draw.",
   "Plugin.Settings.Gestures.HeaderTrigger": "Action",
-  "Plugin.Settings.Gestures.HeaderTriggerTip": "What happens when the gesture is triggered — simulate a keyboard shortcut or a mouse button.",
+  "Plugin.Settings.Gestures.HeaderTriggerTip": "The action to run. Click to choose a keyboard shortcut or mouse button.",
   "Plugin.Settings.Gestures.HeaderProcess": "Target Process",
   "Plugin.Settings.Gestures.HeaderProcessTip": "Only trigger this gesture in the specified processes. Leave empty to apply to all processes.",
   "Plugin.Settings.Gestures.HeaderEnabled": "Enabled",
@@ -50,5 +50,11 @@
   "Plugin.Settings.Gestures.Saved": "Gestures saved and applied.",
   "Plugin.Settings.Gestures.ConflictWins": "Conflicts with \"{{name}}\". This one takes priority.",
   "Plugin.Settings.Gestures.ConflictLose": "Conflicts with \"{{name}}\", which will take priority.",
-  "Plugin.Settings.Gestures.Unnamed": "Unnamed"
+  "Plugin.Settings.Gestures.Unnamed": "Unnamed",
+  "Plugin.Settings.Gestures.ClickToRecord": "Click to record",
+  "Plugin.Settings.Gestures.ClickToSetAction": "Click to set action",
+  "Plugin.Settings.Gestures.NoAction": "Not set",
+  "Plugin.Settings.Gestures.MouseBackShort": "Back",
+  "Plugin.Settings.Gestures.MouseForwardShort": "Forward",
+  "Plugin.Settings.ActionPicker.Title": "Choose action"
 }

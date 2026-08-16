@@ -2,8 +2,8 @@ import { tool } from "@qping/plugin-common/client";
 import type { Category, GestureConfig } from "./types";
 import { highlight, t } from "./utils";
 import * as common from "./common";
-import { startHotKeyRecording } from "./keymap-panel";
 import { categorySelfMatches, renderSettingItem } from "./config-panel";
+import { formatMouseButtonLabel, openInputActionPicker, type InputActionPickerLabels } from "./action-picker";
 
 var gestureConfigs: GestureConfig[] | null = null;
 
@@ -18,6 +18,49 @@ var DIRECTION_ARROWS: Record<string, string> = {
 
 function directionsToArrows(directions: string[]): string {
     return directions.map(d => DIRECTION_ARROWS[d] || d).join(" ");
+}
+
+var GESTURE_VISIBLE_DIRS = 4;
+
+function formatGestureDisplay(directions: string[]): { visible: string; full: string; truncated: boolean } {
+    var full = directionsToArrows(directions);
+    if (directions.length <= GESTURE_VISIBLE_DIRS) {
+        return { visible: full, full: full, truncated: false };
+    }
+    return {
+        visible: directionsToArrows(directions.slice(0, GESTURE_VISIBLE_DIRS)) + " …",
+        full: full,
+        truncated: true
+    };
+}
+
+function actionPickerLabels(): InputActionPickerLabels {
+    return {
+        title: t("Plugin.Settings.ActionPicker.Title", "Choose action"),
+        tabKeyboard: t("Plugin.Settings.Gestures.TriggerHotkey", "Hotkey"),
+        tabMouse: t("Plugin.Settings.Gestures.TriggerMouse", "Mouse Button"),
+        recording: t("Plugin.Settings.Keymap.Recording", "Press shortcut..."),
+        cancel: t("Plugin.Settings.Cancel", "Cancel"),
+        mouseBack: t("Plugin.Settings.Gestures.MouseBack", "Back (XButton1)"),
+        mouseForward: t("Plugin.Settings.Gestures.MouseForward", "Forward (XButton2)")
+    };
+}
+
+function formatActionDisplay(gesture: GestureConfig): { text: string; empty: boolean; title: string } {
+    var labels = actionPickerLabels();
+    if (gesture.actionType === "mouse") {
+        var mouseLabel = formatMouseButtonLabel(gesture.mouseButton, labels);
+        if (mouseLabel) {
+            var shortLabel = gesture.mouseButton === "XButton2"
+                ? t("Plugin.Settings.Gestures.MouseForwardShort", "Forward")
+                : t("Plugin.Settings.Gestures.MouseBackShort", "Back");
+            return { text: shortLabel, empty: false, title: mouseLabel };
+        }
+    } else if (gesture.hotKey) {
+        return { text: gesture.hotKey, empty: false, title: gesture.hotKey };
+    }
+    var none = t("Plugin.Settings.Gestures.NoAction", "Not set");
+    return { text: none, empty: true, title: t("Plugin.Settings.Gestures.ClickToSetAction", "Click to set action") };
 }
 
 // ── Search checker (for category tree matching) ──
@@ -178,13 +221,13 @@ export function renderGestures(): void {
                 t("Plugin.Settings.Gestures.HeaderActionTip", "The name of this gesture action."))
             + headerCell("gesture-col-gesture",
                 t("Plugin.Settings.Gestures.HeaderGesture", "Trigger Gesture"),
-                t("Plugin.Settings.Gestures.HeaderGestureTip", "The mouse movement pattern to record. Hold the right mouse button and draw."))
+                t("Plugin.Settings.Gestures.HeaderGestureTip", "Click to re-record. Hold the right mouse button and draw."))
             + headerCell("gesture-col-process",
                 t("Plugin.Settings.Gestures.HeaderProcess", "Target Process"),
                 t("Plugin.Settings.Gestures.HeaderProcessTip", "Only trigger this gesture in the specified processes. Leave empty to apply to all processes."))
             + headerCell("gesture-col-trigger",
                 t("Plugin.Settings.Gestures.HeaderTrigger", "Action"),
-                t("Plugin.Settings.Gestures.HeaderTriggerTip", "What happens when the gesture is triggered — simulate a keyboard shortcut or a mouse button."))
+                t("Plugin.Settings.Gestures.HeaderTriggerTip", "The action to run. Click to choose a keyboard shortcut or mouse button."))
             + headerCell("gesture-col-enabled",
                 t("Plugin.Settings.Gestures.HeaderEnabled", "Enabled"),
                 t("Plugin.Settings.Gestures.HeaderEnabledTip", "Enable or disable this gesture."))
@@ -256,22 +299,24 @@ function renderGestureRow(gesture: GestureConfig, conflictMap: Map<string, strin
     nameDiv.appendChild(nameInput);
     row.appendChild(nameDiv);
 
-    // Gesture (display + record button)
+    // Gesture (click to re-record)
     var gestureDiv = document.createElement("div");
     gestureDiv.className = "gesture-col-gesture";
-    var gestureDisplay = document.createElement("span");
-    gestureDisplay.className = "gesture-display";
+    var gestureBtn = document.createElement("button");
+    gestureBtn.type = "button";
+    gestureBtn.className = "gesture-display";
     if (gesture.directions.length === 0) {
-        gestureDisplay.classList.add("gesture-display-empty");
-        gestureDisplay.textContent = t("Plugin.Settings.Gestures.NoGesture", "Not set");
+        gestureBtn.classList.add("gesture-display-empty");
+        gestureBtn.textContent = t("Plugin.Settings.Gestures.NoGesture", "Not set");
+        gestureBtn.title = t("Plugin.Settings.Gestures.ClickToRecord", "Click to record");
     } else {
-        gestureDisplay.innerHTML = highlight(directionsToArrows(gesture.directions), common.state.searchQuery);
+        var shown = formatGestureDisplay(gesture.directions);
+        gestureBtn.innerHTML = highlight(shown.visible, common.state.searchQuery);
+        gestureBtn.title = shown.truncated
+            ? shown.full
+            : t("Plugin.Settings.Gestures.ClickToRecord", "Click to record");
     }
-
-    var recordBtn = document.createElement("button");
-    recordBtn.className = "btn btn-secondary gesture-record-btn";
-    recordBtn.textContent = t("Plugin.Settings.Gestures.Record", "Record");
-    recordBtn.addEventListener("click", () => {
+    gestureBtn.addEventListener("click", () => {
         startGestureRecording((dirs) => {
             gesture.directions = dirs;
             common.state.gesturesDirty = true;
@@ -279,79 +324,8 @@ function renderGestureRow(gesture: GestureConfig, conflictMap: Map<string, strin
             common.updateSaveButton();
         });
     });
-
-    gestureDiv.appendChild(gestureDisplay);
-    gestureDiv.appendChild(recordBtn);
+    gestureDiv.appendChild(gestureBtn);
     row.appendChild(gestureDiv);
-
-    // Trigger (action type + value)
-    var triggerDiv = document.createElement("div");
-    triggerDiv.className = "gesture-col-trigger";
-
-    var typeSelect = document.createElement("select");
-    typeSelect.className = "setting-select gesture-type-select";
-    var hotkeyOption = document.createElement("option");
-    hotkeyOption.value = "hotkey";
-    hotkeyOption.textContent = t("Plugin.Settings.Gestures.TriggerHotkey", "Hotkey");
-    var mouseOption = document.createElement("option");
-    mouseOption.value = "mouse";
-    mouseOption.textContent = t("Plugin.Settings.Gestures.TriggerMouse", "Mouse Button");
-    typeSelect.appendChild(hotkeyOption);
-    typeSelect.appendChild(mouseOption);
-    typeSelect.value = gesture.actionType || "hotkey";
-
-    var triggerValueContainer = document.createElement("span");
-    triggerValueContainer.className = "gesture-trigger-value";
-
-    function renderTriggerValue(): void {
-        triggerValueContainer.innerHTML = "";
-        if (typeSelect.value === "hotkey") {
-            var hotKeyBtn = document.createElement("button");
-            hotKeyBtn.className = "hotkey-recorder";
-            hotKeyBtn.textContent = gesture.hotKey || t("Plugin.Settings.Keymap.NoHotkey", "None");
-            hotKeyBtn.addEventListener("click", () => {
-                startHotKeyRecording(hotKeyBtn, (newVal) => {
-                    gesture.hotKey = newVal;
-                    gesture.mouseButton = null;
-                    common.state.gesturesDirty = true;
-                    hotKeyBtn.textContent = newVal || t("Plugin.Settings.Keymap.NoHotkey", "None");
-                    common.updateSaveButton();
-                });
-            });
-            triggerValueContainer.appendChild(hotKeyBtn);
-        } else {
-            var mouseSelect = document.createElement("select");
-            mouseSelect.className = "setting-select";
-            var backOpt = document.createElement("option");
-            backOpt.value = "XButton1";
-            backOpt.textContent = t("Plugin.Settings.Gestures.MouseBack", "Back (XButton1)");
-            var fwdOpt = document.createElement("option");
-            fwdOpt.value = "XButton2";
-            fwdOpt.textContent = t("Plugin.Settings.Gestures.MouseForward", "Forward (XButton2)");
-            mouseSelect.appendChild(backOpt);
-            mouseSelect.appendChild(fwdOpt);
-            mouseSelect.value = gesture.mouseButton || "XButton1";
-            mouseSelect.addEventListener("change", () => {
-                gesture.mouseButton = mouseSelect.value;
-                gesture.hotKey = null;
-                common.state.gesturesDirty = true;
-                common.updateSaveButton();
-            });
-            triggerValueContainer.appendChild(mouseSelect);
-        }
-    }
-
-    typeSelect.addEventListener("change", () => {
-        gesture.actionType = typeSelect.value;
-        common.state.gesturesDirty = true;
-        renderTriggerValue();
-        common.updateSaveButton();
-    });
-
-    renderTriggerValue();
-
-    triggerDiv.appendChild(typeSelect);
-    triggerDiv.appendChild(triggerValueContainer);
 
     // Process filter
     var processDiv = document.createElement("div");
@@ -373,6 +347,39 @@ function renderGestureRow(gesture: GestureConfig, conflictMap: Map<string, strin
     processDiv.appendChild(processInput);
     row.appendChild(processDiv);
 
+    // Action (actual operation; click opens picker)
+    var triggerDiv = document.createElement("div");
+    triggerDiv.className = "gesture-col-trigger";
+    var actionBtn = document.createElement("button");
+    actionBtn.type = "button";
+    actionBtn.className = "gesture-action-display";
+    var actionShown = formatActionDisplay(gesture);
+    actionBtn.textContent = actionShown.text;
+    actionBtn.title = actionShown.title;
+    if (actionShown.empty) actionBtn.classList.add("is-empty");
+    actionBtn.addEventListener("click", () => {
+        void openInputActionPicker({
+            showKeyboard: true,
+            showMouse: true,
+            value: {
+                kind: gesture.actionType === "mouse" ? "mouse" : "hotkey",
+                hotKey: gesture.hotKey ?? null,
+                mouseButton: gesture.mouseButton ?? null
+            },
+            labels: actionPickerLabels(),
+            onSuspendHotkeys: () => { void tool.call("suspendHotkeys"); },
+            onResumeHotkeys: () => { void tool.call("resumeHotkeys"); }
+        }).then((result) => {
+            if (!result) return;
+            gesture.actionType = result.kind;
+            gesture.hotKey = result.kind === "hotkey" ? (result.hotKey ?? null) : null;
+            gesture.mouseButton = result.kind === "mouse" ? (result.mouseButton ?? null) : null;
+            common.state.gesturesDirty = true;
+            renderGestures();
+            common.updateSaveButton();
+        });
+    });
+    triggerDiv.appendChild(actionBtn);
     row.appendChild(triggerDiv);
 
     // Enabled checkbox

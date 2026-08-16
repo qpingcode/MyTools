@@ -499,7 +499,7 @@ mark {
 .gesture-row {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 6px;
 }
 
 .gesture-header {
@@ -510,17 +510,36 @@ mark {
     color: var(--mt-text-tertiary, #888);
 }
 
+.gesture-header > div {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gesture-header > .gesture-col-enabled,
+.gesture-header > .gesture-col-actions {
+    overflow: visible;
+    text-overflow: unset;
+}
+
 .gesture-row {
-    padding: 10px 0;
+    padding: 8px 0;
     border-bottom: 1px solid var(--mt-border-subtle, #2e2e2e);
 }
 
 .gesture-col-name {
-    width: 130px;
+    width: 108px;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     gap: 4px;
+}
+
+.gesture-col-name .setting-input,
+.gesture-col-process .setting-input {
+    max-width: none;
+    padding: 4px 6px;
+    font-size: 13px;
 }
 
 .gesture-conflict-icon {
@@ -532,73 +551,72 @@ mark {
 }
 
 .gesture-col-gesture {
-    width: 150px;
+    width: 92px;
     flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.gesture-col-trigger {
-    flex: 1;
-    min-width: 160px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
 }
 
 .gesture-col-process {
-    width: 160px;
+    width: 132px;
+    flex-shrink: 0;
+}
+
+.gesture-col-trigger {
+    width: 96px;
     flex-shrink: 0;
 }
 
 .gesture-col-enabled {
-    width: 60px;
+    width: 56px;
     flex-shrink: 0;
     text-align: center;
 }
 
 .gesture-col-actions {
-    width: 30px;
+    width: 24px;
     flex-shrink: 0;
     text-align: center;
 }
 
-.gesture-display {
-    font-size: 16px;
-    font-family: "Cascadia Code", "Consolas", monospace;
+.gesture-display,
+.gesture-action-display {
+    display: block;
+    width: 100%;
+    padding: 3px 4px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
     color: var(--mt-text, #e0e0e0);
-    min-width: 48px;
+    cursor: pointer;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     line-height: 1.5;
 }
 
-.gesture-display-empty {
+.gesture-display {
+    font-size: 15px;
+    font-family: "Cascadia Code", "Consolas", monospace;
+    letter-spacing: 1px;
+}
+
+.gesture-action-display {
+    font-size: 12px;
     font-family: inherit;
-    font-size: 13px;
+}
+
+.gesture-display:hover,
+.gesture-action-display:hover {
+    border-color: var(--mt-accent, #4a9eff);
+}
+
+.gesture-display-empty,
+.gesture-action-display.is-empty {
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 0;
     color: var(--mt-text-tertiary, #888);
     font-style: italic;
-}
-
-.gesture-record-btn {
-    padding: 3px 10px;
-    font-size: 12px;
-    white-space: nowrap;
-}
-
-.gesture-type-select {
-    width: auto;
-    max-width: 120px;
-}
-
-.gesture-trigger-value {
-    flex: 1;
-    display: flex;
-    align-items: center;
-}
-
-.gesture-trigger-value .setting-select {
-    width: 100%;
-    max-width: none;
 }
 
 .gesture-delete-btn {
