@@ -61,51 +61,6 @@ function toState(conversation: Conversation): ChatState {
     error: conversation.error,
   };
 }
-
-function buildSearchItem(query: unknown) {
-  const text = normalizeText(query);
-  return {
-    id: "deepseek-chat",
-    title: text
-      ? mytoolsI18n.t("Plugin.DeepSeekChat.Result.Title", { defaultValue: "Chat: {{text}}", text })
-      : mytoolsI18n.t("Plugin.DeepSeekChat.Name", { defaultValue: "DeepSeek Chat" }),
-    subtitle: mytoolsI18n.t("Plugin.DeepSeekChat.Result.Subtitle", {
-      defaultValue: "Talk with DeepSeek using a streaming chat view",
-    }),
-    priority: 100,
-    icon: {
-      kind: "emoji",
-      value: "💬",
-    },
-    actions: [
-      {
-        id: "open-detail",
-        title: mytoolsI18n.t("Plugin.DeepSeekChat.Action.OpenChat.Title", { defaultValue: "Open Chat" }),
-        kind: "detail",
-        description: mytoolsI18n.t("Plugin.DeepSeekChat.Action.OpenChat.Description", {
-          defaultValue: "Open DeepSeek chat",
-        }),
-      },
-    ],
-  };
-}
-
-function createDetail(query: unknown) {
-  const conversation = createConversation();
-  const initialText = normalizeText(query);
-  if (initialText) {
-    addUserMessage(conversation, initialText);
-    startAssistantStream(conversation);
-  }
-
-  return {
-    type: "web-detail",
-    htmlEntry: "web/index.html",
-    title: mytoolsI18n.t("Plugin.DeepSeekChat.Name", { defaultValue: "DeepSeek Chat" }),
-    initialState: toState(conversation),
-  };
-}
-
 function addUserMessage(conversation: Conversation, content: string): void {
   conversation.messages.push({
     role: "user",
@@ -267,16 +222,6 @@ plugin
     mytoolsI18n.configure(params);
     return {};
   })
-  .search((params) => ({
-    items: [buildSearchItem(params.query || "")],
-  }))
-  .action((params) => ({
-    message: mytoolsI18n.t("Plugin.DeepSeekChat.Action.OpenChat.Success", {
-      defaultValue: "Opened DeepSeek chat",
-    }),
-    actionType: "none",
-    detail: createDetail(params.query || ""),
-  }))
   .handle("send", (payload) => {
     try {
       return handleSend(payload);

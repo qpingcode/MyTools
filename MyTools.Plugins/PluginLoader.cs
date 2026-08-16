@@ -51,15 +51,9 @@ public class PluginLoader(ILogger<PluginLoader> logger, IKeywordRegistry keyword
     private void RegisterPlugins()
     { 
         // register keyword plugins
-        var processKiller = plugins.OfType<ProcessKillerPlugin>().First();
-        keywordRegistry.Register(PluginConstants.KillProcessKeyword, processKiller);
-        
         var clipboard = plugins.OfType<ClipBoardPlugin>().First();
         keywordRegistry.Register(PluginConstants.ClipboardHistory, clipboard);
 
-        var uuidGenerator = plugins.OfType<UuidGeneratorPlugin>().First();
-        keywordRegistry.Register(PluginConstants.UuidGeneratorKeyword, uuidGenerator);
-        
         var DllInterfaceReader = plugins.OfType<DllInterfaceReaderPlugin>().First();
         keywordRegistry.Register(PluginConstants.DllInterfaceReaderKeyword, DllInterfaceReader);
 

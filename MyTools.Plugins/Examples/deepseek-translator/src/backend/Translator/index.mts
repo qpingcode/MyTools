@@ -227,44 +227,6 @@ function createInitialState(query: unknown, status = "idle"): TranslationState {
     error: "",
   };
 }
-
-function buildSearchItem(query: unknown) {
-  const text = normalizeText(query);
-  return {
-    id: `deepseek-translator:${text || "empty"}`,
-    title: text
-      ? mytoolsI18n.t("Plugin.DeepSeekTranslator.Result.Title", { defaultValue: "Translate: {{text}}", text })
-      : mytoolsI18n.t("Plugin.DeepSeekTranslator.Name", { defaultValue: "DeepSeek Translator" }),
-    subtitle: mytoolsI18n.t("Plugin.DeepSeekTranslator.Result.Subtitle", {
-      defaultValue: "Translate sentences or words with IPA using DeepSeek",
-    }),
-    priority: 100,
-    icon: {
-      kind: "emoji",
-      value: "🌐",
-    },
-    actions: [
-      {
-        id: "open-detail",
-        title: mytoolsI18n.t("Plugin.DeepSeekTranslator.Action.Open.Title", { defaultValue: "Open Translator" }),
-        kind: "detail",
-        description: mytoolsI18n.t("Plugin.DeepSeekTranslator.Action.Open.Description", {
-          defaultValue: "Open the translator detail page",
-        }),
-      },
-    ],
-  };
-}
-
-function createDetail(query: unknown, itemId: unknown) {
-  return {
-    type: "web-detail",
-    htmlEntry: "web/Translator/index.html",
-    title: mytoolsI18n.t("Plugin.DeepSeekTranslator.Name", { defaultValue: "DeepSeek Translator" }),
-    initialState: createInitialState(query),
-  };
-}
-
 function createHistoryState() {
   const cache = readCache();
   const entries = toCacheEntries(cache.entries)
@@ -771,16 +733,6 @@ plugin
     mytoolsI18n.configure(params);
     return {};
   })
-  .search((params) => ({
-    items: [buildSearchItem(params.query || "")],
-  }))
-  .action((params) => ({
-    message: mytoolsI18n.t("Plugin.DeepSeekTranslator.Action.Open.Success", {
-      defaultValue: "Opened translator",
-    }),
-    actionType: "none",
-    detail: createDetail(params.query || "", params.itemId || "deepseek-translator:item"),
-  }))
   .handle("translate", async (payload, context) => {
     const data = payloadRecord(payload);
     const text = normalizeText(data.text || context.query || "");

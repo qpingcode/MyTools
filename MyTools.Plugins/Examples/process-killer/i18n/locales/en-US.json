@@ -1,0 +1,7 @@
+{
+  "Plugin.ProcessKiller.Name": "Process Killer",
+  "Plugin.ProcessKiller.Action.Kill": "Kill Process",
+  "Plugin.ProcessKiller.Action.KillDescription": "Terminate the selected process",
+  "Plugin.ProcessKiller.User": "User: {{name}}",
+  "Plugin.ProcessKiller.Port": "Port: {{port}}"
+}

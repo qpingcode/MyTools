@@ -45,10 +45,7 @@ public static class PluginServiceCollectionExtensions
         services.AddSingleton<IPlugin, FileSearcher>();
         services.AddSingleton<IPlugin, CommandRunner>();
         services.AddSingleton<IPlugin, SearchEnginePlugin>();
-        services.AddSingleton<IPlugin, ProcessKillerPlugin>();
         services.AddSingleton<IPlugin, PluginSearcher>();
-        services.AddSingleton<IPlugin, CalculatorPlugin>();
-        services.AddSingleton<IPlugin, UuidGeneratorPlugin>();
         services.AddSingleton<IPlugin, DllInterfaceReaderPlugin>();
         services.AddSingleton<IPlugin, ChromeBookmarksPlugin>();
 

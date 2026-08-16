@@ -1,0 +1,8 @@
+{
+  "Plugin.UuidGenerator.Name": "UUID/GUID Generator",
+  "Plugin.UuidGenerator.Action.Copy": "Copy",
+  "Plugin.UuidGenerator.Action.CopyDescription": "Copy the value to the clipboard",
+  "Plugin.UuidGenerator.HelpTitle": "GUID Generator Help",
+  "Plugin.UuidGenerator.Help": "Press any character to start Generator.\nFormat Options:\n• uppercase\n• nodash\n• braces\n• parentheses\n• base64",
+  "Plugin.UuidGenerator.ResultSubtitle": "GUID ({{format}})"
+}

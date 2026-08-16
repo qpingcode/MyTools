@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "scope": "plugin:calculator",
+  "pluginId": "calculator",
+  "sourceLocale": "en-US",
+  "entries": [
+    {
+      "key": "Plugin.Calculator.Name",
+      "defaultValue": "Calculator",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "计算器"
+      },
+      "sourceHash": "sha256:668b80455fdbae2f6816c7d0d542c0238d627b3da0454e14388bd429713590e1"
+    },
+    {
+      "key": "Plugin.Calculator.Action.Copy",
+      "defaultValue": "Copy",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "复制"
+      },
+      "sourceHash": "sha256:e21f935f11d7e966dbbae78da9daa378fe8142a14e7c0cd7434183005faa6c5c"
+    },
+    {
+      "key": "Plugin.Calculator.Action.CopyDescription",
+      "defaultValue": "Copy the result to the clipboard",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "将结果复制到剪贴板"
+      },
+      "sourceHash": "sha256:56f0199721e718177c3762099c8b922dc421b60406c2431041525890926ec8f1"
+    }
+  ]
+}

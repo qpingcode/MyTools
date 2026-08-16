@@ -2,9 +2,7 @@
 
 public class PluginConstants
 {
-    public const string KillProcessKeyword = "kill";
     public const string ClipboardHistory = "cb";
-    public const string UuidGeneratorKeyword = "guid";
     public static string DllInterfaceReaderKeyword = "dll";
 
     public const string PluginCachePrefix = "PluginCache_";

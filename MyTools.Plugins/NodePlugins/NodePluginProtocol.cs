@@ -43,6 +43,7 @@ internal sealed class NodePluginSearchItem
     public int Priority { get; init; }
     public NodePluginIconDto? Icon { get; init; }
     public List<NodePluginActionDto> Actions { get; init; } = [];
+    public string? CopyText { get; init; }
 }
 
 internal sealed class NodePluginIconDto

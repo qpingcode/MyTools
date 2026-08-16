@@ -1,0 +1,7 @@
+{
+  "Plugin.ProcessKiller.Name": "进程管理",
+  "Plugin.ProcessKiller.Action.Kill": "结束进程",
+  "Plugin.ProcessKiller.Action.KillDescription": "终止所选进程",
+  "Plugin.ProcessKiller.User": "用户：{{name}}",
+  "Plugin.ProcessKiller.Port": "端口：{{port}}"
+}
