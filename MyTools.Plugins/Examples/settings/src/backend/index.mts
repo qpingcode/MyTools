@@ -11,7 +11,7 @@ plugin
     mytoolsI18n.configure(params);
     return {};
   })
-  .search((_params: any) => ({
+  .search((_params) => ({
     items: [
       {
         id: "settings:main",

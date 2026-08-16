@@ -68,11 +68,55 @@ test("Plugin.publish before start throws", () => {
 
 test("buildRoutes maps search handler to plugin.call.search", async () => {
   const plugin = mod.createPlugin();
-  plugin.search((p) => ({ items: [{ id: "1", title: p.query }] }));
+  plugin.search((p) => ({ items: [{ id: "1", title: p.query, mode: p.mode }] }));
   const routes = plugin.buildRoutes();
   assert.ok(routes["plugin.call.search"], "search route missing");
-  const result = await routes["plugin.call.search"]({ query: "hi" });
-  assert.deepEqual(result, { items: [{ id: "1", title: "hi" }] });
+  const result = await routes["plugin.call.search"]({ query: "hi", mode: "plugin" });
+  assert.deepEqual(result, { items: [{ id: "1", title: "hi", mode: "plugin" }] });
+});
+
+test("search params default query, mode, locale and theme when payload is sparse", async () => {
+  const plugin = mod.createPlugin();
+  plugin.search((p) => p);
+  const routes = plugin.buildRoutes();
+  const result = await routes["plugin.call.search"]({});
+  assert.deepEqual(result, {
+    locale: "en-US",
+    fallbackLocale: "en-US",
+    theme: "dark",
+    query: "",
+    mode: "global",
+  });
+});
+
+test("buildRoutes maps action handler to plugin.call.invokeAction", async () => {
+  const plugin = mod.createPlugin();
+  plugin.action((p) => ({ itemId: p.itemId, actionId: p.actionId, query: p.query }));
+  const routes = plugin.buildRoutes();
+  assert.ok(routes["plugin.call.invokeAction"], "action route missing");
+  const result = await routes["plugin.call.invokeAction"]({
+    itemId: "hello:1",
+    actionId: "open-detail",
+    query: "hi",
+    locale: "zh-CN",
+    theme: "light",
+  });
+  assert.deepEqual(result, { itemId: "hello:1", actionId: "open-detail", query: "hi" });
+});
+
+test("action params default ids and query when payload is sparse", async () => {
+  const plugin = mod.createPlugin();
+  plugin.action((p) => p);
+  const routes = plugin.buildRoutes();
+  const result = await routes["plugin.call.invokeAction"]({});
+  assert.deepEqual(result, {
+    locale: "en-US",
+    fallbackLocale: "en-US",
+    theme: "dark",
+    itemId: "",
+    actionId: "",
+    query: "",
+  });
 });
 
 test("buildRoutes maps named handler to plugin.call.<name>", async () => {

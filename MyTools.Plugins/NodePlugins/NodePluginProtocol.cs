@@ -11,6 +11,25 @@ internal sealed class NodePluginInitializeRequest
     public required string Theme { get; init; }
 }
 
+internal sealed class NodePluginSearchRequest
+{
+    public required string Query { get; init; }
+    public required string Mode { get; init; }
+    public required string Locale { get; init; }
+    public required string FallbackLocale { get; init; }
+    public required string Theme { get; init; }
+}
+
+internal sealed class NodePluginActionRequest
+{
+    public required string ItemId { get; init; }
+    public required string ActionId { get; init; }
+    public required string Query { get; init; }
+    public required string Locale { get; init; }
+    public required string FallbackLocale { get; init; }
+    public required string Theme { get; init; }
+}
+
 internal sealed class NodePluginSearchResponse
 {
     public List<NodePluginSearchItem> Items { get; init; } = [];
