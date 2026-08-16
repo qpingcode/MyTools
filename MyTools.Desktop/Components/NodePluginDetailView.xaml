@@ -12,5 +12,27 @@
                 CornerRadius="8">
             <wv2:WebView2 x:Name="PluginBrowser" />
         </Border>
+        <Border x:Name="HandshakeErrorOverlay"
+                Panel.ZIndex="1"
+                Background="{DynamicResource SurfaceBrush}"
+                CornerRadius="8"
+                Visibility="Collapsed">
+            <StackPanel VerticalAlignment="Center"
+                        HorizontalAlignment="Center"
+                        MaxWidth="420"
+                        Margin="24">
+                <TextBlock x:Name="HandshakeErrorTitle"
+                           TextAlignment="Center"
+                           FontSize="16"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource TextPrimaryBrush}" />
+                <TextBlock x:Name="HandshakeErrorDetail"
+                           Margin="0,8,0,0"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap"
+                           Opacity="0.7"
+                           Foreground="{DynamicResource TextPrimaryBrush}" />
+            </StackPanel>
+        </Border>
     </Grid>
 </UserControl>

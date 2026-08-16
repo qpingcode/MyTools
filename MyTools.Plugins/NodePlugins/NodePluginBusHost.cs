@@ -19,7 +19,7 @@ using MyTools.Protocol.Versioning;
 namespace MyTools.Plugins.NodePlugins;
 
 /// <summary>
-/// Message-bus runtime for a Node plugin entry. Each host method (<c>search</c>, <c>detailCall</c>, …)
+/// Message-bus runtime for a Node plugin entry. Each host method (<c>search</c>, <c>invokeAction</c>, …)
 /// is mapped to a <c>plugin.call.&lt;method&gt;</c> envelope; responses are correlated by request id
 /// via a registered host endpoint on the bus. Inbound <c>plugin.event.*</c> envelopes raise
 /// <see cref="EventReceived"/>; <c>host.call.*</c> is handled by the <see cref="MessageBus"/> through
@@ -295,26 +295,6 @@ internal sealed class NodePluginBusHost : INodePluginHost
         return SendAsync<NodePluginActionResponse>(Routes.PluginCall.InvokeAction, new
         {
             itemId, actionId, query, locale, fallbackLocale,
-        }, cancellationToken);
-    }
-
-    public Task<NodePluginDetailEventResponse> SendDetailEventAsync(string itemId, string eventName,
-        JsonElement? payload, string query, string locale, string fallbackLocale,
-        CancellationToken cancellationToken = default)
-    {
-        return SendAsync<NodePluginDetailEventResponse>(Routes.PluginCall.DetailEvent, new
-        {
-            itemId, eventName, query, payload, locale, fallbackLocale,
-        }, cancellationToken);
-    }
-
-    public Task<NodePluginDetailCallResponse> SendDetailCallAsync(string itemId, string action,
-        JsonElement? payload, string query, string locale, string fallbackLocale,
-        CancellationToken cancellationToken = default)
-    {
-        return SendAsync<NodePluginDetailCallResponse>(Routes.PluginCall.DetailCall, new
-        {
-            itemId, action, query, payload, locale, fallbackLocale,
         }, cancellationToken);
     }
 

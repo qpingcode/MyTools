@@ -46,6 +46,8 @@ public partial class NodePluginDetailView : UserControl
     private CoreWebView2MessageChannel? _webChannel;
     private WebView2Transport? _webTransport;
     private EndpointId? _webEndpoint;
+    private CancellationTokenSource? _handshakeTimeoutCts;
+    private bool _handshakeFailed;
 
     public NodePluginDetailView()
     {
@@ -110,8 +112,7 @@ public partial class NodePluginDetailView : UserControl
         if (e.PropertyName == nameof(NodePluginDetailViewModel.CurrentContext))
         {
             NavigateIfNeeded();
-            SendInitializeMessage();
-            SendSearchMessage();
+            TrySendPageReadyMessages();
         }
 
         if (e.PropertyName == nameof(NodePluginDetailViewModel.CurrentQuery))
@@ -141,6 +142,7 @@ public partial class NodePluginDetailView : UserControl
     private async Task NavigateAsync(string entryPath)
     {
         browserReady = false;
+        HideHandshakeError();
         TearDownWebTransport();
         try
         {
@@ -153,6 +155,13 @@ public partial class NodePluginDetailView : UserControl
 
             var themedPath = ResolveThemedEntryPath(entryPath);
             PluginBrowser.Source = BuildPluginEntryUri(themedPath);
+        }
+        catch (HandshakeException ex)
+        {
+            StaticLogger.LogWarning(ex,
+                "Node session handshake failed plugin={Plugin} code={Code}",
+                viewModel?.CurrentContext?.PluginId, ex.Error.Code);
+            ShowHandshakeError(ex.Error.Code);
         }
         catch (Exception ex)
         {
@@ -264,9 +273,9 @@ public partial class NodePluginDetailView : UserControl
             return;
         }
 
-        SendInitializeMessage();
-        SendSearchMessage();
-        if (focusPrimaryInputWhenReady)
+        StartHandshakeTimeout();
+        TrySendPageReadyMessages();
+        if (focusPrimaryInputWhenReady && !_handshakeFailed)
         {
             _ = FocusPrimaryInputAsync();
         }
@@ -316,10 +325,9 @@ public partial class NodePluginDetailView : UserControl
                 });
                 return tcs.Task;
             },
-            enrichDetailCallPayload: EnrichDetailCallPayload);
-        _webTransport.LegacyShimEnabled = false;
-        // Page handshake is optional; mark ready so detailCall works if handshake is late/missed.
-        _webTransport.MarkHandshaken();
+            enrichPluginCallPayload: EnrichPluginCallPayload);
+        _webTransport.HandshakeSucceeded += OnWebHandshakeSucceeded;
+        _webTransport.HandshakeFailed += OnWebHandshakeFailed;
 
         _webEndpoint = new EndpointId(
             binding.PluginId, binding.EntryId, binding.SessionId, binding.EndpointId, IsNode: false);
@@ -329,7 +337,7 @@ public partial class NodePluginDetailView : UserControl
             endpointLabel, sessionId);
     }
 
-    private JsonObject EnrichDetailCallPayload(JsonObject payload)
+    private JsonObject EnrichPluginCallPayload(JsonObject payload)
     {
         var ctx = viewModel?.CurrentContext;
         if (ctx is null) return payload;
@@ -341,8 +349,108 @@ public partial class NodePluginDetailView : UserControl
         return payload;
     }
 
+    private void OnWebHandshakeSucceeded(ProtocolVersion version)
+    {
+        _ = Dispatcher.InvokeAsync(() =>
+        {
+            CancelHandshakeTimeout();
+            HideHandshakeError();
+            StaticLogger.LogInformation(
+                "WebView handshake succeeded endpoint={Endpoint} version={Version}",
+                _webTransport?.Binding.EndpointId, version);
+            TrySendPageReadyMessages();
+        });
+    }
+
+    private void OnWebHandshakeFailed(BusError error)
+    {
+        _ = Dispatcher.InvokeAsync(() =>
+        {
+            CancelHandshakeTimeout();
+            StaticLogger.LogWarning(
+                "WebView handshake failed plugin={Plugin} code={Code} message={Message}",
+                viewModel?.CurrentContext?.PluginId, error.Code, error.Message);
+            ShowHandshakeError(error.Code);
+        });
+    }
+
+    private void StartHandshakeTimeout()
+    {
+        if (_handshakeFailed || _webTransport is { IsHandshaken: true }) return;
+
+        CancelHandshakeTimeout();
+        var cts = new CancellationTokenSource();
+        _handshakeTimeoutCts = cts;
+        _ = WaitForHandshakeAsync(cts.Token);
+    }
+
+    private async Task WaitForHandshakeAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(WebView2Transport.HandshakeTimeout, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        await Dispatcher.InvokeAsync(() =>
+        {
+            if (_handshakeFailed || _webTransport is { IsHandshaken: true }) return;
+            StaticLogger.LogWarning(
+                "WebView handshake timed out plugin={Plugin}",
+                viewModel?.CurrentContext?.PluginId);
+            ShowHandshakeError(null);
+        });
+    }
+
+    private void CancelHandshakeTimeout()
+    {
+        try { _handshakeTimeoutCts?.Cancel(); } catch { /* ignore */ }
+        _handshakeTimeoutCts?.Dispose();
+        _handshakeTimeoutCts = null;
+    }
+
+    private void TrySendPageReadyMessages()
+    {
+        if (!browserReady || _webTransport is not { IsHandshaken: true }) return;
+        SendInitializeMessage();
+        SendSearchMessage();
+    }
+
+    private void ShowHandshakeError(ErrorCode? code)
+    {
+        _handshakeFailed = true;
+        CancelHandshakeTimeout();
+        var title = localizationService.GetCaption(
+            "PluginPage.HandshakeFailed",
+            "Plugin page could not connect");
+        var detailKey = code == ErrorCode.ProtocolMismatch
+            ? "PluginPage.ProtocolMismatch"
+            : "PluginPage.HandshakeTimeout";
+        var detailDefault = code == ErrorCode.ProtocolMismatch
+            ? "This plugin is not compatible with the current MyTools version."
+            : "The plugin page did not complete protocol handshake.";
+        HandshakeErrorTitle.Text = title;
+        HandshakeErrorDetail.Text = localizationService.GetCaption(detailKey, detailDefault);
+        HandshakeErrorOverlay.Visibility = Visibility.Visible;
+        // WebView2 is an HWND interop surface and paints over WPF siblings; hide it
+        // so the overlay is actually visible.
+        PluginBrowser.Visibility = Visibility.Collapsed;
+    }
+
+    private void HideHandshakeError()
+    {
+        _handshakeFailed = false;
+        HandshakeErrorOverlay.Visibility = Visibility.Collapsed;
+        PluginBrowser.Visibility = Visibility.Visible;
+    }
+
     private void TearDownWebTransport()
     {
+        CancelHandshakeTimeout();
+
         if (_webEndpoint is not null && _bus is not null)
         {
             _bus.UnregisterEndpoint(_webEndpoint);
@@ -351,6 +459,8 @@ public partial class NodePluginDetailView : UserControl
 
         if (_webTransport is not null)
         {
+            _webTransport.HandshakeSucceeded -= OnWebHandshakeSucceeded;
+            _webTransport.HandshakeFailed -= OnWebHandshakeFailed;
             _webTransport.Invalidate();
             _ = _webTransport.DisposeAsync();
             _webTransport = null;
@@ -481,11 +591,11 @@ public partial class NodePluginDetailView : UserControl
 
     private void SendHostEvent(string route, object payload)
     {
-        if (!browserReady || _webTransport is null)
+        if (!browserReady || _webTransport is not { IsHandshaken: true })
         {
             StaticLogger.LogWarning(
-                "SendHostEvent: dropped (browserReady={BrowserReady}, transport={HasTransport}), route={Route}",
-                browserReady, _webTransport is not null, route);
+                "SendHostEvent: dropped (browserReady={BrowserReady}, handshaken={Handshaken}), route={Route}",
+                browserReady, _webTransport?.IsHandshaken == true, route);
             return;
         }
 
@@ -493,7 +603,7 @@ public partial class NodePluginDetailView : UserControl
         var id = _ids.NewId();
         var envelope = new Envelope
         {
-            Version = ProtocolVersion.Current,
+            Version = _webTransport.NegotiatedVersion ?? ProtocolVersion.Current,
             Id = id,
             TraceId = id,
             SessionId = binding.SessionId,

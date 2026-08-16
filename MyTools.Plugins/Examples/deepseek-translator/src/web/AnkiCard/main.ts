@@ -64,7 +64,7 @@ import { createWebBusClient, HostEvents } from "@qping/plugin-bus/web";
 
     async function callState(action: string, data: Record<string, unknown> = {}): Promise<void> {
         try {
-            renderState(await bus.detailCall(action, data || {}));
+            renderState(await bus.call(action, data || {}));
         } catch (error) {
             renderState({
                 status: "error",

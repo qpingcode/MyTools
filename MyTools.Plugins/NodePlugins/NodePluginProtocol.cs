@@ -46,16 +46,6 @@ internal sealed class NodePluginDetailViewDto
     public JsonElement InitialState { get; init; }
 }
 
-internal sealed class NodePluginDetailEventResponse
-{
-    public JsonElement State { get; init; }
-}
-
-internal sealed class NodePluginDetailCallResponse
-{
-    public JsonElement Result { get; init; }
-}
-
 public sealed class NodePluginEventReceivedEventArgs : EventArgs
 {
     public required string SubjectId { get; init; }

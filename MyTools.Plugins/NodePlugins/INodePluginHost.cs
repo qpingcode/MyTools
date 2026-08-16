@@ -28,14 +28,6 @@ internal interface INodePluginHost
         string itemId, string actionId, string query, string locale, string fallbackLocale,
         CancellationToken cancellationToken = default);
 
-    Task<NodePluginDetailEventResponse> SendDetailEventAsync(
-        string itemId, string eventName, JsonElement? payload, string query, string locale, string fallbackLocale,
-        CancellationToken cancellationToken = default);
-
-    Task<NodePluginDetailCallResponse> SendDetailCallAsync(
-        string itemId, string action, JsonElement? payload, string query, string locale, string fallbackLocale,
-        CancellationToken cancellationToken = default);
-
     /// <summary>Current bus session id.</summary>
     string? SessionId { get; }
 

@@ -210,30 +210,6 @@ public sealed class NodePlugin : IPlugin, IDisposable
             itemId, actionId, query, localizationService.CurrentLocale, manifest.DefaultLocale);
     }
 
-    public async Task<JsonElement?> HandleDetailEventAsync(string itemId, string eventName, JsonElement? payload, string query)
-    {
-        var response = await processHost.SendDetailEventAsync(
-            itemId, eventName, payload, query, localizationService.CurrentLocale, manifest.DefaultLocale);
-        if (response.State.ValueKind == JsonValueKind.Undefined)
-        {
-            return null;
-        }
-
-        return response.State.Clone();
-    }
-
-    public async Task<JsonElement?> HandleDetailCallAsync(string itemId, string action, JsonElement? payload, string query)
-    {
-        var response = await processHost.SendDetailCallAsync(
-            itemId, action, payload, query, localizationService.CurrentLocale, manifest.DefaultLocale);
-        if (response.Result.ValueKind == JsonValueKind.Undefined)
-        {
-            return null;
-        }
-
-        return response.Result.Clone();
-    }
-
     internal NodePluginDetailContext? CreateDetailContext(string itemId, string searchText, string query, NodePluginDetailViewDto? detail)
     {
         var detailPath = ResolveDetailEntryFullPath(detail?.HtmlEntry);

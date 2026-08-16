@@ -28,6 +28,7 @@ public class V3StackDoesNotReferenceStdioTest
         "NodePluginProtocol",   // legacy DTO namespace
         "HostCallProtocol",      // legacy host-call DTO
         "JsonRpc",               // legacy JSON-RPC framing
+        "tool-call",             // legacy WebView page protocol
         "MyTools.Plugins.NodePlugins", // legacy namespace
     ];
 

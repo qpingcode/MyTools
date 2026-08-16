@@ -25,7 +25,7 @@ import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qp
 
     document.getElementById("refresh")!.addEventListener("click", async function () {
         try {
-            updateState(await bus.detailCall("refresh", { currentQuery: document.getElementById("query")!.textContent }));
+            updateState(await bus.call("refresh", { currentQuery: document.getElementById("query")!.textContent }));
         } catch (error) {
             updateState({ error: error instanceof Error ? error.message : String(error) });
         }

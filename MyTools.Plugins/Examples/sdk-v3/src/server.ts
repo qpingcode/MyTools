@@ -1,15 +1,13 @@
 /**
  * v3 server-side tool SDK: a fluent `createTool()` API that mirrors the v2 @qping/plugin-common/server
  * surface (initialize/search/action/handle/publish/hostCall/start) but runs over the v3 named-pipe
- * message bus via bootstrap.ts. This lets existing plugin backends switch to v3 transport by
- * changing only the import — no handler-logic rewrite.
+ * message bus via bootstrap.ts.
  *
  * Legacy method names map to v3 routes:
  *   initialize -> plugin.call.initialize
  *   search     -> plugin.call.search
  *   invokeAction -> plugin.call.invokeAction
- *   detailEvent  -> plugin.call.detailEvent
- *   detailCall   -> plugin.call.detailCall (+ named handlers via plugin.call.<action>)
+ *   handle(name) -> plugin.call.<name>
  *   publish    -> plugin.event.<subjectId>
  *   hostCall   -> host.call.<method>
  */
@@ -72,7 +70,6 @@ export class NodeTool {
   /** Publishes a plugin.event.<subjectId> event to all webviews in the session. */
   publish(subjectId: string, payload: unknown = {}): void {
     if (!this.#runtime) throw new Error("tool not started");
-    // Strip the legacy prefix to form a clean route; the host EventReceived surfaces the route.
     const route = pluginEventRoute(subjectId);
     this.#runtime.transport.send({
       version: ProtocolVersion,
@@ -118,26 +115,12 @@ export class NodeTool {
         return this.#actionHandler!({ ...p, itemId: p.itemId, query: p.query });
       };
     }
-    // Legacy detail calls: plugin.call.detailCall carries an `action` field selecting the handler.
-    routes[Routes.PluginCall.DetailCall] = async (p) => {
-      const action = p?.action ?? "";
-      const handler = this.#handlers.get(action);
-      if (!handler) {
-        throw new Error(`no handler registered for action '${action}'`);
-      }
-      const ctx = extractContext(p);
-      const result = await handler(p?.payload ?? {}, ctx);
-      return { result: result ?? {} };
-    };
-    routes[Routes.PluginCall.DetailEvent] = async (p) => {
-      return { state: p?.payload ?? {} };
-    };
     for (const [action, handler] of this.#handlers) {
       const route = pluginCallRoute(action);
       if (!routes[route]) {
         routes[route] = async (p) => {
-          const ctx = extractContext(p);
-          return handler(p, ctx);
+          const ctx = extractContext(p, action);
+          return handler(p ?? {}, ctx);
         };
       }
     }
@@ -149,9 +132,9 @@ export class NodeTool {
   }
 }
 
-function extractContext(p: any): NodeToolContext {
+function extractContext(p: any, action: string): NodeToolContext {
   return {
-    action: p?.action ?? "",
+    action,
     itemId: p?.itemId ?? "",
     query: p?.query ?? "",
     locale: p?.locale ?? "en-US",

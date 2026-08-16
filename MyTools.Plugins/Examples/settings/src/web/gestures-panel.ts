@@ -79,7 +79,7 @@ export function gesturesMatchesSearch(): boolean {
 export async function loadGestures(): Promise<void> {
     common.settingsList.innerHTML = '<div class="loading">' + t("Plugin.Settings.Loading", "Loading...") + "</div>";
     try {
-        var data = await bus.detailCall<{ gestures: GestureConfig[] }>("getGestures");
+        var data = await bus.call<{ gestures: GestureConfig[] }>("getGestures");
         gestureConfigs = data.gestures || [];
         common.state.gesturesDirty = false;
         renderGestures();
@@ -367,8 +367,8 @@ function renderGestureRow(gesture: GestureConfig, conflictMap: Map<string, strin
                 mouseButton: gesture.mouseButton ?? null
             },
             labels: actionPickerLabels(),
-            onSuspendHotkeys: () => { void bus.detailCall("suspendHotkeys"); },
-            onResumeHotkeys: () => { void bus.detailCall("resumeHotkeys"); }
+            onSuspendHotkeys: () => { void bus.call("suspendHotkeys"); },
+            onResumeHotkeys: () => { void bus.call("resumeHotkeys"); }
         }).then((result) => {
             if (!result) return;
             gesture.actionType = result.kind;
@@ -428,7 +428,7 @@ var GESTURE_DISTANCE_THRESHOLD = 30;
 function startGestureRecording(onCapture: (dirs: string[]) => void): void {
     // Pause global gesture detection so it doesn't interfere with recording.
     // The host ignores this if gesture detection was never started (disabled).
-    void bus.detailCall("suspendGestures");
+    void bus.call("suspendGestures");
 
     // Create a full-screen overlay to capture right-button drag
     var overlay = document.createElement("div");
@@ -521,7 +521,7 @@ function startGestureRecording(onCapture: (dirs: string[]) => void): void {
             overlay.parentNode.removeChild(overlay);
         }
         // Resume global gesture detection. The host ignores this if gestures are disabled.
-        void bus.detailCall("resumeGestures");
+        void bus.call("resumeGestures");
     }
 
     overlay.addEventListener("mousedown", onMouseDown);
@@ -539,7 +539,7 @@ function startGestureRecording(onCapture: (dirs: string[]) => void): void {
 export async function saveGesturesInternal(): Promise<boolean> {
     if (!common.state.gesturesDirty || !gestureConfigs) return true;
 
-    await bus.detailCall("saveGestures", { gestures: gestureConfigs });
+    await bus.call("saveGestures", { gestures: gestureConfigs });
     common.state.gesturesDirty = false;
     common.showToast(t("Plugin.Settings.Gestures.Saved", "Gestures saved and applied."), "success");
     return true;

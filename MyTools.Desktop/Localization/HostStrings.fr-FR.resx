@@ -76,5 +76,8 @@
   <data name="Theme.dark" xml:space="preserve"><value>Sombre</value></data>
   <data name="Configuration.General.Theme.Title" xml:space="preserve"><value>Thème</value></data>
   <data name="Configuration.General.Theme.Description" xml:space="preserve"><value>Choisir le thème de couleur</value></data>
+  <data name="PluginPage.HandshakeFailed" xml:space="preserve"><value>La page du plugin n’a pas pu se connecter</value></data>
+  <data name="PluginPage.HandshakeTimeout" xml:space="preserve"><value>La page du plugin n’a pas terminé la négociation de protocole.</value></data>
+  <data name="PluginPage.ProtocolMismatch" xml:space="preserve"><value>Ce plugin n’est pas compatible avec la version actuelle de MyTools.</value></data>
 </root>
 

@@ -1,6 +1,9 @@
 /**
  * v3 Web SDK: speaks protocol envelopes over chrome.webview.postMessage.
  * Host stamps identity; the page does not supply plugin/entry/session ids.
+ *
+ * Connections start with bus.handshake. Subsequent plugin.call.* envelopes use the
+ * negotiated version. call("refresh") is sent as plugin.call.refresh.
  */
 
 import { mytoolsI18n } from "./i18n.ts";
@@ -10,6 +13,7 @@ import {
   MessageKind,
   ProtocolVersion,
   Routes,
+  pluginCallRoute,
 } from "./protocol.ts";
 import type { MyToolsThemePayload } from "./webTypes.ts";
 
@@ -30,15 +34,15 @@ type Pending = {
 };
 
 export interface WebBusClient {
-  call(route: string, payload?: unknown, timeoutMs?: number): Promise<unknown>;
-  /** plugin.call.detailCall; unwraps the Node `{ result }` wrapper. */
-  detailCall<T = unknown>(action: string, payload?: unknown, timeoutMs?: number): Promise<T>;
-  onEvent(handler: (env: Envelope) => void): () => void;
+  /** Sends plugin.call.<method>. Bare names are prefixed; full routes are left as-is. */
+  call<T = unknown>(method: string, payload?: unknown, timeoutMs?: number): Promise<T>;
   on<T = unknown>(route: string, handler: (payload: T) => void): () => void;
   i18n: typeof mytoolsI18n;
   theme: typeof mytoolsTheme;
   close(): void;
 }
+
+const HandshakeTimeoutMs = 8_000;
 
 const mytoolsTheme = {
   current: "dark",
@@ -108,28 +112,30 @@ function applyHostSideEffects(env: Envelope): void {
   }
 }
 
-function unwrapDetailResult(payload: unknown): unknown {
-  if (payload && typeof payload === "object" && "result" in payload) {
-    return (payload as { result: unknown }).result;
+function negotiatedVersionFrom(payload: unknown): string {
+  if (payload && typeof payload === "object" && "negotiatedVersion" in payload) {
+    const value = (payload as { negotiatedVersion?: unknown }).negotiatedVersion;
+    if (typeof value === "string" && value.length > 0) return value;
   }
-  return payload;
+  return ProtocolVersion;
 }
 
 /**
  * Creates a Web bus client. Registers the message listener immediately so host
  * events that arrive before `on()` are buffered and replayed.
  *
- * Handshake runs in the background (host also marks the transport ready).
- * Page scripts are bundled as IIFE, so this function is synchronous.
+ * Handshake is required before call(). Page scripts are bundled as IIFE, so this
+ * function is synchronous; handshake runs in the background and gates call().
  */
 export function createWebBusClient(options?: {
-  handshake?: boolean;
   timeoutMs?: number;
 }): WebBusClient {
   const pending = new Map<string, Pending>();
   const eventHandlers = new Set<(env: Envelope) => void>();
   const lastByRoute = new Map<string, Envelope>();
   const defaultTimeout = options?.timeoutMs ?? 30_000;
+  let wireVersion = ProtocolVersion;
+  let handshakeError: Error | null = null;
 
   const onMessage = (event: MessageEvent) => {
     const env = parseMessage(event.data);
@@ -152,49 +158,64 @@ export function createWebBusClient(options?: {
     }
   };
 
+  let handshakeDone: Promise<void> = Promise.resolve();
   if (hasWebView()) {
     (window as any).chrome.webview.addEventListener("message", onMessage);
-    if (options?.handshake !== false) {
-      void handshake(defaultTimeout).catch(() => {
-        // Host marks the transport handshaken; a missed handshake is not fatal.
+    handshakeDone = handshake(HandshakeTimeoutMs)
+      .then((version) => {
+        wireVersion = version;
+      })
+      .catch((err: unknown) => {
+        handshakeError = err instanceof Error ? err : new Error(String(err));
+        throw handshakeError;
       });
-    }
   }
 
-  function call(route: string, payload?: unknown, timeoutMs = defaultTimeout): Promise<unknown> {
-    return new Promise((resolve, reject) => {
-      const id = randomId();
-      const timer = window.setTimeout(() => {
-        pending.delete(id);
-        reject(new Error(`request timed out: ${route}`));
-      }, timeoutMs);
-      pending.set(id, {
-        resolve: (v) => {
-          window.clearTimeout(timer);
-          resolve(v);
-        },
-        reject: (e) => {
-          window.clearTimeout(timer);
-          reject(e);
-        },
-      });
-      post({
-        version: ProtocolVersion,
-        id,
-        traceId: id,
-        sessionId: "",
-        pluginId: "",
-        entryId: "",
-        endpointId: "",
-        kind: MessageKind.Request,
-        route,
-        timeoutMs,
-        payload: payload ?? {},
-      });
+  function ensureHandshaken(): Promise<void> {
+    if (handshakeError) return Promise.reject(handshakeError);
+    return handshakeDone.then(() => {
+      if (handshakeError) throw handshakeError;
     });
   }
 
-  function onEvent(handler: (env: Envelope) => void): () => void {
+  function call<T = unknown>(method: string, payload?: unknown, timeoutMs = defaultTimeout): Promise<T> {
+    const route = pluginCallRoute(method);
+    return ensureHandshaken().then(
+      () =>
+        new Promise<T>((resolve, reject) => {
+          const id = randomId();
+          const timer = window.setTimeout(() => {
+            pending.delete(id);
+            reject(new Error(`request timed out: ${route}`));
+          }, timeoutMs);
+          pending.set(id, {
+            resolve: (v) => {
+              window.clearTimeout(timer);
+              resolve(v as T);
+            },
+            reject: (e) => {
+              window.clearTimeout(timer);
+              reject(e);
+            },
+          });
+          post({
+            version: wireVersion,
+            id,
+            traceId: id,
+            sessionId: "",
+            pluginId: "",
+            entryId: "",
+            endpointId: "",
+            kind: MessageKind.Request,
+            route,
+            timeoutMs,
+            payload: payload ?? {},
+          });
+        }),
+    );
+  }
+
+  function subscribe(handler: (env: Envelope) => void): () => void {
     eventHandlers.add(handler);
     for (const env of lastByRoute.values()) handler(env);
     return () => {
@@ -204,13 +225,8 @@ export function createWebBusClient(options?: {
 
   return {
     call,
-    detailCall: async (action, payload, timeoutMs) => {
-      const response = await call(Routes.PluginCall.DetailCall, { action, payload }, timeoutMs);
-      return unwrapDetailResult(response) as never;
-    },
-    onEvent,
     on: (route, handler) =>
-      onEvent((env) => {
+      subscribe((env) => {
         if (env.route === route) handler((env.payload ?? {}) as never);
       }),
     i18n: mytoolsI18n,
@@ -226,7 +242,7 @@ export function createWebBusClient(options?: {
   };
 }
 
-async function handshake(timeoutMs: number): Promise<void> {
+function handshake(timeoutMs: number): Promise<string> {
   const id = randomId();
   return new Promise((resolve, reject) => {
     const timer = window.setTimeout(() => {
@@ -241,7 +257,7 @@ async function handshake(timeoutMs: number): Promise<void> {
       if (env.error) {
         reject(new Error(`${env.error.code}: ${env.error.message}`));
       } else {
-        resolve();
+        resolve(negotiatedVersionFrom(env.payload));
       }
     };
 
