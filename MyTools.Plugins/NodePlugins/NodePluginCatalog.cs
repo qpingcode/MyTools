@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using MyTools.Common.Config;
 using MyTools.Common.Localization;
+using MyTools.Protocol.Manifest;
 using MyTools.Protocol.Versioning;
 
 namespace MyTools.Plugins.NodePlugins;
@@ -85,11 +86,31 @@ public sealed class NodePluginCatalog
                     return [];
                 }
 
-                var detailEntryFullPath = ResolveFileUnderPluginRoot(fullPluginDirectory, entryModel.Detail!.Entry!);
-                if (detailEntryFullPath == null)
+                var detailResult = PluginDetailResolver.TryResolve(
+                    entryModel.Detail?.Type,
+                    entryModel.Detail?.Entry,
+                    entryModel.Id!,
+                    out var resolvedDetail);
+                if (!detailResult.IsValid)
                 {
-                    logger.LogWarning("Skipping node plugin manifest with invalid detail entry: {ManifestPath}", manifestPath);
+                    logger.LogWarning(
+                        "Skipping node plugin manifest with invalid detail: {ManifestPath}. {Reason}",
+                        manifestPath,
+                        detailResult.Error?.Message);
                     return [];
+                }
+
+                string? detailEntry = null;
+                string? detailEntryFullPath = null;
+                if (resolvedDetail.IsWeb)
+                {
+                    detailEntry = resolvedDetail.Entry;
+                    detailEntryFullPath = ResolveFileUnderPluginRoot(fullPluginDirectory, resolvedDetail.Entry!);
+                    if (detailEntryFullPath == null)
+                    {
+                        logger.LogWarning("Skipping node plugin manifest with invalid detail entry: {ManifestPath}", manifestPath);
+                        return [];
+                    }
                 }
 
                 manifests.Add(new NodePluginManifest
@@ -105,9 +126,10 @@ public sealed class NodePluginCatalog
                     ProtocolVersion = fileModel.ProtocolVersion!,
                     PluginDirectory = fullPluginDirectory,
                     EntryFullPath = entryFullPath,
-                    DetailEntry = entryModel.Detail.Entry,
+                    DetailEntry = detailEntry,
                     DetailEntryFullPath = detailEntryFullPath,
                     Keywords = entryModel.Keywords ?? [],
+                    SearchGlobal = ResolveSearchGlobal(entryModel.Search),
                     HotKey = entryModel.HotKey,
                     Capabilities = entryModel.Capabilities ?? [],
                     DefaultLocale = fileModel.I18n?.DefaultLocale ?? "en-US",
@@ -170,13 +192,13 @@ public sealed class NodePluginCatalog
                     && !string.IsNullOrWhiteSpace(fileModel.I18n.LocalesPath)));
     }
 
+    /// <summary>Omitted <c>search.global</c> defaults to false (opt-in).</summary>
+    private static bool ResolveSearchGlobal(SearchManifestFile? search) => search?.Global ?? false;
+
     private static bool IsValidEntry(EntryManifestFile entryModel)
     {
         return !string.IsNullOrWhiteSpace(entryModel.Id)
-            && !string.IsNullOrWhiteSpace(entryModel.Entry)
-            && entryModel.Detail != null
-            && string.Equals(entryModel.Detail.Type, "web", StringComparison.OrdinalIgnoreCase)
-            && !string.IsNullOrWhiteSpace(entryModel.Detail.Entry);
+            && !string.IsNullOrWhiteSpace(entryModel.Entry);
     }
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -199,9 +221,15 @@ public sealed class NodePluginCatalog
         public LocalizedNameDto? Name { get; init; }
         public string? Entry { get; init; }
         public List<string>? Keywords { get; init; }
+        public SearchManifestFile? Search { get; init; }
         public string? HotKey { get; init; }
         public List<string>? Capabilities { get; init; }
         public DetailManifestFile? Detail { get; init; }
+    }
+
+    private sealed class SearchManifestFile
+    {
+        public bool? Global { get; init; }
     }
 
     /// <summary>
@@ -216,7 +244,7 @@ public sealed class NodePluginCatalog
 
     private sealed class DetailManifestFile
     {
-        public string? Type { get; init; }
+        public string Type { get; init; } = PluginDetailTypes.Web;
         public string? Entry { get; init; }
     }
 

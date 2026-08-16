@@ -45,12 +45,8 @@ public sealed class KeymapService
     {
         foreach (var plugin in nodePlugins)
         {
-            // 应用启用状态覆盖
-            var enabledOverride = overrideProvider.GetIsEnabled(plugin.PluginId);
-            if (enabledOverride.HasValue)
-            {
-                plugin.IsEnabled = enabledOverride.Value;
-            }
+            // 应用启用状态和全局结果覆盖
+            ApplyOverridesToPlugin(plugin);
 
             if (!plugin.IsEnabled)
             {
@@ -106,16 +102,15 @@ public sealed class KeymapService
     }
 
     /// <summary>
-    /// 重新注册所有关键词（保存覆盖后调用）。Clear 全部，按覆盖重新注册。
+    /// 重新注册 Node 插件关键词（保存覆盖后或启动时调用）。
+    /// 只替换 Node 插件条目，保留内置插件关键词。
     /// </summary>
     public void ReRegisterKeywords(IEnumerable<IPlugin> allPlugins)
     {
-        keywordRegistry.Clear();
-
-        // 内置插件关键词由 PluginLoader.RegisterPlugins 硬编码注册，
-        // 这里只重新注册 Node 插件关键词（含覆盖）。
         foreach (var plugin in allPlugins.OfType<NodePlugin>())
         {
+            keywordRegistry.UnregisterPlugin(plugin);
+
             if (!plugin.IsEnabled)
             {
                 continue;
@@ -133,18 +128,26 @@ public sealed class KeymapService
     }
 
     /// <summary>
-    /// 应用启用状态覆盖到 Node 插件（保存后调用）。
+    /// 应用启用状态和全局结果覆盖到 Node 插件。
     /// </summary>
     public void ApplyEnabledOverrides(IEnumerable<NodePlugin> nodePlugins)
     {
         foreach (var plugin in nodePlugins)
         {
-            var enabled = overrideProvider.GetIsEnabled(plugin.PluginId);
-            if (enabled.HasValue)
-            {
-                plugin.IsEnabled = enabled.Value;
-            }
+            ApplyOverridesToPlugin(plugin);
         }
+    }
+
+    private void ApplyOverridesToPlugin(NodePlugin plugin)
+    {
+        var enabled = overrideProvider.GetIsEnabled(plugin.PluginId);
+        if (enabled.HasValue)
+        {
+            plugin.IsEnabled = enabled.Value;
+        }
+
+        var include = overrideProvider.GetIncludeInGlobalResults(plugin.PluginId);
+        plugin.IsGlobalSearchPlugin = include ?? plugin.DefaultIncludeInGlobalResults;
     }
 
     /// <summary>

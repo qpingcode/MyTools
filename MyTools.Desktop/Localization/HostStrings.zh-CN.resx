@@ -62,6 +62,8 @@
   <data name="Configuration.General.Description" xml:space="preserve"><value>常规设置</value></data>
   <data name="Configuration.General.Language.Title" xml:space="preserve"><value>界面语言</value></data>
   <data name="Configuration.General.Language.Description" xml:space="preserve"><value>选择应用程序的显示语言</value></data>
+  <data name="Configuration.General.SearchHotKey.Title" xml:space="preserve"><value>搜索热键</value></data>
+  <data name="Configuration.General.SearchHotKey.Description" xml:space="preserve"><value>打开 MyTools 搜索窗口的快捷键</value></data>
   <data name="Configuration.General.AutoStart.Title" xml:space="preserve"><value>开机自启</value></data>
   <data name="Configuration.General.AutoStart.Description" xml:space="preserve"><value>系统启动时自动运行 MyTools</value></data>
   <data name="Configuration.General.MaxHistory.Title" xml:space="preserve"><value>最大历史记录</value></data>

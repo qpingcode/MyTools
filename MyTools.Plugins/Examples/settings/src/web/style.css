@@ -431,6 +431,12 @@ mark {
     width: 100%;
 }
 
+.keymap-col-global {
+    width: 100px;
+    flex-shrink: 0;
+    text-align: center;
+}
+
 .keymap-checkbox {
     width: 18px;
     height: 18px;

@@ -114,4 +114,86 @@ public class PluginManifestV3Test
 
         Assert.That(result.IsValid, Is.False);
     }
+
+    [Test]
+    public void Validate_OmittedDetail_ShouldPass()
+    {
+        var m = new PluginManifestV3
+        {
+            Id = "p", ProtocolVersion = "3.0",
+            Entries = [new() { Id = "main", Entry = "index.mjs", Capabilities = [] }]
+        };
+
+        var result = PluginManifestV3Validator.Validate(m);
+
+        Assert.That(result.IsValid, Is.True);
+    }
+
+    [Test]
+    public void Validate_ListDetail_ShouldPass()
+    {
+        var m = new PluginManifestV3
+        {
+            Id = "p", ProtocolVersion = "3.0",
+            Entries =
+            [
+                new()
+                {
+                    Id = "main",
+                    Entry = "index.mjs",
+                    Detail = new EntryDetailV3 { Type = PluginDetailTypes.List }
+                }
+            ]
+        };
+
+        var result = PluginManifestV3Validator.Validate(m);
+
+        Assert.That(result.IsValid, Is.True);
+    }
+
+    [Test]
+    public void Validate_WebDetailWithoutEntry_ShouldFail()
+    {
+        var m = new PluginManifestV3
+        {
+            Id = "p", ProtocolVersion = "3.0",
+            Entries =
+            [
+                new()
+                {
+                    Id = "main",
+                    Entry = "index.mjs",
+                    Detail = new EntryDetailV3 { Type = PluginDetailTypes.Web }
+                }
+            ]
+        };
+
+        var result = PluginManifestV3Validator.Validate(m);
+
+        Assert.That(result.IsValid, Is.False);
+        Assert.That(result.Error!.Code, Is.EqualTo(ErrorCode.InvalidPayload));
+    }
+
+    [Test]
+    public void Validate_BasicDetailType_ShouldFail()
+    {
+        var m = new PluginManifestV3
+        {
+            Id = "p", ProtocolVersion = "3.0",
+            Entries =
+            [
+                new()
+                {
+                    Id = "main",
+                    Entry = "index.mjs",
+                    Detail = new EntryDetailV3 { Type = "basic" }
+                }
+            ]
+        };
+
+        var result = PluginManifestV3Validator.Validate(m);
+
+        Assert.That(result.IsValid, Is.False);
+        Assert.That(result.Error!.Message, Does.Contain("unsupported detail.type"));
+    }
 }

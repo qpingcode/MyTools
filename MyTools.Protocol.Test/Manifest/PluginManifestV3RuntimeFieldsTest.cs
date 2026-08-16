@@ -14,33 +14,28 @@ namespace MyTools.Protocol.Test.Manifest;
 [TestFixture]
 public class PluginManifestV3RuntimeFieldsTest
 {
-    private static PluginManifestV3 LoadSettingsV3()
+    private static PluginManifestV3 LoadExampleV3(string pluginFolder)
     {
         var root = TestContext.CurrentContext.TestDirectory;
         for (var i = 0; i < 6 && root is not null; i++)
         {
-            var path = Path.Combine(root, "..", "MyTools.Plugins", "Examples", "settings", "plugin.json");
-            path = Path.GetFullPath(path);
+            var path = Path.GetFullPath(Path.Combine(root, "..", "MyTools.Plugins", "Examples", pluginFolder, "plugin.json"));
             if (File.Exists(path))
             {
                 return JsonSerializer.Deserialize<PluginManifestV3>(File.ReadAllText(path), ProtocolJsonOptions.Default)!;
             }
-            root = Path.GetDirectoryName(root);
-        }
-        // Fallback: search the repo for the file.
-        var dir = TestContext.CurrentContext.TestDirectory;
-        for (var i = 0; i < 6 && dir is not null; i++)
-        {
-            var candidate = Path.Combine(dir, "MyTools.Plugins", "Examples", "settings", "plugin.json");
+            var candidate = Path.Combine(root, "MyTools.Plugins", "Examples", pluginFolder, "plugin.json");
             if (File.Exists(candidate))
             {
                 return JsonSerializer.Deserialize<PluginManifestV3>(File.ReadAllText(candidate), ProtocolJsonOptions.Default)!;
             }
-            dir = Path.GetDirectoryName(dir);
+            root = Path.GetDirectoryName(root);
         }
-        Assert.Fail("settings plugin.json not found");
+        Assert.Fail($"{pluginFolder} plugin.json not found");
         return null!;
     }
+
+    private static PluginManifestV3 LoadSettingsV3() => LoadExampleV3("settings");
 
     [Test]
     public void Deserialize_ShouldReadEntryKeywords()
@@ -92,5 +87,16 @@ public class PluginManifestV3RuntimeFieldsTest
 
         Assert.That(back.Entries[0].HotKey, Is.EqualTo(m.Entries[0].HotKey));
         Assert.That(back.Entries[0].Keywords, Is.EquivalentTo(m.Entries[0].Keywords!));
+    }
+
+    [Test]
+    public void Deserialize_ShouldReadEntrySearchGlobal()
+    {
+        var hello = LoadExampleV3("hello-search");
+        Assert.That(hello.Entries[0].Search, Is.Not.Null);
+        Assert.That(hello.Entries[0].Search!.Global, Is.True);
+
+        var settings = LoadSettingsV3();
+        Assert.That(settings.Entries[0].Search, Is.Null);
     }
 }

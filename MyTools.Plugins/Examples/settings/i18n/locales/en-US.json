@@ -17,6 +17,8 @@
   "Plugin.Settings.Keymap.HeaderName": "Plugin Name",
   "Plugin.Settings.Keymap.HeaderHotkey": "Hotkey",
   "Plugin.Settings.Keymap.HeaderKeywords": "Keywords",
+  "Plugin.Settings.Keymap.HeaderGlobalResults": "Global results",
+  "Plugin.Settings.Keymap.HeaderGlobalResultsTip": "Include this plugin when searching without a keyword",
   "Plugin.Settings.Keymap.KeywordsPlaceholder": "None",
   "Plugin.Settings.Keymap.NoHotkey": "None",
   "Plugin.Settings.Keymap.Recording": "Press shortcut...",
@@ -56,5 +58,6 @@
   "Plugin.Settings.Gestures.NoAction": "Not set",
   "Plugin.Settings.Gestures.MouseBackShort": "Back",
   "Plugin.Settings.Gestures.MouseForwardShort": "Forward",
-  "Plugin.Settings.ActionPicker.Title": "Choose action"
+  "Plugin.Settings.ActionPicker.Title": "Choose action",
+  "Plugin.Settings.SearchHotKey.PickerTitle": "Set search hotkey"
 }

@@ -48,6 +48,23 @@ public class NodePluginKeywordRouteTest
     }
 
     [Test]
+    public void ShouldOpenDetailOnKeywordRoute_ShouldStayOnListWhenDetailOmitted()
+    {
+        using var plugin = CreatePlugin(withWebDetail: false);
+
+        Assert.That(plugin.ShouldOpenDetailOnKeywordRoute("tr"), Is.False);
+        Assert.That(plugin.ShouldOpenDetailOnKeywordRoute("tr hello"), Is.False);
+    }
+
+    [Test]
+    public void CreateHotKeyDetailContext_ShouldReturnNullWhenDetailOmitted()
+    {
+        using var plugin = CreatePlugin(withWebDetail: false);
+
+        Assert.That(plugin.CreateHotKeyDetailContext(), Is.Null);
+    }
+
+    [Test]
     public void CreateHotKeyDetailContext_ShouldUseIndependentPluginId()
     {
         using var plugin = CreatePlugin();
@@ -61,7 +78,7 @@ public class NodePluginKeywordRouteTest
         Assert.That(context.EntryFullPath, Is.EqualTo(detailPath));
     }
 
-    private NodePlugin CreatePlugin()
+    private NodePlugin CreatePlugin(bool withWebDetail = true)
     {
         var manifest = new NodePluginManifest
         {
@@ -75,8 +92,8 @@ public class NodePluginKeywordRouteTest
             ProtocolVersion = "3.0",
             PluginDirectory = rootPath,
             EntryFullPath = backendPath,
-            DetailEntry = Path.Combine("web", "index.html"),
-            DetailEntryFullPath = detailPath,
+            DetailEntry = withWebDetail ? Path.Combine("web", "index.html") : null,
+            DetailEntryFullPath = withWebDetail ? detailPath : null,
             Keywords = ["tr"],
             HotKey = "Alt+C"
         };

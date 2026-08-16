@@ -33,6 +33,8 @@ export type KeymapPlugin = {
     defaultKeywords: string[];
     currentKeywords: string[];
     isEnabled: boolean;
+    defaultIncludeInGlobalResults: boolean;
+    includeInGlobalResults: boolean;
     isNodePlugin: boolean;
 };
 

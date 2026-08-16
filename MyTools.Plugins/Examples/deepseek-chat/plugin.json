@@ -17,7 +17,7 @@
       },
       "entry": "backend/index.mjs",
       "capabilities": [],
-      "keywords": ["chat", "ds"],
+      "keywords": ["chat"],
       "hotKey": "Alt+V",
       "detail": {
         "type": "web",

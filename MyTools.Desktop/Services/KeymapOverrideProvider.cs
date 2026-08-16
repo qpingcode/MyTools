@@ -43,6 +43,11 @@ public sealed class KeymapOverrideProvider
         return overrides.TryGetValue(pluginId, out var o) ? o.IsEnabled : null;
     }
 
+    public bool? GetIncludeInGlobalResults(string pluginId)
+    {
+        return overrides.TryGetValue(pluginId, out var o) ? o.IncludeInGlobalResults : null;
+    }
+
     public IReadOnlyDictionary<string, KeymapOverride> GetAll()
     {
         return overrides;
@@ -97,4 +102,6 @@ public sealed class KeymapOverride
     public string? HotKey { get; set; }
     public List<string>? Keywords { get; set; }
     public bool? IsEnabled { get; set; }
+    /// <summary>Override for whether the plugin appears in unscoped search results.</summary>
+    public bool? IncludeInGlobalResults { get; set; }
 }

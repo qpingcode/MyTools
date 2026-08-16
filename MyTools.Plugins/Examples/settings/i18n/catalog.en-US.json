@@ -149,6 +149,22 @@
       "sourceHash": "sha256:placeholder"
     },
     {
+      "key": "Plugin.Settings.Keymap.HeaderGlobalResults",
+      "defaultValue": "Global results",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "全局结果" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Keymap.HeaderGlobalResultsTip",
+      "defaultValue": "Include this plugin when searching without a keyword",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "无关键词时是否出现在全局搜索结果中" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
       "key": "Plugin.Settings.Keymap.KeywordsPlaceholder",
       "defaultValue": "None",
       "placeholders": [],
@@ -474,6 +490,14 @@
       "placeholders": [],
       "references": [],
       "existingTranslations": { "zh-CN": "选择操作" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.SearchHotKey.PickerTitle",
+      "defaultValue": "Set search hotkey",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "设置搜索热键" },
       "sourceHash": "sha256:placeholder"
     }
   ]

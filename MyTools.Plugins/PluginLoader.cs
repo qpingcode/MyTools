@@ -73,7 +73,9 @@ public class PluginLoader(ILogger<PluginLoader> logger, IKeywordRegistry keyword
         
         foreach(var plugin in GetAllPlugins())
         {
-            if (plugin.IsGlobalSearchPlugin)
+            // Node plugins stay in the registry so settings can opt them into global
+            // results later; Searcher still filters on IsGlobalSearchPlugin.
+            if (plugin.IsGlobalSearchPlugin || plugin is NodePlugin)
             {
                 globalSearchRegistry.Register(plugin);
             }

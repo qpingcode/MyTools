@@ -2,6 +2,7 @@
 
 public interface IAppConfig
 {
+    public string SearchHotKeyText { get; set; }
     public HotKeyConfig SearchHotKey { get; }
     public string Language { get; set; }
     public string Theme { get; set; }

@@ -17,8 +17,8 @@ export type InputActionPickerLabels = {
     tabMouse: string;
     recording: string;
     cancel: string;
-    mouseBack: string;
-    mouseForward: string;
+    mouseBack?: string;
+    mouseForward?: string;
 };
 
 export type OpenInputActionPickerOptions = {

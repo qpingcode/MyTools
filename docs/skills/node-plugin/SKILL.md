@@ -1,11 +1,11 @@
 ---
 name: node-plugin
-description: Develop a MyTools Node plugin (backend + WebView2 detail page) on the v3 named-pipe message bus. Use whenever the user wants to create, scaffold, or edit a MyTools plugin. Covers plugin.json, @qping/plugin-bus, backend handlers, web detail page, host.call capabilities, i18n, and theming.
+description: Develop a MyTools Node plugin (backend + optional WebView2 detail page) on the v3 named-pipe message bus. Use whenever the user wants to create, scaffold, or edit a MyTools plugin. Covers plugin.json, @qping/plugin-bus, backend handlers, list or web UI, host.call capabilities, i18n, and theming.
 ---
 
 # MyTools Node Plugin 开发
 
-MyTools Node 插件 = 独立 Node 进程里的后端 + 宿主用 WebView2 加载的 HTML 详情页。通信走 v3 消息总线（Named Pipe + WebView2 postMessage），协议版本 **3.0**。
+MyTools Node 插件 = 独立 Node 进程里的后端 + 可选的 WebView2 HTML 详情页。不写 `detail` 时宿主用 `search` 结果走原生列表。通信走 v3 消息总线（Named Pipe + WebView2 postMessage），协议版本 **3.0**。
 
 参考实现：`MyTools.Plugins/Examples/` 下的 `hello-search`（最小）、`json-formatter` / `xml-formatter`（页面自包含）、`settings`（`hostCall`）、`deepseek-chat`、`deepseek-translator`（多 entry）。SDK 源码：`MyTools.Plugins/Examples/sdk-v3`（包名 `@qping/plugin-bus`）。
 
@@ -118,6 +118,7 @@ SDK 把旧式方法名映射到 v3 路由：`initialize` → `plugin.call.initia
       "entry": "backend/index.mjs",
       "capabilities": [],
       "keywords": ["kw1"],
+      "search": { "global": false },
       "hotKey": "Alt+V",
       "detail": { "type": "web", "entry": "web/index.html" }
     }
@@ -131,7 +132,10 @@ SDK 把旧式方法名映射到 v3 路由：`initialize` → `plugin.call.initia
 - `id` 稳定、kebab-case；配置路径 `Plugins.{id}.*`，i18n scope `plugin:{id}`。
 - 每个 entry 的 `name` 是 `{ key, defaultValue }`，不是字符串。
 - `capabilities` 必填（可 `[]`）。只有声明过的能力才能 `hostCall`；`settings` 声明 `"configuration.write"`。
-- `detail.type` 必须是 `"web"`。`hotKey`、`keywords` 可选。
+- `detail` 可选。省略（或 `"detail": { "type": "list" }`）时宿主用 `search` 的结果走原生列表（BasicListView）：关键词路由停留在列表，热键打开搜索主窗口并锁定该插件。不要写 `type: "basic"`（那是宿主 ViewModel 名，不是 plugin.json 契约）。
+- 需要自定义页面时再写 `"detail": { "type": "web", "entry": "web/index.html" }`。`hotKey`、`keywords`、`search` 可选。
+- `search.global`：出现在**无关键词**的全局搜索结果中。省略或 `false` 时不参与全局搜索（opt-in，避免设置类插件污染每次搜索）。用户可在设置 → 插件列表的 **全局结果** 中覆盖此项。
+- 有非空 `keywords` 就会注册 `keyword + 查询串` 的插件级搜索；没有 keywords 则只能靠全局搜索或热键进入。只有全局、没有关键词时（如 `hello-search`）必须设 `"search": { "global": true }`。
 - 没有顶层 `name` / `runtime`；旧的单 entry（无 `entries[]`）清单会被跳过。
 
 ## 4. 后端（Node）
@@ -184,7 +188,7 @@ plugin
 ```
 
 - `initialize` 的 params 是 `{ locale, fallbackLocale, messages, theme }`（`PluginInitializeParams`）。`theme` 为 `"light"` | `"dark"`，不含 CSS token。`mytoolsI18n.configure(params)` 装进 i18n。
-- `search` 的 params 是 `{ query, mode, locale, fallbackLocale, theme }`（`PluginSearchParams`）。`mode` 为 `"global"` | `"plugin"`。返回 `{ items }`。
+- `search` 的 params 是 `{ query, mode, locale, fallbackLocale, theme }`（`PluginSearchParams`）。`mode` 为 `"global"` | `"plugin"`：全局搜索（无关键词）为 `"global"`，用户输入 `keyword + 查询串` 进入该插件时为 `"plugin"`。返回 `{ items }`。
 - `action` 的 params 是 `{ itemId, actionId, query, locale, fallbackLocale, theme }`（`PluginActionParams`）。返回 `{ message, actionType, detail? }`。
 - `handle(name, fn)` 给详情页 `bus.call(name)` 用。`context` 有 `action / itemId / query / locale / fallbackLocale / theme`（由宿主注入，页面不必带）。
 - 纯前端工具（如 json-formatter）可以只有 `initialize/search/action`，不注册 `handle`。

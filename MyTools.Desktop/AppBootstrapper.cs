@@ -169,6 +169,7 @@ public class AppBootstrapper : IDisposable
     private void RegisterNodePluginHotKeys(IEnumerable<NodePlugin> nodePlugins)
     {
         keymapService.RegisterAllHotKeys(nodePlugins, OpenNodePluginDetail);
+        keymapService.ReRegisterKeywords(pluginLoader.LoadedPlugins);
     }
 
     private void OpenNodePluginDetail(NodePlugin nodePlugin)
@@ -306,6 +307,12 @@ public class AppBootstrapper : IDisposable
                 localization.GetCaption("Configuration.General.Theme.Description", "Choose the application color theme"),
                 themeService.CurrentTheme.ToWireString(),
                 valueType: SettingValueTypes.Theme);
+
+            var searchHotKeySetting = registry.AddSetting(generalCategory, "SearchHotKey",
+                localization.GetCaption("Configuration.General.SearchHotKey.Title", "Search hotkey"),
+                localization.GetCaption("Configuration.General.SearchHotKey.Description", "Keyboard shortcut that opens MyTools search"),
+                AppConfigService.DefaultSearchHotKey,
+                valueType: SettingValueTypes.HotKey);
             
             registry.AddSetting(generalCategory, "AutoStart",
                 localization.GetCaption("Configuration.General.AutoStart.Title", "Auto start"),
@@ -368,6 +375,10 @@ public class AppBootstrapper : IDisposable
             // AppConfigService is authoritative for the theme as well.
             registry.FindSetting(ThemeService.ThemeSettingPath)?
                 .InitValueWithoutNotify(themeService.CurrentTheme.ToWireString());
+            searchHotKeySetting.InitValueWithoutNotify(
+                string.IsNullOrWhiteSpace(appConfigService.AppConfig.SearchHotKeyText)
+                    ? AppConfigService.DefaultSearchHotKey
+                    : appConfigService.AppConfig.SearchHotKeyText);
         }
         catch (Exception ex)
         {
