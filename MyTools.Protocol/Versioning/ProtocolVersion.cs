@@ -13,6 +13,9 @@ public readonly record struct ProtocolVersion(int Major, int Minor) : IComparabl
     /// <summary>The highest version this host supports.</summary>
     public static ProtocolVersion Current { get; } = new(3, 0);
 
+    /// <summary>Wire form of <see cref="Current"/> (currently "3.0").</summary>
+    public static string CurrentWire => Current.ToString();
+
     public override string ToString() => $"{Major}.{Minor}";
 
     public int CompareTo(ProtocolVersion other)

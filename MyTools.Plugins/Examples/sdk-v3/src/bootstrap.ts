@@ -12,7 +12,13 @@ import readline from "node:readline/promises";
 import { randomBytes } from "node:crypto";
 import { NodeTransport } from "./transport.ts";
 import { HandlerRouter } from "./router.ts";
-import type { Envelope } from "./protocol.ts";
+import {
+  type Envelope,
+  EndpointIds,
+  MessageKind,
+  ProtocolVersion,
+  Routes,
+} from "./protocol.ts";
 
 export interface PluginHandlers {
   [route: string]: (payload: any) => Promise<any> | any;
@@ -24,7 +30,7 @@ export interface PluginRuntime {
   close(): Promise<void>;
 }
 
-const SUPPORTED_VERSIONS = ["3.0"];
+const SUPPORTED_VERSIONS = [ProtocolVersion];
 
 /**
  * Connects to the host pipe (reading the bootstrap line from stdin), completes handshake, and
@@ -40,7 +46,25 @@ export async function runPlugin(handlers: PluginHandlers): Promise<PluginRuntime
   const router = new HandlerRouter({ send: (env: Envelope) => transport.send(env) });
   router.setIdentity(identity);
 
+  // Passive host-liveness watchdog: exit if Host stops sending bus.ping (orphan process).
+  // Threshold is well above the host ping interval (~2s) to tolerate brief host stalls.
+  const HOST_LOST_MS = 15_000;
+  let lastPingAt = Date.now();
+  const watchdog = setInterval(() => {
+    if (Date.now() - lastPingAt > HOST_LOST_MS) {
+      clearInterval(watchdog);
+      process.exit(1);
+    }
+  }, 1_000);
+  watchdog.unref?.();
+
+  transport.onDisconnect(() => {
+    clearInterval(watchdog);
+    process.exit(1);
+  });
+
   transport.onMessage((env) => {
+    if (env.route === Routes.Bus.Ping) lastPingAt = Date.now();
     router.dispatch(env);
   });
 
@@ -51,7 +75,10 @@ export async function runPlugin(handlers: PluginHandlers): Promise<PluginRuntime
   return {
     transport,
     router,
-    close: () => transport.close(),
+    close: async () => {
+      clearInterval(watchdog);
+      await transport.close();
+    },
   };
 }
 
@@ -84,18 +111,18 @@ export async function completeHandshake(
 ): Promise<{ pluginId: string; entryId: string; sessionId: string; endpointId: string }> {
   const id = randomBytes(16).toString("hex");
   const req: Envelope = {
-    version: "3.0",
+    version: ProtocolVersion,
     id,
     traceId: id,
     sessionId: "",
     pluginId: "",
     entryId: "",
-    endpointId: "node-main",
-    kind: "request",
-    route: "bus.handshake",
+    endpointId: EndpointIds.NodeMain,
+    kind: MessageKind.Request,
+    route: Routes.Bus.Handshake,
     timeoutMs,
     payload: {
-      version: "3.0",
+      version: ProtocolVersion,
       supportedVersions: SUPPORTED_VERSIONS,
       token,
     },
@@ -108,7 +135,7 @@ export async function completeHandshake(
     }, timeoutMs);
 
     const unsubscribe = transport.onMessage((env: Envelope) => {
-      if (env.kind !== "response" || env.correlationId !== id) return;
+      if (env.kind !== MessageKind.Response || env.correlationId !== id) return;
       clearTimeout(timer);
       unsubscribe();
       if (env.error) {
@@ -119,7 +146,7 @@ export async function completeHandshake(
       const pluginId = String(p.pluginId ?? "");
       const entryId = String(p.entryId ?? "");
       const sessionId = String(p.sessionId ?? "");
-      const endpointId = String(p.endpointId ?? "node-main");
+      const endpointId = String(p.endpointId ?? EndpointIds.NodeMain);
       if (!pluginId || !entryId || !sessionId) {
         reject(new Error("bus.handshake success response missing bound identity"));
         return;

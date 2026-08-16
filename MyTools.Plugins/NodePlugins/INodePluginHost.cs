@@ -38,5 +38,8 @@ internal interface INodePluginHost
         string itemId, string action, JsonElement? payload, string query, string locale, string fallbackLocale,
         CancellationToken cancellationToken = default);
 
+    /// <summary>Current v3 session id when running on the message bus; null for legacy stdio hosts.</summary>
+    string? SessionId { get; }
+
     void Dispose();
 }

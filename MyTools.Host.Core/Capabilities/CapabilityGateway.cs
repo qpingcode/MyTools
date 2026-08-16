@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using MyTools.Protocol.Errors;
 
@@ -22,27 +23,28 @@ public sealed record CapabilityAuditEntry(string PluginId, string EntryId, strin
 /// Phase-1 capability gateway skeleton. Architecture position and per-call validation match the
 /// final form so that Phase-3 authorization can be plugged in without moving components. In Phase-1
 /// the authorization decision is "declared ⇒ granted"; Phase-3 replaces that single decision point.
+/// Session start, host.call, and teardown all hit this type from different threads.
 /// </summary>
 public sealed class CapabilityGateway
 {
-    private readonly Dictionary<string, PluginManifest> _manifests = new();
-    private readonly List<CapabilityAuditEntry> _audit = new();
+    private readonly ConcurrentDictionary<string, PluginManifest> _manifests = new();
+    private readonly ConcurrentQueue<CapabilityAuditEntry> _audit = new();
 
-    public IReadOnlyList<CapabilityAuditEntry> AuditEntries => _audit;
+    public IReadOnlyList<CapabilityAuditEntry> AuditEntries => _audit.ToArray();
 
     public void RegisterManifest(PluginManifest manifest)
         => _manifests[Key(manifest.PluginId, manifest.EntryId)] = manifest;
 
     public void UnregisterManifest(string pluginId, string entryId)
-        => _manifests.Remove(Key(pluginId, entryId));
+        => _manifests.TryRemove(Key(pluginId, entryId), out _);
 
     public CapabilityDecision Authorize(string pluginId, string entryId, string capabilityRoute)
     {
         var key = Key(pluginId, entryId);
         var allowed = _manifests.TryGetValue(key, out var manifest)
-                      && manifest!.Capabilities.Contains(capabilityRoute);
+                      && manifest.Capabilities.Contains(capabilityRoute);
 
-        _audit.Add(new CapabilityAuditEntry(pluginId, entryId, capabilityRoute, allowed));
+        _audit.Enqueue(new CapabilityAuditEntry(pluginId, entryId, capabilityRoute, allowed));
 
         return allowed
             ? CapabilityDecision.Allow()

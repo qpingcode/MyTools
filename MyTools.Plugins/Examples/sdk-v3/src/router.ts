@@ -5,7 +5,15 @@
  */
 
 import { randomBytes } from "node:crypto";
-import type { Envelope, BusError } from "./protocol.ts";
+import {
+  type Envelope,
+  type BusError,
+  EndpointIds,
+  ErrorCode,
+  MessageKind,
+  ProtocolVersion,
+  Routes,
+} from "./protocol.ts";
 
 type Handler = (payload: unknown) => Promise<unknown> | unknown;
 type Sender = (env: Envelope) => void;
@@ -22,7 +30,7 @@ export class HandlerRouter {
   private pluginId = "p";
   private entryId = "e";
   private sessionId = "s";
-  private endpointId = "node-main";
+  private endpointId = EndpointIds.NodeMain;
 
   /** Injected transport send fn; tests can override `router.send` directly. */
   send: Sender;
@@ -45,21 +53,21 @@ export class HandlerRouter {
 
   /** Dispatches an inbound request/response. Returns once handled. */
   async dispatch(env: Envelope): Promise<void> {
-    if (env.kind === "response") {
+    if (env.kind === MessageKind.Response) {
       this.handleHostResponse(env);
       return;
     }
-    if (env.kind !== "request") return;
+    if (env.kind !== MessageKind.Request) return;
 
     // bus.ping is always auto-replied; it does not occupy a handler slot.
-    if (env.route === "bus.ping") {
+    if (env.route === Routes.Bus.Ping) {
       this.send(this.responseFor(env, { ok: true }));
       return;
     }
 
     const handler = this.handlers.get(env.route);
     if (!handler) {
-      this.send(this.errorResponseFor(env, "RouteNotFound", `route '${env.route}' has no handler`));
+      this.send(this.errorResponseFor(env, ErrorCode.RouteNotFound, `route '${env.route}' has no handler`));
       return;
     }
 
@@ -68,7 +76,7 @@ export class HandlerRouter {
       this.send(this.responseFor(env, result ?? {}));
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      this.send(this.errorResponseFor(env, "InternalError", message));
+      this.send(this.errorResponseFor(env, ErrorCode.InternalError, message));
     }
   }
 
@@ -77,14 +85,14 @@ export class HandlerRouter {
     return new Promise((resolve, reject) => {
       const id = randomBytesHex();
       const req: Envelope = {
-        version: "3.0",
+        version: ProtocolVersion,
         id,
         traceId: id,
         sessionId: this.sessionId,
         pluginId: this.pluginId,
         entryId: this.entryId,
         endpointId: this.endpointId,
-        kind: "request",
+        kind: MessageKind.Request,
         route,
         timeoutMs,
         payload,
@@ -120,7 +128,7 @@ export class HandlerRouter {
 
   private responseFor(req: Envelope, payload: unknown): Envelope {
     return {
-      version: "3.0",
+      version: ProtocolVersion,
       id: randomBytesHex(),
       correlationId: req.id,
       traceId: req.traceId,
@@ -128,13 +136,13 @@ export class HandlerRouter {
       pluginId: req.pluginId,
       entryId: req.entryId,
       endpointId: this.endpointId,
-      kind: "response",
+      kind: MessageKind.Response,
       route: req.route,
       payload,
     };
   }
 
-  private errorResponseFor(req: Envelope, code: string, message: string): Envelope {
+  private errorResponseFor(req: Envelope, code: BusError["code"], message: string): Envelope {
     return {
       ...this.responseFor(req, null),
       payload: undefined,

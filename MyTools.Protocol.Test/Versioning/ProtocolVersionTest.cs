@@ -12,6 +12,7 @@ public class ProtocolVersionTest
         Assert.That(ProtocolVersion.Current.Major, Is.EqualTo(3));
         Assert.That(ProtocolVersion.Current.Minor, Is.EqualTo(0));
         Assert.That(ProtocolVersion.Current.ToString(), Is.EqualTo("3.0"));
+        Assert.That(ProtocolVersion.CurrentWire, Is.EqualTo("3.0"));
     }
 
     [Test]

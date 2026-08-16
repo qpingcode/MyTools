@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using MyTools.Common.Localization;
 using MyTools.Host.Core.Bus;
 using MyTools.Host.Core.Sessions;
+using MyTools.Protocol.Versioning;
 
 namespace MyTools.Plugins.NodePlugins;
 
@@ -49,7 +50,7 @@ public sealed class NodePluginFactory
         var isV3 = useV3Transport
                    && bus is not null
                    && sessionManager is not null
-                   && manifest.ProtocolVersion == "3.0";
+                   && manifest.ProtocolVersion == ProtocolVersion.CurrentWire;
 
         var hostLogger = loggerFactory.CreateLogger<NodePluginFactory>();
         hostLogger.LogInformation("CreateHost: plugin={Id} proto={Proto} useV3={UseV3} bus={Bus} mgr={Mgr} -> isV3={IsV3}",

@@ -41,8 +41,8 @@ internal sealed class FakeProcessController : INodeProcessController
         transport.Deliver(new Envelope
         {
             Version = ProtocolVersion.Current,
-            Id = "hs-req-1",
-            TraceId = "hs-req-1",
+            Id = Guid.NewGuid().ToString("N"),
+            TraceId = Guid.NewGuid().ToString("N"),
             SessionId = "",
             PluginId = pluginId,
             EntryId = entryId,

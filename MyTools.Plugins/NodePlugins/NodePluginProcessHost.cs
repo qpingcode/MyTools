@@ -6,6 +6,12 @@ using Microsoft.Extensions.Logging;
 
 namespace MyTools.Plugins.NodePlugins;
 
+/// <summary>
+/// Legacy stdio JSON-RPC host for plugins that still declare protocolVersion other than "3.0".
+/// New plugins should use <see cref="NodePluginBusHost"/> (named-pipe message bus). Kept so
+/// external/older packages without a v3 manifest continue to load when
+/// <see cref="PluginServiceCollectionExtensions.UseV3Transport"/> is on.
+/// </summary>
 internal sealed class NodePluginProcessHost : INodePluginHost
 {
     private readonly NodePluginManifest manifest;
@@ -24,6 +30,8 @@ internal sealed class NodePluginProcessHost : INodePluginHost
     /// 为 null 表示该插件没有注册宿主能力（如普通搜索/翻译插件）。
     /// </summary>
     public Func<HostCallRequest, CancellationToken, Task<JsonElement>>? HostCallHandler { get; set; }
+
+    public string? SessionId => null;
 
     public NodePluginProcessHost(NodePluginManifest manifest, ILogger<NodePluginProcessHost> logger)
     {

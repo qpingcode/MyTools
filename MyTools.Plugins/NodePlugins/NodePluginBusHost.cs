@@ -6,12 +6,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MyTools.Host.Core.Bus;
+using MyTools.Host.Core.Heartbeat;
 using MyTools.Host.Core.Sessions;
 using MyTools.Host.Core.Transports;
 using MyTools.Protocol.Errors;
 using MyTools.Protocol.Identity;
 using MyTools.Protocol.Manifest;
 using MyTools.Protocol.Messages;
+using MyTools.Protocol.Routing;
 using MyTools.Protocol.Versioning;
 
 namespace MyTools.Plugins.NodePlugins;
@@ -20,9 +22,9 @@ namespace MyTools.Plugins.NodePlugins;
 /// v3 message-bus runtime for a Node plugin entry, implementing the same <see cref="INodePluginHost"/>
 /// surface as the legacy <see cref="NodePluginProcessHost"/> but over the v3 named-pipe bus. Each
 /// legacy method (<c>search</c>, <c>detailCall</c>, …) is mapped to a <c>plugin.call.&lt;method&gt;</c>
-/// envelope; responses are correlated by request id. Inbound <c>plugin.event.*</c> envelopes raise
-/// <see cref="EventReceived"/>; inbound <c>host.call.*</c> requests are dispatched to
-/// <see cref="HostCallHandler"/>. The Node process is owned by the <see cref="PluginSessionManager"/>.
+/// envelope; responses are correlated by request id via a registered host endpoint on the bus.
+/// Inbound <c>plugin.event.*</c> envelopes raise <see cref="EventReceived"/>; <c>host.call.*</c> is
+/// handled by the <see cref="MessageBus"/> through <see cref="HostCallHandler"/>.
 /// </summary>
 internal sealed class NodePluginBusHost : INodePluginHost
 {
@@ -36,15 +38,27 @@ internal sealed class NodePluginBusHost : INodePluginHost
 
     private PluginSession? _session;
     private EndpointId? _nodeEndpoint;
+    private EndpointId? _hostEndpoint;
+    private HostEndpointTransport? _hostTransport;
+    private CancellationTokenSource? _heartbeatCts;
     private int _started; // 0 = not started, 1 = started
 
-    /// <summary>Default per-request timeout (ms) when the caller does not supply a cancellation token.</summary>
+    /// <summary>Host→Node ping interval.</summary>
+    internal static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(2);
+
+    /// <summary>Per-ping timeout before counting a consecutive miss.</summary>
+    internal static readonly TimeSpan HeartbeatPingTimeout = TimeSpan.FromSeconds(3);
+
+    /// <summary>Consecutive missed pongs before declaring the peer dead.</summary>
+    internal const int HeartbeatDeadAfter = 3;
+
     private const int DefaultTimeoutMs = 30000;
 
-    /// <summary>The node executable path used to spawn the child process. Override via constructor if needed.</summary>
     public string NodeExePath { get; set; } = "node";
 
     public PluginSession? Session => _session;
+
+    public string? SessionId => _session?.SessionId;
 
     public NodePluginBusHost(NodePluginManifest manifest, PluginSessionManager sessionManager,
         MessageBus bus, ILogger<NodePluginBusHost> logger, IIdGenerator? ids = null)
@@ -54,28 +68,24 @@ internal sealed class NodePluginBusHost : INodePluginHost
         _bus = bus;
         _logger = logger;
         _ids = ids ?? new GuidIdGenerator();
-        _logger.LogInformation("NodePluginBusHost created for plugin={PluginId} entry={EntryId}", manifest.ParentId, manifest.EntryId);
+        _sessionManager.SessionReplaced += OnSessionReplaced;
+        _logger.LogInformation("NodePluginBusHost created for plugin={PluginId} entry={EntryId}",
+            manifest.ParentId, manifest.EntryId);
     }
 
     public event EventHandler<NodePluginEventReceivedEventArgs>? EventReceived;
 
     public Func<HostCallRequest, CancellationToken, Task<JsonElement>>? HostCallHandler { get; set; }
 
-    /// <summary>Starts the session explicitly: spawns the Node process and connects the bus.</summary>
     public async Task StartAsync(string nodeExePath, CancellationToken cancellationToken)
     {
         NodeExePath = nodeExePath;
         await EnsureStartedAsync(cancellationToken);
     }
 
-    /// <summary>
-    /// Lazy start (double-checked lock): spawns the Node process and connects the pipe on first use.
-    /// Mirrors NodePluginProcessHost.EnsureStartedAsync so NodePlugin can use the bus host without
-    /// any explicit start call — the first SearchAsync/InitializeAsync/etc. triggers it.
-    /// </summary>
     private async Task EnsureStartedAsync(CancellationToken cancellationToken)
     {
-        if (System.Threading.Volatile.Read(ref _started) == 1) return;
+        if (Volatile.Read(ref _started) == 1) return;
 
         await _startLock.WaitAsync(cancellationToken);
         try
@@ -85,16 +95,15 @@ internal sealed class NodePluginBusHost : INodePluginHost
             var v3 = ToV3Manifest();
             _session = await _sessionManager.StartSessionAsync(v3, _manifest.EntryId, NodeExePath, cancellationToken);
             _nodeEndpoint = new EndpointId(_manifest.ParentId, _manifest.EntryId, _session.SessionId,
-                "node-main", IsNode: true);
+                EndpointIds.NodeMain, IsNode: true);
+            BindHostEndpoint();
 
-            // Listen for inbound envelopes from the Node side.
-            var nodeTransport = _session.Controller?.Transport;
-            if (nodeTransport is not null)
-            {
-                nodeTransport.MessageReceived += OnInbound;
-            }
+            _bus.RegisterHostCallHandler(_manifest.ParentId, _manifest.EntryId, InvokeHostCallAsync);
 
-            System.Threading.Volatile.Write(ref _started, 1);
+            _heartbeatCts = new CancellationTokenSource();
+            _ = RunHeartbeatAsync(_heartbeatCts.Token);
+
+            Volatile.Write(ref _started, 1);
         }
         finally
         {
@@ -102,9 +111,145 @@ internal sealed class NodePluginBusHost : INodePluginHost
         }
     }
 
-    private void OnInbound(Envelope env)
+    private void OnSessionReplaced(object? sender, PluginSessionReplacedEventArgs e)
     {
-        _logger.LogInformation("OnInbound: kind={Kind} route={Route} corr={CorrelationId}", env.Kind, env.Route, env.CorrelationId);
+        if (e.PluginId != _manifest.ParentId || e.EntryId != _manifest.EntryId) return;
+
+        _logger.LogWarning("Session replaced for {PluginId}/{EntryId}: {Old} -> {New}",
+            e.PluginId, e.EntryId, e.Previous.SessionId, e.Current.SessionId);
+
+        FailLocalPending(ErrorCode.TransportDisconnected, "node session restarted");
+        UnbindHostEndpoint();
+
+        _session = e.Current;
+        _nodeEndpoint = new EndpointId(_manifest.ParentId, _manifest.EntryId, _session.SessionId,
+            EndpointIds.NodeMain, IsNode: true);
+        BindHostEndpoint();
+    }
+
+    private void BindHostEndpoint()
+    {
+        if (_session is null) return;
+        _hostTransport = new HostEndpointTransport();
+        _hostTransport.Delivered += OnHostDelivery;
+        _hostEndpoint = new EndpointId(_manifest.ParentId, _manifest.EntryId, _session.SessionId,
+            EndpointIds.Host, IsNode: false);
+        _bus.RegisterEndpoint(_hostEndpoint, _hostTransport);
+    }
+
+    private void UnbindHostEndpoint()
+    {
+        if (_hostEndpoint is not null)
+        {
+            _bus.UnregisterEndpoint(_hostEndpoint);
+            _hostEndpoint = null;
+        }
+
+        if (_hostTransport is not null)
+        {
+            _hostTransport.Delivered -= OnHostDelivery;
+            _ = _hostTransport.DisposeAsync();
+            _hostTransport = null;
+        }
+    }
+
+    private void FailLocalPending(ErrorCode code, string message)
+    {
+        foreach (var (_, tcs) in _pending)
+        {
+            tcs.TrySetException(new BusCallException(code.ToString(), message));
+        }
+
+        _pending.Clear();
+    }
+
+    private async Task RunHeartbeatAsync(CancellationToken cancellationToken)
+    {
+        var monitor = new HeartbeatMonitor(
+            (long)HeartbeatPingTimeout.TotalMilliseconds,
+            HeartbeatDeadAfter,
+            () => Environment.TickCount64);
+
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                await Task.Delay(HeartbeatInterval, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+
+            var session = _session;
+            var hostEndpoint = _hostEndpoint;
+            if (session is null || !session.IsAvailable || hostEndpoint is null) continue;
+
+            var pingId = _ids.NewId();
+            var waiter = new TaskCompletionSource<JsonNode?>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _pending[pingId] = waiter;
+
+            var ping = new Envelope
+            {
+                Version = ProtocolVersion.Current,
+                Id = pingId,
+                TraceId = pingId,
+                SessionId = session.SessionId,
+                PluginId = _manifest.ParentId,
+                EntryId = _manifest.EntryId,
+                EndpointId = EndpointIds.Host,
+                Kind = MessageKind.Request,
+                Route = Routes.Bus.Ping,
+                TimeoutMs = (int)HeartbeatPingTimeout.TotalMilliseconds,
+                Payload = JsonNode.Parse("""{"ok":true}"""),
+            };
+
+            monitor.OnPingSent();
+            try
+            {
+                await _bus.RouteRequestAsync(ping, hostEndpoint);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "bus.ping send failed");
+                _pending.TryRemove(pingId, out _);
+                continue;
+            }
+
+            try
+            {
+                using var pingCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                pingCts.CancelAfter(HeartbeatPingTimeout);
+                await waiter.Task.WaitAsync(pingCts.Token);
+                monitor.OnPong();
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                _pending.TryRemove(pingId, out _);
+                var check = monitor.CheckTimeout();
+                if (check.NowDead)
+                {
+                    _logger.LogWarning(
+                        "Node heartbeat dead for {PluginId}/{EntryId} after {N} timeouts; requesting restart",
+                        _manifest.ParentId, _manifest.EntryId, HeartbeatDeadAfter);
+                    await _sessionManager.NotifyPeerDeadAsync(_manifest.ParentId, _manifest.EntryId);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+        }
+    }
+
+    private void OnHostDelivery(Envelope env)
+    {
+        if (!Routes.IsPing(env.Route))
+        {
+            _logger.LogInformation("HostDelivery: kind={Kind} route={Route} corr={CorrelationId}",
+                env.Kind, env.Route, env.CorrelationId);
+        }
+        
         switch (env.Kind)
         {
             case MessageKind.Response:
@@ -113,16 +258,24 @@ internal sealed class NodePluginBusHost : INodePluginHost
             case MessageKind.Event:
                 HandleEvent(env);
                 break;
-            case MessageKind.Request:
-                _ = HandleHostCallAsync(env);
-                break;
         }
+    }
+
+    private async Task<JsonElement> InvokeHostCallAsync(
+        string method, JsonElement parameters, CancellationToken cancellationToken)
+    {
+        if (HostCallHandler is null)
+        {
+            throw new InvalidOperationException("No host call handler registered for this plugin.");
+        }
+
+        return await HostCallHandler(new HostCallRequest(method, parameters), cancellationToken);
     }
 
     public Task<JsonElement> InitializeAsync(string locale, string fallbackLocale,
         IReadOnlyDictionary<string, string> messages, CancellationToken cancellationToken = default)
     {
-        return SendAndUnwrapResultAsync("plugin.call.initialize", new
+        return SendAndUnwrapResultAsync(Routes.PluginCall.Initialize, new
         {
             locale, fallbackLocale, messages,
         }, cancellationToken);
@@ -131,7 +284,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
     public Task<NodePluginSearchResponse> SearchAsync(string query, string mode, string locale,
         string fallbackLocale, CancellationToken cancellationToken)
     {
-        return SendAsync<NodePluginSearchResponse>("plugin.call.search", new
+        return SendAsync<NodePluginSearchResponse>(Routes.PluginCall.Search, new
         {
             query, mode, locale, fallbackLocale,
         }, cancellationToken);
@@ -140,7 +293,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
     public Task<NodePluginActionResponse> InvokeActionAsync(string itemId, string actionId, string query,
         string locale, string fallbackLocale, CancellationToken cancellationToken = default)
     {
-        return SendAsync<NodePluginActionResponse>("plugin.call.invokeAction", new
+        return SendAsync<NodePluginActionResponse>(Routes.PluginCall.InvokeAction, new
         {
             itemId, actionId, query, locale, fallbackLocale,
         }, cancellationToken);
@@ -150,7 +303,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
         JsonElement? payload, string query, string locale, string fallbackLocale,
         CancellationToken cancellationToken = default)
     {
-        return SendAsync<NodePluginDetailEventResponse>("plugin.call.detailEvent", new
+        return SendAsync<NodePluginDetailEventResponse>(Routes.PluginCall.DetailEvent, new
         {
             itemId, eventName, query, payload, locale, fallbackLocale,
         }, cancellationToken);
@@ -160,7 +313,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
         JsonElement? payload, string query, string locale, string fallbackLocale,
         CancellationToken cancellationToken = default)
     {
-        return SendAsync<NodePluginDetailCallResponse>("plugin.call.detailCall", new
+        return SendAsync<NodePluginDetailCallResponse>(Routes.PluginCall.DetailCall, new
         {
             itemId, action, query, payload, locale, fallbackLocale,
         }, cancellationToken);
@@ -168,13 +321,21 @@ internal sealed class NodePluginBusHost : INodePluginHost
 
     public void Dispose()
     {
+        _sessionManager.SessionReplaced -= OnSessionReplaced;
+
+        try { _heartbeatCts?.Cancel(); } catch { /* ignore */ }
+        _heartbeatCts?.Dispose();
+        _heartbeatCts = null;
+
+        FailLocalPending(ErrorCode.TransportDisconnected, "bus host disposed");
+        UnbindHostEndpoint();
+        _bus.UnregisterHostCallHandler(_manifest.ParentId, _manifest.EntryId);
+
         if (_session is not null)
         {
             _ = _sessionManager.StopSessionAsync(_manifest.ParentId, _manifest.EntryId, _session.SessionId);
         }
     }
-
-    // --- helpers ---
 
     private async Task<T> SendAsync<T>(string route, object parameters, CancellationToken cancellationToken)
     {
@@ -196,12 +357,11 @@ internal sealed class NodePluginBusHost : INodePluginHost
     private async Task<JsonNode?> SendAndAwaitResponseAsync(string route, object parameters,
         CancellationToken cancellationToken)
     {
-        // Lazy start: spawn the Node process on first use (mirrors v2 NodePluginProcessHost).
         await EnsureStartedAsync(cancellationToken);
 
-        if (_session is null || _nodeEndpoint is null)
+        if (_session is null || _hostEndpoint is null)
         {
-            throw new System.InvalidOperationException("bus host failed to start");
+            throw new InvalidOperationException("bus host failed to start");
         }
 
         var id = _ids.NewId();
@@ -213,7 +373,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
             SessionId = _session.SessionId,
             PluginId = _manifest.ParentId,
             EntryId = _manifest.EntryId,
-            EndpointId = "host",
+            EndpointId = EndpointIds.Host,
             Kind = MessageKind.Request,
             Route = route,
             TimeoutMs = DefaultTimeoutMs,
@@ -223,28 +383,25 @@ internal sealed class NodePluginBusHost : INodePluginHost
         var tcs = new TaskCompletionSource<JsonNode?>(TaskCreationOptions.RunContinuationsAsynchronously);
         _pending[id] = tcs;
 
-        // Real per-request timeout: a linked CTS that fires at DefaultTimeoutMs OR when the caller
-        // cancels. On timeout the pending slot is removed and the task faults with TimeoutException.
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeoutCts.CancelAfter(DefaultTimeoutMs);
         var requestStartedAt = System.Diagnostics.Stopwatch.GetTimestamp();
-        _logger.LogInformation($"id: {id}, start");
+        _logger.LogInformation("id: {Id}, start", id);
         using var _ = timeoutCts.Token.Register(() =>
         {
             if (_pending.TryRemove(id, out var timedOutTcs))
             {
-                _logger.LogInformation($"id: {id}, cancelled");
                 var elapsedMs = System.Diagnostics.Stopwatch.GetElapsedTime(requestStartedAt).TotalMilliseconds;
-                _logger.LogWarning("plugin.call '{Route}' timed out after {ElapsedMs}ms (expected {TimeoutMs}ms)", route, elapsedMs, DefaultTimeoutMs);
-                timedOutTcs.TrySetCanceled();
+                _logger.LogWarning(
+                    "plugin.call '{Route}' timed out after {ElapsedMs}ms (expected {TimeoutMs}ms)",
+                    route, elapsedMs, DefaultTimeoutMs);
+                timedOutTcs.TrySetException(new BusCallException(
+                    ErrorCode.RequestTimeout.ToString(),
+                    $"plugin.call '{route}' timed out after {DefaultTimeoutMs}ms"));
             }
         });
 
-        // Route the request to the Node endpoint. Use a synthetic "host" origin (not a real
-        // endpoint) so the bus can find the session; the response returns via OnInbound.
-        var hostOrigin = new EndpointId(_manifest.ParentId, _manifest.EntryId, _session.SessionId,
-            "host", IsNode: false);
-        await _bus.RouteRequestAsync(env, hostOrigin);
+        await _bus.RouteRequestAsync(env, _hostEndpoint);
         _logger.LogInformation("Sent plugin.call '{Route}' id={Id}, waiting for response", route, id);
 
         return await tcs.Task;
@@ -275,84 +432,28 @@ internal sealed class NodePluginBusHost : INodePluginHost
         });
     }
 
-    private async Task HandleHostCallAsync(Envelope env)
-    {
-        var transport = _session?.Controller?.Transport;
-        if (transport is null)
-        {
-            _logger.LogWarning("host call {Route} dropped: no node transport", env.Route);
-            return;
-        }
-
-        Envelope reply;
-        try
-        {
-            if (HostCallHandler is null)
-            {
-                throw new System.InvalidOperationException("No host call handler registered for this plugin.");
-            }
-
-            var req = new HostCallRequest(env.Route.Replace("host.call.", ""),
-                JsonDocument.Parse(env.Payload?.ToJsonString() ?? "{}").RootElement.Clone());
-            var result = await HostCallHandler(req, CancellationToken.None);
-            reply = BuildHostCallReply(env, payload: JsonNode.Parse(result.GetRawText()), error: null);
-        }
-        catch (System.Exception ex)
-        {
-            _logger.LogError(ex, "host call {Route} failed", env.Route);
-            reply = BuildHostCallReply(env, payload: null,
-                error: BusError.For(ErrorCode.InternalError, ex.Message));
-        }
-
-        try
-        {
-            await transport.SendAsync(reply, CancellationToken.None);
-            _logger.LogInformation("Replied to host.call '{Route}' corr={CorrelationId}", env.Route, env.Id);
-        }
-        catch (System.Exception ex)
-        {
-            _logger.LogError(ex, "Failed to send host.call reply for {Route}", env.Route);
-        }
-    }
-
-    private Envelope BuildHostCallReply(Envelope request, JsonNode? payload, BusError? error)
-    {
-        return new Envelope
-        {
-            Version = ProtocolVersion.Current,
-            Id = _ids.NewId(),
-            CorrelationId = request.Id,
-            TraceId = request.TraceId,
-            SessionId = request.SessionId,
-            PluginId = request.PluginId,
-            EntryId = request.EntryId,
-            EndpointId = "host",
-            Kind = MessageKind.Response,
-            Route = request.Route,
-            Payload = payload,
-            Error = error,
-        };
-    }
-
     private PluginManifestV3 ToV3Manifest()
     {
         return new PluginManifestV3
         {
             Id = _manifest.ParentId,
             Version = _manifest.Version,
-            ProtocolVersion = "3.0",
-            Entries = [new PluginEntryV3
-            {
-                EntryId = _manifest.EntryId,
-                NodeEntry = _manifest.EntryFullPath,
-                Capabilities = [],
-            }],
+            ProtocolVersion = ProtocolVersion.CurrentWire,
+            Entries =
+            [
+                new PluginEntryV3
+                {
+                    Id = _manifest.EntryId,
+                    Entry = _manifest.EntryFullPath,
+                    Capabilities = _manifest.Capabilities,
+                },
+            ],
         };
     }
 }
 
-/// <summary>Thrown when a plugin.call.* response carries an error.</summary>
-internal sealed class BusCallException : System.Exception
+/// <summary>Thrown when a plugin.call.* response carries an error or times out.</summary>
+internal sealed class BusCallException : Exception
 {
     public BusCallException(string code, string message) : base($"{code}: {message}") { }
 }

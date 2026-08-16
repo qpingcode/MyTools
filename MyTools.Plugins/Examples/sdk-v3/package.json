@@ -23,6 +23,11 @@
       "import": "./dist/bootstrap.mjs",
       "default": "./dist/bootstrap.mjs"
     },
+    "./web": {
+      "types": "./dist/webClient.d.ts",
+      "import": "./dist/webClient.mjs",
+      "default": "./dist/webClient.mjs"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {

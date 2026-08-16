@@ -1,8 +1,8 @@
 using System;
-using MyTools.Host.Transports.Process;
+using MyTools.Host.Core.Reliability;
 using NUnit.Framework;
 
-namespace MyTools.Host.Transports.Test.Process;
+namespace MyTools.Host.Core.Test.Reliability;
 
 [TestFixture]
 public class RestartPolicyTest

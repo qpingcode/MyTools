@@ -10,6 +10,9 @@ using MyTools.Common.Theming;
 using MyTools.Desktop.Components;
 using MyTools.Desktop.ViewModels;
 using MyTools.Desktop.Views;
+using MyTools.Host.Core.Bus;
+using MyTools.Host.Core.Capabilities;
+using MyTools.Host.Core.Sessions;
 using NUnit.Framework;
 
 namespace MyTools.Desktop.Test.Views;
@@ -33,10 +36,13 @@ public class PluginWindowTitleLayoutTests
         }
 
         originalServiceProvider = (IServiceProvider?)ServiceProviderField.GetValue(null);
+        var bus = new MessageBus();
         var services = new ServiceCollection()
             .AddSingleton<ILocalizationService, TestLocalizationService>()
             .AddSingleton<IThemeService, TestThemeService>()
             .AddSingleton<ILogger<NodePluginDetailView>>(NullLogger<NodePluginDetailView>.Instance)
+            .AddSingleton(bus)
+            .AddSingleton(new PluginSessionManager(bus, new CapabilityGateway(), new UnusedProcessFactory()))
             .BuildServiceProvider();
         ServiceProviderField.SetValue(null, services);
     }
@@ -269,6 +275,12 @@ public class PluginWindowTitleLayoutTests
             add { }
             remove { }
         }
+    }
+
+    private sealed class UnusedProcessFactory : INodeProcessControllerFactory
+    {
+        public INodeProcessController Create(string nodeExePath, string nodeEntryFullPath)
+            => throw new NotSupportedException("Layout tests do not start Node processes.");
     }
 
     private sealed class TestThemeService : IThemeService

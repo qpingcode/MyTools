@@ -15,6 +15,15 @@
  */
 
 import { runPlugin, type PluginRuntime } from "./bootstrap.ts";
+import {
+  EndpointIds,
+  MessageKind,
+  ProtocolVersion,
+  Routes,
+  hostCallRoute,
+  pluginCallRoute,
+  pluginEventRoute,
+} from "./protocol.ts";
 
 type NodeToolContext = {
   action: string;
@@ -64,16 +73,16 @@ export class NodeTool {
   publish(subjectId: string, payload: unknown = {}): void {
     if (!this.#runtime) throw new Error("tool not started");
     // Strip the legacy prefix to form a clean route; the host EventReceived surfaces the route.
-    const route = subjectId.startsWith("plugin.event.") ? subjectId : `plugin.event.${subjectId}`;
+    const route = pluginEventRoute(subjectId);
     this.#runtime.transport.send({
-      version: "3.0",
+      version: ProtocolVersion,
       id: crypto.randomUUID().replace(/-/g, "").slice(0, 32),
       traceId: crypto.randomUUID().replace(/-/g, "").slice(0, 32),
       sessionId: "",
       pluginId: "",
       entryId: "",
-      endpointId: "node-main",
-      kind: "event",
+      endpointId: EndpointIds.NodeMain,
+      kind: MessageKind.Event,
       route,
       payload,
     });
@@ -82,7 +91,7 @@ export class NodeTool {
   /** Calls a host.call.<method> capability and awaits the response. */
   hostCall(method: string, params: Record<string, unknown> = {}): Promise<unknown> {
     if (!this.#runtime) return Promise.reject(new Error("tool not started"));
-    return this.#runtime.router.callHost(`host.call.${method}`, params);
+    return this.#runtime.router.callHost(hostCallRoute(method), params);
   }
 
   /** Connects to the host pipe and begins dispatching. Must be called last. */
@@ -99,18 +108,18 @@ export class NodeTool {
     const routes: Record<string, (payload: any) => unknown | Promise<unknown>> = {};
 
     if (this.#initializeHandler) {
-      routes["plugin.call.initialize"] = (p) => this.#initializeHandler!(p);
+      routes[Routes.PluginCall.Initialize] = (p) => this.#initializeHandler!(p);
     }
     if (this.#searchHandler) {
-      routes["plugin.call.search"] = (p) => this.#searchHandler!(p);
+      routes[Routes.PluginCall.Search] = (p) => this.#searchHandler!(p);
     }
     if (this.#actionHandler) {
-      routes["plugin.call.invokeAction"] = (p) => {
+      routes[Routes.PluginCall.InvokeAction] = (p) => {
         return this.#actionHandler!({ ...p, itemId: p.itemId, query: p.query });
       };
     }
     // Legacy detail calls: plugin.call.detailCall carries an `action` field selecting the handler.
-    routes["plugin.call.detailCall"] = async (p) => {
+    routes[Routes.PluginCall.DetailCall] = async (p) => {
       const action = p?.action ?? "";
       const handler = this.#handlers.get(action);
       if (!handler) {
@@ -120,11 +129,11 @@ export class NodeTool {
       const result = await handler(p?.payload ?? {}, ctx);
       return { result: result ?? {} };
     };
-    routes["plugin.call.detailEvent"] = async (p) => {
+    routes[Routes.PluginCall.DetailEvent] = async (p) => {
       return { state: p?.payload ?? {} };
     };
     for (const [action, handler] of this.#handlers) {
-      const route = `plugin.call.${action}`;
+      const route = pluginCallRoute(action);
       if (!routes[route]) {
         routes[route] = async (p) => {
           const ctx = extractContext(p);

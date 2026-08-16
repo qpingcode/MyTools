@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 
 namespace MyTools.Host.Core.Security;
@@ -46,7 +46,8 @@ public readonly record struct TokenValidation(bool IsValid, string? Reason)
 public sealed class BootstrapTokenValidator
 {
     private readonly Func<DateTime> _clock;
-    private readonly Dictionary<string, BootstrapToken> _issued = new();
+    // Shared across plugin startups; Issue/Validate run on many threads at once.
+    private readonly ConcurrentDictionary<string, BootstrapToken> _issued = new();
 
     public BootstrapTokenValidator(Func<DateTime>? clock = null)
         => _clock = clock ?? (() => DateTime.UtcNow);
@@ -87,7 +88,7 @@ public sealed class BootstrapTokenValidator
 
         if (now > token.ExpiresAt)
         {
-            _issued.Remove(presentedValue);
+            _issued.TryRemove(presentedValue, out _);
             return TokenValidation.Fail("token expired");
         }
         if (token.ExpectedPid != observed.Pid)
@@ -103,7 +104,11 @@ public sealed class BootstrapTokenValidator
             return TokenValidation.Fail("plugin/entry identity mismatch");
         }
 
-        _issued.Remove(presentedValue); // one-shot: consume on success
+        // one-shot: consume on success. TryRemove loses to a concurrent consumer.
+        if (!_issued.TryRemove(presentedValue, out _))
+        {
+            return TokenValidation.Fail("token value not recognized");
+        }
         return TokenValidation.Ok();
     }
 }

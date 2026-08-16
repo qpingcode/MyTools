@@ -29,13 +29,11 @@ public readonly record struct RouteClassification(bool IsLegal, RouteNamespace N
 /// </summary>
 public static class RouteRules
 {
-    // Exact-match bus routes implemented in Phase 1.
     private static readonly HashSet<string> ActiveBusRoutes =
-        ["bus.handshake", "bus.ping"];
+        [Routes.Bus.Handshake, Routes.Bus.Ping];
 
-    // Reserved route names — recognized but not implemented in Phase 1 (return RouteNotFound).
     private static readonly HashSet<string> ReservedBusRoutes =
-        ["bus.cancel", "bus.subscribe", "bus.unsubscribe"];
+        [Routes.Bus.Cancel, Routes.Bus.Subscribe, Routes.Bus.Unsubscribe];
 
     public static RouteClassification Classify(string route)
     {
@@ -44,25 +42,21 @@ public static class RouteRules
             return RouteClassification.NotFound(route);
         }
 
-        // Active bus routes.
         if (ActiveBusRoutes.Contains(route))
         {
             return RouteClassification.Legal(RouteNamespace.Bus);
         }
 
-        // Reserved bus routes: recognized but not implemented.
         if (ReservedBusRoutes.Contains(route))
         {
             return RouteClassification.NotFound(route);
         }
 
-        // Reserved diagnostics.* namespace.
-        if (route.StartsWith("diagnostics.", StringComparison.Ordinal))
+        if (Routes.IsDiagnostics(route))
         {
             return RouteClassification.NotFound(route);
         }
 
-        // Namespaced business routes: must be prefix + '.' + at least one segment.
         var ns = ClassifyNamespace(route);
         return ns == RouteNamespace.Unknown
             ? RouteClassification.NotFound(route)
@@ -71,13 +65,10 @@ public static class RouteRules
 
     private static RouteNamespace ClassifyNamespace(string route)
     {
-        if (TryPrefix(route, "plugin.call.")) return RouteNamespace.PluginCall;
-        if (TryPrefix(route, "host.call.")) return RouteNamespace.HostCall;
-        if (TryPrefix(route, "plugin.event.")) return RouteNamespace.PluginEvent;
-        if (TryPrefix(route, "host.event.")) return RouteNamespace.HostEvent;
+        if (Routes.HasSegmentAfterPrefix(route, Routes.Prefix.PluginCall)) return RouteNamespace.PluginCall;
+        if (Routes.HasSegmentAfterPrefix(route, Routes.Prefix.HostCall)) return RouteNamespace.HostCall;
+        if (Routes.HasSegmentAfterPrefix(route, Routes.Prefix.PluginEvent)) return RouteNamespace.PluginEvent;
+        if (Routes.HasSegmentAfterPrefix(route, Routes.Prefix.HostEvent)) return RouteNamespace.HostEvent;
         return RouteNamespace.Unknown;
     }
-
-    private static bool TryPrefix(string route, string prefix)
-        => route.Length > prefix.Length && route.StartsWith(prefix, StringComparison.Ordinal);
 }

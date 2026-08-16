@@ -6,25 +6,84 @@
  *
  * Field names are camelCase on the wire (System.Text.Json camelCase policy on the C# side).
  * Null fields are omitted on the wire (WhenWritingNull).
+ *
+ * Runtime constants mirror MyTools.Protocol (MessageKindWire, Routes, EndpointIds,
+ * ProtocolVersion.CurrentWire). Do not re-hardcode those strings in SDK source.
  */
 
-export type MessageKind = "request" | "response" | "event";
+export const MessageKind = {
+  Request: "request",
+  Response: "response",
+  Event: "event",
+} as const;
+export type MessageKind = (typeof MessageKind)[keyof typeof MessageKind];
 
-export type ErrorCode =
-  | "ProtocolMismatch"
-  | "HandshakeFailed"
-  | "CapabilityNotDeclared"
-  | "CapabilityDenied"
-  | "InvalidPayload"
-  | "MessageTooLarge"
-  | "RouteNotFound"
-  | "RequestTimeout"
-  | "TooManyRequests"
-  | "TransportDisconnected"
-  | "PluginUnavailable"
-  | "InternalError"
-  | "Cancelled"
-  | "RateLimited";
+export const ErrorCode = {
+  ProtocolMismatch: "ProtocolMismatch",
+  HandshakeFailed: "HandshakeFailed",
+  CapabilityNotDeclared: "CapabilityNotDeclared",
+  CapabilityDenied: "CapabilityDenied",
+  InvalidPayload: "InvalidPayload",
+  MessageTooLarge: "MessageTooLarge",
+  RouteNotFound: "RouteNotFound",
+  RequestTimeout: "RequestTimeout",
+  TooManyRequests: "TooManyRequests",
+  TransportDisconnected: "TransportDisconnected",
+  PluginUnavailable: "PluginUnavailable",
+  InternalError: "InternalError",
+  Cancelled: "Cancelled",
+  RateLimited: "RateLimited",
+} as const;
+export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
+
+export const ProtocolVersion = "3.0";
+
+export const EndpointIds = {
+  NodeMain: "node-main",
+  Host: "host",
+} as const;
+
+export const Routes = {
+  Bus: {
+    Handshake: "bus.handshake",
+    Ping: "bus.ping",
+    Cancel: "bus.cancel",
+    Subscribe: "bus.subscribe",
+    Unsubscribe: "bus.unsubscribe",
+  },
+  Prefix: {
+    PluginCall: "plugin.call.",
+    HostCall: "host.call.",
+    PluginEvent: "plugin.event.",
+    HostEvent: "host.event.",
+    Diagnostics: "diagnostics.",
+  },
+  PluginCall: {
+    Initialize: "plugin.call.initialize",
+    Search: "plugin.call.search",
+    InvokeAction: "plugin.call.invokeAction",
+    DetailEvent: "plugin.call.detailEvent",
+    DetailCall: "plugin.call.detailCall",
+  },
+} as const;
+
+export function pluginCallRoute(method: string): string {
+  return method.startsWith(Routes.Prefix.PluginCall)
+    ? method
+    : `${Routes.Prefix.PluginCall}${method}`;
+}
+
+export function hostCallRoute(method: string): string {
+  return method.startsWith(Routes.Prefix.HostCall)
+    ? method
+    : `${Routes.Prefix.HostCall}${method}`;
+}
+
+export function pluginEventRoute(subjectId: string): string {
+  return subjectId.startsWith(Routes.Prefix.PluginEvent)
+    ? subjectId
+    : `${Routes.Prefix.PluginEvent}${subjectId}`;
+}
 
 export interface BusError {
   code: ErrorCode;
@@ -38,7 +97,7 @@ export interface BusError {
  * required; the optional ones are omitted on the wire when null.
  */
 export interface Envelope {
-  version: string; // e.g. "3.0"
+  version: string; // e.g. ProtocolVersion
   id: string;
   correlationId?: string | null;
   traceId: string;

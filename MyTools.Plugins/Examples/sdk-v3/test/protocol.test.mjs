@@ -12,6 +12,10 @@ import { dirname, join } from "node:path";
 import {
   canonicalStringify,
   canonicalize,
+  MessageKind,
+  ProtocolVersion,
+  Routes,
+  EndpointIds,
 } from "../src/protocol.ts";
 import { encodeFrame, encodeFrameString, MAX_FRAME_BYTES } from "../src/framing.ts";
 import { FrameDecoder } from "../src/framing.ts";
@@ -33,6 +37,18 @@ for (const file of readdirSync(fixturesDir).filter((f) => f.endsWith(".json"))) 
 test("canonicalStringify omits null-valued keys", () => {
   const out = canonicalStringify({ a: 1, b: null, c: "x" });
   assert.equal(out, JSON.stringify({ a: 1, c: "x" }));
+});
+
+test("runtime constants match the frozen wire vocabulary", () => {
+  assert.equal(MessageKind.Request, "request");
+  assert.equal(MessageKind.Response, "response");
+  assert.equal(MessageKind.Event, "event");
+  assert.equal(ProtocolVersion, "3.0");
+  assert.equal(EndpointIds.NodeMain, "node-main");
+  assert.equal(Routes.Bus.Ping, "bus.ping");
+  assert.equal(Routes.Bus.Handshake, "bus.handshake");
+  assert.equal(Routes.PluginCall.Search, "plugin.call.search");
+  assert.equal(Routes.PluginCall.DetailCall, "plugin.call.detailCall");
 });
 
 // --- frame encode/decode ---

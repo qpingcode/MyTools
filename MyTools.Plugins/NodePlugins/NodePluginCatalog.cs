@@ -112,6 +112,7 @@ public sealed class NodePluginCatalog
                     DetailEntryFullPath = detailEntryFullPath,
                     Keywords = entryModel.Keywords ?? [],
                     HotKey = entryModel.HotKey,
+                    Capabilities = entryModel.Capabilities ?? [],
                     DefaultLocale = fileModel.I18n?.DefaultLocale ?? "en-US",
                     CatalogFullPath = catalogFullPath,
                     LocalesDirectoryFullPath = localesDirectoryFullPath,
@@ -202,6 +203,7 @@ public sealed class NodePluginCatalog
         public string? Entry { get; init; }
         public List<string>? Keywords { get; init; }
         public string? HotKey { get; init; }
+        public List<string>? Capabilities { get; init; }
         public DetailManifestFile? Detail { get; init; }
     }
 

@@ -8,6 +8,7 @@ using MyTools.Protocol.Errors;
 using MyTools.Protocol.Handshake;
 using MyTools.Protocol.Identity;
 using MyTools.Protocol.Messages;
+using MyTools.Protocol.Routing;
 using MyTools.Protocol.Versioning;
 
 namespace MyTools.Host.Core.Sessions;
@@ -73,9 +74,9 @@ public static class PipeHandshake
             SessionId = sessionId,
             PluginId = expectedIdentity.PluginId,
             EntryId = expectedIdentity.EntryId,
-            EndpointId = "host",
+            EndpointId = EndpointIds.Host,
             Kind = MessageKind.Response,
-            Route = "bus.handshake",
+            Route = Routes.Bus.Handshake,
             Payload = JsonSerializer.SerializeToNode(successPayload, ProtocolJsonOptions.Default),
         };
         await transport.SendAsync(reply, cancellationToken);
@@ -89,7 +90,7 @@ public static class PipeHandshake
 
         void OnMessage(Envelope env)
         {
-            if (env.Kind == MessageKind.Request && env.Route == "bus.handshake")
+            if (env.Kind == MessageKind.Request && Routes.IsHandshake(env.Route))
             {
                 tcs.TrySetResult(env);
             }
@@ -128,9 +129,9 @@ public static class PipeHandshake
             SessionId = request.SessionId,
             PluginId = request.PluginId,
             EntryId = request.EntryId,
-            EndpointId = "host",
+            EndpointId = EndpointIds.Host,
             Kind = MessageKind.Response,
-            Route = "bus.handshake",
+            Route = Routes.Bus.Handshake,
             Error = error,
         };
 }
