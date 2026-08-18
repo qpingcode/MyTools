@@ -42,17 +42,42 @@ public class Execute : IAction
     protected virtual async Task ExecuteCoreAsync(string filePath, string args, bool runAsAdmin)
     {
         var workDir = GetWorkDirectory(filePath);
-        var startInfo = GetProcessStartInfo(filePath, runAsAdmin, workDir);
+        if (TryShellLaunch(filePath, args, runAsAdmin, workDir))
+        {
+            return;
+        }
+        Console.WriteLine("[shell-launch] fallback Process.Start file={0} runAsAdmin={1}", filePath, runAsAdmin);
+
+        var startInfo = GetProcessStartInfo(filePath, runAsAdmin, workDir, args);
 
         try
         {
             var process = Process.Start(startInfo);
             process?.Dispose();
+            Console.WriteLine("[shell-launch] fallback Process.Start success file={0}", filePath);
         }
         catch(Exception)
         {
+            Console.WriteLine("[shell-launch] fallback Process.Start failed, trying FileLinkOpenHelper file={0}", filePath);
             await Task.Run(() => FileLinkOpenHelper.OpenLink(filePath, runAsAdmin));
+            Console.WriteLine("[shell-launch] FileLinkOpenHelper success file={0}", filePath);
         }
+    }
+
+    private static bool TryShellLaunch(string filePath, string args, bool runAsAdmin, string workDir)
+    {
+        if (Path.GetExtension(filePath).Equals(".ps1", StringComparison.CurrentCultureIgnoreCase))
+        {
+            var powershellArgs = $"-ExecutionPolicy Bypass -File \"{filePath}\"";
+            if (!string.IsNullOrWhiteSpace(args))
+            {
+                powershellArgs += " " + args;
+            }
+
+            return ExplorerShellLauncher.TryLaunch("powershell.exe", powershellArgs, workDir, runAsAdmin, out _);
+        }
+
+        return ExplorerShellLauncher.TryLaunch(filePath, args, workDir, runAsAdmin, out _);
     }
     
     static string GetWorkDirectory(string filePath)
@@ -84,7 +109,7 @@ public class Execute : IAction
      * NOTE:
      * 1. rider debug模式下, 不会出现Mytools关闭导致子进程关闭的问题, 但是普通模式下会出现
      */
-    static ProcessStartInfo GetProcessStartInfo(string filePath, bool runAsAdmin = false, string workDir = "")
+    static ProcessStartInfo GetProcessStartInfo(string filePath, bool runAsAdmin = false, string workDir = "", string args = "")
     {
         var ext = Path.GetExtension(filePath);
         
@@ -93,7 +118,9 @@ public class Execute : IAction
             var startInfo = new ProcessStartInfo
             {
                 FileName = "powershell.exe",
-                Arguments = $"-ExecutionPolicy Bypass -File \"{filePath}\"",
+                Arguments = string.IsNullOrWhiteSpace(args)
+                    ? $"-ExecutionPolicy Bypass -File \"{filePath}\""
+                    : $"-ExecutionPolicy Bypass -File \"{filePath}\" {args}",
                 UseShellExecute = true,
                 Verb = runAsAdmin ? "runas" : "open",
                 CreateNoWindow = false,
@@ -105,6 +132,7 @@ public class Execute : IAction
         return new ProcessStartInfo
         {
             FileName = filePath,
+            Arguments = args,
             UseShellExecute = true,
             Verb = runAsAdmin? "runas" : "open",
             WorkingDirectory = workDir
