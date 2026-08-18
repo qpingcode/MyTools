@@ -1,5 +1,5 @@
 ---
-name: node-plugin
+name: create-plugin
 description: Develop a MyTools Node plugin (backend + optional WebView2 detail page) on the v3 named-pipe message bus. Use whenever the user wants to create, scaffold, or edit a MyTools plugin. Covers plugin.json, @qping/plugin-bus, backend handlers, list or web UI, host.call capabilities, i18n, and theming.
 ---
 
