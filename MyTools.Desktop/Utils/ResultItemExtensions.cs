@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using MyTools.Common.DependencyInjection;
 using MyTools.Common.Localization;
 using MyTools.Desktop.Components;
+using MyTools.Desktop.Utils;
 using MyTools.Plugins;
 
 namespace MyTools.Common;
@@ -26,6 +27,12 @@ public static class ResultItemExtensions
     public static async Task ExecuteAction(this ResultItem item, IActionWithCommand action)
     {
         var actionResult = await action.ExecuteAsync(item.Args).ConfigureAwait(false);
+        Console.WriteLine(
+            "[action-result] action={0} success={1} actionType={2} message={3}",
+            action.Name,
+            actionResult.Success,
+            actionResult.ActionType,
+            actionResult.Message);
         if (actionResult.Success)
         {
             var history = ServiceLocator.GetRequiredService<SearchHistoryDbHelper>();
@@ -44,7 +51,7 @@ public static class ResultItemExtensions
         {
             var localization = ServiceLocator.GetRequiredService<ILocalizationService>();
             var message = actionResult.LocalizedMessage?.Resolve(localization) ?? actionResult.Message;
-            MessageBox.Show(
+            TopmostMessageBox.Show(
                 localization.GetCaption(
                     "Action.ExecuteFailed.Message",
                     "Cannot execute {{action}}: {{message}}",
