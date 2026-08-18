@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MyTools.Common;
+using MyTools.Common.Config;
 using MyTools.Host.Core.Bus;
 using MyTools.Host.Core.Capabilities;
 using MyTools.Host.Core.Sessions;
@@ -17,7 +18,8 @@ public static class PluginServiceCollectionExtensions
         services.AddSingleton(sp => new MessageBus(
             sp.GetRequiredService<CapabilityGateway>(),
             logger: sp.GetService<ILoggerFactory>()?.CreateLogger("MyTools.Host.Core.Bus.MessageBus")));
-        services.AddSingleton<INodeProcessControllerFactory, Host.Transports.Process.NodeProcessControllerFactory>();
+        services.AddSingleton<INodeProcessControllerFactory>(_ =>
+            new Host.Transports.Process.NodeProcessControllerFactory(ConfigPath.PluginsDataPath));
         services.AddSingleton(sp => new PluginSessionManager(
             sp.GetRequiredService<MessageBus>(),
             sp.GetRequiredService<CapabilityGateway>(),

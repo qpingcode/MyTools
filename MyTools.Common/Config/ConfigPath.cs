@@ -4,6 +4,9 @@ public static class ConfigPath
 {
     public static readonly string Base = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MyTools.Desktop");
+
+    public static readonly string PluginsDataPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MyTools.Desktop", "pluginsData");
     
     public static readonly string DatabasePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MyTools.Desktop", "Database");
