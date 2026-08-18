@@ -138,14 +138,20 @@ public partial class LeftRightLayoutViewModel : ObservableObject, ISwitchableVie
         {
             if (IsCtrlPressed)
             {
-                isHandled = true;
                 var command = key == Key.Enter ? "Ctrl+Enter" : $"Ctrl+{key}";
-                ExecuteAction(command);
+                if (CanExecuteCommand(command))
+                {
+                    isHandled = true;
+                    ExecuteAction(command);
+                }
             }
             else if (key == Key.Enter)
             {
-                isHandled = true;
-                ExecuteAction(null);
+                if (CanExecuteCommand(Commands.DefaultCommand))
+                {
+                    isHandled = true;
+                    ExecuteAction(Commands.DefaultCommand);
+                }
             }
         }
         
@@ -158,6 +164,11 @@ public partial class LeftRightLayoutViewModel : ObservableObject, ISwitchableVie
         {
            await SelectedResult.ExecuteAction(command);
         }
+    }
+
+    private bool CanExecuteCommand(string command)
+    {
+        return SelectedResult?.AllowedActions.Any(a => a.Command == command) == true;
     }
 
     public bool HandleKeyUp(Key key)
