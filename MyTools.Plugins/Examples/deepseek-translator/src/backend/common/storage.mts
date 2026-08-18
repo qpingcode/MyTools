@@ -1,7 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 
-export const DATA_DIR = process.env.MYTOOLS_TRANSLATOR_DATA_DIR || path.join(process.cwd(), "data");
+export const DATA_DIR =
+  normalizeText(process.env.MYTOOLS_PLUGIN_DATA_DIR) ||
+  normalizeText(process.env.MYTOOLS_TRANSLATOR_DATA_DIR) ||
+  path.join(process.cwd(), "data");
 export const CACHE_PATH = path.join(DATA_DIR, "translation-cache.json");
 export const FAVORITES_PATH = path.join(DATA_DIR, "favorites.json");
 export const SETTINGS_PATH = path.join(DATA_DIR, "settings.json");

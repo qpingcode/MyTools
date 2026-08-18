@@ -8,6 +8,13 @@ namespace MyTools.Host.Transports.Process;
 /// </summary>
 public sealed class NodeProcessControllerFactory : INodeProcessControllerFactory
 {
+    private readonly string _pluginsDataRoot;
+
+    public NodeProcessControllerFactory(string pluginsDataRoot)
+    {
+        _pluginsDataRoot = pluginsDataRoot;
+    }
+
     public INodeProcessController Create(string nodeExePath, string nodeEntryFullPath)
-        => new NodeProcessController(nodeExePath, nodeEntryFullPath);
+        => new NodeProcessController(nodeExePath, nodeEntryFullPath, _pluginsDataRoot);
 }

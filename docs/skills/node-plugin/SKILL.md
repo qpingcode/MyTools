@@ -193,6 +193,7 @@ plugin
 - `handle(name, fn)` 给详情页 `bus.call(name)` 用。`context` 有 `action / itemId / query / locale / fallbackLocale / theme`（由宿主注入，页面不必带）。
 - 纯前端工具（如 json-formatter）可以只有 `initialize/search/action`，不注册 `handle`。
 - 环境变量从 `process.env` 读。`start()` 连宿主 Named Pipe，不要自己读 stdin。
+- 数据落盘优先用宿主注入目录：`MYTOOLS_PLUGIN_DATA_DIR`（单插件目录，例如 `%APPDATA%\MyTools.Desktop\pluginsData\deepseek-translator`），其次可读 `MYTOOLS_PLUGINS_DATA_DIR`（所有插件数据根目录）。避免把数据写到 `process.cwd()`。
 
 需要宿主能力时（照 `settings`）：页面 `bus.call("getConfiguration")` → 后端 `handle` → `plugin.hostCall("getConfiguration")`。页面不能直接发 `host.call.*`。manifest 必须声明对应 capability（`getConfiguration` 等旧方法名折到 `configuration.write`）。
 

@@ -47,7 +47,7 @@ public class NodeProcessControllerTest
     public async Task Start_SpawnsNode_Handshakes_RoundTripsBusPing()
     {
         var entry = SdkV3EntryPath();
-        var controller = new NodeProcessController("node", entry);
+        var controller = new NodeProcessController("node", entry, TestPluginsDataRoot());
         var tokens = new BootstrapTokenValidator();
         var ids = new GuidIdGenerator();
         const string pluginId = "fixture";
@@ -93,14 +93,22 @@ public class NodeProcessControllerTest
     [Test]
     public void Stop_WhenNotStarted_ShouldNotThrow()
     {
-        var controller = new NodeProcessController("node", "placeholder.mjs");
+        var controller = new NodeProcessController("node", "placeholder.mjs", TestPluginsDataRoot());
         Assert.DoesNotThrowAsync(async () => await controller.StopAsync());
     }
 
     [Test]
     public void Transport_BeforeStart_ShouldBeNull()
     {
-        var controller = new NodeProcessController("node", "placeholder.mjs");
+        var controller = new NodeProcessController("node", "placeholder.mjs", TestPluginsDataRoot());
         Assert.That(controller.Transport, Is.Null);
+    }
+
+    private static string TestPluginsDataRoot()
+    {
+        return System.IO.Path.Combine(
+            System.IO.Path.GetTempPath(),
+            "MyTools.Host.Transports.Test",
+            "pluginsData");
     }
 }

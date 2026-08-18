@@ -21,14 +21,16 @@ public sealed class NodeProcessController : INodeProcessController
 {
     private readonly string _nodeExePath;
     private readonly string _nodeEntryFullPath;
+    private readonly string _pluginsDataRoot;
     private System.Diagnostics.Process? _process;
     private ProcessTreeJob? _job;
     private NamedPipeTransport? _transport;
 
-    public NodeProcessController(string nodeExePath, string nodeEntryFullPath)
+    public NodeProcessController(string nodeExePath, string nodeEntryFullPath, string pluginsDataRoot)
     {
         _nodeExePath = nodeExePath;
         _nodeEntryFullPath = nodeEntryFullPath;
+        _pluginsDataRoot = Path.GetFullPath(pluginsDataRoot);
     }
 
     public IMessageTransport? Transport => _transport;
@@ -47,6 +49,8 @@ public sealed class NodeProcessController : INodeProcessController
         var connectTask = _transport.ConnectAsync(cancellationToken);
 
         _job = new ProcessTreeJob();
+        var pluginDataDir = Path.Combine(_pluginsDataRoot, SanitizePathSegment(pluginId));
+        Directory.CreateDirectory(pluginDataDir);
 
         var psi = new ProcessStartInfo
         {
@@ -61,6 +65,8 @@ public sealed class NodeProcessController : INodeProcessController
 
         // Log stderr for debugging Node startup failures.
         psi.Environment["MYTOOLS_V3"] = "1";
+        psi.Environment["MYTOOLS_PLUGINS_DATA_DIR"] = _pluginsDataRoot;
+        psi.Environment["MYTOOLS_PLUGIN_DATA_DIR"] = pluginDataDir;
 
         _process = System.Diagnostics.Process.Start(psi)
             ?? throw new System.Exception($"failed to start node: {_nodeExePath}");
@@ -118,5 +124,21 @@ public sealed class NodeProcessController : INodeProcessController
         _process = null;
         _transport = null;
         ObservedIdentity = null;
+    }
+
+    private static string SanitizePathSegment(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "_plugin";
+        }
+
+        var sanitized = value;
+        foreach (var invalid in Path.GetInvalidFileNameChars())
+        {
+            sanitized = sanitized.Replace(invalid, '_');
+        }
+
+        return sanitized;
     }
 }
