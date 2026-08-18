@@ -30,7 +30,8 @@ public class RunCommandAction : IAction
         {
             var config = JsonSerializer.Deserialize<CommandSpec>(stringParam.GetValue(), JsonOptions);
 
-            ProcessStartInfo processStartInfo;
+            string command;
+            string commandArgs;
             var workDirectory = config?.WorkingDirectory
                 ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             if (config?.IsBashScript == true)
@@ -39,30 +40,44 @@ public class RunCommandAction : IAction
                 var tempFilePathWithExtension = Path.ChangeExtension(tempFilePath, ".bat");
                 await File.WriteAllLinesAsync(tempFilePathWithExtension, config.Scripts ?? []);
 
-                processStartInfo = new ProcessStartInfo
-                {
-                    FileName = "cmd.exe",
-                    Arguments = $"/k \"{tempFilePathWithExtension}\"",
-                    UseShellExecute = true,
-                    Verb = config.RunAsAdmin ? "runas" : null,
-                    WorkingDirectory = workDirectory
-                };
+                command = "cmd.exe";
+                commandArgs = $"/k \"{tempFilePathWithExtension}\"";
             }
             else
             {
-                processStartInfo = new ProcessStartInfo
-                {
-                    FileName = config?.Command,
-                    Arguments = config?.Args,
-                    UseShellExecute = true,
-                    Verb = config?.RunAsAdmin == true ? "runas" : null,
-                    WorkingDirectory = workDirectory
-                };
+                command = config?.Command ?? string.Empty;
+                commandArgs = config?.Args ?? string.Empty;
             }
+
+            if (string.IsNullOrWhiteSpace(command))
+            {
+                return ActionResult.CreateFailure("Command is empty");
+            }
+
+            if (ExplorerShellLauncher.TryLaunch(
+                    command,
+                    commandArgs,
+                    workDirectory,
+                    config?.RunAsAdmin == true,
+                    out _))
+            {
+                return ActionResult.CreateSuccess("Command executed");
+            }
+            Console.WriteLine("[shell-launch] RunCommandAction fallback Process.Start command={0}", command);
+
+            var processStartInfo = new ProcessStartInfo
+            {
+                FileName = command,
+                Arguments = commandArgs,
+                UseShellExecute = true,
+                Verb = config?.RunAsAdmin == true ? "runas" : null,
+                WorkingDirectory = workDirectory
+            };
 
             using var process = new Process();
             process.StartInfo = processStartInfo;
             process.Start();
+            Console.WriteLine("[shell-launch] RunCommandAction fallback Process.Start success command={0}", command);
 
             return ActionResult.CreateSuccess("Command executed");
         }
