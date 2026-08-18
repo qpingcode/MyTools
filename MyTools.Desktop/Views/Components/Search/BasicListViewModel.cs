@@ -151,14 +151,20 @@ public partial class BasicListViewModel : ObservableObject, ISwitchableViewModel
         {
             if (IsCtrlPressed)
             {
-                isHandled = true;
                 var command = key == Key.Enter ? "Ctrl+Enter" : $"Ctrl+{key}";
-                ExecuteAction(command);
+                if (CanExecuteCommand(command))
+                {
+                    isHandled = true;
+                    ExecuteAction(command);
+                }
             }
             else if(key == Key.Enter)
             {
-                isHandled = true;
-                ExecuteAction(null);
+                if (CanExecuteCommand(Commands.DefaultCommand))
+                {
+                    isHandled = true;
+                    ExecuteAction(Commands.DefaultCommand);
+                }
             }
         }
     
@@ -216,6 +222,11 @@ public partial class BasicListViewModel : ObservableObject, ISwitchableViewModel
         {
             await SelectedResult.ExecuteAction(command);
         }
+    }
+
+    private bool CanExecuteCommand(string command)
+    {
+        return SelectedResult?.AllowedActions.Any(a => a.Command == command) == true;
     }
     
     partial void OnSelectedResultChanged(ResultItem? value)
