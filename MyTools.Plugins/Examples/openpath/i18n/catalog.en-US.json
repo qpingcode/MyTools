@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "scope": "plugin:openpath",
+  "pluginId": "openpath",
+  "sourceLocale": "en-US",
+  "entries": [
+    {
+      "key": "Plugin.OpenPath.Name",
+      "defaultValue": "OpenPath",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "从剪贴板打开 IDE"
+      },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.OpenPath.Action.Open",
+      "defaultValue": "Open",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "打开"
+      },
+      "sourceHash": "sha256:placeholder"
+    }
+  ]
+}

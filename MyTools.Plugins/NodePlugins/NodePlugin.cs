@@ -114,6 +114,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
     public bool IsGlobalSearchPlugin { get; set; }
 
     public IReadOnlyList<string> Keywords => manifest.Keywords;
+    public IReadOnlyList<string> Capabilities => manifest.Capabilities;
 
     public string PrimaryKeyword => manifest.Keywords.FirstOrDefault() ?? string.Empty;
 

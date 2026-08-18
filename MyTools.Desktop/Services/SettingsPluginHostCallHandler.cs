@@ -20,7 +20,7 @@ namespace MyTools.Desktop.Services;
 /// 为 settings 节点插件提供宿主能力：读取和保存应用配置。
 /// 通过 hostCall 协议被 Node 后端调用。
 /// </summary>
-public sealed class SettingsPluginHostCallHandler
+public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
 {
     private readonly IConfigurationRegistry registry;
     private readonly ThemeService themeService;
@@ -44,6 +44,8 @@ public sealed class SettingsPluginHostCallHandler
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
+
+    public string Capability => "configuration.write";
 
     public SettingsPluginHostCallHandler(
         IConfigurationRegistry registry,
