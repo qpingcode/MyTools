@@ -19,6 +19,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
     private readonly ILocalizationService localizationService;
     private readonly IThemeService themeService;
     private PluginLocalizationService? pluginLocalization;
+    private IReadOnlyList<string>? effectiveKeywords;
 
     /// <summary>
     /// 插件级别的翻译服务，查询此插件自己的 locale 文件。
@@ -116,7 +117,15 @@ public sealed class NodePlugin : IPlugin, IDisposable
     public IReadOnlyList<string> Keywords => manifest.Keywords;
     public IReadOnlyList<string> Capabilities => manifest.Capabilities;
 
-    public string PrimaryKeyword => manifest.Keywords.FirstOrDefault() ?? string.Empty;
+    public string PrimaryKeyword => (effectiveKeywords ?? manifest.Keywords).FirstOrDefault() ?? string.Empty;
+
+    public void SetEffectiveKeywords(IEnumerable<string> keywords)
+    {
+        ArgumentNullException.ThrowIfNull(keywords);
+        effectiveKeywords = keywords
+            .Where(keyword => !string.IsNullOrWhiteSpace(keyword))
+            .ToArray();
+    }
 
     public string Id => manifest.Id;
 

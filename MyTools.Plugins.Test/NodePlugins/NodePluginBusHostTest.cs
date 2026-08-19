@@ -39,7 +39,7 @@ public class NodePluginBusHostTest
         EntryFullPath = "C:/fake/settings/backend/index.mjs",
         Keywords = ["settings"],
         HotKey = "Alt+S",
-        Capabilities = ["configuration.write"],
+        Capabilities = ["configuration.read"],
     };
 
     [Test]
@@ -101,7 +101,7 @@ public class NodePluginBusHostTest
         {
             Version = ProtocolVersion.Current, Id = "hc-1", TraceId = "hc-1", SessionId = sessionId,
             PluginId = "forged", EntryId = "forged", EndpointId = "forged",
-            Kind = MessageKind.Request, Route = "host.call.getConfiguration", TimeoutMs = 5000,
+            Kind = MessageKind.Request, Route = "host.call.configuration.read", TimeoutMs = 5000,
             Payload = JsonNode.Parse("{}"),
         });
 
@@ -114,7 +114,7 @@ public class NodePluginBusHostTest
         }
 
         Assert.That(reply, Is.Not.Null, "host must reply to host.call on the node transport");
-        Assert.That(reply!.Route, Is.EqualTo("host.call.getConfiguration"));
+        Assert.That(reply!.Route, Is.EqualTo("host.call.configuration.read"));
         Assert.That(reply.Error, Is.Null);
         Assert.That(reply.PluginId, Is.EqualTo("settings"), "inbound identity must be stamped");
         Assert.That(reply.Payload?.ToJsonString(), Does.Contain("light"));
@@ -132,7 +132,7 @@ public class NodePluginBusHostTest
         {
             Version = ProtocolVersion.Current, Id = "hc-deny", TraceId = "hc-deny", SessionId = sessionId,
             PluginId = "settings", EntryId = "main", EndpointId = "node-main",
-            Kind = MessageKind.Request, Route = "host.call.getConfiguration", TimeoutMs = 5000,
+            Kind = MessageKind.Request, Route = "host.call.configuration.read", TimeoutMs = 5000,
             Payload = JsonNode.Parse("{}"),
         });
 
@@ -170,7 +170,7 @@ public class NodePluginBusHostTest
             EntryFullPath = "C:/fake/settings/backend/index.mjs",
             Keywords = ["settings"],
             HotKey = "Alt+S",
-            Capabilities = capabilities ?? ["configuration.write"],
+            Capabilities = capabilities ?? ["configuration.read"],
         };
         var host = new NodePluginBusHost(m, manager, bus, NullLogger<NodePluginBusHost>.Instance);
 

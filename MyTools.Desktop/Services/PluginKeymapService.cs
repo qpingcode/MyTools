@@ -22,12 +22,14 @@ public sealed class PluginKeymapService
         foreach (var plugin in allPlugins.OfType<NodePlugin>())
         {
             keywordRegistry.UnregisterPlugin(plugin);
+            var keywords = overrideProvider.GetKeywords(plugin.PluginId) ?? plugin.Keywords.ToList();
+            plugin.SetEffectiveKeywords(keywords);
+
             if (!plugin.IsEnabled)
             {
                 continue;
             }
 
-            var keywords = overrideProvider.GetKeywords(plugin.PluginId) ?? plugin.Keywords.ToList();
             foreach (var keyword in keywords.Where(keyword => !string.IsNullOrWhiteSpace(keyword)))
             {
                 keywordRegistry.Register(keyword, plugin);
