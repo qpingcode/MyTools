@@ -92,5 +92,13 @@
   "Plugin.Settings.CommandRunner.WorkingDirectory": "工作目录",
   "Plugin.Settings.CommandRunner.RunAsAdmin": "以管理员运行",
   "Plugin.Settings.CommandRunner.Apply": "应用",
-  "Plugin.Settings.CommandRunner.Saved": "命令已保存。"
+  "Plugin.Settings.CommandRunner.Saved": "命令已保存。",
+  "Plugin.Settings.Table.Search": "搜索",
+  "Plugin.Settings.Table.Add": "新增",
+  "Plugin.Settings.Table.Edit": "编辑",
+  "Plugin.Settings.Table.Delete": "删除",
+  "Plugin.Settings.Table.Empty": "暂无数据",
+  "Plugin.Settings.Table.Apply": "应用",
+  "Plugin.Settings.Table.Yes": "是",
+  "Plugin.Settings.Table.No": "否"
 }

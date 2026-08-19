@@ -27,6 +27,7 @@ public sealed class CategoryDto
     public string Key { get; init; } = "";
     public string Name { get; init; } = "";
     public string? Description { get; init; }
+    public string? Icon { get; init; }
     public bool IsSelectable { get; init; }
     public List<CategoryDto> Children { get; init; } = new();
     public List<SettingDto> Settings { get; init; } = new();
@@ -41,6 +42,23 @@ public sealed class SettingDto
     public string? CurrentValue { get; init; }
     public string? DefaultValue { get; init; }
     public bool RequiresRestart { get; init; }
+    public string? UiHint { get; init; }
+    public SettingSchemaDto? Schema { get; init; }
+}
+
+public sealed class SettingSchemaDto
+{
+    public List<SettingSchemaPropertyDto> Properties { get; init; } = [];
+}
+
+public sealed class SettingSchemaPropertyDto
+{
+    public string Key { get; init; } = "";
+    public string Type { get; init; } = "";
+    public string Title { get; init; } = "";
+    public string? UiHint { get; init; }
+    public string? DefaultValue { get; init; }
+    public bool Hidden { get; init; }
 }
 
 public sealed class OptionDto

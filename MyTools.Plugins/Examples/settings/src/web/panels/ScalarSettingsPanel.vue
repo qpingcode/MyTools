@@ -2,6 +2,8 @@
 import { computed, reactive } from "vue";
 import HighlightText from "../components/HighlightText.vue";
 import HotKeyRecorder from "../components/HotKeyRecorder.vue";
+import ArraySettingTable from "../components/ArraySettingTable.vue";
+import SettingField from "../components/SettingField.vue";
 import { bus } from "../bus";
 import { t } from "../i18n";
 import { categorySelfMatches, currentCategory, markSettingDirty, store } from "../store";
@@ -16,6 +18,48 @@ const pathDraft = reactive<Record<string, string>>({});
 type PathMode = "file" | "fileOrDirectory";
 type ValidatePathResult = { valid?: boolean; message?: string };
 type PickPathResult = { cancelled?: boolean; path?: string };
+
+function isArraySetting(setting: Setting): boolean {
+    return setting.valueType === "Array";
+}
+
+function usesSchemaControl(setting: Setting): boolean {
+    return !!setting.uiHint && setting.valueType !== "Language"
+        && setting.valueType !== "Theme"
+        && setting.valueType !== "LogLevel"
+        && setting.valueType !== "HotKey"
+        && !isPathSetting(setting);
+}
+
+function fieldType(setting: Setting): string {
+    const valueType = setting.valueType.toLowerCase();
+    if (valueType === "integer") return "int";
+    if (valueType === "bool") return "bool";
+    if (valueType === "double") return "double";
+    return "string";
+}
+
+function currentRawValue(setting: Setting): unknown {
+    const text = currentValue(setting);
+    if (setting.valueType === "Bool") return text === "True";
+    if (setting.valueType === "Integer") {
+        const parsed = Number.parseInt(text || "0", 10);
+        return Number.isFinite(parsed) ? parsed : 0;
+    }
+    if (setting.valueType === "Double") {
+        const parsed = Number.parseFloat(text || "0");
+        return Number.isFinite(parsed) ? parsed : 0;
+    }
+    return text;
+}
+
+function onField(setting: Setting, value: unknown): void {
+    if (setting.valueType === "Bool") {
+        onBool(setting, !!value);
+        return;
+    }
+    onText(setting, value == null ? "" : String(value));
+}
 
 function isPathSetting(setting: Setting): boolean {
     const fullPath = setting.fullPath.toLowerCase();
@@ -109,7 +153,12 @@ async function browsePath(setting: Setting): Promise<void> {
         {{ t("Plugin.Settings.NoSettings", "No settings in this category") }}
     </div>
     <div v-else class="scalar-list">
-        <div v-for="setting in category.settings" :key="setting.fullPath" class="setting-item">
+        <div
+            v-for="setting in category.settings"
+            :key="setting.fullPath"
+            class="setting-item"
+            :class="{ 'setting-item-block': isArraySetting(setting) }"
+        >
             <div class="setting-copy">
                 <div class="setting-title">
                     <HighlightText :text="setting.title" :query="store.searchQuery" />
@@ -118,8 +167,9 @@ async function browsePath(setting: Setting): Promise<void> {
                     <HighlightText :text="setting.description" :query="store.searchQuery" />
                 </div>
             </div>
-            <div class="setting-control">
-                <div v-if="setting.valueType === 'Bool'" class="control-bool">
+            <div class="setting-control" :class="{ 'setting-control-block': isArraySetting(setting) }">
+                <ArraySettingTable v-if="isArraySetting(setting)" :setting="setting" />
+                <div v-else-if="setting.valueType === 'Bool' && !setting.uiHint" class="control-bool">
                     <n-switch
                         :value="currentValue(setting) === 'True'"
                         @update:value="onBool(setting, !!$event)"
@@ -156,6 +206,13 @@ async function browsePath(setting: Setting): Promise<void> {
                     :default-hot-key="setting.defaultValue ?? ''"
                     exclude-search-hot-key
                     @update:model-value="onHotKey(setting, $event)"
+                />
+                <SettingField
+                    v-else-if="usesSchemaControl(setting)"
+                    :type="fieldType(setting)"
+                    :ui-hint="setting.uiHint"
+                    :model-value="currentRawValue(setting)"
+                    @update:model-value="onField(setting, $event)"
                 />
                 <n-input
                     v-else-if="setting.valueType === 'Integer' || setting.valueType === 'Double'"
@@ -197,6 +254,14 @@ async function browsePath(setting: Setting): Promise<void> {
     padding: 18px 0;
 }
 
+.setting-item-block {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+    max-width: 100%;
+}
+
 .setting-copy {
     min-width: 0;
     flex: 1;
@@ -222,6 +287,18 @@ async function browsePath(setting: Setting): Promise<void> {
     justify-content: flex-end;
     align-items: center;
     width: 280px;
+}
+
+.setting-control-block {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    justify-content: stretch;
+}
+
+.scalar-list {
+    min-width: 0;
+    max-width: 100%;
 }
 
 .control-select,

@@ -44,7 +44,12 @@ public enum SettingValueTypes
     /// 浮点数值
     /// </summary>
     Double,
-    
+
+    /// <summary>
+    /// JSON 数组（由 plugin.json schema 定义元素结构）
+    /// </summary>
+    Array,
+
     /// <summary>
     /// 自定义类型（需要序列化器）
     /// </summary>

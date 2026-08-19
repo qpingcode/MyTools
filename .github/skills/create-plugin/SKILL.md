@@ -7,7 +7,7 @@ description: Develop a MyTools Node plugin (backend + optional WebView2 detail p
 
 MyTools Node 插件 = 独立 Node 进程里的后端 + 可选的 WebView2 HTML 详情页。不写 `detail` 时宿主用 `search` 结果走原生列表。通信走 v3 消息总线（Named Pipe + WebView2 postMessage），协议版本 **3.0**。
 
-参考实现：`MyTools.Plugins/Examples/` 下的 `hello-search`（最小）、`json-formatter` / `xml-formatter`（页面自包含）、`settings`（`hostCall`）、`deepseek-chat`、`deepseek-translator`（多 entry）。SDK 源码：`MyTools.Plugins/Examples/sdk-v3`（包名 `@qping/plugin-bus`）。
+参考实现：`MyTools.Plugins/Examples/` 下的 `hello-search`（最小）、`json-formatter` / `xml-formatter`（页面自包含）、`settings`（`hostCall`）、`snippet`（`plugin.json` configuration + `configuration.readOwn`）、`deepseek-chat`、`deepseek-translator`（多 entry）。SDK 源码：`MyTools.Plugins/Examples/sdk-v3`（包名 `@qping/plugin-bus`）。
 
 ## 1. 目录结构
 
@@ -102,6 +102,7 @@ SDK 把旧式方法名映射到 v3 路由：`initialize` → `plugin.call.initia
   "id": "my-plugin",
   "version": "0.1.0",
   "protocolVersion": "3.0",
+  "icon": "mdi-star-outline",
   "i18n": {
     "defaultLocale": "en-US",
     "catalog": "i18n/catalog.en-US.json",
@@ -128,14 +129,19 @@ SDK 把旧式方法名映射到 v3 路由：`initialize` → `plugin.call.initia
 
 要点：
 
+- `version` 必须是符合 [semver](https://semver.org/) 的字符串，例如 `"0.1.0"`。 会展示到界面, 用户可以看到
 - `protocolVersion` 必须是 `"3.0"`，否则宿主拒绝加载。
 - `id` 稳定、kebab-case；配置路径 `Plugins.{id}.*`，i18n scope `plugin:{id}`。
 - 每个 entry 的 `name` 是 `{ key, defaultValue }`，不是字符串。
 - `capabilities` 必填（可 `[]`）。只有声明过的能力才能 `hostCall`；调用的方法名必须与声明的 capability 完全一致，例如读取配置使用 `plugin.hostCall("configuration.read")` 并声明 `"configuration.read"`。
+- 顶层 `icon` 是 Settings 侧栏图标（Material Design Icons 类名，如 `"mdi-message-text-outline"`）。省略时用默认齿轮变体图标。
+- 插件级设置写在顶层 `configuration`（不是 entry 上）。宿主启动时按 schema 注册到 Settings 侧栏，分类名为插件显示名，设置完整路径为 `{pluginId}.{key}`（例如 `snippet.Phrases`）。`key` 也可以写成 `snippet.Phrases` 或 `Plugins.Snippet.Phrases`，宿主会去掉前缀。
+- `type`：`string` / `bool` / `int` / `double` / `array`。`uiHint` 可选：string 默认 `input`（也可 `textarea` / `email` / `telephone`）；bool 默认 `checkbox`（也可 `radio` / `select`）；int/double 默认 `input-number`；array 默认 `table`，必须带 `schema.properties`。列 `type: "hidden"` 不显示，可用于时间戳等。默认值支持宏 `${DateTime.Now}`（新增行时解析）。
+- 需要读自己的设置时声明 `configuration.readOwn`。不要用 `configuration.read`（那是 settings 插件读全部设置）。
 - `detail` 可选。省略（或 `"detail": { "type": "list" }`）时宿主用 `search` 的结果走原生列表：关键词路由停留在列表，热键打开搜索主窗口并锁定该插件。
 - 需要自定义页面时再写 `"detail": { "type": "web", "entry": "web/index.html" }`。`hotKey`、`alias`、`search` 可选。
 - `search.global`：出现在**无关键词**的全局搜索结果中。省略或 `false` 时不参与全局搜索（opt-in，避免设置类插件污染每次搜索）。用户可在设置 → 插件列表的 **全局结果** 中覆盖此项。
-- 有非空 `alias` 就会注册 `alias + 查询串` 的插件级搜索；没有 alias 则只能靠全局搜索或热键进入。只有全局、没有别名时（如 `hello-search`）必须设 `"search": { "global": true }`。
+- 有非空 `alias` 就会注册 `alias + 查询串` 的插件级搜索；没有 alias 则只能靠全局搜索或热键进入。只有全局、没有别名时（如 `hello-sWearch`）必须设 `"search": { "global": true }`。
 - 没有顶层 `name` / `runtime`；旧的单 entry（无 `entries[]`）清单会被跳过。
 
 ## 4. 后端（Node）
@@ -190,6 +196,7 @@ plugin
 - `initialize` 的 params 是 `{ locale, fallbackLocale, messages, theme }`（`PluginInitializeParams`）。`theme` 为 `"light"` | `"dark"`，不含 CSS token。`mytoolsI18n.configure(params)` 装进 i18n。
 - `search` 的 params 是 `{ query, mode, locale, fallbackLocale, theme }`（`PluginSearchParams`）。`mode` 为 `"global"` | `"plugin"`：全局搜索（无关键词）为 `"global"`，用户输入 `keyword + 查询串` 进入该插件时为 `"plugin"`。返回 `{ items }`。
 - `action` 的 params 是 `{ itemId, actionId, query, locale, fallbackLocale, theme }`（`PluginActionParams`）。返回 `{ message, actionType, detail? }`。
+- 搜索 item 的 `actions[].kind`：`copy` 复制到剪贴板；`copyAndPaste` 复制并粘贴到之前聚焦的窗口（需提供 `copyText`）；`detail` 打开 Web 详情页；`run` / `kill` 见现有插件。
 - `handle(name, fn)` 给详情页 `bus.call(name)` 用。`context` 有 `action / itemId / query / locale / fallbackLocale / theme`（由宿主注入，页面不必带）。
 - 纯前端工具（如 json-formatter）可以只有 `initialize/search/action`，不注册 `handle`。
 - 环境变量从 `process.env` 读。`start()` 连宿主 Named Pipe，不要自己读 stdin。
@@ -207,7 +214,8 @@ plugin
 | Capability | 说明 | 参数/结果摘要 | 代码定义 |
 | --- | --- | --- | --- |
 | `configuration.read` | 读取宿主全部设置分类、设置项及支持的语言、主题、日志级别。 | 无参数；返回 settings 配置 DTO。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
-| `configuration.write` | 保存设置值，并应用主题、语言、日志级别、开机启动和搜索热键等变更。 | `{ values }`；返回 `{ requiresRestart }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
+| `configuration.readOwn` | 读取**当前插件自己的**设置值。按 `pluginId` 过滤，不能读其他插件。 | 无参数；返回 `{ values: { [settingName]: value } }`，数组保持 JSON 数组。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
+| `configuration.write` | 保存设置值，并应用主题、语言、日志级别、开机启动和搜索热键等变更。 | `{ changes }`；返回 `{ requiresRestart }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
 | `keymap.read` | 读取插件 Alias、全局搜索和启用状态。 | 无参数；返回插件 keymap 列表，不包含热键。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
 | `keymap.write` | 保存插件 Alias、全局搜索和启用状态，并刷新关键词及搜索缓存。 | `{ overrides }`；返回 `{ success }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
 | `keymap.validate` | 检查插件 Alias 冲突。 | `{ keywords }`；返回 `{ conflicts }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |

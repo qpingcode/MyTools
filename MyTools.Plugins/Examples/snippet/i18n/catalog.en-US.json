@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "scope": "plugin:snippet",
+  "pluginId": "snippet",
+  "sourceLocale": "en-US",
+  "entries": [
+    {
+      "key": "Plugin.Snippet.Name",
+      "defaultValue": "Snippet",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "快捷短语" },
+      "sourceHash": "sha256:48f55cb895c3bf6fec03c7be5de54685dc20fce388addc31dd3c849ea4b09452"
+    },
+    {
+      "key": "Plugin.Snippet.Setting.Phrases",
+      "defaultValue": "Phrases",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "短语" },
+      "sourceHash": "sha256:076bcf6aae77baad87996fdcdd36b513bb44458288adb5cf5d1b4827c4d40fb9"
+    },
+    {
+      "key": "Plugin.Snippet.Setting.Phrases.Description",
+      "defaultValue": "Shortcut phrases available in global search. Press Enter to copy and paste.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "可在全局搜索中使用的快捷短语。按回车复制并粘贴。" },
+      "sourceHash": "sha256:22c7d7c0fe0fb4173fb9d0cf366454f8aaee5d4155916619fd62bda3144f0938"
+    },
+    {
+      "key": "Plugin.Snippet.Column.Trigger",
+      "defaultValue": "Trigger",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "触发词" },
+      "sourceHash": "sha256:8b9c643731c941195b61d1f3de78fda81ac490ee73f420bb7543df59d6a92206"
+    },
+    {
+      "key": "Plugin.Snippet.Column.Timestamp",
+      "defaultValue": "Created",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "创建时间" },
+      "sourceHash": "sha256:d70b9e24bca26b409b9458ceca6c9e5c2b5c3171c37ff050c6f6a0d7a4420d2a"
+    },
+    {
+      "key": "Plugin.Snippet.Column.Content",
+      "defaultValue": "Phrase",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "短语内容" },
+      "sourceHash": "sha256:159410b8c9be321a89f79bc5a7ac24040ef0a5e9fe8badf415817729b41c5b71"
+    },
+    {
+      "key": "Plugin.Snippet.Action.Paste",
+      "defaultValue": "Copy and paste",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "复制并粘贴" },
+      "sourceHash": "sha256:598f03ce59a6e41ed3fbe72447478b7bd98612e6bd64c8fd1664df7f47d223bb"
+    },
+    {
+      "key": "Plugin.Snippet.Action.PasteDescription",
+      "defaultValue": "Copy the phrase and paste it into the previously focused window",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "复制短语并粘贴到之前聚焦的窗口" },
+      "sourceHash": "sha256:7902e60faa42e4f233a8b4a9c61ec4d7f0bafb7d081991d672f7459d3c5f3144"
+    },
+    {
+      "key": "Plugin.Snippet.Untitled",
+      "defaultValue": "Untitled phrase",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "未命名短语" },
+      "sourceHash": "sha256:3f7261b274e8061c60d70b878540819c9eeeca5ad15e9c3c8093318072d8867c"
+    }
+  ]
+}

@@ -56,7 +56,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
 
     public IReadOnlyCollection<string> Capabilities { get; } =
     [
-        "configuration.read", "configuration.write",
+        "configuration.read", "configuration.write", "configuration.readOwn",
         "keymap.read", "keymap.write", "keymap.validate",
         "gestures.read", "gestures.write", "gestures.suspend", "gestures.resume",
         "hotkeys.read", "hotkeys.write", "hotkeys.suspend", "hotkeys.resume", "hotkeys.validate",
@@ -114,6 +114,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
             return request.Method switch
             {
                 "configuration.read" => GetConfiguration(),
+                "configuration.readOwn" => GetOwnConfiguration(request.PluginId),
                 "configuration.write" => SaveConfiguration(request.Params),
                 "keymap.read" => GetKeymap(),
                 "keymap.write" => SaveKeymap(request.Params),
@@ -172,6 +173,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
             Key = category.FullPath,
             Name = category.Name,
             Description = category.Description,
+            Icon = category.Icon,
             IsSelectable = category.IsSelectable,
             Children = category.Children.Select(MapCategory).ToList(),
             Settings = category.Settings.Select(MapSetting).ToList()
@@ -180,24 +182,71 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
 
     private static SettingDto MapSetting(ConfigurationSetting setting)
     {
-        var value = setting.CurrentValue;
-        var valueString = value switch
-        {
-            null => null,
-            bool b => b ? "True" : "False",
-            _ => value.ToString()
-        };
-
         return new SettingDto
         {
             FullPath = setting.FullPath,
             Title = setting.Title,
             Description = setting.Description,
             ValueType = setting.ValueType.ToString(),
-            CurrentValue = valueString,
-            DefaultValue = setting.DefaultValue?.ToString(),
-            RequiresRestart = (setting.Options & SettingOptions.RequiresRestart) != 0
+            CurrentValue = ConfigurationSettingValues.ToDtoString(setting.CurrentValue),
+            DefaultValue = ConfigurationSettingValues.ToDtoString(setting.DefaultValue),
+            RequiresRestart = (setting.Options & SettingOptions.RequiresRestart) != 0,
+            UiHint = setting.UiHint,
+            Schema = MapSchema(setting.Schema)
         };
+    }
+
+    private static SettingSchemaDto? MapSchema(SettingSchema? schema)
+    {
+        if (schema == null || schema.Properties.Count == 0)
+        {
+            return null;
+        }
+
+        return new SettingSchemaDto
+        {
+            Properties = schema.Properties.Select(property => new SettingSchemaPropertyDto
+            {
+                Key = property.Key,
+                Type = property.Type,
+                Title = property.Title,
+                UiHint = property.UiHint,
+                DefaultValue = property.DefaultValue,
+                Hidden = property.Hidden
+            }).ToList()
+        };
+    }
+
+    private JsonElement GetOwnConfiguration(string pluginId)
+    {
+        var values = new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
+        foreach (var category in registry.GetRootCategories())
+        {
+            CollectOwnSettings(category, pluginId, values);
+        }
+
+        return JsonSerializer.SerializeToElement(new { values }, JsonCamelCaseOptions);
+    }
+
+    private static void CollectOwnSettings(
+        ConfigurationCategory category,
+        string pluginId,
+        Dictionary<string, JsonElement> values)
+    {
+        foreach (var setting in category.Settings)
+        {
+            if (!ConfigurationSettingValues.Owns(pluginId, setting.FullPath))
+            {
+                continue;
+            }
+
+            values[setting.Name] = ConfigurationSettingValues.ToJsonElement(setting.CurrentValue ?? setting.DefaultValue);
+        }
+
+        foreach (var child in category.Children)
+        {
+            CollectOwnSettings(child, pluginId, values);
+        }
     }
 
     private JsonElement SaveConfiguration(JsonElement payload)
@@ -219,7 +268,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
 
             ValidatePathSettingIfNeeded(change.FullPath, change.Value);
 
-            setting.CurrentValue = ConvertValue(setting, change.Value);
+            setting.CurrentValue = ConfigurationSettingValues.Convert(setting, change.Value);
         }
 
         registry.SaveChanges();
@@ -645,22 +694,6 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
             Keywords = source.Keywords is null ? null : [.. source.Keywords],
             IsEnabled = source.IsEnabled,
             IncludeInGlobalResults = source.IncludeInGlobalResults
-        };
-    }
-
-    private static object? ConvertValue(ConfigurationSetting setting, string? stringValue)
-    {
-        if (stringValue == null)
-        {
-            return null;
-        }
-
-        return setting.ValueType switch
-        {
-            SettingValueTypes.Bool => string.Equals(stringValue, "True", StringComparison.OrdinalIgnoreCase),
-            SettingValueTypes.Integer => int.TryParse(stringValue, out var i) ? i : stringValue,
-            SettingValueTypes.Double => double.TryParse(stringValue, out var d) ? d : stringValue,
-            _ => stringValue
         };
     }
 

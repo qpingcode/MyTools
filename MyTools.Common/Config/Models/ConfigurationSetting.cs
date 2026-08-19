@@ -27,6 +27,8 @@ public partial class ConfigurationSetting : ObservableObject
     public ConfigurationCategory? Category { get; init; }
     public required IRegistrySerializer Serializer { get; init; }
     public int SortOrder { get; init; }
+    public string? UiHint { get; set; }
+    public SettingSchema? Schema { get; set; }
     public bool IsVisible => (Options & SettingOptions.Hidden) != 0;
     public bool IsDirty { get; set; }
 

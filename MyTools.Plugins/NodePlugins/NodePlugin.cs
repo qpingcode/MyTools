@@ -168,6 +168,14 @@ public sealed class NodePlugin : IPlugin, IDisposable
 
     public void RegisterSettings(IConfigurationRegistry configurationRegistry)
     {
+        PluginConfigurationRegistrar.Register(
+            configurationRegistry,
+            ParentId,
+            GetDisplayName(),
+            Description,
+            manifest.Configuration,
+            PluginLocalization,
+            manifest.Icon);
     }
 
     public string GetQueryWithoutKeyword(string searchText)
@@ -293,7 +301,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
 
     private static IActionParams CreateActionArgs(NodePluginSearchItem item, string query, string title)
     {
-        if (HasKind(item, "copy"))
+        if (HasKind(item, "copy") || HasKind(item, "copyAndPaste"))
         {
             return ActionStringParam.From(item.CopyText ?? title);
         }
@@ -320,6 +328,12 @@ public sealed class NodePlugin : IPlugin, IDisposable
             if (string.Equals(action.Kind, "copy", StringComparison.OrdinalIgnoreCase))
             {
                 yield return WellKnownActions.Copy.WithCommand(command);
+                continue;
+            }
+
+            if (string.Equals(action.Kind, "copyAndPaste", StringComparison.OrdinalIgnoreCase))
+            {
+                yield return WellKnownActions.CopyAndPaste.WithCommand(command);
                 continue;
             }
 
