@@ -18,16 +18,36 @@ plugin
     const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
     return await plugin.hostCall("configuration.write", params);
   })
-  .handle("getKeymap", async () => {
-    return await plugin.hostCall("keymap.read");
+  .handle("getPluginOverrides", async () => {
+    const [keymap, hotkeys] = await Promise.all([
+      plugin.hostCall("keymap.read") as Promise<any>,
+      plugin.hostCall("hotkeys.read") as Promise<any>,
+    ]);
+    const hotkeysByPlugin = new Map<string, Record<string, unknown>>(
+      (hotkeys?.plugins || []).map((item: Record<string, unknown>) => [String(item.pluginId), item]),
+    );
+    return {
+      plugins: (keymap?.plugins || []).map((item: any) => ({
+        ...item,
+        ...(hotkeysByPlugin.get(item.pluginId) || {}),
+      })),
+    };
   })
   .handle("saveKeymap", async (payload: any) => {
     const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
     return await plugin.hostCall("keymap.write", params);
   })
+  .handle("saveHotKeys", async (payload: any) => {
+    const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
+    return await plugin.hostCall("hotkeys.write", params);
+  })
   .handle("validateKeymap", async (payload: any) => {
     const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
     return await plugin.hostCall("keymap.validate", params);
+  })
+  .handle("validateHotKeys", async (payload: any) => {
+    const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
+    return await plugin.hostCall("hotkeys.validate", params);
   })
   .handle("getGestures", async () => {
     return await plugin.hostCall("gestures.read");

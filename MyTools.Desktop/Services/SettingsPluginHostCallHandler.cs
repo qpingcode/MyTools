@@ -27,8 +27,9 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     private readonly LanguageService languageService;
     private readonly LogLevelService logLevelService;
     private readonly AutoStartService autoStartService;
-    private readonly KeymapService keymapService;
-    private readonly KeymapOverrideProvider keymapOverrideProvider;
+    private readonly PluginHotKeyService pluginHotKeyService;
+    private readonly PluginKeymapService pluginKeymapService;
+    private readonly PluginOverrideProvider pluginOverrideProvider;
     private readonly GestureConfigProvider gestureConfigProvider;
     private readonly GestureRegistry gestureRegistry;
     private readonly MouseHelper mouseHelper;
@@ -58,7 +59,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         "configuration.read", "configuration.write",
         "keymap.read", "keymap.write", "keymap.validate",
         "gestures.read", "gestures.write", "gestures.suspend", "gestures.resume",
-        "hotkeys.suspend", "hotkeys.resume", "hotkeys.validate",
+        "hotkeys.read", "hotkeys.write", "hotkeys.suspend", "hotkeys.resume", "hotkeys.validate",
         "action.capture",
         "commandRunner.read", "commandRunner.write"
     ];
@@ -69,8 +70,9 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         LanguageService languageService,
         LogLevelService logLevelService,
         AutoStartService autoStartService,
-        KeymapService keymapService,
-        KeymapOverrideProvider keymapOverrideProvider,
+        PluginHotKeyService pluginHotKeyService,
+        PluginKeymapService pluginKeymapService,
+        PluginOverrideProvider pluginOverrideProvider,
         GestureConfigProvider gestureConfigProvider,
         GestureRegistry gestureRegistry,
         MouseHelper mouseHelper,
@@ -86,8 +88,9 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         this.languageService = languageService;
         this.logLevelService = logLevelService;
         this.autoStartService = autoStartService;
-        this.keymapService = keymapService;
-        this.keymapOverrideProvider = keymapOverrideProvider;
+        this.pluginHotKeyService = pluginHotKeyService;
+        this.pluginKeymapService = pluginKeymapService;
+        this.pluginOverrideProvider = pluginOverrideProvider;
         this.gestureConfigProvider = gestureConfigProvider;
         this.gestureRegistry = gestureRegistry;
         this.mouseHelper = mouseHelper;
@@ -115,13 +118,15 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
                 "keymap.read" => GetKeymap(),
                 "keymap.write" => SaveKeymap(request.Params),
                 "keymap.validate" => ValidateKeymap(request.Params),
+                "hotkeys.read" => GetHotKeys(),
+                "hotkeys.write" => SaveHotKeys(request.Params),
                 "gestures.read" => GetGestures(),
                 "gestures.write" => SaveGestures(request.Params),
                 "gestures.suspend" => SuspendGestures(),
                 "gestures.resume" => ResumeGestures(),
                 "hotkeys.suspend" => SuspendHotkeys(),
                 "hotkeys.resume" => ResumeHotkeys(),
-                "hotkeys.validate" => CheckHotKey(request.Params),
+                "hotkeys.validate" => ValidateHotKeys(request.Params),
                 "commandRunner.read" => GetCommandRunner(),
                 "commandRunner.write" => SaveCommandRunner(request.Params),
                 _ => throw new NotSupportedException($"Unknown hostCall method: {request.Method}")
@@ -300,20 +305,17 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     private JsonElement GetKeymap()
     {
         var nodePlugins = pluginLoader.LoadedPlugins.OfType<NodePlugin>().ToList();
-        var overrides = keymapOverrideProvider.GetAll();
+        var overrides = pluginOverrideProvider.GetAll();
 
         var plugins = nodePlugins.Select(p =>
         {
             var pluginId = p.PluginId;
             var ov = overrides.TryGetValue(pluginId, out var o) ? o : null;
-            var defaultHotKey = p.HotKey ?? "";
             var defaultKeywords = p.Keywords.ToList();
             return new KeymapPluginDto
             {
                 PluginId = pluginId,
                 Name = p.GetDisplayName(),
-                DefaultHotKey = defaultHotKey,
-                CurrentHotKey = ov?.HotKey ?? defaultHotKey,
                 DefaultKeywords = defaultKeywords,
                 CurrentKeywords = ov?.Keywords ?? defaultKeywords,
                 IsEnabled = p.IsEnabled,
@@ -330,33 +332,30 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     private JsonElement SaveKeymap(JsonElement payload)
     {
         var request = payload.Deserialize<KeymapSaveRequest>(JsonCamelCaseOptions);
-        var merged = keymapOverrideProvider.GetAll()
+        var merged = pluginOverrideProvider.GetAll()
             .ToDictionary(kv => kv.Key, kv => CloneOverride(kv.Value));
 
         if (request?.Overrides != null)
         {
             foreach (var (pluginId, item) in request.Overrides)
             {
-                merged[pluginId] = new KeymapOverride
-                {
-                    HotKey = item.HotKey,
-                    Keywords = item.Keywords,
-                    IsEnabled = item.IsEnabled,
-                    IncludeInGlobalResults = item.IncludeInGlobalResults
-                };
+                var current = merged.GetValueOrDefault(pluginId) ?? new PluginOverride();
+                current.Keywords = item.Keywords;
+                current.IsEnabled = item.IsEnabled;
+                current.IncludeInGlobalResults = item.IncludeInGlobalResults;
+                merged[pluginId] = current;
             }
         }
 
-        keymapOverrideProvider.Save(merged);
+        pluginOverrideProvider.Save(merged);
 
-        // 热应用：必须在 UI 线程执行（热键注册涉及 Win32 消息）
         System.Windows.Application.Current.Dispatcher.Invoke(() =>
         {
             var nodePlugins = pluginLoader.LoadedPlugins.OfType<NodePlugin>().ToList();
 
-            keymapService.ApplyEnabledOverrides(nodePlugins);
-            keymapService.ReRegisterAllHotKeys(nodePlugins, OpenPluginDetail);
-            keymapService.ReRegisterKeywords(pluginLoader.LoadedPlugins);
+            pluginKeymapService.ApplyOverrides(nodePlugins);
+            pluginHotKeyService.ReRegisterAll(nodePlugins, OpenPluginDetail);
+            pluginKeymapService.ReRegisterKeywords(pluginLoader.LoadedPlugins);
             searcher.InvalidateHomePageCache();
         });
 
@@ -369,44 +368,94 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         var nodePlugins = pluginLoader.LoadedPlugins.OfType<NodePlugin>().ToList();
         var pluginNames = nodePlugins.ToDictionary(p => p.PluginId, p => p.Name);
 
-        // 构建当前值基准
+        var currentKeywords = nodePlugins.ToDictionary(
+            p => p.PluginId,
+            p => (List<string>?)(pluginOverrideProvider.GetKeywords(p.PluginId) ?? p.Keywords.ToList()));
+
+        var conflicts = new List<KeymapConflictDto>();
+
+        if (request?.Keywords != null)
+        {
+            conflicts.AddRange(pluginKeymapService.ValidateKeywords(request.Keywords, pluginNames, currentKeywords)
+                .Select(c => new KeymapConflictDto
+                {
+                    PluginId = c.PluginId,
+                    Field = c.Field,
+                    Value = c.Value,
+                    ConflictsWith = c.ConflictsWithName
+                }));
+        }
+
+        return JsonSerializer.SerializeToElement(new { conflicts }, JsonCamelCaseOptions);
+    }
+
+    private JsonElement GetHotKeys()
+    {
+        var plugins = pluginLoader.LoadedPlugins.OfType<NodePlugin>()
+            .Select(p =>
+            {
+                var defaultHotKey = p.HotKey ?? "";
+                return new HotKeyPluginDto
+                {
+                    PluginId = p.PluginId,
+                    DefaultHotKey = defaultHotKey,
+                    CurrentHotKey = pluginOverrideProvider.GetHotKey(p.PluginId) ?? defaultHotKey
+                };
+            })
+            .ToList();
+        return JsonSerializer.SerializeToElement(new HotKeysDto { Plugins = plugins }, JsonCamelCaseOptions);
+    }
+
+    private JsonElement SaveHotKeys(JsonElement payload)
+    {
+        var request = payload.Deserialize<HotKeysSaveRequest>(JsonCamelCaseOptions);
+        var merged = pluginOverrideProvider.GetAll()
+            .ToDictionary(kv => kv.Key, kv => CloneOverride(kv.Value));
+
+        if (request?.HotKeys != null)
+        {
+            foreach (var (pluginId, hotKey) in request.HotKeys)
+            {
+                var current = merged.GetValueOrDefault(pluginId) ?? new PluginOverride();
+                current.HotKey = hotKey;
+                merged[pluginId] = current;
+            }
+        }
+
+        pluginOverrideProvider.Save(merged);
+        System.Windows.Application.Current.Dispatcher.Invoke(() =>
+        {
+            var nodePlugins = pluginLoader.LoadedPlugins.OfType<NodePlugin>().ToList();
+            pluginHotKeyService.ReRegisterAll(nodePlugins, OpenPluginDetail);
+        });
+
+        return JsonSerializer.SerializeToElement(new { success = true }, JsonCamelCaseOptions);
+    }
+
+    private JsonElement ValidateHotKeys(JsonElement payload)
+    {
+        var request = payload.Deserialize<HotKeysValidateRequest>(JsonCamelCaseOptions);
+        var nodePlugins = pluginLoader.LoadedPlugins.OfType<NodePlugin>().ToList();
+        var pluginNames = nodePlugins.ToDictionary(p => p.PluginId, p => p.Name);
         var currentHotKeys = nodePlugins.ToDictionary(
             p => p.PluginId,
-            p => (string?)(keymapOverrideProvider.GetHotKey(p.PluginId) ?? p.HotKey));
+            p => (string?)(pluginOverrideProvider.GetHotKey(p.PluginId) ?? p.HotKey));
         currentHotKeys["__search__"] = registry.FindSetting(AppConfigService.SearchHotKeySettingPath)?.CurrentValue as string
             ?? appConfigService.AppConfig.SearchHotKeyText;
         pluginNames["__search__"] = languageService.GetCaption(
             "Configuration.General.SearchHotKey.Title", "Search hotkey");
-        var currentKeywords = nodePlugins.ToDictionary(
-            p => p.PluginId,
-            p => (List<string>?)(keymapOverrideProvider.GetKeywords(p.PluginId) ?? p.Keywords.ToList()));
 
-        var conflicts = new List<KeymapConflictDto>();
-
-        if (request?.HotKeys != null)
-        {
-            conflicts.AddRange(keymapService.ValidateHotKeys(request.HotKeys, pluginNames, currentHotKeys)
+        var conflicts = request?.HotKeys == null
+            ? []
+            : pluginHotKeyService.Validate(request.HotKeys, pluginNames, currentHotKeys)
                 .Select(c => new KeymapConflictDto
                 {
                     PluginId = c.PluginId,
                     Field = c.Field,
                     Value = c.Value,
                     ConflictsWith = c.ConflictsWithName
-                }));
-        }
-
-        if (request?.Keywords != null)
-        {
-            conflicts.AddRange(keymapService.ValidateKeywords(request.Keywords, pluginNames, currentKeywords)
-                .Select(c => new KeymapConflictDto
-                {
-                    PluginId = c.PluginId,
-                    Field = c.Field,
-                    Value = c.Value,
-                    ConflictsWith = c.ConflictsWithName
-                }));
-        }
-
+                })
+                .ToList();
         return JsonSerializer.SerializeToElement(new { conflicts }, JsonCamelCaseOptions);
     }
 
@@ -446,19 +495,6 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     {
         System.Windows.Application.Current.Dispatcher.Invoke(() => hotKeyManager.ResumeAllHotKeys());
         return JsonSerializer.SerializeToElement(new { }, JsonCamelCaseOptions);
-    }
-
-    private JsonElement CheckHotKey(JsonElement payload)
-    {
-        var request = payload.Deserialize<CheckHotKeyRequest>(JsonCamelCaseOptions) ?? new CheckHotKeyRequest();
-        var inspection = InspectHotKey(request.HotKey, request);
-        return JsonSerializer.SerializeToElement(
-            new CheckHotKeyResult
-            {
-                ConflictWith = inspection.ConflictWith,
-                Reserved = inspection.Reserved
-            },
-            JsonCamelCaseOptions);
     }
 
     private async Task<JsonElement> CaptureInputActionAsync(HostCallRequest hostCall)
@@ -507,7 +543,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         var nodePlugins = pluginLoader.LoadedPlugins.OfType<NodePlugin>().ToList();
         var pluginHotKeys = nodePlugins.ToDictionary(
             p => p.PluginId,
-            p => (string?)(keymapOverrideProvider.GetHotKey(p.PluginId) ?? p.HotKey));
+            p => (string?)(pluginOverrideProvider.GetHotKey(p.PluginId) ?? p.HotKey));
         var pluginNames = nodePlugins.ToDictionary(p => p.PluginId, p => p.GetDisplayName());
 
         var searchHotKey = request.CurrentSearchHotKey
@@ -601,9 +637,9 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         hotKeyManager.RegisterySearchHotKey(parsed);
     }
 
-    private static KeymapOverride CloneOverride(KeymapOverride source)
+    private static PluginOverride CloneOverride(PluginOverride source)
     {
-        return new KeymapOverride
+        return new PluginOverride
         {
             HotKey = source.HotKey,
             Keywords = source.Keywords is null ? null : [.. source.Keywords],
@@ -659,8 +695,6 @@ public sealed class KeymapPluginDto
 {
     public string PluginId { get; init; } = "";
     public string Name { get; init; } = "";
-    public string DefaultHotKey { get; init; } = "";
-    public string CurrentHotKey { get; init; } = "";
     public List<string> DefaultKeywords { get; init; } = new();
     public List<string> CurrentKeywords { get; init; } = new();
     public bool IsEnabled { get; init; }
@@ -676,7 +710,6 @@ public sealed class KeymapSaveRequest
 
 public sealed class KeymapOverrideItem
 {
-    public string? HotKey { get; init; }
     public List<string>? Keywords { get; init; }
     public bool? IsEnabled { get; init; }
     public bool? IncludeInGlobalResults { get; init; }
@@ -684,8 +717,29 @@ public sealed class KeymapOverrideItem
 
 public sealed class KeymapValidateRequest
 {
-    public Dictionary<string, string?>? HotKeys { get; init; }
     public Dictionary<string, List<string>?>? Keywords { get; init; }
+}
+
+public sealed class HotKeysDto
+{
+    public List<HotKeyPluginDto> Plugins { get; init; } = new();
+}
+
+public sealed class HotKeyPluginDto
+{
+    public string PluginId { get; init; } = "";
+    public string DefaultHotKey { get; init; } = "";
+    public string CurrentHotKey { get; init; } = "";
+}
+
+public sealed class HotKeysSaveRequest
+{
+    public Dictionary<string, string?>? HotKeys { get; init; }
+}
+
+public sealed class HotKeysValidateRequest
+{
+    public Dictionary<string, string?>? HotKeys { get; init; }
 }
 
 public sealed class KeymapConflictDto
@@ -703,12 +757,6 @@ public sealed class CheckHotKeyRequest
     public bool ExcludeSearchHotKey { get; init; }
     public bool ExcludeReservedHotKey { get; init; }
     public string? CurrentSearchHotKey { get; init; }
-}
-
-public sealed class CheckHotKeyResult
-{
-    public string? ConflictWith { get; init; }
-    public bool Reserved { get; init; }
 }
 
 public sealed class CaptureInputActionRequest

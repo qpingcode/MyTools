@@ -33,7 +33,8 @@ public class AppBootstrapper : IDisposable
     private readonly ILogger<AppBootstrapper> logger;
     private readonly LogLevelService logLevelService;
     private readonly PluginWindowManager pluginWindowManager;
-    private readonly KeymapService keymapService;
+    private readonly PluginHotKeyService pluginHotKeyService;
+    private readonly PluginKeymapService pluginKeymapService;
     private readonly IConfigurationRegistry registry;
     private readonly ILocalizationService localization;
     private readonly IThemeService themeService;
@@ -51,7 +52,8 @@ public class AppBootstrapper : IDisposable
         ILogger<AppBootstrapper> logger,
         LogLevelService logLevelService,
         PluginWindowManager pluginWindowManager,
-        KeymapService keymapService,
+        PluginHotKeyService pluginHotKeyService,
+        PluginKeymapService pluginKeymapService,
         IConfigurationRegistry registry,
         ILocalizationService localization,
         IThemeService themeService)
@@ -68,7 +70,8 @@ public class AppBootstrapper : IDisposable
         this.logger = logger;
         this.logLevelService = logLevelService;
         this.pluginWindowManager = pluginWindowManager;
-        this.keymapService = keymapService;
+        this.pluginHotKeyService = pluginHotKeyService;
+        this.pluginKeymapService = pluginKeymapService;
         this.registry = registry;
         this.localization = localization;
         this.themeService = themeService;
@@ -148,7 +151,7 @@ public class AppBootstrapper : IDisposable
 
         var loadedPlugins = pluginLoader.InitPlugins();
         RegisterNodePluginHostCallHandlers(loadedPlugins.OfType<NodePlugin>());
-        RegisterNodePluginHotKeys(loadedPlugins.OfType<NodePlugin>());
+        RegisterNodePluginOverrides(loadedPlugins.OfType<NodePlugin>());
     }
 
     /// <summary>
@@ -166,10 +169,12 @@ public class AppBootstrapper : IDisposable
         }
     }
 
-    private void RegisterNodePluginHotKeys(IEnumerable<NodePlugin> nodePlugins)
+    private void RegisterNodePluginOverrides(IEnumerable<NodePlugin> nodePlugins)
     {
-        keymapService.RegisterAllHotKeys(nodePlugins, OpenNodePluginDetail);
-        keymapService.ReRegisterKeywords(pluginLoader.LoadedPlugins);
+        var plugins = nodePlugins.ToList();
+        pluginKeymapService.ApplyOverrides(plugins);
+        pluginHotKeyService.RegisterAll(plugins, OpenNodePluginDetail);
+        pluginKeymapService.ReRegisterKeywords(pluginLoader.LoadedPlugins);
     }
 
     private void OpenNodePluginDetail(NodePlugin nodePlugin)

@@ -1,0 +1,106 @@
+using MyTools.Common;
+using MyTools.Plugins;
+using MyTools.Plugins.NodePlugins;
+
+namespace MyTools.Desktop.Services;
+
+public sealed class PluginKeymapService
+{
+    private readonly PluginOverrideProvider overrideProvider;
+    private readonly IKeywordRegistry keywordRegistry;
+
+    public PluginKeymapService(
+        PluginOverrideProvider overrideProvider,
+        IKeywordRegistry keywordRegistry)
+    {
+        this.overrideProvider = overrideProvider;
+        this.keywordRegistry = keywordRegistry;
+    }
+
+    public void ReRegisterKeywords(IEnumerable<IPlugin> allPlugins)
+    {
+        foreach (var plugin in allPlugins.OfType<NodePlugin>())
+        {
+            keywordRegistry.UnregisterPlugin(plugin);
+            if (!plugin.IsEnabled)
+            {
+                continue;
+            }
+
+            var keywords = overrideProvider.GetKeywords(plugin.PluginId) ?? plugin.Keywords.ToList();
+            foreach (var keyword in keywords.Where(keyword => !string.IsNullOrWhiteSpace(keyword)))
+            {
+                keywordRegistry.Register(keyword, plugin);
+            }
+        }
+    }
+
+    public void ApplyOverrides(IEnumerable<NodePlugin> nodePlugins)
+    {
+        foreach (var plugin in nodePlugins)
+        {
+            var enabled = overrideProvider.GetIsEnabled(plugin.PluginId);
+            if (enabled.HasValue)
+            {
+                plugin.IsEnabled = enabled.Value;
+            }
+
+            plugin.IsGlobalSearchPlugin = overrideProvider.GetIncludeInGlobalResults(plugin.PluginId)
+                ?? plugin.DefaultIncludeInGlobalResults;
+        }
+    }
+
+    public List<PluginOverrideConflict> ValidateKeywords(
+        IReadOnlyDictionary<string, List<string>?> pendingKeywords,
+        IReadOnlyDictionary<string, string> pluginNames,
+        IReadOnlyDictionary<string, List<string>?> currentKeywords)
+    {
+        var resolved = new Dictionary<string, List<string>?>(currentKeywords);
+        foreach (var (pluginId, keywords) in pendingKeywords)
+        {
+            resolved[pluginId] = keywords;
+        }
+
+        var byKeyword = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (pluginId, keywords) in resolved)
+        {
+            if (keywords == null)
+            {
+                continue;
+            }
+
+            foreach (var keyword in keywords.Where(keyword => !string.IsNullOrWhiteSpace(keyword)))
+            {
+                if (!byKeyword.TryGetValue(keyword, out var pluginIds))
+                {
+                    pluginIds = [];
+                    byKeyword[keyword] = pluginIds;
+                }
+                pluginIds.Add(pluginId);
+            }
+        }
+
+        var conflicts = new List<PluginOverrideConflict>();
+        foreach (var (keyword, pluginIds) in byKeyword.Where(pair => pair.Value.Count > 1))
+        {
+            foreach (var pluginId in pluginIds)
+            {
+                var conflictWith = pluginIds.First(id => id != pluginId);
+                conflicts.Add(new PluginOverrideConflict(
+                    pluginId,
+                    "keyword",
+                    keyword,
+                    conflictWith,
+                    pluginNames.GetValueOrDefault(conflictWith, conflictWith)));
+            }
+        }
+        return conflicts;
+    }
+}
+
+public sealed record PluginOverrideConflict(
+    string PluginId,
+    string Field,
+    string Value,
+    string ConflictsWithId,
+    string ConflictsWithName);

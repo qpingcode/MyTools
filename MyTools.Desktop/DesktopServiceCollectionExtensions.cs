@@ -77,9 +77,10 @@ public static class DesktopServiceCollectionExtensions
             sp.GetRequiredService<RestartPluginHostCallHandler>());
         serviceCollection.AddSingleton<NodePluginHostCallRouter>();
         serviceCollection.AddSingleton<InputActionCaptureService>();
-        serviceCollection.AddSingleton<KeymapOverrideProvider>();
+        serviceCollection.AddSingleton<PluginOverrideProvider>();
         serviceCollection.AddSingleton<GestureConfigProvider>();
-        serviceCollection.AddSingleton<KeymapService>();
+        serviceCollection.AddSingleton<PluginHotKeyService>();
+        serviceCollection.AddSingleton<PluginKeymapService>();
         serviceCollection.AddSingleton<HotKeyManager>();
         serviceCollection.AddSingleton<HotKeyMessageHandler>();
         serviceCollection.AddSingleton<IGlobal, Global>();

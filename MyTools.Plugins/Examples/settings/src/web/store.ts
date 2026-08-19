@@ -218,11 +218,11 @@ export async function loadConfiguration(): Promise<void> {
 }
 
 export async function loadSpecialPanels(): Promise<void> {
-    await Promise.allSettled([loadKeymap(), loadGestures(), loadCommands()]);
+    await Promise.allSettled([loadPluginOverrides(), loadGestures(), loadCommands()]);
 }
 
-export async function loadKeymap(): Promise<void> {
-    const data = await bus.call<{ plugins: KeymapPlugin[] }>("getKeymap");
+export async function loadPluginOverrides(): Promise<void> {
+    const data = await bus.call<{ plugins: KeymapPlugin[] }>("getPluginOverrides");
     store.keymapPlugins = data.plugins || [];
     store.keymapDirty.clear();
     store.keymapConflicts = [];
@@ -329,8 +329,8 @@ export async function saveSettings(): Promise<void> {
         }
 
         if (store.keymapDirty.size > 0) {
-            const keymapSaved = await saveKeymapInternal();
-            if (!keymapSaved) return;
+            const pluginOverridesSaved = await savePluginOverridesInternal();
+            if (!pluginOverridesSaved) return;
         }
 
         if (store.gesturesDirty) {
@@ -358,42 +358,63 @@ export async function saveSettings(): Promise<void> {
     }
 }
 
-async function saveKeymapInternal(): Promise<boolean> {
+async function savePluginOverridesInternal(): Promise<boolean> {
     if (store.keymapDirty.size === 0 || !store.keymapPlugins) return true;
 
-    const overrides: Record<string, KeymapDirty> = {};
+    const keymapOverrides: Record<string, KeymapDirty> = {};
     const hotKeysToValidate: Record<string, string | null> = {};
     const keywordsToValidate: Record<string, string[] | null> = {};
+    let hasKeymapChanges = false;
 
     for (const plugin of store.keymapPlugins) {
         const dirty = store.keymapDirty.get(plugin.pluginId);
         if (!dirty) continue;
-        overrides[plugin.pluginId] = {
-            hotKey: dirty.hotKey !== undefined ? dirty.hotKey : plugin.currentHotKey,
-            keywords: dirty.keywords !== undefined ? dirty.keywords : plugin.currentKeywords,
-            isEnabled: dirty.isEnabled !== undefined ? dirty.isEnabled : plugin.isEnabled,
-            includeInGlobalResults: dirty.includeInGlobalResults !== undefined
-                ? dirty.includeInGlobalResults
-                : plugin.includeInGlobalResults,
-        };
-        if (dirty.hotKey !== undefined) hotKeysToValidate[plugin.pluginId] = dirty.hotKey;
+        if (dirty.keywords !== undefined
+            || dirty.isEnabled !== undefined
+            || dirty.includeInGlobalResults !== undefined) {
+            hasKeymapChanges = true;
+            keymapOverrides[plugin.pluginId] = {
+                keywords: dirty.keywords !== undefined ? dirty.keywords : plugin.currentKeywords,
+                isEnabled: dirty.isEnabled !== undefined ? dirty.isEnabled : plugin.isEnabled,
+                includeInGlobalResults: dirty.includeInGlobalResults !== undefined
+                    ? dirty.includeInGlobalResults
+                    : plugin.includeInGlobalResults,
+            };
+        }
+        if (dirty.hotKey !== undefined) {
+            hotKeysToValidate[plugin.pluginId] = dirty.hotKey;
+        }
         if (dirty.keywords !== undefined) keywordsToValidate[plugin.pluginId] = dirty.keywords;
     }
 
-    const validateResult = await bus.call<{ conflicts: KeymapConflict[] }>("validateKeymap", {
-        hotKeys: hotKeysToValidate,
-        keywords: keywordsToValidate,
-    });
+    const conflicts: KeymapConflict[] = [];
+    if (Object.keys(keywordsToValidate).length > 0) {
+        const result = await bus.call<{ conflicts: KeymapConflict[] }>("validateKeymap", {
+            keywords: keywordsToValidate,
+        });
+        conflicts.push(...(result.conflicts || []));
+    }
+    if (Object.keys(hotKeysToValidate).length > 0) {
+        const result = await bus.call<{ conflicts: KeymapConflict[] }>("validateHotKeys", {
+            hotKeys: hotKeysToValidate,
+        });
+        conflicts.push(...(result.conflicts || []));
+    }
 
-    store.keymapConflicts = validateResult.conflicts || [];
+    store.keymapConflicts = conflicts;
     if (store.keymapConflicts.length > 0) {
         showToast(t("Plugin.Settings.Keymap.HasConflicts", "Conflicts detected. Resolve them before saving."), "error");
         return false;
     }
 
-    await bus.call("saveKeymap", { overrides });
+    if (hasKeymapChanges) {
+        await bus.call("saveKeymap", { overrides: keymapOverrides });
+    }
+    if (Object.keys(hotKeysToValidate).length > 0) {
+        await bus.call("saveHotKeys", { hotKeys: hotKeysToValidate });
+    }
     store.keymapDirty.clear();
-    await loadKeymap();
+    await loadPluginOverrides();
     refreshDirty();
     return true;
 }
