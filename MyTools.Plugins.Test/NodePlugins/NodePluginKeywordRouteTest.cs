@@ -48,6 +48,21 @@ public class NodePluginKeywordRouteTest
     }
 
     [Test]
+    public void KeywordRoute_ShouldUseEffectiveKeywordOverride()
+    {
+        using var plugin = CreatePlugin();
+        plugin.SetEffectiveKeywords(["translate"]);
+
+        Assert.That(plugin.ShouldOpenDetailOnKeywordRoute("tr hello"), Is.False);
+        Assert.That(plugin.ShouldOpenDetailOnKeywordRoute("translate hello"), Is.True);
+        Assert.That(plugin.GetQueryWithoutKeyword("translate hello"), Is.EqualTo("hello"));
+
+        var context = plugin.CreateKeywordDetailContext("translate hello", "hello");
+        Assert.That(context, Is.Not.Null);
+        Assert.That(context!.Keyword, Is.EqualTo("translate"));
+    }
+
+    [Test]
     public void ShouldOpenDetailOnKeywordRoute_ShouldStayOnListWhenDetailOmitted()
     {
         using var plugin = CreatePlugin(withWebDetail: false);
