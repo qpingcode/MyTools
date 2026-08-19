@@ -19,7 +19,7 @@
       "capabilities": [
         "configuration.read"
       ],
-      "keywords": [],
+      "alias": [],
       "search": { "global": true },
       "detail": { "type": "list" }
     }

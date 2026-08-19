@@ -63,7 +63,7 @@ function onPluginHotKeyChange(plugin: KeymapPlugin, value: string | null): void 
             <div class="col-hotkey">{{ t("Plugin.Settings.Keymap.HeaderHotkey", "Hotkey") }}</div>
             <div
                 class="col-keywords"
-                :title="t('Plugin.Settings.Keymap.HeaderKeywordsTip', 'Keyword aliases to trigger this plugin directly')"
+                :title="t('Plugin.Settings.Keymap.HeaderKeywordsTip', 'Aliases used to open this plugin directly')"
             >
                 {{ t("Plugin.Settings.Keymap.HeaderKeywords", "Alias") }}
             </div>

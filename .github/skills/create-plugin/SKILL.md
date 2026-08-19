@@ -117,7 +117,7 @@ SDK 把旧式方法名映射到 v3 路由：`initialize` → `plugin.call.initia
       },
       "entry": "backend/index.mjs",
       "capabilities": [],
-      "keywords": ["kw1"],
+      "alias": ["kw1"],
       "search": { "global": false },
       "hotKey": "Alt+V",
       "detail": { "type": "web", "entry": "web/index.html" }
@@ -131,11 +131,11 @@ SDK 把旧式方法名映射到 v3 路由：`initialize` → `plugin.call.initia
 - `protocolVersion` 必须是 `"3.0"`，否则宿主拒绝加载。
 - `id` 稳定、kebab-case；配置路径 `Plugins.{id}.*`，i18n scope `plugin:{id}`。
 - 每个 entry 的 `name` 是 `{ key, defaultValue }`，不是字符串。
-- `capabilities` 必填（可 `[]`）。只有声明过的能力才能 `hostCall`；`settings` 声明 `"configuration.write"`。
+- `capabilities` 必填（可 `[]`）。只有声明过的能力才能 `hostCall`；调用的方法名必须与声明的 capability 完全一致，例如读取配置使用 `plugin.hostCall("configuration.read")` 并声明 `"configuration.read"`。
 - `detail` 可选。省略（或 `"detail": { "type": "list" }`）时宿主用 `search` 的结果走原生列表：关键词路由停留在列表，热键打开搜索主窗口并锁定该插件。
-- 需要自定义页面时再写 `"detail": { "type": "web", "entry": "web/index.html" }`。`hotKey`、`keywords`、`search` 可选。
+- 需要自定义页面时再写 `"detail": { "type": "web", "entry": "web/index.html" }`。`hotKey`、`alias`、`search` 可选。
 - `search.global`：出现在**无关键词**的全局搜索结果中。省略或 `false` 时不参与全局搜索（opt-in，避免设置类插件污染每次搜索）。用户可在设置 → 插件列表的 **全局结果** 中覆盖此项。
-- 有非空 `keywords` 就会注册 `keyword + 查询串` 的插件级搜索；没有 keywords 则只能靠全局搜索或热键进入。只有全局、没有关键词时（如 `hello-search`）必须设 `"search": { "global": true }`。
+- 有非空 `alias` 就会注册 `alias + 查询串` 的插件级搜索；没有 alias 则只能靠全局搜索或热键进入。只有全局、没有别名时（如 `hello-search`）必须设 `"search": { "global": true }`。
 - 没有顶层 `name` / `runtime`；旧的单 entry（无 `entries[]`）清单会被跳过。
 
 ## 4. 后端（Node）
@@ -195,7 +195,47 @@ plugin
 - 环境变量从 `process.env` 读。`start()` 连宿主 Named Pipe，不要自己读 stdin。
 - 数据落盘优先用宿主注入目录：`MYTOOLS_PLUGIN_DATA_DIR`（单插件目录，例如 `%APPDATA%\MyTools.Desktop\pluginsData\deepseek-translator`），其次可读 `MYTOOLS_PLUGINS_DATA_DIR`（所有插件数据根目录）。避免把数据写到 `process.cwd()`。
 
-需要宿主能力时（照 `settings`）：页面 `bus.call("getConfiguration")` → 后端 `handle` → `plugin.hostCall("getConfiguration")`。页面不能直接发 `host.call.*`。manifest 必须声明对应 capability（`getConfiguration` 等旧方法名折到 `configuration.write`）。
+需要宿主能力时（照 `settings`）：页面 `bus.call("getConfiguration")` → 后端 `handle` → `plugin.hostCall("configuration.read")`。页面不能直接发 `host.call.*`。manifest 必须声明完全相同的 capability；宿主不转换旧方法名。
+
+### 可用 capabilities
+
+只有已注册 `IPluginHostCapabilityHandler` 的 capability 才能调用。Node 后端调用
+`plugin.hostCall("<capability>", params?)`，且当前 entry 的 `plugin.json` 必须在
+`capabilities` 中逐项声明完全相同的字符串。声明不匹配时宿主返回
+`CapabilityNotDeclared`。
+
+| Capability | 说明 | 参数/结果摘要 | 代码定义 |
+| --- | --- | --- | --- |
+| `configuration.read` | 读取宿主全部设置分类、设置项及支持的语言、主题、日志级别。 | 无参数；返回 settings 配置 DTO。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
+| `configuration.write` | 保存设置值，并应用主题、语言、日志级别、开机启动和搜索热键等变更。 | `{ values }`；返回 `{ requiresRestart }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
+| `keymap.read` | 读取插件 Alias、全局搜索和启用状态。 | 无参数；返回插件 keymap 列表，不包含热键。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
+| `keymap.write` | 保存插件 Alias、全局搜索和启用状态，并刷新关键词及搜索缓存。 | `{ overrides }`；返回 `{ success }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
+| `keymap.validate` | 检查插件 Alias 冲突。 | `{ keywords }`；返回 `{ conflicts }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
+| `gestures.read` | 读取鼠标手势配置。 | 无参数；返回 gestures 列表。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
+| `gestures.write` | 保存鼠标手势配置并刷新手势注册。 | `{ gestures }`；返回 `{ success }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
+| `gestures.suspend` | 临时暂停鼠标手势检测，通常在录制手势时使用。 | 无参数；返回空对象。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
+| `gestures.resume` | 恢复鼠标手势检测。 | 无参数；返回空对象。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
+| `hotkeys.read` | 读取插件默认热键和当前覆盖热键。 | 无参数；返回插件热键列表。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
+| `hotkeys.write` | 保存插件热键覆盖并重新注册插件热键。 | `{ hotKeys }`；返回 `{ success }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
+| `hotkeys.suspend` | 临时注销/暂停宿主全局热键。 | 无参数；返回空对象。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
+| `hotkeys.resume` | 恢复宿主全局热键注册。 | 无参数；返回空对象。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
+| `hotkeys.validate` | 检查待保存的插件热键是否与搜索热键或其他插件热键冲突。 | `{ hotKeys }`；返回 `{ conflicts }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
+| `action.capture` | 打开宿主原生输入录制窗口，捕获键盘热键或鼠标按钮。 | 录制选项；返回 `{ cancelled, kind, hotKey, mouseButton }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
+| `path.pick` | 打开 Windows 原生文件选择窗口。 | `{ title?, filter?, initialPath? }`；返回 `{ cancelled, path }`。 | [`PathPluginHostCallHandler`](../../../MyTools.Desktop/Services/PathPluginHostCallHandler.cs) |
+| `path.validate` | 校验路径是否为绝对路径、是否存在，以及是否满足文件类型要求。 | `{ path, kind }`，`kind` 为 `file` 或 `fileOrDirectory`；返回 `{ valid, message }`。 | [`PathPluginHostCallHandler`](../../../MyTools.Desktop/Services/PathPluginHostCallHandler.cs) |
+| `restart` | 重启 MyTools Desktop。 | 无参数；返回空对象后执行重启。 | [`RestartPluginHostCallHandler`](../../../MyTools.Desktop/Services/RestartPluginHostCallHandler.cs) |
+
+能力基础设施：
+
+- Handler 接口：[`IPluginHostCapabilityHandler`](../../../MyTools.Desktop/Services/IPluginHostCapabilityHandler.cs)
+- Handler 注册：[`DesktopServiceCollectionExtensions`](../../../MyTools.Desktop/DesktopServiceCollectionExtensions.cs)
+- capability 到 handler 的直接路由：[`NodePluginHostCallRouter`](../../../MyTools.Desktop/Services/NodePluginHostCallRouter.cs)
+- manifest 声明校验与审计：[`CapabilityGateway`](../../../MyTools.Host.Core/Capabilities/CapabilityGateway.cs)
+- 每次 `host.call.*` 的授权入口：[`MessageBus`](../../../MyTools.Host.Core/Bus/MessageBus.cs)
+- 插件热键与 keymap 的共享持久化：[`PluginOverrideProvider`](../../../MyTools.Desktop/Services/PluginOverrideProvider.cs)，写入 `PluginOverrides.json`；不会读取、迁移或删除旧 `Keymap.json`。
+
+不要根据测试或设计文档推断 capability 可用性。例如 `clipboard.read` 当前没有注册
+`IPluginHostCapabilityHandler`，因此尚不是可调用的宿主能力。
 
 `plugin.hostCall(method, params?, timeoutMs?)`：未传 `timeoutMs` 时，若当前正在处理页面的 `bus.call`，使用该请求的**剩余超时**；否则默认 30 秒。显式传入时不会超过剩余时间。
 

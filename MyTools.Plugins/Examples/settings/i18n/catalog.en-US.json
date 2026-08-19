@@ -142,11 +142,19 @@
     },
     {
       "key": "Plugin.Settings.Keymap.HeaderKeywords",
-      "defaultValue": "Keywords",
+      "defaultValue": "Alias",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "关键词" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "别名" },
+      "sourceHash": "b19e02e9502bbe5ac59dff4b2d4160768a4a7b8feff5693e5769613562290a45"
+    },
+    {
+      "key": "Plugin.Settings.Keymap.HeaderKeywordsTip",
+      "defaultValue": "Aliases used to open this plugin directly",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "用于直接打开此插件的别名" },
+      "sourceHash": "c9ab8ade414816086ec96b3c71a79c99833cb23cab4dd26c335745878604904d"
     },
     {
       "key": "Plugin.Settings.Keymap.HeaderGlobalResults",
@@ -158,11 +166,11 @@
     },
     {
       "key": "Plugin.Settings.Keymap.HeaderGlobalResultsTip",
-      "defaultValue": "Include this plugin when searching without a keyword",
+      "defaultValue": "Include this plugin in global search when no alias is used",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "无关键词时是否出现在全局搜索结果中" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "未使用别名时是否出现在全局搜索结果中" },
+      "sourceHash": "8c659d4be3ca8d78bb92ae51ab25e29ab872589c017b04058a366afba68e57f7"
     },
     {
       "key": "Plugin.Settings.Keymap.KeywordsPlaceholder",

@@ -128,7 +128,7 @@ public sealed class NodePluginCatalog
                     EntryFullPath = entryFullPath,
                     DetailEntry = detailEntry,
                     DetailEntryFullPath = detailEntryFullPath,
-                    Keywords = entryModel.Keywords ?? [],
+                    Keywords = entryModel.Alias ?? [],
                     SearchGlobal = ResolveSearchGlobal(entryModel.Search),
                     HotKey = entryModel.HotKey,
                     Capabilities = entryModel.Capabilities ?? [],
@@ -220,7 +220,7 @@ public sealed class NodePluginCatalog
         public string? Id { get; init; }
         public LocalizedNameDto? Name { get; init; }
         public string? Entry { get; init; }
-        public List<string>? Keywords { get; init; }
+        public List<string>? Alias { get; init; }
         public SearchManifestFile? Search { get; init; }
         public string? HotKey { get; init; }
         public List<string>? Capabilities { get; init; }
