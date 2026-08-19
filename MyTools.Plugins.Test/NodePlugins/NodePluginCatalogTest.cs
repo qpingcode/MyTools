@@ -50,7 +50,7 @@ public class NodePluginCatalogTest
               "id": "hello",
               "name": { "key": "Plugin.HelloSearch.Name", "defaultValue": "Hello Search" },
               "entry": "backend/index.mjs",
-              "keywords": ["hello"],
+              "alias": ["hello"],
               "hotKey": "Alt+C",
               "detail": {
                 "type": "web",
@@ -104,7 +104,7 @@ public class NodePluginCatalogTest
               "id": "translator",
               "name": { "key": "Plugin.Translator.Name", "defaultValue": "DeepSeek Translator" },
               "entry": "backend/Translator/index.mjs",
-              "keywords": ["tr", "translate"],
+              "alias": ["tr", "translate"],
               "hotKey": "Alt+C",
               "detail": {
                 "type": "web",
@@ -115,7 +115,7 @@ public class NodePluginCatalogTest
               "id": "history",
               "name": { "key": "Plugin.History.Name", "defaultValue": "DeepSeek Translation History" },
               "entry": "backend/History/index.mjs",
-              "keywords": ["trh"],
+              "alias": ["trh"],
               "hotKey": "Alt+V",
               "detail": {
                 "type": "web",
@@ -164,7 +164,7 @@ public class NodePluginCatalogTest
               "id": "hello",
               "name": "Hello Search",
               "entry": "backend/index.mjs",
-              "keywords": ["hello"],
+              "alias": ["hello"],
               "detail": {
                 "type": "web",
                 "entry": "web/detail.html"
@@ -195,7 +195,7 @@ public class NodePluginCatalogTest
           "runtime": "node",
           "entry": "backend/index.mjs",
           "protocolVersion": "3.0",
-          "keywords": ["legacy"],
+          "alias": ["legacy"],
           "detail": {
             "type": "web",
             "entry": "web/detail.html"
@@ -231,7 +231,7 @@ public class NodePluginCatalogTest
             "localesPath": "../"
           },
           "entries": [{
-            "id": "main", "entry": "backend/index.mjs", "keywords": ["unsafe"],
+            "id": "main", "entry": "backend/index.mjs", "alias": ["unsafe"],
             "detail": { "type": "web", "entry": "web/detail.html" }
           }]
         }
@@ -259,7 +259,7 @@ public class NodePluginCatalogTest
               "name": { "key": "Plugin.Settings.Name", "defaultValue": "Settings" },
               "entry": "backend/index.mjs",
               "capabilities": ["configuration.write"],
-              "keywords": ["settings"],
+              "alias": ["settings"],
               "detail": {
                 "type": "web",
                 "entry": "web/index.html"
@@ -295,7 +295,7 @@ public class NodePluginCatalogTest
               "id": "hello",
               "name": { "key": "Plugin.HelloSearch.Name", "defaultValue": "Hello Search" },
               "entry": "backend/index.mjs",
-              "keywords": [],
+              "alias": [],
               "search": { "global": true },
               "detail": {
                 "type": "web",
@@ -386,7 +386,7 @@ public class NodePluginCatalogTest
               "id": "main",
               "name": { "key": "Plugin.List.Name", "defaultValue": "List Plugin" },
               "entry": "backend/index.mjs",
-              "keywords": ["list"]
+              "alias": ["list"]
             }
           ]
         }

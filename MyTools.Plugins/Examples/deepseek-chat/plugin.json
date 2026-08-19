@@ -17,7 +17,7 @@
       },
       "entry": "backend/index.mjs",
       "capabilities": [],
-      "keywords": ["chat"],
+      "alias": ["chat"],
       "hotKey": "Alt+V",
       "search": {
         "global": false

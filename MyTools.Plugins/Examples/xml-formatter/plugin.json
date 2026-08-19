@@ -17,7 +17,7 @@
       },
       "entry": "backend/index.mjs",
       "capabilities": [],
-      "keywords": ["xml"],
+      "alias": ["xml"],
       "search": { "global": false },
       "detail": {
         "type": "web",

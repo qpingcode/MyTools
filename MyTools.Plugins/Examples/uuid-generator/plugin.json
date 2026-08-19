@@ -17,7 +17,7 @@
       },
       "entry": "backend/index.mjs",
       "capabilities": [],
-      "keywords": ["guid"],
+      "alias": ["guid"],
       "search": { "global": false },
       "detail": { "type": "list" }
     }

@@ -36,7 +36,7 @@
         "path.validate",
         "restart"
       ],
-      "keywords": ["settings"],
+      "alias": ["settings"],
       "hotKey": "Alt+S",
       "detail": {
         "type": "web",
