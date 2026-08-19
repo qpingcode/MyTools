@@ -44,7 +44,7 @@ public static class DesktopServiceCollectionExtensions
 
     public static IServiceCollection AddDesktopServices(this IServiceCollection serviceCollection)
     {
-        serviceCollection.AddSingleton<MessageOnlyWindow>();
+        serviceCollection.AddSingleton<NativeMessageWindowHost>();
         
         // windows
         serviceCollection.AddTransient<SearchWindow>();  // 如果是 singleton的，每次打开都会闪烁
@@ -80,7 +80,7 @@ public static class DesktopServiceCollectionExtensions
         serviceCollection.AddSingleton<IKeyboardHelper, KeyboardHelperForPlugin>();
         
         // Windows Message Handlers
-        serviceCollection.AddSingleton<MessageOnlyWindow>();
+        serviceCollection.AddSingleton<NativeMessageWindowHost>();
         serviceCollection.AddSingleton<IWindowMessageHandler>(sp => sp.GetRequiredService<HotKeyMessageHandler>());
         serviceCollection.AddSingleton<IWindowHandleAware>(sp => sp.GetRequiredService<HotKeyMessageHandler>());
         
