@@ -315,6 +315,7 @@ public partial class App
     protected override void OnExit(ExitEventArgs e)
     {
         _notifyIcon?.Dispose();
+        appBootstrapper?.Dispose();
         serviceProvider?.Dispose();
         if (ownsMutex)
         {

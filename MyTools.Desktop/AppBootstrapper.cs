@@ -22,7 +22,7 @@ namespace MyTools.Desktop;
 public class AppBootstrapper : IDisposable
 {
     private readonly AppConfigService appConfigService;
-    private readonly MessageOnlyWindow messageOnlyWindow;
+    private readonly NativeMessageWindowHost nativeMessageWindowHost;
     private readonly GestureRegistry gestureRegistry;
     private readonly GestureConfigProvider gestureConfigProvider;
     private readonly MouseHelper mouseHelper;
@@ -40,7 +40,7 @@ public class AppBootstrapper : IDisposable
 
     public AppBootstrapper(
         AppConfigService appConfigService,
-        MessageOnlyWindow messageOnlyWindow,
+        NativeMessageWindowHost nativeMessageWindowHost,
         GestureRegistry gestureRegistry,
         GestureConfigProvider gestureConfigProvider,
         MouseHelper mouseHelper,
@@ -57,7 +57,7 @@ public class AppBootstrapper : IDisposable
         IThemeService themeService)
     {
         this.appConfigService = appConfigService;
-        this.messageOnlyWindow = messageOnlyWindow;
+        this.nativeMessageWindowHost = nativeMessageWindowHost;
         this.gestureRegistry = gestureRegistry;
         this.gestureConfigProvider = gestureConfigProvider;
         this.mouseHelper = mouseHelper;
@@ -78,9 +78,9 @@ public class AppBootstrapper : IDisposable
     {
         var appConfig = appConfigService.AppConfig;
         
-        // Ensure that MessageOnlyWindow has been loaded and Windows messages have been properly monitored
+        // Ensure that NativeMessageWindowHost has been loaded and Windows messages have been properly monitored
         // which is a prerequisite for the clipboard / hotkey
-        EnsureMessageOnlyWindow();
+        EnsureNativeMessageWindowHost();
         
         InitializeConfigurationData();
 
@@ -103,9 +103,9 @@ public class AppBootstrapper : IDisposable
         ThemeManager.ApplyTheme(e.CurrentTheme);
     }
     
-    private void EnsureMessageOnlyWindow()
+    private void EnsureNativeMessageWindowHost()
     {
-        messageOnlyWindow.Show();
+        nativeMessageWindowHost.EnsureCreated();
     }
 
     private void InitializeGestureDetection()
@@ -468,5 +468,6 @@ public class AppBootstrapper : IDisposable
     {
         themeService.ThemeChanged -= OnThemeChanged;
         hotKeyManager?.UnregisterAllHotKeys();
+        nativeMessageWindowHost.Dispose();
     }
 }
