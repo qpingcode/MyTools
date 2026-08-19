@@ -3,7 +3,6 @@ import { bus } from "./bus";
 import { localeRevision, t } from "./i18n";
 import type {
     Category,
-    CommandConfig,
     Config,
     GestureConfig,
     KeymapConflict,
@@ -14,13 +13,12 @@ import type {
 } from "./types";
 
 export const SYSTEM_CATEGORY_KEYS = new Set(["General", "Gestures", "Plugins"]);
-export const SPECIAL_CATEGORY_KEYS = new Set(["Plugins", "Gestures", "CommandRunner"]);
+export const SPECIAL_CATEGORY_KEYS = new Set(["Plugins", "Gestures"]);
 
 const CATEGORY_ICONS: Record<string, string> = {
     General: "mdi-cog-outline",
     Gestures: "mdi-gesture-swipe",
     Plugins: "mdi-puzzle-outline",
-    CommandRunner: "mdi-console-line",
 };
 
 function categoryIcon(category: Category): string {
@@ -44,13 +42,11 @@ export const store = reactive({
     keymapDirty: new Map<string, KeymapDirty>(),
     keymapConflicts: [] as KeymapConflict[],
     gesturesDirty: false,
-    commandsDirty: false,
     dirty: false,
     saving: false,
 
     keymapPlugins: null as KeymapPlugin[] | null,
     gestureConfigs: null as GestureConfig[] | null,
-    commands: null as CommandConfig[] | null,
 
     toast: {
         show: false,
@@ -63,8 +59,7 @@ export const store = reactive({
 export function refreshDirty(): void {
     store.dirty = store.dirtySettings.size > 0
         || store.keymapDirty.size > 0
-        || store.gesturesDirty
-        || store.commandsDirty;
+        || store.gesturesDirty;
 }
 
 export const isDirty = computed(() => store.dirty);
@@ -101,7 +96,6 @@ export function categorySelfMatches(category: Category): boolean {
     }
     if (category.key === "Plugins" && keymapMatchesSearch()) return true;
     if (category.key === "Gestures" && gesturesMatchesSearch()) return true;
-    if (category.key === "CommandRunner" && commandsMatchesSearch()) return true;
     return false;
 }
 
@@ -120,13 +114,6 @@ function gesturesMatchesSearch(): boolean {
     return store.gestureConfigs.some((gesture) =>
         gesture.actionName.toLowerCase().includes(store.searchQuery)
         || gesture.processNames.some((name) => name.toLowerCase().includes(store.searchQuery)));
-}
-
-function commandsMatchesSearch(): boolean {
-    if (!store.searchQuery || !store.commands) return false;
-    return store.commands.some((command) =>
-        (command.name || "").toLowerCase().includes(store.searchQuery)
-        || (command.command || "").toLowerCase().includes(store.searchQuery));
 }
 
 export const sidebarItems = computed((): SidebarItem[] => {
@@ -172,9 +159,6 @@ export const currentTitle = computed(() => {
     }
     if (store.currentCategoryKey === "Gestures") {
         return t("Plugin.Settings.Category.Gestures", "Mouse Gestures");
-    }
-    if (store.currentCategoryKey === "CommandRunner") {
-        return t("Plugin.Settings.Category.CommandRunner", "Custom Commands");
     }
     return currentCategory.value?.name || "";
 });
@@ -223,7 +207,7 @@ export async function loadConfiguration(): Promise<void> {
 }
 
 export async function loadSpecialPanels(): Promise<void> {
-    await Promise.allSettled([loadPluginOverrides(), loadGestures(), loadCommands()]);
+    await Promise.allSettled([loadPluginOverrides(), loadGestures()]);
 }
 
 export async function loadPluginOverrides(): Promise<void> {
@@ -238,13 +222,6 @@ export async function loadGestures(): Promise<void> {
     const data = await bus.call<{ gestures: GestureConfig[] }>("getGestures");
     store.gestureConfigs = data.gestures || [];
     store.gesturesDirty = false;
-    refreshDirty();
-}
-
-export async function loadCommands(): Promise<void> {
-    const data = await bus.call<{ commands: CommandConfig[] }>("getCommandRunner");
-    store.commands = data.commands || [];
-    store.commandsDirty = false;
     refreshDirty();
 }
 
@@ -263,12 +240,6 @@ export function markKeymapDirty(pluginId: string, change: KeymapDirty): void {
 
 export function markGesturesDirty(): void {
     store.gesturesDirty = true;
-    refreshDirty();
-    scheduleSave();
-}
-
-export function markCommandsDirty(): void {
-    store.commandsDirty = true;
     refreshDirty();
     scheduleSave();
 }
@@ -341,11 +312,6 @@ export async function saveSettings(): Promise<void> {
         if (store.gesturesDirty) {
             await bus.call("saveGestures", { gestures: store.gestureConfigs || [] });
             store.gesturesDirty = false;
-        }
-
-        if (store.commandsDirty) {
-            await bus.call("saveCommandRunner", { commands: store.commands || [] });
-            store.commandsDirty = false;
         }
 
         if (requiresRestart) {

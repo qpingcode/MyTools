@@ -1,7 +1,7 @@
 namespace MyTools.Desktop.Models;
 
 /// <summary>
-/// 用户配置的自定义命令，持久化到 CommandRunner.json。
+/// 用户配置的自定义命令。历史数据来自 CommandRunner.json，现已迁入 Settings.json 的 command-runner.Commands。
 /// </summary>
 public sealed class CommandConfig
 {

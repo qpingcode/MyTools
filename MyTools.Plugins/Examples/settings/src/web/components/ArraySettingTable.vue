@@ -23,8 +23,10 @@ const tableQuery = ref("");
 const draft = reactive<Record<string, unknown>>({});
 
 const properties = computed((): SettingSchemaProperty[] => props.setting.schema?.properties ?? []);
-const visibleProperties = computed(() =>
+const editorProperties = computed(() =>
     properties.value.filter((property) => !property.hidden && property.type.toLowerCase() !== "hidden"));
+const tableProperties = computed(() =>
+    editorProperties.value.filter((property) => property.table !== false));
 
 const rows = computed(() => {
     const dirty = store.dirtySettings.get(props.setting.fullPath);
@@ -37,7 +39,7 @@ const filteredRows = computed(() => {
     return rows.value
         .map((row, index) => ({ row, index }))
         .filter(({ row }) =>
-            visibleProperties.value.some((property) =>
+            editorProperties.value.some((property) =>
                 formatCellText(row[property.key]).toLowerCase().includes(query)));
 });
 
@@ -108,7 +110,7 @@ function removeRow(index: number): void {
 }
 
 function editorFields(): SettingSchemaProperty[] {
-    return visibleProperties.value;
+    return editorProperties.value;
 }
 </script>
 
@@ -139,7 +141,7 @@ function editorFields(): SettingSchemaProperty[] {
             <div class="array-table">
                 <div class="table-head">
                     <div
-                        v-for="property in visibleProperties"
+                        v-for="property in tableProperties"
                         :key="property.key"
                         class="table-cell"
                         :class="property.type.toLowerCase() === 'bool' ? 'col-bool' : 'col-text'"
@@ -151,7 +153,7 @@ function editorFields(): SettingSchemaProperty[] {
                 </div>
                 <div v-for="item in filteredRows" :key="item.index" class="table-row">
                     <div
-                        v-for="property in visibleProperties"
+                        v-for="property in tableProperties"
                         :key="property.key"
                         class="table-cell"
                         :class="property.type.toLowerCase() === 'bool' ? 'col-bool' : 'col-text'"

@@ -369,12 +369,6 @@ public class AppBootstrapper : IDisposable
                 localization.GetCaption("Configuration.Plugins.Description", "Plugin Settings"),
                 IsSelectable: true);
 
-            registry.AddCategory(
-                "CommandRunner",
-                localization.GetCaption("Plugin.CommandRunner.Name", "Custom Commands"),
-                localization.GetCaption("Plugin.CommandRunner.Description", "Run custom commands from search"),
-                IsSelectable: true);
-
             var openPathCategory = registry.AddCategory(
                 "openpath",
                 localization.GetCaption("Plugin.OpenPath.Name", "Open Path"),
@@ -425,6 +419,7 @@ public class AppBootstrapper : IDisposable
             
             // Load configuration from file if exists
             registry.Reload();
+            CommandRunnerSettingsMigrator.Migrate(registry, logger);
             // AppConfigService is authoritative for the locale. Ignore a stale legacy copy in Settings.json.
             languageSetting.InitValueWithoutNotify(localization.CurrentLocale);
             // AppConfigService is authoritative for the theme as well.

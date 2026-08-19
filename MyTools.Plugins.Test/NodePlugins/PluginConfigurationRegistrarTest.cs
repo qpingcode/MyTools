@@ -48,7 +48,7 @@ public class PluginConfigurationRegistrarTest
                     [
                         new() { Key = "trigger", Type = "string", Label = new LocalizedNameV3 { Key = "t", DefaultValue = "Trigger" } },
                         new() { Key = "timestamp", Type = "hidden", DefaultValue = JsonValue.Create("${DateTime.Now}") },
-                        new() { Key = "content", Type = "string", UiHint = "textarea" }
+                        new() { Key = "content", Type = "string", UiHint = "textarea", Table = false }
                     ]
                 }
             }
@@ -70,6 +70,8 @@ public class PluginConfigurationRegistrarTest
         Assert.That(setting.Schema.Properties[1].Hidden, Is.True);
         Assert.That(setting.Schema.Properties[1].DefaultValue, Is.EqualTo("${DateTime.Now}"));
         Assert.That(setting.Schema.Properties[2].UiHint, Is.EqualTo("textarea"));
+        Assert.That(setting.Schema.Properties[2].Table, Is.False);
+        Assert.That(setting.Schema.Properties[0].Table, Is.True);
         Assert.That(((JsonElement)setting.DefaultValue!).GetRawText(), Is.EqualTo("[]"));
     }
 

@@ -1,5 +1,15 @@
 {
   "Plugin.CommandRunner.Name": "自定义命令",
+  "Plugin.CommandRunner.Setting.Commands": "命令",
+  "Plugin.CommandRunner.Setting.Commands.Description": "可在全局搜索中使用的自定义命令。按回车运行。",
+  "Plugin.CommandRunner.Column.Name": "名称",
+  "Plugin.CommandRunner.Column.ScriptMode": "批处理脚本",
+  "Plugin.CommandRunner.Column.Command": "命令 / 网址",
+  "Plugin.CommandRunner.Column.Args": "参数",
+  "Plugin.CommandRunner.Column.Scripts": "脚本内容",
+  "Plugin.CommandRunner.Column.WorkingDirectory": "工作目录",
+  "Plugin.CommandRunner.Column.RunAsAdmin": "以管理员运行",
   "Plugin.CommandRunner.Action.Run": "运行",
-  "Plugin.CommandRunner.Action.RunDescription": "运行所选命令"
+  "Plugin.CommandRunner.Action.RunDescription": "运行所选命令",
+  "Plugin.CommandRunner.Untitled": "未命名命令"
 }

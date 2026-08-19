@@ -1,6 +1,6 @@
 {
   "id": "settings",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "protocolVersion": "3.0",
   "i18n": {
     "defaultLocale": "en-US",
@@ -30,8 +30,6 @@
         "gestures.suspend",
         "gestures.resume",
         "action.capture",
-        "commandRunner.read",
-        "commandRunner.write",
         "path.pick",
         "path.validate",
         "restart"

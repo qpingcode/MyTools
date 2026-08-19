@@ -33,6 +33,11 @@ public sealed class PluginConfigurationPropertyV3
     public LocalizedNameV3? Label { get; init; }
     public JsonNode? DefaultValue { get; init; }
     public string? UiHint { get; init; }
+    /// <summary>
+    /// When <c>false</c>, the property is omitted from the settings table and only shown in the edit dialog.
+    /// Omitted means <c>true</c>.
+    /// </summary>
+    public bool Table { get; init; } = true;
 }
 
 /// <summary>Allowed <c>configuration[].type</c> values in plugin.json.</summary>
@@ -44,13 +49,17 @@ public static class PluginConfigurationTypes
     public const string Integer = "integer";
     public const string Double = "double";
     public const string Array = "array";
+    public const string Path = "path";
     public const string Hidden = "hidden";
+    public const string PathFile = "file";
+    public const string PathDirectory = "directory";
+    public const string PathFileOrDirectory = "fileOrDirectory";
 
     public static bool IsSettingType(string? type) => Normalize(type) is
-        String or Bool or Int or Double or Array;
+        String or Bool or Int or Double or Array or Path;
 
     public static bool IsPropertyType(string? type) => Normalize(type) is
-        String or Bool or Int or Double or Hidden;
+        String or Bool or Int or Double or Path or Hidden;
 
     public static string Normalize(string? type)
     {
@@ -68,7 +77,30 @@ public static class PluginConfigurationTypes
         Bool => "checkbox",
         Int or Double => "input-number",
         Array => "table",
+        Path => PathFileOrDirectory,
         Hidden => "",
         _ => "input"
     };
+
+    public static bool IsPathType(string? type) => Normalize(type) == Path;
+
+    /// <summary>
+    /// Picker/validation kind for <see cref="Path"/> settings and columns.
+    /// Accepts <c>file</c>, <c>directory</c>, or <c>fileOrDirectory</c>; anything else defaults to file-or-directory.
+    /// </summary>
+    public static string NormalizePathKind(string? uiHint)
+    {
+        var hint = (uiHint ?? "").Trim();
+        if (string.Equals(hint, PathFile, StringComparison.OrdinalIgnoreCase))
+        {
+            return PathFile;
+        }
+
+        if (string.Equals(hint, PathDirectory, StringComparison.OrdinalIgnoreCase))
+        {
+            return PathDirectory;
+        }
+
+        return PathFileOrDirectory;
+    }
 }

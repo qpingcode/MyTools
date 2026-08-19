@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
@@ -60,8 +59,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         "keymap.read", "keymap.write", "keymap.validate",
         "gestures.read", "gestures.write", "gestures.suspend", "gestures.resume",
         "hotkeys.read", "hotkeys.write", "hotkeys.suspend", "hotkeys.resume", "hotkeys.validate",
-        "action.capture",
-        "commandRunner.read", "commandRunner.write"
+        "action.capture"
     ];
 
     public SettingsPluginHostCallHandler(
@@ -128,8 +126,6 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
                 "hotkeys.suspend" => SuspendHotkeys(),
                 "hotkeys.resume" => ResumeHotkeys(),
                 "hotkeys.validate" => ValidateHotKeys(request.Params),
-                "commandRunner.read" => GetCommandRunner(),
-                "commandRunner.write" => SaveCommandRunner(request.Params),
                 _ => throw new NotSupportedException($"Unknown hostCall method: {request.Method}")
             };
         }
@@ -212,7 +208,8 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
                 Title = property.Title,
                 UiHint = property.UiHint,
                 DefaultValue = property.DefaultValue,
-                Hidden = property.Hidden
+                Hidden = property.Hidden,
+                Table = property.Table
             }).ToList()
         };
     }
@@ -612,53 +609,6 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         });
     }
 
-    private static readonly JsonSerializerOptions CommandRunnerJsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true,
-        WriteIndented = true,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        AllowTrailingCommas = true,
-        ReadCommentHandling = JsonCommentHandling.Skip
-    };
-
-    private static string CommandRunnerConfigPath => Path.Combine(ConfigPath.Base, "CommandRunner.json");
-
-    private JsonElement GetCommandRunner()
-    {
-        var commands = ReadCommandRunnerConfigs();
-        return JsonSerializer.SerializeToElement(new CommandRunnerDto { Commands = commands }, JsonCamelCaseOptions);
-    }
-
-    private JsonElement SaveCommandRunner(JsonElement payload)
-    {
-        var request = payload.Deserialize<CommandRunnerSaveRequest>(JsonCamelCaseOptions);
-        var commands = request?.Commands ?? [];
-        Directory.CreateDirectory(ConfigPath.Base);
-        File.WriteAllText(CommandRunnerConfigPath, JsonSerializer.Serialize(commands, CommandRunnerJsonOptions));
-        return JsonSerializer.SerializeToElement(new { success = true }, JsonCamelCaseOptions);
-    }
-
-    private List<CommandConfig> ReadCommandRunnerConfigs()
-    {
-        var path = CommandRunnerConfigPath;
-        if (!File.Exists(path))
-        {
-            return [];
-        }
-
-        try
-        {
-            var json = File.ReadAllText(path);
-            return JsonSerializer.Deserialize<List<CommandConfig>>(json, CommandRunnerJsonOptions) ?? [];
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Failed to read CommandRunner.json");
-            return [];
-        }
-    }
-
     private void ApplySearchHotKeyFromSettings()
     {
         var text = registry.FindSetting(AppConfigService.SearchHotKeySettingPath)?.GetValue<string>()?.Trim() ?? string.Empty;
@@ -818,14 +768,4 @@ public sealed class GesturesDto
 public sealed class GesturesSaveRequest
 {
     public List<GestureConfig> Gestures { get; init; } = new();
-}
-
-public sealed class CommandRunnerDto
-{
-    public List<CommandConfig> Commands { get; init; } = new();
-}
-
-public sealed class CommandRunnerSaveRequest
-{
-    public List<CommandConfig> Commands { get; init; } = new();
 }

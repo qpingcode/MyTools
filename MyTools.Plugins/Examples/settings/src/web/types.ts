@@ -7,6 +7,7 @@ export type SettingSchemaProperty = {
     uiHint?: string;
     defaultValue?: string;
     hidden?: boolean;
+    table?: boolean;
 };
 
 export type SettingSchema = {
@@ -78,16 +79,6 @@ export type GestureConfig = {
     mouseButton?: string | null;
     processNames: string[];
     isEnabled: boolean;
-};
-
-export type CommandConfig = {
-    name: string;
-    command?: string;
-    args?: string;
-    runAsAdmin?: boolean;
-    isBashScript?: boolean;
-    scripts?: string[];
-    workingDirectory?: string;
 };
 
 export type SidebarItem =

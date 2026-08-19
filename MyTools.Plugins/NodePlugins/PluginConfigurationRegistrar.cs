@@ -147,7 +147,8 @@ public static class PluginConfigurationRegistrar
                     Type = type,
                     Title = ResolveLabel(property.Label, property.Key, localization),
                     UiHint = string.IsNullOrEmpty(uiHint) ? null : uiHint,
-                    DefaultValue = ToStringValue(property.DefaultValue)
+                    DefaultValue = ToStringValue(property.DefaultValue),
+                    Table = property.Table
                 };
             }).ToList()
         };
