@@ -7,11 +7,11 @@ namespace MyTools.Desktop.Services;
 
 /// <summary>
 /// 用户对插件热键/关键词/启用状态的覆盖配置。
-/// 存储在 %AppData%/MyTools.Desktop/Keymap.json 中，优先于 plugin.json 中的默认值。
+/// 存储在 %AppData%/MyTools.Desktop/PluginOverrides.json 中，优先于 plugin.json 中的默认值。
 /// </summary>
-public sealed class KeymapOverrideProvider
+public sealed class PluginOverrideProvider
 {
-    private static readonly string FilePath = Path.Combine(ConfigPath.Base, "Keymap.json");
+    private static readonly string FilePath = Path.Combine(ConfigPath.Base, "PluginOverrides.json");
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -19,10 +19,10 @@ public sealed class KeymapOverrideProvider
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    private readonly ILogger<KeymapOverrideProvider> logger;
-    private Dictionary<string, KeymapOverride> overrides = new();
+    private readonly ILogger<PluginOverrideProvider> logger;
+    private Dictionary<string, PluginOverride> overrides = new();
 
-    public KeymapOverrideProvider(ILogger<KeymapOverrideProvider> logger)
+    public PluginOverrideProvider(ILogger<PluginOverrideProvider> logger)
     {
         this.logger = logger;
         Load();
@@ -48,12 +48,12 @@ public sealed class KeymapOverrideProvider
         return overrides.TryGetValue(pluginId, out var o) ? o.IncludeInGlobalResults : null;
     }
 
-    public IReadOnlyDictionary<string, KeymapOverride> GetAll()
+    public IReadOnlyDictionary<string, PluginOverride> GetAll()
     {
         return overrides;
     }
 
-    public void Save(Dictionary<string, KeymapOverride> newOverrides)
+    public void Save(Dictionary<string, PluginOverride> newOverrides)
     {
         overrides = newOverrides;
         Persist();
@@ -65,17 +65,19 @@ public sealed class KeymapOverrideProvider
         {
             if (!File.Exists(FilePath))
             {
+                overrides = new Dictionary<string, PluginOverride>();
+                Persist();
                 return;
             }
 
             var json = File.ReadAllText(FilePath);
-            overrides = JsonSerializer.Deserialize<Dictionary<string, KeymapOverride>>(json, JsonOptions)
-                        ?? new Dictionary<string, KeymapOverride>();
+            overrides = JsonSerializer.Deserialize<Dictionary<string, PluginOverride>>(json, JsonOptions)
+                        ?? new Dictionary<string, PluginOverride>();
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to load Keymap.json.");
-            overrides = new Dictionary<string, KeymapOverride>();
+            logger.LogError(ex, "Failed to load PluginOverrides.json.");
+            overrides = new Dictionary<string, PluginOverride>();
         }
     }
 
@@ -89,7 +91,7 @@ public sealed class KeymapOverrideProvider
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to save Keymap.json.");
+            logger.LogError(ex, "Failed to save PluginOverrides.json.");
         }
     }
 }
@@ -97,7 +99,7 @@ public sealed class KeymapOverrideProvider
 /// <summary>
 /// 单个插件的覆盖项。所有字段为 null 表示用 plugin.json 默认值。
 /// </summary>
-public sealed class KeymapOverride
+public sealed class PluginOverride
 {
     public string? HotKey { get; set; }
     public List<string>? Keywords { get; set; }

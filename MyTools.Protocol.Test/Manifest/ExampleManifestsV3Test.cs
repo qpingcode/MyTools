@@ -67,6 +67,7 @@ public class ExampleManifestsV3Test
         {
             "configuration.read", "configuration.write",
             "keymap.read", "keymap.write", "keymap.validate",
+            "hotkeys.read", "hotkeys.write", "hotkeys.validate",
             "gestures.read", "gestures.write", "gestures.suspend", "gestures.resume",
             "action.capture",
             "commandRunner.read", "commandRunner.write",
