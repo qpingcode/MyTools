@@ -70,7 +70,6 @@ public class ExampleManifestsV3Test
             "hotkeys.read", "hotkeys.write", "hotkeys.validate",
             "gestures.read", "gestures.write", "gestures.suspend", "gestures.resume",
             "action.capture",
-            "commandRunner.read", "commandRunner.write",
             "path.pick", "path.validate",
             "restart"
         }));

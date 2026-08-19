@@ -59,6 +59,7 @@ public sealed class SettingSchemaPropertyDto
     public string? UiHint { get; init; }
     public string? DefaultValue { get; init; }
     public bool Hidden { get; init; }
+    public bool Table { get; init; } = true;
 }
 
 public sealed class OptionDto

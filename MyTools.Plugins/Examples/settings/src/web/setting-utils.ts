@@ -37,6 +37,9 @@ export function coercePropertyValue(type: string, raw: unknown): unknown {
         const value = typeof raw === "number" ? raw : Number.parseFloat(String(raw ?? "0"));
         return Number.isFinite(value) ? value : 0;
     }
+    if (Array.isArray(raw)) {
+        return raw.map((item) => String(item ?? "")).join("\n");
+    }
     return raw == null ? "" : String(raw);
 }
 

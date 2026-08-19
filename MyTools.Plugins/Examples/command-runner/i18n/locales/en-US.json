@@ -1,5 +1,15 @@
 {
   "Plugin.CommandRunner.Name": "Custom Commands",
+  "Plugin.CommandRunner.Setting.Commands": "Commands",
+  "Plugin.CommandRunner.Setting.Commands.Description": "Custom commands available in global search. Press Enter to run.",
+  "Plugin.CommandRunner.Column.Name": "Name",
+  "Plugin.CommandRunner.Column.ScriptMode": "Batch script",
+  "Plugin.CommandRunner.Column.Command": "Command / URL",
+  "Plugin.CommandRunner.Column.Args": "Arguments",
+  "Plugin.CommandRunner.Column.Scripts": "Script lines",
+  "Plugin.CommandRunner.Column.WorkingDirectory": "Working directory",
+  "Plugin.CommandRunner.Column.RunAsAdmin": "Run as administrator",
   "Plugin.CommandRunner.Action.Run": "Run",
-  "Plugin.CommandRunner.Action.RunDescription": "Run the selected command"
+  "Plugin.CommandRunner.Action.RunDescription": "Run the selected command",
+  "Plugin.CommandRunner.Untitled": "Untitled command"
 }

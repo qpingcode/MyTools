@@ -38,7 +38,7 @@ public class RunCommandAction : IAction
             {
                 var tempFilePath = Path.GetTempFileName();
                 var tempFilePathWithExtension = Path.ChangeExtension(tempFilePath, ".bat");
-                await File.WriteAllLinesAsync(tempFilePathWithExtension, config.Scripts ?? []);
+                await File.WriteAllLinesAsync(tempFilePathWithExtension, ReadScripts(config.Scripts));
 
                 command = "cmd.exe";
                 commandArgs = $"/k \"{tempFilePathWithExtension}\"";
@@ -97,8 +97,40 @@ public class RunCommandAction : IAction
 
         public bool IsBashScript { get; set; }
 
-        public List<string>? Scripts { get; set; }
+        public JsonElement Scripts { get; set; }
 
         public string? WorkingDirectory { get; set; }
+    }
+
+    internal static IReadOnlyList<string> ReadScripts(JsonElement scripts)
+    {
+        if (scripts.ValueKind == JsonValueKind.String)
+        {
+            return SplitScriptLines(scripts.GetString());
+        }
+
+        if (scripts.ValueKind != JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        return scripts.EnumerateArray()
+            .Select(item => item.ValueKind == JsonValueKind.String ? item.GetString() ?? "" : item.GetRawText())
+            .Select(line => line.TrimEnd())
+            .Where(line => line.Length > 0)
+            .ToList();
+    }
+
+    internal static IReadOnlyList<string> SplitScriptLines(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return [];
+        }
+
+        return text.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+            .Select(line => line.TrimEnd())
+            .Where(line => line.Length > 0)
+            .ToList();
     }
 }

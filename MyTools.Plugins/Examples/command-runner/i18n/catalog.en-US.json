@@ -9,9 +9,79 @@
       "defaultValue": "Custom Commands",
       "placeholders": [],
       "references": [],
-      "existingTranslations": {
-        "zh-CN": "自定义命令"
-      },
+      "existingTranslations": { "zh-CN": "自定义命令" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.CommandRunner.Setting.Commands",
+      "defaultValue": "Commands",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "命令" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.CommandRunner.Setting.Commands.Description",
+      "defaultValue": "Custom commands available in global search. Press Enter to run.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "可在全局搜索中使用的自定义命令。按回车运行。" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.CommandRunner.Column.Name",
+      "defaultValue": "Name",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "名称" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.CommandRunner.Column.ScriptMode",
+      "defaultValue": "Batch script",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "批处理脚本" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.CommandRunner.Column.Command",
+      "defaultValue": "Command / URL",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "命令 / 网址" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.CommandRunner.Column.Args",
+      "defaultValue": "Arguments",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "参数" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.CommandRunner.Column.Scripts",
+      "defaultValue": "Script lines",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "脚本内容" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.CommandRunner.Column.WorkingDirectory",
+      "defaultValue": "Working directory",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "工作目录" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.CommandRunner.Column.RunAsAdmin",
+      "defaultValue": "Run as administrator",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "以管理员运行" },
       "sourceHash": "sha256:placeholder"
     },
     {
@@ -19,9 +89,7 @@
       "defaultValue": "Run",
       "placeholders": [],
       "references": [],
-      "existingTranslations": {
-        "zh-CN": "运行"
-      },
+      "existingTranslations": { "zh-CN": "运行" },
       "sourceHash": "sha256:placeholder"
     },
     {
@@ -29,9 +97,15 @@
       "defaultValue": "Run the selected command",
       "placeholders": [],
       "references": [],
-      "existingTranslations": {
-        "zh-CN": "运行所选命令"
-      },
+      "existingTranslations": { "zh-CN": "运行所选命令" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.CommandRunner.Untitled",
+      "defaultValue": "Untitled command",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "未命名命令" },
       "sourceHash": "sha256:placeholder"
     }
   ]

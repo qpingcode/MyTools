@@ -1,13 +1,99 @@
 {
   "id": "command-runner",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "protocolVersion": "3.0",
+  "icon": "mdi-console-line",
   "i18n": {
     "defaultLocale": "en-US",
     "catalog": "i18n/catalog.en-US.json",
     "localesPath": "i18n/locales",
     "supportedLocales": ["en-US", "zh-CN"]
   },
+  "configuration": [
+    {
+      "key": "Commands",
+      "label": {
+        "key": "Plugin.CommandRunner.Setting.Commands",
+        "defaultValue": "Commands"
+      },
+      "description": {
+        "key": "Plugin.CommandRunner.Setting.Commands.Description",
+        "defaultValue": "Custom commands available in global search. Press Enter to run."
+      },
+      "type": "array",
+      "defaultValue": [],
+      "uiHint": "table",
+      "schema": {
+        "properties": [
+          {
+            "key": "name",
+            "type": "string",
+            "label": {
+              "key": "Plugin.CommandRunner.Column.Name",
+              "defaultValue": "Name"
+            },
+            "uiHint": "input"
+          },
+          {
+            "key": "isBashScript",
+            "type": "bool",
+            "table": false,
+            "label": {
+              "key": "Plugin.CommandRunner.Column.ScriptMode",
+              "defaultValue": "Batch script"
+            }
+          },
+          {
+            "key": "command",
+            "type": "string",
+            "label": {
+              "key": "Plugin.CommandRunner.Column.Command",
+              "defaultValue": "Command / URL"
+            },
+            "uiHint": "input"
+          },
+          {
+            "key": "args",
+            "type": "string",
+            "table": false,
+            "label": {
+              "key": "Plugin.CommandRunner.Column.Args",
+              "defaultValue": "Arguments"
+            },
+            "uiHint": "input"
+          },
+          {
+            "key": "scripts",
+            "type": "string",
+            "table": false,
+            "label": {
+              "key": "Plugin.CommandRunner.Column.Scripts",
+              "defaultValue": "Script lines"
+            },
+            "uiHint": "textarea"
+          },
+          {
+            "key": "workingDirectory",
+            "type": "string",
+            "table": false,
+            "label": {
+              "key": "Plugin.CommandRunner.Column.WorkingDirectory",
+              "defaultValue": "Working directory"
+            },
+            "uiHint": "input"
+          },
+          {
+            "key": "runAsAdmin",
+            "type": "bool",
+            "label": {
+              "key": "Plugin.CommandRunner.Column.RunAsAdmin",
+              "defaultValue": "Run as administrator"
+            }
+          }
+        ]
+      }
+    }
+  ],
   "entries": [
     {
       "id": "command-runner",
@@ -16,7 +102,7 @@
         "defaultValue": "Custom Commands"
       },
       "entry": "backend/index.mjs",
-      "capabilities": [],
+      "capabilities": ["configuration.readOwn"],
       "alias": [],
       "search": { "global": true },
       "detail": { "type": "list" }

@@ -112,4 +112,19 @@ public class PluginManifestV3RuntimeFieldsTest
         Assert.That(snippet.Entries[0].Capabilities, Is.EquivalentTo(new[] { "configuration.readOwn" }));
         Assert.That(snippet.Entries[0].Search!.Global, Is.True);
     }
+
+    [Test]
+    public void Deserialize_ShouldReadCommandRunnerConfiguration()
+    {
+        var commandRunner = LoadExampleV3("command-runner");
+        Assert.That(commandRunner.Icon, Is.EqualTo("mdi-console-line"));
+        Assert.That(commandRunner.Configuration, Has.Count.EqualTo(1));
+        Assert.That(commandRunner.Configuration[0].Key, Is.EqualTo("Commands"));
+        Assert.That(commandRunner.Configuration[0].Type, Is.EqualTo("array"));
+        Assert.That(commandRunner.Configuration[0].Schema!.Properties, Has.Count.EqualTo(7));
+        Assert.That(
+            commandRunner.Configuration[0].Schema.Properties.Where(property => property.Table).Select(property => property.Key),
+            Is.EquivalentTo(new[] { "name", "command", "runAsAdmin" }));
+        Assert.That(commandRunner.Entries[0].Capabilities, Is.EquivalentTo(new[] { "configuration.readOwn" }));
+    }
 }

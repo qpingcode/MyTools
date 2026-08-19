@@ -13,5 +13,6 @@ public sealed class SettingSchemaProperty
     public string Title { get; init; } = "";
     public string? UiHint { get; init; }
     public string? DefaultValue { get; init; }
+    public bool Table { get; init; } = true;
     public bool Hidden => string.Equals(Type, "hidden", StringComparison.OrdinalIgnoreCase);
 }

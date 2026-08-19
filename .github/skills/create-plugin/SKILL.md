@@ -7,7 +7,7 @@ description: Develop a MyTools Node plugin (backend + optional WebView2 detail p
 
 MyTools Node 插件 = 独立 Node 进程里的后端 + 可选的 WebView2 HTML 详情页。不写 `detail` 时宿主用 `search` 结果走原生列表。通信走 v3 消息总线（Named Pipe + WebView2 postMessage），协议版本 **3.0**。
 
-参考实现：`MyTools.Plugins/Examples/` 下的 `hello-search`（最小）、`json-formatter` / `xml-formatter`（页面自包含）、`settings`（`hostCall`）、`snippet`（`plugin.json` configuration + `configuration.readOwn`）、`deepseek-chat`、`deepseek-translator`（多 entry）。SDK 源码：`MyTools.Plugins/Examples/sdk-v3`（包名 `@qping/plugin-bus`）。
+参考实现：`MyTools.Plugins/Examples/` 下的 `hello-search`（最小）、`json-formatter` / `xml-formatter`（页面自包含）、`settings`（`hostCall`）、`snippet` / `command-runner`（`plugin.json` configuration + `configuration.readOwn`）、`deepseek-chat`、`deepseek-translator`（多 entry）。SDK 源码：`MyTools.Plugins/Examples/sdk-v3`（包名 `@qping/plugin-bus`）。
 
 ## 1. 目录结构
 
@@ -136,7 +136,7 @@ SDK 把旧式方法名映射到 v3 路由：`initialize` → `plugin.call.initia
 - `capabilities` 必填（可 `[]`）。只有声明过的能力才能 `hostCall`；调用的方法名必须与声明的 capability 完全一致，例如读取配置使用 `plugin.hostCall("configuration.read")` 并声明 `"configuration.read"`。
 - 顶层 `icon` 是 Settings 侧栏图标（Material Design Icons 类名，如 `"mdi-message-text-outline"`）。省略时用默认齿轮变体图标。
 - 插件级设置写在顶层 `configuration`（不是 entry 上）。宿主启动时按 schema 注册到 Settings 侧栏，分类名为插件显示名，设置完整路径为 `{pluginId}.{key}`（例如 `snippet.Phrases`）。`key` 也可以写成 `snippet.Phrases` 或 `Plugins.Snippet.Phrases`，宿主会去掉前缀。
-- `type`：`string` / `bool` / `int` / `double` / `array`。`uiHint` 可选：string 默认 `input`（也可 `textarea` / `email` / `telephone`）；bool 默认 `checkbox`（也可 `radio` / `select`）；int/double 默认 `input-number`；array 默认 `table`，必须带 `schema.properties`。列 `type: "hidden"` 不显示，可用于时间戳等。默认值支持宏 `${DateTime.Now}`（新增行时解析）。
+- `type`：`string` / `bool` / `int` / `double` / `array`。`uiHint` 可选：string 默认 `input`（也可 `textarea` / `email` / `telephone`）；bool 默认 `checkbox`（也可 `radio` / `select`）；int/double 默认 `input-number`；array 默认 `table`，必须带 `schema.properties`。列 `type: "hidden"` 表格和编辑框都不显示（时间戳等）。列 `"table": false` 只在编辑对话框出现，不出现在表格。默认值支持宏 `${DateTime.Now}`（新增行时解析）。
 - 需要读自己的设置时声明 `configuration.readOwn`。不要用 `configuration.read`（那是 settings 插件读全部设置）。
 - `detail` 可选。省略（或 `"detail": { "type": "list" }`）时宿主用 `search` 的结果走原生列表：关键词路由停留在列表，热键打开搜索主窗口并锁定该插件。
 - 需要自定义页面时再写 `"detail": { "type": "web", "entry": "web/index.html" }`。`hotKey`、`alias`、`search` 可选。

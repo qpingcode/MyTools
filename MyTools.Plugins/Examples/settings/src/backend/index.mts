@@ -66,13 +66,6 @@ plugin
     const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
     return await plugin.hostCall("action.capture", params);
   })
-  .handle("getCommandRunner", async () => {
-    return await plugin.hostCall("commandRunner.read");
-  })
-  .handle("saveCommandRunner", async (payload: any) => {
-    const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
-    return await plugin.hostCall("commandRunner.write", params);
-  })
   .handle("pickPath", async (payload: any) => {
     const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
     return await plugin.hostCall("path.pick", params);
