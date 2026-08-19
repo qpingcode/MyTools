@@ -96,7 +96,7 @@ public class AppConfigService
     public void SetSearchHotKey(string hotKeyText)
     {
         AppConfig.SearchHotKeyText = string.IsNullOrWhiteSpace(hotKeyText)
-            ? DefaultSearchHotKey
+            ? string.Empty
             : hotKeyText.Trim();
         SaveConfig(AppConfig);
     }

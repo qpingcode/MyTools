@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import HighlightText from "../components/HighlightText.vue";
 import ScalarSettingsPanel from "./ScalarSettingsPanel.vue";
 import { bus } from "../bus";
@@ -21,6 +21,7 @@ const GESTURE_VISIBLE_DIRS = 4;
 const recording = ref(false);
 const recordingHint = computed(() => t("Plugin.Settings.Gestures.Recording", "Hold right button to draw..."));
 const trail = ref("");
+const overlayRef = ref<HTMLElement | null>(null);
 let recordingTarget: GestureConfig | null = null;
 let directions: string[] = [];
 let lastPoint: { x: number; y: number } | null = null;
@@ -40,6 +41,12 @@ const headers = computed(() => ({
     enabled: t("Plugin.Settings.Gestures.HeaderEnabled", "Enabled"),
     enabledTip: t("Plugin.Settings.Gestures.HeaderEnabledTip", "Enable or disable this gesture."),
 }));
+
+watch(recording, async (value) => {
+    if (!value) return;
+    await nextTick();
+    overlayRef.value?.focus();
+});
 
 function directionsToArrows(dirs: string[]): string {
     return dirs.map((dir) => DIRECTION_ARROWS[dir] || dir).join(" ");
@@ -256,30 +263,31 @@ onBeforeUnmount(() => {
             </div>
             <div v-for="(gesture, index) in gestures" :key="gesture.id || index" class="gesture-row">
                 <div class="col-name">
-                    <v-icon
+                    <i
                         v-if="conflicts.get(gesture.id)"
-                        icon="mdi-alert"
-                        color="error"
-                        size="small"
+                        class="mdi mdi-alert conflict-icon"
                         :title="conflicts.get(gesture.id)"
-                    />
-                    <v-text-field
-                        v-model="gesture.actionName"
+                    ></i>
+                    <n-input
+                        :value="gesture.actionName"
                         :placeholder="t('Plugin.Settings.Gestures.NamePlaceholder', 'e.g. Close Tab')"
-                        density="compact"
-                        variant="outlined"
-                        hide-details
-                        @update:model-value="markDirty"
+                        size="small"
+                        @update:value="
+                            gesture.actionName = String($event || '');
+                            markDirty();
+                        "
                     />
                 </div>
                 <div class="col-gesture">
-                    <v-btn
-                        variant="text"
-                        class="gesture-display"
+                    <button
+                        type="button"
+                        class="flat-display"
                         :class="{ empty: gesture.directions.length === 0 }"
-                        :title="gesture.directions.length === 0
-                            ? t('Plugin.Settings.Gestures.ClickToRecord', 'Click to record')
-                            : formatGestureDisplay(gesture.directions).full"
+                        :title="
+                            gesture.directions.length === 0
+                                ? t('Plugin.Settings.Gestures.ClickToRecord', 'Click to record')
+                                : formatGestureDisplay(gesture.directions).full
+                        "
                         @click="startRecording(gesture)"
                     >
                         <span v-if="gesture.directions.length === 0">
@@ -290,58 +298,62 @@ onBeforeUnmount(() => {
                             :text="formatGestureDisplay(gesture.directions).visible"
                             :query="store.searchQuery"
                         />
-                    </v-btn>
+                    </button>
                 </div>
                 <div class="col-process">
-                    <v-text-field
-                        :model-value="(gesture.processNames || []).join(', ')"
+                    <n-input
+                        :value="(gesture.processNames || []).join(', ')"
                         :placeholder="t('Plugin.Settings.Gestures.ProcessPlaceholder', 'Any')"
                         :title="t('Plugin.Settings.Gestures.ProcessHint', 'Comma-separated process names')"
-                        density="compact"
-                        variant="outlined"
-                        hide-details
-                        @update:model-value="onProcessChange(gesture, String($event || ''))"
+                        size="small"
+                        @update:value="onProcessChange(gesture, String($event || ''))"
                     />
                 </div>
                 <div class="col-trigger">
-                    <v-btn
-                        variant="text"
-                        class="action-display"
+                    <button
+                        type="button"
+                        class="flat-display"
                         :class="{ empty: formatActionDisplay(gesture).empty }"
                         :title="formatActionDisplay(gesture).title"
                         @click="setAction(gesture)"
                     >
                         {{ formatActionDisplay(gesture).text }}
-                    </v-btn>
+                    </button>
                 </div>
                 <div class="col-enabled">
-                    <v-checkbox
-                        v-model="gesture.isEnabled"
-                        hide-details
-                        density="compact"
-                        color="primary"
-                        @update:model-value="markDirty"
+                    <n-checkbox
+                        :checked="gesture.isEnabled"
+                        @update:checked="
+                            gesture.isEnabled = !!$event;
+                            markDirty();
+                        "
                     />
                 </div>
                 <div class="col-actions">
-                    <v-btn
-                        icon="mdi-close"
-                        size="x-small"
-                        variant="text"
+                    <button
+                        type="button"
+                        class="icon-delete-btn"
                         :title="t('Plugin.Settings.Gestures.Delete', 'Delete')"
                         @click="removeGesture(gesture)"
-                    />
+                    >
+                        <i class="mdi mdi-trash-can-outline delete-icon"></i>
+                    </button>
                 </div>
             </div>
         </div>
         <div class="add-bar">
-            <v-btn variant="tonal" size="small" prepend-icon="mdi-plus" @click="addGesture">
+            <n-button secondary size="small" @click="addGesture">
+                <template #icon>
+                    <i class="mdi mdi-plus"></i>
+                </template>
                 {{ t("Plugin.Settings.Gestures.Add", "Add Gesture") }}
-            </v-btn>
+            </n-button>
         </div>
         <div
             v-if="recording"
+            ref="overlayRef"
             class="gesture-record-overlay"
+            tabindex="0"
             @mousedown="onMouseDown"
             @mousemove="onMouseMove"
             @mouseup="onMouseUp"
@@ -412,24 +424,54 @@ onBeforeUnmount(() => {
     justify-content: center;
 }
 
-.gesture-display,
-.action-display {
+.icon-delete-btn {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--mt-text-tertiary, #aaaaaa);
+    cursor: pointer;
+    transition: background-color 140ms ease, color 140ms ease, transform 120ms ease;
+}
+
+.icon-delete-btn:hover {
+    background: rgba(239, 68, 68, 0.14);
+    color: #ef4444;
+}
+
+.icon-delete-btn:active {
+    transform: scale(0.96);
+}
+
+.delete-icon {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.flat-display {
     width: 100%;
-    justify-content: flex-start;
-    text-transform: none;
-    letter-spacing: 0;
+    border: none;
+    background: transparent;
+    color: var(--mt-text, #fff);
+    text-align: left;
+    padding: 6px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    font: inherit;
     min-width: 0;
 }
 
-.gesture-display {
-    font-family: "Cascadia Code", Consolas, monospace;
+.flat-display:hover {
+    background: var(--mt-surface-hover, #3a3a3a);
 }
 
-.gesture-display.empty,
-.action-display.empty {
+.flat-display.empty {
     font-style: italic;
     opacity: 0.6;
-    font-family: inherit;
 }
 
 .add-bar {
@@ -466,5 +508,9 @@ onBeforeUnmount(() => {
     font-family: "Cascadia Code", Consolas, monospace;
     letter-spacing: 8px;
     min-height: 64px;
+}
+
+.conflict-icon {
+    color: #f44336;
 }
 </style>

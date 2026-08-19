@@ -19,7 +19,7 @@
   "Plugin.Settings.Keymap.HeaderName": "Plugin Name",
   "Plugin.Settings.Keymap.HeaderHotkey": "Hotkey",
   "Plugin.Settings.Keymap.HeaderKeywords": "Keyword",
-  "Plugin.Settings.Keymap.HeaderGlobalResults": "Global results",
+  "Plugin.Settings.Keymap.HeaderGlobalResults": "Global",
   "Plugin.Settings.Keymap.HeaderGlobalResultsTip": "Include this plugin when searching without a keyword",
   "Plugin.Settings.Keymap.KeywordsPlaceholder": "None",
   "Plugin.Settings.Keymap.NoHotkey": "None",

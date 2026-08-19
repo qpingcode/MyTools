@@ -82,7 +82,7 @@ public partial class InputActionCaptureWindow
         TabsPanel.Visibility = captureOptions.ShowKeyboard && captureOptions.ShowMouse
             ? Visibility.Visible
             : Visibility.Collapsed;
-        ResetButton.Visibility = captureOptions.ShowReset ? Visibility.Visible : Visibility.Collapsed;
+        ClearButton.Visibility = captureOptions.ShowKeyboard ? Visibility.Visible : Visibility.Collapsed;
         RenderBody();
     }
 
@@ -190,16 +190,14 @@ public partial class InputActionCaptureWindow
         CaptureSurface.Focus();
     }
 
-    private void ResetButton_Click(object sender, RoutedEventArgs e)
+    private void ClearButton_Click(object sender, RoutedEventArgs e)
     {
-        if (kind == KindMouse)
+        if (kind != KindHotkey)
         {
-            draftMouseButton = options.DefaultMouseButton ?? MouseBack;
-            RenderBody();
             return;
         }
 
-        ApplyHotKey(string.IsNullOrWhiteSpace(options.DefaultHotKey) ? null : options.DefaultHotKey, fromReset: true);
+        ApplyHotKey(null, fromReset: true);
     }
 
     private void CancelButton_Click(object sender, RoutedEventArgs e) => Close();
@@ -287,6 +285,9 @@ public partial class InputActionCaptureWindow
         MouseTab.Background = kind == KindMouse ? activeBg : idleBg;
         KeyboardTab.Foreground = kind == KindHotkey ? activeFg : idleFg;
         MouseTab.Foreground = kind == KindMouse ? activeFg : idleFg;
+        ClearButton.Visibility = options.ShowKeyboard && kind == KindHotkey
+            ? Visibility.Visible
+            : Visibility.Collapsed;
     }
 
     private void ConfirmAndClose()

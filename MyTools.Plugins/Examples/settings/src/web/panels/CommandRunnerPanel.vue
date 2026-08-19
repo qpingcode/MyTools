@@ -120,114 +120,104 @@ function canSave(): boolean {
         <div v-if="commands.length === 0" class="empty">
             {{ labels.empty }}
         </div>
-        <v-table v-else density="compact" class="command-table">
-            <thead>
-                <tr>
-                    <th class="col-name">{{ labels.headerName }}</th>
-                    <th>{{ labels.headerCommand }}</th>
-                    <th class="col-admin">{{ labels.headerAdmin }}</th>
-                    <th class="col-actions"></th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="(command, index) in commands" :key="index">
-                    <td class="col-name">
-                        <span class="ellipsis" :title="command.name">
-                            <HighlightText :text="command.name" :query="store.searchQuery" />
-                        </span>
-                    </td>
-                    <td class="col-command">
-                        <span class="mono ellipsis" :title="subtitle(command)">
-                            <HighlightText :text="subtitle(command)" :query="store.searchQuery" />
-                        </span>
-                    </td>
-                    <td class="col-admin">
-                        <v-icon v-if="command.runAsAdmin" icon="mdi-shield-account" size="small" />
-                    </td>
-                    <td class="col-actions">
-                        <v-btn icon="mdi-pencil" size="x-small" variant="text" @click="openEditor(index)" />
-                        <v-btn
-                            icon="mdi-close"
-                            size="x-small"
-                            variant="text"
-                            :title="labels.delete"
-                            @click="removeCommand(index)"
-                        />
-                    </td>
-                </tr>
-            </tbody>
-        </v-table>
+        <div v-else class="command-table">
+            <div class="table-head">
+                <div class="col-name">{{ labels.headerName }}</div>
+                <div class="col-command">{{ labels.headerCommand }}</div>
+                <div class="col-admin">{{ labels.headerAdmin }}</div>
+                <div class="col-actions"></div>
+            </div>
+            <div v-for="(command, index) in commands" :key="index" class="table-row">
+                <div class="col-name">
+                    <span class="ellipsis" :title="command.name">
+                        <HighlightText :text="command.name" :query="store.searchQuery" />
+                    </span>
+                </div>
+                <div
+                    class="col-command col-command-clickable"
+                    :title="t('Plugin.Settings.CommandRunner.Edit', 'Edit command')"
+                    @click="openEditor(index)"
+                >
+                    <span class="mono ellipsis" :title="subtitle(command)">
+                        <HighlightText :text="subtitle(command)" :query="store.searchQuery" />
+                    </span>
+                </div>
+                <div class="col-admin">
+                    <i v-if="command.runAsAdmin" class="mdi mdi-shield-account"></i>
+                </div>
+                <div class="col-actions">
+                    <button
+                        type="button"
+                        class="icon-delete-btn"
+                        :title="labels.delete"
+                        @click="removeCommand(index)"
+                    >
+                        <i class="mdi mdi-trash-can-outline delete-icon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
         <div class="add-bar">
-            <v-btn variant="tonal" size="small" prepend-icon="mdi-plus" @click="openEditor(null)">
+            <n-button secondary size="small" @click="openEditor(null)">
+                <template #icon>
+                    <i class="mdi mdi-plus"></i>
+                </template>
                 {{ labels.add }}
-            </v-btn>
+            </n-button>
         </div>
 
-        <v-dialog v-model="editorOpen" max-width="560" persistent>
-            <v-card rounded="lg" class="command-editor">
-                <v-card-title>
+        <n-modal v-model:show="editorOpen" :mask-closable="false">
+            <n-card class="command-editor" role="dialog" aria-modal="true">
+                <div class="editor-title">
                     {{ editingIndex == null ? labels.add : labels.edit }}
-                </v-card-title>
-                <v-card-text class="editor-body editor-form">
-                    <div class="form-row">
-                        <div class="form-label">{{ labels.name }}</div>
-                        <v-text-field v-model="draft.name" variant="solo" hide-details />
-                    </div>
-                    <div class="form-row">
-                        <div class="form-label">{{ labels.scriptMode }}</div>
-                        <v-switch v-model="draft.isBashScript" hide-details />
-                    </div>
-                    <div v-if="draft.isBashScript" class="form-row form-row-top">
+                </div>
+                <div class="editor-body editor-form">
+                    <div class="form-label">{{ labels.name }}</div>
+                    <n-input v-model:value="draft.name" size="small" />
+
+                    <div class="form-label">{{ labels.scriptMode }}</div>
+                    <n-switch v-model:value="draft.isBashScript" />
+
+                    <template v-if="draft.isBashScript">
                         <div class="form-label">
                             <div>{{ labels.scripts }}</div>
                             <div class="form-hint">{{ labels.scriptsHint }}</div>
                         </div>
-                        <v-textarea
-                            v-model="scriptsText"
-                            variant="solo"
-                            hide-details
-                            auto-grow
-                            rows="4"
+                        <n-input
+                            v-model:value="scriptsText"
+                            type="textarea"
+                            :autosize="{ minRows: 4 }"
                         />
-                    </div>
-                    <template v-else>
-                        <div class="form-row">
-                            <div class="form-label">{{ labels.command }}</div>
-                            <v-text-field v-model="draft.command" variant="solo" hide-details />
-                        </div>
-                        <div class="form-row">
-                            <div class="form-label">{{ labels.args }}</div>
-                            <v-text-field v-model="draft.args" variant="solo" hide-details />
-                        </div>
                     </template>
-                    <div class="form-row">
-                        <div class="form-label">{{ labels.workingDirectory }}</div>
-                        <v-text-field v-model="draft.workingDirectory" variant="solo" hide-details />
-                    </div>
-                    <div class="form-row">
-                        <div class="form-label">{{ labels.runAsAdmin }}</div>
-                        <v-switch v-model="draft.runAsAdmin" hide-details />
-                    </div>
-                </v-card-text>
-                <v-card-actions class="editor-actions">
-                    <v-spacer />
-                    <v-btn variant="tonal" size="default" rounded="lg" class="editor-btn" @click="editorOpen = false">
+                    <template v-else>
+                        <div class="form-label">{{ labels.command }}</div>
+                        <n-input v-model:value="draft.command" size="small" />
+
+                        <div class="form-label">{{ labels.args }}</div>
+                        <n-input v-model:value="draft.args" size="small" />
+                    </template>
+
+                    <div class="form-label">{{ labels.workingDirectory }}</div>
+                    <n-input v-model:value="draft.workingDirectory" size="small" />
+
+                    <div class="form-label">{{ labels.runAsAdmin }}</div>
+                    <n-switch v-model:value="draft.runAsAdmin" />
+                </div>
+                <div class="editor-actions">
+                    <n-button size="small" @click="editorOpen = false">
                         {{ labels.cancel }}
-                    </v-btn>
-                    <v-btn
-                        color="primary"
-                        variant="flat"
-                        size="default"
-                        rounded="lg"
-                        class="editor-btn"
+                    </n-button>
+                    <n-button
+                        type="primary"
+                        size="small"
                         :disabled="!canSave()"
                         @click="saveEditor"
                     >
                         {{ labels.apply }}
-                    </v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
+                    </n-button>
+                </div>
+            </n-card>
+        </n-modal>
     </div>
 </template>
 
@@ -239,16 +229,49 @@ function canSave(): boolean {
 }
 
 .command-table {
-    table-layout: fixed;
     width: 100%;
+    min-width: 0;
+}
+
+.table-head,
+.table-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.table-head {
+    padding: 8px 0 10px;
+    border-bottom: 1px solid var(--mt-border, #404040);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--mt-text-tertiary, #aaaaaa);
+}
+
+.table-row {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--mt-border, #404040);
+    min-width: 0;
 }
 
 .col-name {
-    width: 25%;
+    flex: 0 0 180px;
+    min-width: 0;
 }
 
 .col-command {
-    max-width: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.col-command-clickable {
+    cursor: pointer;
+    border-radius: 8px;
+    padding: 4px 6px;
+}
+
+.col-command-clickable:hover {
+    background: var(--mt-surface-hover, #3a3a3a);
 }
 
 .ellipsis {
@@ -266,90 +289,82 @@ function canSave(): boolean {
 
 .col-admin,
 .col-actions {
-    width: 72px;
-    white-space: nowrap;
+    flex: 0 0 64px;
+    min-width: 64px;
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+}
+
+.icon-delete-btn {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--mt-text-tertiary, #aaaaaa);
+    cursor: pointer;
+    transition: background-color 140ms ease, color 140ms ease, transform 120ms ease;
+}
+
+.icon-delete-btn:hover {
+    background: rgba(239, 68, 68, 0.14);
+    color: #ef4444;
+}
+
+.icon-delete-btn:active {
+    transform: scale(0.96);
+}
+
+.delete-icon {
+    font-size: 16px;
+    line-height: 1;
 }
 
 .add-bar {
     padding: 16px 0;
 }
 
+.command-editor {
+    width: min(560px, calc(100vw - 32px));
+    background: var(--mt-surface, #292929);
+}
+
+.editor-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
 .editor-form {
     display: grid;
     grid-template-columns: max-content minmax(0, 1fr);
     column-gap: 12px;
-    row-gap: 6px;
+    row-gap: 8px;
     align-items: center;
-}
-
-.form-row {
-    display: contents;
-}
-
-.form-row-top .form-label {
-    align-self: start;
-    line-height: 1.35;
 }
 
 .form-label {
     font-size: 13px;
     font-weight: 500;
-    line-height: 32px;
-    white-space: nowrap;
     color: var(--mt-text, #fff);
+    white-space: nowrap;
 }
 
 .form-hint {
-    margin-top: 0;
+    margin-top: 2px;
     font-size: 11px;
     font-weight: 400;
-    line-height: 1.35;
     color: var(--mt-text-tertiary, #aaaaaa);
 }
 
-.form-row :deep(.v-input) {
-    min-width: 0;
-}
-
-.form-row :deep(.v-switch) {
-    justify-self: start;
-    width: auto;
-}
-
-.form-row :deep(.v-field) {
-    border: none;
-    box-shadow: none;
-    border-radius: 8px;
-    background: var(--mt-surface-alt, #333333);
-}
-
-.form-row :deep(.v-field__overlay) {
-    background: var(--mt-surface-alt, #333333);
-    opacity: 1;
-}
-
-.form-row :deep(.v-field__outline) {
-    display: none;
-}
-
-.form-row :deep(.v-field--focused .v-field__overlay) {
-    background: var(--mt-surface-hover, #3a3a3a);
-}
-
-.editor-body {
-    padding: 4px 16px 8px !important;
-}
-
 .editor-actions {
-    padding: 4px 16px 12px !important;
+    margin-top: 14px;
+    display: flex;
+    justify-content: flex-end;
     gap: 8px;
-}
-
-.editor-btn {
-    min-width: 80px;
-}
-
-.command-editor :deep(.v-card-title) {
-    padding: 12px 16px 4px !important;
 }
 </style>

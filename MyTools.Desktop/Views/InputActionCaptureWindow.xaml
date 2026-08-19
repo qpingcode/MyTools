@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="clr-namespace:MyTools.Desktop.Localization"
         Title="{loc:Loc InputActionCapture.Title, DefaultValue=Set shortcut}"
-        Width="360"
+        Width="460"
+        MinWidth="440"
         SizeToContent="Height"
         ResizeMode="NoResize"
         WindowStyle="ToolWindow"
@@ -20,16 +21,17 @@
         <Style x:Key="ModernButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
             <Setter Property="Foreground" Value="{DynamicResource AccentForegroundBrush}"/>
-            <Setter Property="Padding" Value="20,4"/>
+            <Setter Property="Padding" Value="20,6"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Height" Value="28"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="MinWidth" Value="104"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="4">
+                                CornerRadius="8">
                             <ContentPresenter HorizontalAlignment="Center"
                                               VerticalAlignment="Center"
                                               Margin="{TemplateBinding Padding}"/>
@@ -70,7 +72,7 @@
         </Style>
     </Window.Resources>
 
-    <Grid Margin="16">
+    <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -113,11 +115,11 @@
 
         <Border x:Name="CaptureSurface"
                 Grid.Row="2"
-                MinHeight="72"
+                MinHeight="92"
                 BorderBrush="{DynamicResource AccentBrush}"
                 BorderThickness="1"
-                CornerRadius="8"
-                Padding="12"
+                CornerRadius="10"
+                Padding="16"
                 Focusable="True"
                 ContextMenu="{x:Null}">
             <TextBlock x:Name="CaptureLabel"
@@ -138,14 +140,19 @@
                    TextWrapping="Wrap"
                    Visibility="Collapsed"/>
 
-        <Grid Grid.Row="4" Margin="0,16,0,0">
-            <Button x:Name="ResetButton"
-                    HorizontalAlignment="Left"
-                    Style="{StaticResource SecondaryButton}"
-                    Content="{loc:Loc InputActionCapture.Reset, DefaultValue=Reset to default}"
-                    Click="ResetButton_Click"
-                    Visibility="Collapsed"/>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+        <Grid Grid.Row="4" Margin="0,18,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,16,0">
+                <Button x:Name="ClearButton"
+                        Style="{StaticResource SecondaryButton}"
+                        Content="{loc:Loc InputActionCapture.Clear, DefaultValue=Clear}"
+                        Click="ClearButton_Click"
+                        Visibility="Collapsed"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button x:Name="CancelButton"
                         Style="{StaticResource SecondaryButton}"
                         Content="{loc:Loc Cancel, DefaultValue=Cancel}"

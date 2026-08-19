@@ -90,6 +90,7 @@
   <data name="InputActionCapture.RecordingMouse" xml:space="preserve"><value>Cliquez sur un bouton de souris...</value></data>
   <data name="InputActionCapture.Conflict" xml:space="preserve"><value>Déjà utilisé par {{name}}</value></data>
   <data name="InputActionCapture.Reserved" xml:space="preserve"><value>{{hotKey}} est un raccourci Windows courant et ne peut pas être utilisé comme raccourci global.</value></data>
+  <data name="InputActionCapture.Clear" xml:space="preserve"><value>Effacer</value></data>
   <data name="InputActionCapture.Reset" xml:space="preserve"><value>Rétablir la valeur par défaut</value></data>
   <data name="InputActionCapture.MouseLeft" xml:space="preserve"><value>Gauche</value></data>
   <data name="InputActionCapture.MouseRight" xml:space="preserve"><value>Droit</value></data>
@@ -97,4 +98,3 @@
   <data name="InputActionCapture.MouseBack" xml:space="preserve"><value>Précédent (XButton1)</value></data>
   <data name="InputActionCapture.MouseForward" xml:space="preserve"><value>Suivant (XButton2)</value></data>
 </root>
-

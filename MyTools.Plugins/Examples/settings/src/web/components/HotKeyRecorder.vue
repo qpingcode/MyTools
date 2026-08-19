@@ -30,24 +30,13 @@ async function record(): Promise<void> {
     if (!result) return;
     emit("update:modelValue", result.hotKey || null);
 }
-
-function clear(): void {
-    emit("update:modelValue", null);
-}
 </script>
 
 <template>
     <div class="hotkey-recorder">
-        <v-btn size="small" variant="flat" class="hotkey-btn" @click="record">
+        <n-button size="small" secondary class="hotkey-btn" @click="record">
             {{ label }}
-        </v-btn>
-        <v-btn
-            icon="mdi-close"
-            size="x-small"
-            variant="text"
-            :title="t('Plugin.Settings.Keymap.ClearHotkey', 'Clear hotkey')"
-            @click="clear"
-        />
+        </n-button>
     </div>
 </template>
 
@@ -55,7 +44,7 @@ function clear(): void {
 .hotkey-recorder {
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 4px;
     min-width: 0;
     width: 100%;
 }
@@ -63,8 +52,16 @@ function clear(): void {
 .hotkey-btn {
     min-width: 0;
     flex: 1 1 auto;
-    padding: 0 8px;
-    background: var(--mt-surface, #292929) !important;
-    color: var(--mt-text, #fff) !important;
+    justify-content: flex-start;
+    --n-height: 34px;
+    --n-border-radius: 14px;
+    --n-padding: 0 12px;
+    text-align: left;
+    overflow: hidden;
+}
+
+.hotkey-btn :deep(.n-button__border),
+.hotkey-btn :deep(.n-button__state-border) {
+    border-radius: 14px !important;
 }
 </style>

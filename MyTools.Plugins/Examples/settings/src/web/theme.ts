@@ -1,29 +1,72 @@
-import type { ThemeDefinition } from "vuetify";
+import type { GlobalThemeOverrides } from "naive-ui";
 
 function cssVar(name: string, fallback: string): string {
     const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     return value || fallback;
 }
 
-export function readThemeColors(): ThemeDefinition["colors"] {
+export function readThemeOverrides(): GlobalThemeOverrides {
+    const accent = cssVar("--settings-accent", "#22c55e");
+    const accentHover = cssVar("--settings-accent-hover", "#16a34a");
+    const accentPressed = cssVar("--settings-accent-pressed", "#15803d");
+    const border = cssVar("--mt-border", "#404040");
+
     return {
-        background: cssVar("--mt-surface-bg", "#1E1E1E"),
-        surface: cssVar("--mt-surface", "#292929"),
-        "surface-bright": cssVar("--mt-surface-hover", "#3A3A3A"),
-        "surface-light": cssVar("--mt-surface-alt", "#333333"),
-        "surface-variant": cssVar("--mt-surface-alt", "#333333"),
-        primary: cssVar("--mt-accent", "#3F51B5"),
-        "primary-darken-1": cssVar("--mt-accent-hover", "#303F9F"),
-        secondary: cssVar("--mt-surface-alt", "#333333"),
-        error: "#f44336",
-        info: cssVar("--mt-accent", "#3F51B5"),
-        success: cssVar("--mt-accent", "#3F51B5"),
-        warning: "#fb8c00",
-        "on-background": cssVar("--mt-text", "#FFFFFF"),
-        "on-surface": cssVar("--mt-text", "#FFFFFF"),
-        "on-primary": cssVar("--mt-accent-foreground", "#FFFFFF"),
-        "on-secondary": cssVar("--mt-text", "#FFFFFF"),
-        "on-error": "#FFFFFF",
+        common: {
+            primaryColor: accent,
+            primaryColorHover: accentHover,
+            primaryColorPressed: accentPressed,
+            primaryColorSuppl: accent,
+            textColorBase: cssVar("--mt-text", "#FFFFFF"),
+            bodyColor: cssVar("--mt-surface-bg", "#1E1E1E"),
+            cardColor: cssVar("--mt-surface", "#292929"),
+            modalColor: cssVar("--mt-surface", "#292929"),
+            borderColor: border,
+            inputColor: cssVar("--mt-surface", "#292929"),
+            tableColor: "transparent",
+            scrollbarColor: border,
+            errorColor: "#f44336",
+            warningColor: "#fb8c00",
+            successColor: accent,
+            infoColor: accent,
+        },
+        Input: {
+            color: cssVar("--mt-surface", "#292929"),
+            colorFocus: cssVar("--mt-surface-hover", "#3A3A3A"),
+            border: `1px solid ${border}`,
+            borderHover: `1px solid ${accentHover}`,
+            borderFocus: `1px solid ${accent}`,
+            borderRadius: "10px",
+            caretColor: accent,
+        },
+        Select: {
+            peers: {
+                InternalSelection: {
+                    color: cssVar("--mt-surface", "#292929"),
+                    border: `1px solid ${border}`,
+                    borderHover: `1px solid ${accentHover}`,
+                    borderFocus: `1px solid ${accent}`,
+                    borderRadius: "10px",
+                },
+            },
+        },
+        Button: {
+            fontSizeSmall: "13px",
+            fontWeight: "500",
+        },
+        Switch: {
+            railColor: cssVar("--mt-surface-alt", "#333333"),
+            railColorActive: accent,
+        },
+        Checkbox: {
+            colorChecked: accent,
+            borderChecked: `1px solid ${accent}`,
+        },
+        Card: {
+            color: cssVar("--mt-surface", "#292929"),
+            borderColor: border,
+            borderRadius: "12px",
+        },
     };
 }
 

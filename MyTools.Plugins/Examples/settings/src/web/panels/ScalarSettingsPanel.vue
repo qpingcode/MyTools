@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, reactive } from "vue";
 import HighlightText from "../components/HighlightText.vue";
 import HotKeyRecorder from "../components/HotKeyRecorder.vue";
+import { bus } from "../bus";
 import { t } from "../i18n";
 import { categorySelfMatches, currentCategory, markSettingDirty, store } from "../store";
 import type { Option, Setting } from "../types";
@@ -9,8 +10,30 @@ import type { Option, Setting } from "../types";
 const category = computed(() => currentCategory.value);
 const noMatch = computed(() =>
     !!store.searchQuery && category.value != null && !categorySelfMatches(category.value));
+const pathErrors = reactive<Record<string, string>>({});
+const pathDraft = reactive<Record<string, string>>({});
+
+type PathMode = "file" | "fileOrDirectory";
+type ValidatePathResult = { valid?: boolean; message?: string };
+type PickPathResult = { cancelled?: boolean; path?: string };
+
+function isPathSetting(setting: Setting): boolean {
+    const fullPath = setting.fullPath.toLowerCase();
+    return fullPath === "dllinterfacereader.ilspypathsetting"
+        || fullPath === "openpath.riderinstallpath"
+        || fullPath === "openpath.vscodeinstallpath"
+        || fullPath === "openpath.visualstudioinstallpath"
+        || fullPath === "openpath.intellijinstallpath";
+}
+
+function pathModeFor(setting: Setting): PathMode {
+    return setting.fullPath.toLowerCase() === "dllinterfacereader.ilspypathsetting" ? "file" : "fileOrDirectory";
+}
 
 function currentValue(setting: Setting): string {
+    if (isPathSetting(setting) && pathDraft[setting.fullPath] !== undefined) {
+        return pathDraft[setting.fullPath];
+    }
     const dirty = store.dirtySettings.get(setting.fullPath);
     if (dirty !== undefined) return dirty;
     return setting.currentValue ?? "";
@@ -27,12 +50,54 @@ function onText(setting: Setting, value: string | number | null): void {
     markSettingDirty(setting.fullPath, value == null ? "" : String(value));
 }
 
-function onBool(setting: Setting, value: boolean | null): void {
+function onBool(setting: Setting, value: boolean): void {
     markSettingDirty(setting.fullPath, value ? "True" : "False");
 }
 
 function onHotKey(setting: Setting, value: string | null): void {
     markSettingDirty(setting.fullPath, value || "");
+}
+
+function onPathText(setting: Setting, value: string): void {
+    pathDraft[setting.fullPath] = value;
+    pathErrors[setting.fullPath] = "";
+}
+
+async function validatePath(setting: Setting, value: string): Promise<boolean> {
+    const result = await bus.call<ValidatePathResult>("validatePath", {
+        path: value || "",
+        kind: pathModeFor(setting),
+    });
+    if (!result?.valid) {
+        pathErrors[setting.fullPath] = result?.message || t("Plugin.Settings.Path.Invalid", "Invalid path");
+        return false;
+    }
+    pathErrors[setting.fullPath] = "";
+    return true;
+}
+
+async function commitPath(setting: Setting): Promise<void> {
+    const value = pathDraft[setting.fullPath] ?? currentValue(setting);
+    if (!(await validatePath(setting, value))) {
+        return;
+    }
+    markSettingDirty(setting.fullPath, value);
+    delete pathDraft[setting.fullPath];
+}
+
+async function browsePath(setting: Setting): Promise<void> {
+    const result = await bus.call<PickPathResult>("pickPath", {
+        title: setting.title,
+        filter: pathModeFor(setting) === "file"
+            ? "Executable files (*.exe)|*.exe|All files (*.*)|*.*"
+            : "Executable files (*.exe)|*.exe|All files (*.*)|*.*",
+        initialPath: currentValue(setting),
+    });
+    if (!result || result.cancelled || !result.path) {
+        return;
+    }
+    pathDraft[setting.fullPath] = result.path;
+    await commitPath(setting);
 }
 </script>
 
@@ -54,54 +119,62 @@ function onHotKey(setting: Setting, value: string | null): void {
                 </div>
             </div>
             <div class="setting-control">
-                <v-switch
-                    v-if="setting.valueType === 'Bool'"
-                    :model-value="currentValue(setting) === 'True'"
-                    color="primary"
-                    inset
-                    hide-details
-                    density="compact"
-                    @update:model-value="onBool(setting, $event)"
-                />
-                <v-select
+                <div v-if="setting.valueType === 'Bool'" class="control-bool">
+                    <n-switch
+                        :value="currentValue(setting) === 'True'"
+                        @update:value="onBool(setting, !!$event)"
+                    />
+                </div>
+                <div v-else-if="isPathSetting(setting)" class="path-control">
+                    <n-input
+                        :value="currentValue(setting)"
+                        size="small"
+                        class="control-input"
+                        @update:value="onPathText(setting, String($event || ''))"
+                        @blur="commitPath(setting)"
+                    />
+                    <n-button size="small" secondary class="browse-btn" @click="browsePath(setting)">
+                        <template #icon>
+                            <i class="mdi mdi-folder-open-outline"></i>
+                        </template>
+                    </n-button>
+                </div>
+                <n-select
                     v-else-if="setting.valueType === 'Language' || setting.valueType === 'Theme' || setting.valueType === 'LogLevel'"
-                    :model-value="currentValue(setting)"
-                    :items="optionsFor(setting)"
-                    item-title="label"
-                    item-value="value"
-                    variant="solo"
-                    density="compact"
-                    hide-details
+                    :value="currentValue(setting)"
+                    :options="optionsFor(setting)"
+                    value-field="value"
+                    label-field="label"
+                    size="small"
                     class="control-select"
-                    @update:model-value="onText(setting, $event)"
+                    @update:value="onText(setting, $event as string)"
                 />
                 <HotKeyRecorder
                     v-else-if="setting.valueType === 'HotKey'"
+                    class="control-hotkey"
                     :model-value="currentValue(setting)"
                     :default-hot-key="setting.defaultValue ?? ''"
                     exclude-search-hot-key
                     @update:model-value="onHotKey(setting, $event)"
                 />
-                <v-text-field
+                <n-input
                     v-else-if="setting.valueType === 'Integer' || setting.valueType === 'Double'"
-                    :model-value="currentValue(setting)"
+                    :value="currentValue(setting)"
                     type="number"
-                    :step="setting.valueType === 'Integer' ? '1' : undefined"
-                    variant="solo"
-                    density="compact"
-                    hide-details
+                    size="small"
                     class="control-input"
-                    @update:model-value="onText(setting, $event)"
+                    @update:value="onText(setting, $event)"
                 />
-                <v-text-field
+                <n-input
                     v-else
-                    :model-value="currentValue(setting)"
-                    variant="solo"
-                    density="compact"
-                    hide-details
+                    :value="currentValue(setting)"
+                    size="small"
                     class="control-input"
-                    @update:model-value="onText(setting, $event)"
+                    @update:value="onText(setting, $event)"
                 />
+            </div>
+            <div v-if="isPathSetting(setting) && pathErrors[setting.fullPath]" class="path-error">
+                {{ pathErrors[setting.fullPath] }}
             </div>
         </div>
     </div>
@@ -117,6 +190,7 @@ function onHotKey(setting: Setting, value: string | null): void {
 
 .setting-item {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 32px;
@@ -147,11 +221,43 @@ function onHotKey(setting: Setting, value: string | null): void {
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    max-width: 280px;
+    width: 280px;
 }
 
 .control-select,
 .control-input {
     width: 220px;
+}
+
+.control-hotkey {
+    width: 220px;
+}
+
+.control-bool {
+    width: 220px;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.path-control {
+    width: 260px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.path-control .control-input {
+    width: 100%;
+}
+
+.browse-btn {
+    flex: 0 0 auto;
+}
+
+.path-error {
+    width: 100%;
+    margin-top: -8px;
+    color: #f44336;
+    font-size: 12px;
 }
 </style>

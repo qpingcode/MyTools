@@ -13,10 +13,12 @@
       "id": "main",
       "name": {
         "key": "Plugin.OpenPath.Name",
-        "defaultValue": "OpenPath"
+        "defaultValue": "Open Path"
       },
       "entry": "backend/index.mjs",
-      "capabilities": ["configuration.write"],
+      "capabilities": [
+        "configuration.read"
+      ],
       "keywords": [],
       "search": { "global": true },
       "detail": { "type": "list" }

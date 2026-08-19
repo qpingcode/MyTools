@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using MyTools.Host.Core.Capabilities;
 using MyTools.Plugins.NodePlugins;
+using MyTools.Protocol.Routing;
 
 namespace MyTools.Desktop.Services;
 
@@ -18,12 +18,15 @@ public sealed class NodePluginHostCallRouter
         var map = new Dictionary<string, IPluginHostCapabilityHandler>(StringComparer.OrdinalIgnoreCase);
         foreach (var handler in handlers)
         {
-            if (map.TryGetValue(handler.Capability, out var existing))
+            foreach (var capability in handler.Capabilities)
             {
-                throw new InvalidOperationException(
-                    $"Duplicate host-call capability handler for '{handler.Capability}': {existing.GetType().Name}, {handler.GetType().Name}");
+                if (map.TryGetValue(capability, out var existing))
+                {
+                    throw new InvalidOperationException(
+                        $"Duplicate host-call capability handler for '{capability}': {existing.GetType().Name}, {handler.GetType().Name}");
+                }
+                map[capability] = handler;
             }
-            map[handler.Capability] = handler;
         }
         _handlersByCapability = map;
     }
@@ -42,7 +45,7 @@ public sealed class NodePluginHostCallRouter
 
     public async Task<JsonElement> HandleAsync(HostCallRequest request, CancellationToken cancellationToken)
     {
-        var capability = HostCallCapabilityMap.Resolve($"host.call.{request.Method}");
+        var capability = Routes.StripHostCall($"host.call.{request.Method}");
         if (!_handlersByCapability.TryGetValue(capability, out var handler))
         {
             throw new NotSupportedException(

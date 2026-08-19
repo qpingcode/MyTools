@@ -409,7 +409,7 @@ plugin
     }
     log(`resolvedPath=${pathResult.path}`);
 
-    const config = (await plugin.hostCall("getConfiguration")) as ConfigPayload;
+    const config = (await plugin.hostCall("configuration.read")) as ConfigPayload;
     const settings = flattenSettings(config.categories);
     log(
       `settingPaths rider="${settings[SettingPaths.rider] || ""}" vscode="${settings[SettingPaths.vscode] || ""}" vs="${settings[SettingPaths.visualStudio] || ""}" intellij="${settings[SettingPaths.intellij] || ""}"`,

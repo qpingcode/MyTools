@@ -200,7 +200,7 @@ public sealed class MessageBus
 
         try
         {
-            var capability = HostCallCapabilityMap.Resolve(env.Route);
+            var capability = Routes.StripHostCall(env.Route);
             var decision = _gateway.Authorize(source.PluginId, source.EntryId, capability);
             _logger.LogInformation(
                 "CapabilityAudit plugin={PluginId} entry={EntryId} route={Route} allowed={Allowed}",

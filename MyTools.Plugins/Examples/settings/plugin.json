@@ -16,7 +16,23 @@
         "defaultValue": "Settings"
       },
       "entry": "backend/index.mjs",
-      "capabilities": ["configuration.write"],
+      "capabilities": [
+        "configuration.read",
+        "configuration.write",
+        "keymap.read",
+        "keymap.write",
+        "keymap.validate",
+        "gestures.read",
+        "gestures.write",
+        "gestures.suspend",
+        "gestures.resume",
+        "action.capture",
+        "commandRunner.read",
+        "commandRunner.write",
+        "path.pick",
+        "path.validate",
+        "restart"
+      ],
       "keywords": ["settings"],
       "hotKey": "Alt+S",
       "detail": {

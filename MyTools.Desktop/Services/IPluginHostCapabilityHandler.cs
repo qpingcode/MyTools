@@ -5,6 +5,6 @@ namespace MyTools.Desktop.Services;
 
 public interface IPluginHostCapabilityHandler
 {
-    string Capability { get; }
+    IReadOnlyCollection<string> Capabilities { get; }
     Task<JsonElement> HandleAsync(HostCallRequest request, CancellationToken cancellationToken);
 }

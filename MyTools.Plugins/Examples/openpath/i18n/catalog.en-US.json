@@ -6,13 +6,13 @@
   "entries": [
     {
       "key": "Plugin.OpenPath.Name",
-      "defaultValue": "OpenPath",
+      "defaultValue": "Open Path",
       "placeholders": [],
       "references": [],
       "existingTranslations": {
         "zh-CN": "从剪贴板打开 IDE"
       },
-      "sourceHash": "sha256:placeholder"
+      "sourceHash": "sha256:8577cef8d0f972d012669372e47db2e516f03e0237c2bb05034df8d5e9c5369e"
     },
     {
       "key": "Plugin.OpenPath.Action.Open",
@@ -22,7 +22,7 @@
       "existingTranslations": {
         "zh-CN": "打开"
       },
-      "sourceHash": "sha256:placeholder"
+      "sourceHash": "sha256:ed077f3d8125d60dca1979c7133601bd187d47c73ed9975028f677e49e709942"
     }
   ]
 }

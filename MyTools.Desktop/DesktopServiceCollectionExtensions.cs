@@ -69,6 +69,12 @@ public static class DesktopServiceCollectionExtensions
         serviceCollection.AddSingleton<SettingsPluginHostCallHandler>();
         serviceCollection.AddSingleton<IPluginHostCapabilityHandler>(sp =>
             sp.GetRequiredService<SettingsPluginHostCallHandler>());
+        serviceCollection.AddSingleton<PathPluginHostCallHandler>();
+        serviceCollection.AddSingleton<IPluginHostCapabilityHandler>(sp =>
+            sp.GetRequiredService<PathPluginHostCallHandler>());
+        serviceCollection.AddSingleton<RestartPluginHostCallHandler>();
+        serviceCollection.AddSingleton<IPluginHostCapabilityHandler>(sp =>
+            sp.GetRequiredService<RestartPluginHostCallHandler>());
         serviceCollection.AddSingleton<NodePluginHostCallRouter>();
         serviceCollection.AddSingleton<InputActionCaptureService>();
         serviceCollection.AddSingleton<KeymapOverrideProvider>();

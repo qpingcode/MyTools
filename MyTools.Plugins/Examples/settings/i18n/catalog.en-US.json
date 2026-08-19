@@ -150,11 +150,11 @@
     },
     {
       "key": "Plugin.Settings.Keymap.HeaderGlobalResults",
-      "defaultValue": "Global results",
+      "defaultValue": "Global",
       "placeholders": [],
       "references": [],
       "existingTranslations": { "zh-CN": "全局结果" },
-      "sourceHash": "sha256:placeholder"
+      "sourceHash": "a258b30f88c30650e73073d5bdde5cfcc6987100ae62d37789e5c46a0d85b7c6"
     },
     {
       "key": "Plugin.Settings.Keymap.HeaderGlobalResultsTip",
