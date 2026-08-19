@@ -176,6 +176,7 @@
   <data name="InputActionCapture.RecordingMouse" xml:space="preserve"><value>请点击任意鼠标按键...</value></data>
   <data name="InputActionCapture.Conflict" xml:space="preserve"><value>已与「{{name}}」冲突</value></data>
   <data name="InputActionCapture.Reserved" xml:space="preserve"><value>{{hotKey}} 是常用 Windows 快捷键，不能设为全局热键。</value></data>
+  <data name="InputActionCapture.Clear" xml:space="preserve"><value>清除</value></data>
   <data name="InputActionCapture.Reset" xml:space="preserve"><value>恢复默认</value></data>
   <data name="InputActionCapture.MouseLeft" xml:space="preserve"><value>左键</value></data>
   <data name="InputActionCapture.MouseRight" xml:space="preserve"><value>右键</value></data>
@@ -183,4 +184,3 @@
   <data name="InputActionCapture.MouseBack" xml:space="preserve"><value>后退（XButton1）</value></data>
   <data name="InputActionCapture.MouseForward" xml:space="preserve"><value>前进（XButton2）</value></data>
 </root>
-

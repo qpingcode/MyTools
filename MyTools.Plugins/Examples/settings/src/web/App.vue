@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { HostEvents } from "@qping/plugin-bus/web";
 import { computed, onMounted, ref, watch } from "vue";
-import { useTheme } from "vuetify";
+import { createDiscreteApi, darkTheme } from "naive-ui";
 import CommandRunnerPanel from "./panels/CommandRunnerPanel.vue";
 import GesturesPanel from "./panels/GesturesPanel.vue";
 import KeymapPanel from "./panels/KeymapPanel.vue";
@@ -18,11 +18,12 @@ import {
     sidebarItems,
     store,
 } from "./store";
-import { isDarkTheme, readThemeColors } from "./theme";
+import { isDarkTheme, readThemeOverrides } from "./theme";
 
-const vuetifyTheme = useTheme();
+const { message } = createDiscreteApi(["message"]);
 const searchText = ref("");
 const searchTimer = ref<ReturnType<typeof setTimeout> | null>(null);
+const currentTheme = ref(bus.theme.current);
 
 const labels = computed(() => ({
     searchPlaceholder: t("Plugin.Settings.Search.Placeholder", "Search settings..."),
@@ -33,6 +34,12 @@ const labels = computed(() => ({
     restart: t("Plugin.Settings.Restart", "Restart"),
     capturing: capturingHint(),
 }));
+
+const themeOverrides = computed(() => {
+    void currentTheme.value;
+    return readThemeOverrides();
+});
+const themeConfig = computed(() => (isDarkTheme(currentTheme.value) ? darkTheme : null));
 
 watch(searchText, (value) => {
     if (searchTimer.value) clearTimeout(searchTimer.value);
@@ -45,19 +52,28 @@ watch(searchText, (value) => {
     }, 150);
 });
 
-function applyVuetifyTheme(theme?: string): void {
-    const dark = isDarkTheme(theme);
-    vuetifyTheme.global.name.value = dark ? "dark" : "light";
-    const colors = readThemeColors();
-    Object.assign(vuetifyTheme.themes.value[dark ? "dark" : "light"].colors, colors);
+watch(
+    () => store.toast.show,
+    (show) => {
+        if (!show) return;
+        if (store.toast.color === "error") {
+            message.error(store.toast.message, { duration: 3000 });
+        } else {
+            message.success(store.toast.message, { duration: 3000 });
+        }
+        store.toast.show = false;
+    },
+);
+
+function iconClass(icon: string): string[] {
+    return ["mdi", icon];
 }
 
 document.addEventListener("contextmenu", (event) => event.preventDefault());
-applyVuetifyTheme(bus.theme.current);
 
 bus.on(HostEvents.Initialize, async () => {
     store.localeTick += 1;
-    applyVuetifyTheme(bus.theme.current);
+    currentTheme.value = bus.theme.current;
     await loadConfiguration();
 });
 
@@ -67,104 +83,113 @@ bus.on(HostEvents.LanguageChanged, async () => {
 });
 
 bus.on(HostEvents.ThemeChanged, (payload: { theme?: string }) => {
-    applyVuetifyTheme(payload.theme);
+    currentTheme.value = payload.theme;
     store.localeTick += 1;
 });
 
 onMounted(() => {
-    applyVuetifyTheme(bus.theme.current);
+    currentTheme.value = bus.theme.current;
 });
 </script>
 
 <template>
-    <v-app class="settings-app">
-        <div class="settings-shell">
-            <nav class="sidebar">
-                <div class="sidebar-search">
-                    <v-text-field
-                        :key="localeRevision"
-                        v-model="searchText"
-                        :placeholder="labels.searchPlaceholder"
-                        prepend-inner-icon="mdi-magnify"
-                        variant="solo"
-                        density="compact"
-                        hide-details
-                        clearable
-                    />
-                </div>
-                <div class="sidebar-nav">
-                    <template v-for="(item, index) in sidebarItems" :key="item.type === 'group' ? `g-${index}` : item.key">
-                        <div v-if="item.type === 'group'" class="nav-group">{{ item.label }}</div>
-                        <button
-                            v-else
-                            type="button"
-                            class="nav-item"
-                            :class="{ active: item.key === store.currentCategoryKey, disabled: !item.selectable }"
-                            :disabled="!item.selectable"
-                            @click="item.selectable && selectCategory(item.key)"
+    <n-config-provider :theme="themeConfig" :theme-overrides="themeOverrides">
+        <div class="settings-app">
+            <div class="settings-shell">
+                <nav class="sidebar">
+                    <div class="sidebar-search">
+                        <n-input
+                            :key="localeRevision"
+                            v-model:value="searchText"
+                            :placeholder="labels.searchPlaceholder"
+                            clearable
+                            size="small"
                         >
-                            <v-icon :icon="item.icon" size="18" class="nav-icon" />
-                            <span class="nav-label">
-                                <HighlightText :text="item.name" :query="store.searchQuery" />
-                            </span>
-                        </button>
-                    </template>
-                    <div v-if="sidebarItems.length === 0" class="empty">
-                        {{ labels.noResults }}
+                            <template #prefix>
+                                <i class="mdi mdi-magnify nav-input-icon"></i>
+                            </template>
+                        </n-input>
                     </div>
-                </div>
-            </nav>
-            <section class="content-panel">
-                <div class="settings-scroll">
-                    <div v-if="store.loading" class="empty">
-                        {{ labels.loading }}
+                    <div class="sidebar-nav">
+                        <template v-for="(item, index) in sidebarItems" :key="item.type === 'group' ? `g-${index}` : item.key">
+                            <div v-if="item.type === 'group'" class="nav-group">{{ item.label }}</div>
+                            <button
+                                v-else
+                                type="button"
+                                class="nav-item"
+                                :class="{ active: item.key === store.currentCategoryKey, disabled: !item.selectable }"
+                                :disabled="!item.selectable"
+                                @click="item.selectable && selectCategory(item.key)"
+                            >
+                                <i :class="iconClass(item.icon)" class="nav-icon"></i>
+                                <span class="nav-label">
+                                    <HighlightText :text="item.name" :query="store.searchQuery" />
+                                </span>
+                            </button>
+                        </template>
+                        <div v-if="sidebarItems.length === 0" class="empty">
+                            {{ labels.noResults }}
+                        </div>
                     </div>
-                    <div v-else-if="store.error" class="empty">{{ store.error }}</div>
-                    <KeymapPanel v-else-if="store.currentCategoryKey === 'Plugins'" />
-                    <GesturesPanel v-else-if="store.currentCategoryKey === 'Gestures'" />
-                    <CommandRunnerPanel v-else-if="store.currentCategoryKey === 'CommandRunner'" />
-                    <ScalarSettingsPanel v-else />
-                </div>
-            </section>
+                </nav>
+                <section class="content-panel">
+                    <div class="settings-scroll">
+                        <div v-if="store.loading" class="empty">
+                            {{ labels.loading }}
+                        </div>
+                        <div v-else-if="store.error" class="empty">{{ store.error }}</div>
+                        <KeymapPanel v-else-if="store.currentCategoryKey === 'Plugins'" />
+                        <GesturesPanel v-else-if="store.currentCategoryKey === 'Gestures'" />
+                        <CommandRunnerPanel v-else-if="store.currentCategoryKey === 'CommandRunner'" />
+                        <ScalarSettingsPanel v-else />
+                    </div>
+                </section>
+            </div>
+
+            <n-modal v-model:show="store.restartModal" :mask-closable="false">
+                <n-card class="dialog-card" role="dialog" aria-modal="true">
+                    <p class="dialog-text">{{ labels.restartPrompt }}</p>
+                    <div class="dialog-actions">
+                        <n-button size="small" @click="store.restartModal = false">
+                            {{ labels.cancel }}
+                        </n-button>
+                        <n-button size="small" type="primary" @click="restartApp">
+                            {{ labels.restart }}
+                        </n-button>
+                    </div>
+                </n-card>
+            </n-modal>
+
+            <n-modal :show="store.capturing" :mask-closable="false">
+                <n-card class="capture-card" role="dialog" aria-modal="true">
+                    <div class="capture-text">{{ labels.capturing }}</div>
+                    <n-spin size="small" />
+                </n-card>
+            </n-modal>
         </div>
-
-        <v-snackbar v-model="store.toast.show" :color="store.toast.color" timeout="3000">
-            {{ store.toast.message }}
-        </v-snackbar>
-
-        <v-dialog v-model="store.restartModal" max-width="420">
-            <v-card rounded="lg">
-                <v-card-text>
-                    {{ labels.restartPrompt }}
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer />
-                    <v-btn variant="text" rounded="lg" @click="store.restartModal = false">
-                        {{ labels.cancel }}
-                    </v-btn>
-                    <v-btn color="primary" rounded="lg" @click="restartApp">
-                        {{ labels.restart }}
-                    </v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
-
-        <v-overlay v-model="store.capturing" class="align-center justify-center" persistent>
-            <v-card width="280" rounded="lg" class="pa-4 text-center">
-                <div class="mb-3">{{ labels.capturing }}</div>
-                <v-progress-linear color="primary" indeterminate rounded />
-            </v-card>
-        </v-overlay>
-    </v-app>
+    </n-config-provider>
 </template>
 
 <style scoped>
+.settings-app {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    min-height: 0;
+    max-height: 100vh;
+    overflow: hidden;
+    font-family: inherit;
+    font-size: 14px;
+    background: var(--mt-surface-bg, #1e1e1e);
+    color: var(--mt-text, #e0e0e0);
+}
+
 .settings-shell {
+    position: absolute;
+    inset: 0;
     display: flex;
     flex-direction: row;
-    flex: 1 1 auto;
     min-height: 0;
-    height: 100%;
     overflow: hidden;
 }
 
@@ -186,7 +211,8 @@ onMounted(() => {
 .sidebar-nav {
     flex: 1 1 auto;
     min-height: 0;
-    overflow-y: auto;
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
     padding: 4px 10px 16px;
 }
 
@@ -215,10 +241,7 @@ onMounted(() => {
     font: inherit;
 }
 
-.nav-item:hover:not(.disabled) {
-    background: var(--mt-surface-hover, #3a3a3a);
-}
-
+.nav-item:hover:not(.disabled),
 .nav-item.active {
     background: var(--mt-surface-hover, #3a3a3a);
 }
@@ -228,18 +251,19 @@ onMounted(() => {
     cursor: default;
 }
 
-.nav-item:focus {
-    outline: none;
-}
-
 .nav-item:focus-visible {
-    outline: 2px solid var(--mt-accent, #3F51B5);
+    outline: 2px solid var(--mt-accent, #3f51b5);
     outline-offset: 1px;
 }
 
 .nav-icon {
     opacity: 0.85;
     flex-shrink: 0;
+    font-size: 18px;
+}
+
+.nav-input-icon {
+    opacity: 0.7;
 }
 
 .nav-label {
@@ -254,6 +278,7 @@ onMounted(() => {
     flex: 1 1 auto;
     min-width: 0;
     min-height: 0;
+    position: relative;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -261,10 +286,12 @@ onMounted(() => {
 }
 
 .settings-scroll {
-    flex: 1 1 auto;
-    min-height: 0;
+    position: absolute;
+    inset: 0;
+    box-sizing: border-box;
     overflow-x: hidden;
-    overflow-y: auto;
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
     padding: 16px 20px 20px;
 }
 
@@ -275,7 +302,28 @@ onMounted(() => {
     color: var(--mt-text-tertiary, #aaaaaa);
 }
 
-.mb-3 {
+.dialog-card,
+.capture-card {
+    width: min(420px, calc(100vw - 32px));
+    background: var(--mt-surface, #292929);
+}
+
+.capture-card {
+    width: 280px;
+    text-align: center;
+}
+
+.capture-text {
     margin-bottom: 12px;
+}
+
+.dialog-text {
+    margin: 0 0 12px;
+}
+
+.dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
 }
 </style>

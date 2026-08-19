@@ -56,13 +56,22 @@ public class ExampleManifestsV3Test
     }
 
     [Test]
-    public void SettingsManifest_ShouldDeclareConfigurationWrite()
+    public void SettingsManifest_ShouldDeclareExactHostCapabilities()
     {
         var manifests = FindExampleManifests().ToList();
         var settingsPath = manifests.FirstOrDefault(p => p.Contains("settings"));
         Assert.That(settingsPath, Is.Not.Null, "settings plugin.json not found");
 
         var m = JsonSerializer.Deserialize<PluginManifestV3>(File.ReadAllText(settingsPath!), ProtocolJsonOptions.Default)!;
-        Assert.That(m.Entries[0].Capabilities, Contains.Item("configuration.write"));
+        Assert.That(m.Entries[0].Capabilities, Is.EquivalentTo(new[]
+        {
+            "configuration.read", "configuration.write",
+            "keymap.read", "keymap.write", "keymap.validate",
+            "gestures.read", "gestures.write", "gestures.suspend", "gestures.resume",
+            "action.capture",
+            "commandRunner.read", "commandRunner.write",
+            "path.pick", "path.validate",
+            "restart"
+        }));
     }
 }

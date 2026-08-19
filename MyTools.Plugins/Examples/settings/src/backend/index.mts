@@ -12,46 +12,54 @@ plugin
     return {};
   })
   .handle("getConfiguration", async () => {
-    return await plugin.hostCall("getConfiguration");
+    return await plugin.hostCall("configuration.read");
   })
   .handle("saveConfiguration", async (payload: any) => {
     const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
-    return await plugin.hostCall("saveConfiguration", params);
+    return await plugin.hostCall("configuration.write", params);
   })
   .handle("getKeymap", async () => {
-    return await plugin.hostCall("getKeymap");
+    return await plugin.hostCall("keymap.read");
   })
   .handle("saveKeymap", async (payload: any) => {
     const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
-    return await plugin.hostCall("saveKeymap", params);
+    return await plugin.hostCall("keymap.write", params);
   })
   .handle("validateKeymap", async (payload: any) => {
     const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
-    return await plugin.hostCall("validateKeymap", params);
+    return await plugin.hostCall("keymap.validate", params);
   })
   .handle("getGestures", async () => {
-    return await plugin.hostCall("getGestures");
+    return await plugin.hostCall("gestures.read");
   })
   .handle("saveGestures", async (payload: any) => {
     const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
-    return await plugin.hostCall("saveGestures", params);
+    return await plugin.hostCall("gestures.write", params);
   })
   .handle("suspendGestures", async () => {
-    return await plugin.hostCall("suspendGestures");
+    return await plugin.hostCall("gestures.suspend");
   })
   .handle("resumeGestures", async () => {
-    return await plugin.hostCall("resumeGestures");
+    return await plugin.hostCall("gestures.resume");
   })
   .handle("captureInputAction", async (payload: any) => {
     const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
-    return await plugin.hostCall("captureInputAction", params);
+    return await plugin.hostCall("action.capture", params);
   })
   .handle("getCommandRunner", async () => {
-    return await plugin.hostCall("getCommandRunner");
+    return await plugin.hostCall("commandRunner.read");
   })
   .handle("saveCommandRunner", async (payload: any) => {
     const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
-    return await plugin.hostCall("saveCommandRunner", params);
+    return await plugin.hostCall("commandRunner.write", params);
+  })
+  .handle("pickPath", async (payload: any) => {
+    const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
+    return await plugin.hostCall("path.pick", params);
+  })
+  .handle("validatePath", async (payload: any) => {
+    const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
+    return await plugin.hostCall("path.validate", params);
   })
   .handle("restart", async () => {
     return await plugin.hostCall("restart");

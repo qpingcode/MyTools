@@ -47,6 +47,10 @@ function onKeywords(plugin: KeymapPlugin, value: string): void {
 function searchHotKey(): string | undefined {
     return store.dirtySettings.get("General.SearchHotKey");
 }
+
+function onPluginHotKeyChange(plugin: KeymapPlugin, value: string | null): void {
+    markKeymapDirty(plugin.pluginId, { hotKey: value ?? "" });
+}
 </script>
 
 <template>
@@ -55,14 +59,19 @@ function searchHotKey(): string | undefined {
     </div>
     <div v-else class="keymap-panel">
         <div class="keymap-header">
-            <div class="col-name">{{ t("Plugin.Settings.Keymap.HeaderName", "Plugin Name") }}</div>
+            <div class="col-name">{{ t("Plugin.Settings.Keymap.HeaderName", "Plugin") }}</div>
             <div class="col-hotkey">{{ t("Plugin.Settings.Keymap.HeaderHotkey", "Hotkey") }}</div>
-            <div class="col-keywords">{{ t("Plugin.Settings.Keymap.HeaderKeywords", "Keyword") }}</div>
+            <div
+                class="col-keywords"
+                :title="t('Plugin.Settings.Keymap.HeaderKeywordsTip', 'Keyword aliases to trigger this plugin directly')"
+            >
+                {{ t("Plugin.Settings.Keymap.HeaderKeywords", "Alias") }}
+            </div>
             <div
                 class="col-global"
-                :title="t('Plugin.Settings.Keymap.HeaderGlobalResultsTip', 'Include this plugin when searching without a keyword')"
+                :title="t('Plugin.Settings.Keymap.HeaderGlobalResultsTip', 'Include this plugin in global search when no plugin alias is typed')"
             >
-                {{ t("Plugin.Settings.Keymap.HeaderGlobalResults", "Global results") }}
+                {{ t("Plugin.Settings.Keymap.HeaderGlobalResults", "Global") }}
             </div>
             <div class="col-enabled">{{ t("Plugin.Settings.Keymap.HeaderEnabled", "Enabled") }}</div>
         </div>
@@ -74,39 +83,32 @@ function searchHotKey(): string | undefined {
                 <div class="col-hotkey">
                     <HotKeyRecorder
                         :model-value="hotKeyOf(plugin)"
-                        :default-hot-key="plugin.defaultHotKey"
+                        default-hot-key=""
                         :exclude-plugin-id="plugin.pluginId"
                         :current-search-hot-key="searchHotKey()"
-                        @update:model-value="markKeymapDirty(plugin.pluginId, { hotKey: $event })"
+                        @update:model-value="onPluginHotKeyChange(plugin, $event)"
                     />
                 </div>
                 <div class="col-keywords">
-                    <v-text-field
-                        :model-value="keywordsOf(plugin)"
-                        :placeholder="t('Plugin.Settings.Keymap.KeywordsPlaceholder', 'None')"
-                        density="compact"
-                        variant="outlined"
-                        hide-details
-                        @update:model-value="onKeywords(plugin, String($event || ''))"
+                    <n-input
+                        :value="keywordsOf(plugin)"
+                        :placeholder="t('Plugin.Settings.Keymap.KeywordsPlaceholder', 'e.g. git, repo')"
+                        :title="t('Plugin.Settings.Keymap.KeywordsPlaceholder', 'e.g. git, repo')"
+                        size="small"
+                        @update:value="onKeywords(plugin, String($event || ''))"
                     />
                 </div>
                 <div class="col-global">
-                    <v-checkbox
-                        :model-value="globalOf(plugin)"
-                        :title="t('Plugin.Settings.Keymap.HeaderGlobalResultsTip', 'Include this plugin when searching without a keyword')"
-                        hide-details
-                        density="compact"
-                        color="primary"
-                        @update:model-value="markKeymapDirty(plugin.pluginId, { includeInGlobalResults: !!$event })"
+                    <n-checkbox
+                        :checked="globalOf(plugin)"
+                        :title="t('Plugin.Settings.Keymap.HeaderGlobalResultsTip', 'Include this plugin in global search when no plugin alias is typed')"
+                        @update:checked="markKeymapDirty(plugin.pluginId, { includeInGlobalResults: !!$event })"
                     />
                 </div>
                 <div class="col-enabled">
-                    <v-checkbox
-                        :model-value="enabledOf(plugin)"
-                        hide-details
-                        density="compact"
-                        color="primary"
-                        @update:model-value="markKeymapDirty(plugin.pluginId, { isEnabled: !!$event })"
+                    <n-checkbox
+                        :checked="enabledOf(plugin)"
+                        @update:checked="markKeymapDirty(plugin.pluginId, { isEnabled: !!$event })"
                     />
                 </div>
             </div>
@@ -153,37 +155,37 @@ function searchHotKey(): string | undefined {
 }
 
 .col-name {
-    width: 140px;
-    flex: 1 1 140px;
+    width: 180px;
+    flex: 0 0 180px;
     min-width: 0;
-    font-weight: 500;
+    font-weight: 400;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .col-hotkey {
-    width: 120px;
-    flex: 0 0 120px;
+    width: 150px;
+    flex: 0 0 150px;
 }
 
 .col-keywords {
-    width: 88px;
-    flex: 0 0 88px;
+    width: 130px;
+    flex: 1 1 130px;
     min-width: 0;
 }
 
 .col-global {
-    width: 72px;
-    flex: 0 0 72px;
+    width: 82px;
+    flex: 0 0 82px;
     display: flex;
     justify-content: center;
     text-align: center;
 }
 
 .col-enabled {
-    width: 48px;
-    flex: 0 0 48px;
+    width: 68px;
+    flex: 0 0 68px;
     display: flex;
     justify-content: center;
     text-align: center;

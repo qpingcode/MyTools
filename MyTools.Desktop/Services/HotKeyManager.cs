@@ -19,20 +19,23 @@ namespace MyTools.Desktop.Services
             _hotKeyMessageHandler = hotKeyMessageHandler;
         }
 
-        public void RegisterySearchHotKey(HotKeyConfig hotKey)
+        public void RegisterySearchHotKey(HotKeyConfig? hotKey)
         {
             if (_searchHotKeyId != -1)
             {
                 UnregisterHotKey(_searchHotKeyId);
+                _searchHotKeyId = -1;
             }
             
             if (_copyAndSearchHotKeyId != -1)
             {
                 UnregisterHotKey(_copyAndSearchHotKeyId);
+                _copyAndSearchHotKeyId = -1;
             }
 
-            if (hotKey == null)
+            if (hotKey == null || hotKey.Key == Key.None || hotKey.Modifiers == ModifierKeys.None)
             {
+                _logger.LogInformation("Search hotkey is disabled.");
                 return;
             }
 

@@ -38,6 +38,14 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     private readonly AppConfigService appConfigService;
     private readonly InputActionCaptureService inputActionCaptureService;
     private readonly ILogger<SettingsPluginHostCallHandler> logger;
+    private static readonly HashSet<string> FileOrDirectoryPathSettingPaths = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "openpath.RiderInstallPath",
+        "openpath.VsCodeInstallPath",
+        "openpath.VisualStudioInstallPath",
+        "openpath.IntelliJInstallPath"
+    };
+    private const string IlSpyPathSettingFullPath = "DllInterfaceReader.ILSpyPathSetting";
 
     private static readonly JsonSerializerOptions JsonCamelCaseOptions = new()
     {
@@ -45,7 +53,15 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    public string Capability => "configuration.write";
+    public IReadOnlyCollection<string> Capabilities { get; } =
+    [
+        "configuration.read", "configuration.write",
+        "keymap.read", "keymap.write", "keymap.validate",
+        "gestures.read", "gestures.write", "gestures.suspend", "gestures.resume",
+        "hotkeys.suspend", "hotkeys.resume", "hotkeys.validate",
+        "action.capture",
+        "commandRunner.read", "commandRunner.write"
+    ];
 
     public SettingsPluginHostCallHandler(
         IConfigurationRegistry registry,
@@ -87,28 +103,27 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     {
         try
         {
-            if (request.Method == "captureInputAction")
+            if (request.Method == "action.capture")
             {
                 return await CaptureInputActionAsync(request);
             }
 
             return request.Method switch
             {
-                "getConfiguration" => GetConfiguration(),
-                "saveConfiguration" => SaveConfiguration(request.Params),
-                "getKeymap" => GetKeymap(),
-                "saveKeymap" => SaveKeymap(request.Params),
-                "validateKeymap" => ValidateKeymap(request.Params),
-                "getGestures" => GetGestures(),
-                "saveGestures" => SaveGestures(request.Params),
-                "suspendGestures" => SuspendGestures(),
-                "resumeGestures" => ResumeGestures(),
-                "suspendHotkeys" => SuspendHotkeys(),
-                "resumeHotkeys" => ResumeHotkeys(),
-                "checkHotKey" => CheckHotKey(request.Params),
-                "restart" => Restart(),
-                "getCommandRunner" => GetCommandRunner(),
-                "saveCommandRunner" => SaveCommandRunner(request.Params),
+                "configuration.read" => GetConfiguration(),
+                "configuration.write" => SaveConfiguration(request.Params),
+                "keymap.read" => GetKeymap(),
+                "keymap.write" => SaveKeymap(request.Params),
+                "keymap.validate" => ValidateKeymap(request.Params),
+                "gestures.read" => GetGestures(),
+                "gestures.write" => SaveGestures(request.Params),
+                "gestures.suspend" => SuspendGestures(),
+                "gestures.resume" => ResumeGestures(),
+                "hotkeys.suspend" => SuspendHotkeys(),
+                "hotkeys.resume" => ResumeHotkeys(),
+                "hotkeys.validate" => CheckHotKey(request.Params),
+                "commandRunner.read" => GetCommandRunner(),
+                "commandRunner.write" => SaveCommandRunner(request.Params),
                 _ => throw new NotSupportedException($"Unknown hostCall method: {request.Method}")
             };
         }
@@ -196,6 +211,8 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
                 logger.LogWarning("Setting not found: {FullPath}", change.FullPath);
                 continue;
             }
+
+            ValidatePathSettingIfNeeded(change.FullPath, change.Value);
 
             setting.CurrentValue = ConvertValue(setting, change.Value);
         }
@@ -510,19 +527,6 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         });
     }
 
-    private JsonElement Restart()
-    {
-        System.Windows.Application.Current.Dispatcher.Invoke(() =>
-        {
-            if (System.Windows.Application.Current is App app)
-            {
-                app.Restart();
-            }
-        });
-
-        return JsonSerializer.SerializeToElement(new { }, JsonCamelCaseOptions);
-    }
-
     private static readonly JsonSerializerOptions CommandRunnerJsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -572,19 +576,22 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
 
     private void ApplySearchHotKeyFromSettings()
     {
-        var text = registry.FindSetting(AppConfigService.SearchHotKeySettingPath)?.GetValue<string>();
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            text = AppConfigService.DefaultSearchHotKey;
-        }
-
-        if (string.Equals(text, appConfigService.AppConfig.SearchHotKeyText, StringComparison.OrdinalIgnoreCase))
+        var text = registry.FindSetting(AppConfigService.SearchHotKeySettingPath)?.GetValue<string>()?.Trim() ?? string.Empty;
+        var current = appConfigService.AppConfig.SearchHotKeyText?.Trim() ?? string.Empty;
+        if (string.Equals(text, current, StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
 
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            appConfigService.SetSearchHotKey(string.Empty);
+            hotKeyManager.RegisterySearchHotKey(null);
+            return;
+        }
+
         var parsed = new HotKeyConfig(text);
-        if (parsed.Key == System.Windows.Input.Key.None)
+        if (parsed.Key == System.Windows.Input.Key.None || parsed.Modifiers == System.Windows.Input.ModifierKeys.None)
         {
             logger.LogWarning("Ignoring invalid search hotkey {HotKey}.", text);
             return;
@@ -620,6 +627,25 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
             _ => stringValue
         };
     }
+
+    private void ValidatePathSettingIfNeeded(string fullPath, string? value)
+    {
+        if (!FileOrDirectoryPathSettingPaths.Contains(fullPath)
+            && !string.Equals(fullPath, IlSpyPathSettingFullPath, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        var kind = string.Equals(fullPath, IlSpyPathSettingFullPath, StringComparison.OrdinalIgnoreCase)
+            ? "file"
+            : "fileOrDirectory";
+        var result = PathPluginHostCallHandler.ValidatePathByKind(value, kind);
+        if (!result.IsValid)
+        {
+            throw new InvalidOperationException(result.Message ?? "Invalid path.");
+        }
+    }
+
 }
 
 // ── Keymap DTO ──

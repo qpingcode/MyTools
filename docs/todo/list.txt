@@ -1,13 +1,4 @@
-﻿待定：
-1. 配置可以设置每个插件是否在global search中使用 ok
-2. 插件本身可以设置自身不能在global search中使用 ok
-3. settings样式调整， 减少横向滚动条， alias 界面上限制只能设置一个，减少屏幕宽度 ok
-4. 应当支持无界面的node插件
-5. mouse gesture 增加一个嗅探功能（可以在process文本框旁边加按钮） 点击后隐藏settings窗口可以点击显示process名称， 按esc退出嗅探
-  - bug: 当点击windows底部toolbar时候 如果toolbar下面有个重叠的窗口， 右击会穿透窗口，给下面的窗口发送右击事件
-6. 重构代码， 梳理 host / node server/ node client边界， node server 应该是调用host接口（暴露api？ or 进程间通信？）
-7. 是否要支持拼音搜索
-8. 搜索出来的文件可以拖拽到其他软件
+﻿
 
 重要：
 1. 让mytools可以使用deepseek api自行开发插件，实时预览， 
@@ -18,7 +9,16 @@
 2. 考虑怎么支持从剪切板打开软件/插件
 3. 选中内容直接翻译？
 
-
+待定：
+1. 配置可以设置每个插件是否在global search中使用 ok
+2. 插件本身可以设置自身不能在global search中使用 ok
+3. settings样式调整， 减少横向滚动条， alias 界面上限制只能设置一个，减少屏幕宽度 ok
+4. 应当支持无界面的node插件 ok
+5. mouse gesture 增加一个嗅探功能（可以在process文本框旁边加按钮） 点击后隐藏settings窗口可以点击显示process名称， 按esc退出嗅探
+  - bug: 当点击windows底部toolbar时候 如果toolbar下面有个重叠的窗口， 右击会穿透窗口，给下面的窗口发送右击事件
+6. 重构代码， 梳理 host / node server/ node client边界， node server 应该是调用host接口（暴露api？ or 进程间通信？）  ok
+7. 是否要支持拼音搜索
+8. 搜索出来的文件可以拖拽到其他软件
 
 插件待开发：
 1. Snippet  快捷短语
@@ -31,7 +31,7 @@
   - 剪切板增加收藏功能
   - 连续粘贴功能
   
-7. CommandRunner node 插件化， command 能否设置热键？
+7. CommandRunner node 插件化， command 能否设置热键？ 暂时不做热键设置  其他ok
 8. 书签和历史记录 node 插件化， 支持搜索 IDE历史项目 浏览器书签和历史  office历史文件 obsidian笔记
 9. 搜索打开的tab页面？
 10. 哈希 时间戳 进制转换 单位换算 反码补码？？？ 我觉得不需要

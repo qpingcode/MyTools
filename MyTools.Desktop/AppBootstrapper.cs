@@ -371,7 +371,7 @@ public class AppBootstrapper : IDisposable
 
             var openPathCategory = registry.AddCategory(
                 "openpath",
-                localization.GetCaption("Plugin.OpenPath.Name", "OpenPath"),
+                localization.GetCaption("Plugin.OpenPath.Name", "Open Path"),
                 localization.GetCaption(
                     "Plugin.OpenPath.Description",
                     "Open Rider, VSCode, Visual Studio or IntelliJ by clipboard path"),
@@ -417,10 +417,7 @@ public class AppBootstrapper : IDisposable
             // AppConfigService is authoritative for the theme as well.
             registry.FindSetting(ThemeService.ThemeSettingPath)?
                 .InitValueWithoutNotify(themeService.CurrentTheme.ToWireString());
-            searchHotKeySetting.InitValueWithoutNotify(
-                string.IsNullOrWhiteSpace(appConfigService.AppConfig.SearchHotKeyText)
-                    ? AppConfigService.DefaultSearchHotKey
-                    : appConfigService.AppConfig.SearchHotKeyText);
+            searchHotKeySetting.InitValueWithoutNotify(appConfigService.AppConfig.SearchHotKeyText ?? string.Empty);
         }
         catch (Exception ex)
         {

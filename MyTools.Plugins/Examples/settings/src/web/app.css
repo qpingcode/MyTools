@@ -6,6 +6,14 @@ html, body, #app {
     font-size: 14px;
     line-height: 1.4;
     font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+    background: var(--mt-surface-bg, #1e1e1e);
+    color: var(--mt-text, #e0e0e0);
+}
+
+:root {
+    --settings-accent: #22c55e;
+    --settings-accent-hover: #16a34a;
+    --settings-accent-pressed: #15803d;
 }
 
 #app {
@@ -13,150 +21,8 @@ html, body, #app {
     flex-direction: column;
 }
 
-.v-application.settings-app {
-    display: flex !important;
-    flex-direction: column;
-    height: 100% !important;
-    min-height: 0 !important;
-    max-height: 100% !important;
-    overflow: hidden !important;
-    font-family: inherit !important;
-    font-size: 14px !important;
-    background: var(--mt-surface-bg, #1e1e1e) !important;
-    color: var(--mt-text, #e0e0e0) !important;
-}
-
-.v-application.settings-app .v-application__wrap {
-    display: flex !important;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0 !important;
-    height: 100% !important;
-    max-height: 100% !important;
-    overflow: hidden !important;
-}
-
-.settings-app .v-btn {
-    font-size: 13px !important;
-    text-transform: none !important;
-    letter-spacing: 0 !important;
-    font-weight: 500 !important;
-}
-
-.settings-app .v-field {
-    border-radius: 10px !important;
-    background: var(--mt-surface, #292929) !important;
-    box-shadow: none !important;
-}
-
-.settings-app .v-field__outline {
-    display: none;
-}
-
-.settings-app .v-field,
-.settings-app .v-label,
-.settings-app .v-text-field input,
-.settings-app .v-select .v-select__selection-text,
-.settings-app .v-textarea textarea {
-    font-size: 13.5px !important;
-}
-
-.settings-app .v-field .v-icon {
-    opacity: 0.7;
-    font-size: 18px !important;
-}
-
-.settings-app .v-table {
-    font-size: 13.5px !important;
-    background: transparent !important;
-}
-
-.settings-app .v-table th {
-    font-size: 12px !important;
-    font-weight: 600 !important;
-    letter-spacing: 0 !important;
-    color: var(--mt-text-tertiary, #aaaaaa) !important;
-}
-
-.settings-app .v-checkbox,
-.settings-app .v-switch {
-    margin-inline: 0;
-}
-
-.settings-app .v-selection-control {
-    min-height: 32px;
-}
-
-.settings-app .v-switch .v-switch__track {
-    opacity: 1;
-}
-
-/* v-dialog / v-overlay teleport to body, so they miss .settings-app rules. */
-.v-overlay .v-card {
-    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
-    font-size: 14px;
-    color: var(--mt-text, #e0e0e0);
-}
-
-.v-overlay .v-card-title {
-    font-size: 14px !important;
-    font-weight: 600 !important;
-    letter-spacing: 0 !important;
-    line-height: 1.4 !important;
-}
-
-.v-overlay .v-card-text,
-.v-overlay .v-card-text .v-label,
-.v-overlay .v-switch .v-label {
-    font-size: 14px !important;
-    letter-spacing: 0 !important;
-}
-
-.v-overlay .v-btn {
-    font-size: 13px !important;
-    text-transform: none !important;
-    letter-spacing: 0 !important;
-    font-weight: 500 !important;
-}
-
-.v-overlay .v-btn.v-btn--size-default {
-    min-height: 36px;
-    padding-inline: 16px;
-}
-
-.v-overlay .command-editor .v-field {
-    border: none !important;
-    box-shadow: none !important;
-    border-radius: 8px !important;
-    background: var(--mt-surface-alt, #333333) !important;
-}
-
-.v-overlay .command-editor .v-field__overlay {
-    background: var(--mt-surface-alt, #333333) !important;
-    opacity: 1 !important;
-}
-
-.v-overlay .command-editor .v-field__outline {
-    display: none !important;
-}
-
-.v-overlay .command-editor .v-field--focused .v-field__overlay {
-    background: var(--mt-surface-hover, #3a3a3a) !important;
-}
-
-.v-overlay .v-field,
-.v-overlay .v-field .v-label,
-.v-overlay .v-text-field input,
-.v-overlay .v-select .v-select__selection-text,
-.v-overlay .v-textarea textarea,
-.v-overlay .v-field input::placeholder,
-.v-overlay .v-textarea textarea::placeholder {
-    font-size: 13.5px !important;
-}
-
-.v-overlay .v-messages,
-.v-overlay .v-input__details {
-    font-size: 12px !important;
+.mdi {
+    line-height: 1;
 }
 
 mark {
@@ -181,4 +47,53 @@ mark {
 .sidebar-nav::-webkit-scrollbar-track,
 .settings-scroll::-webkit-scrollbar-track {
     background: transparent;
+}
+
+.n-button {
+    transition:
+        transform 120ms ease,
+        background-color 160ms ease,
+        border-color 160ms ease,
+        box-shadow 160ms ease;
+}
+
+.n-button:hover {
+    transform: translateY(-1px);
+}
+
+.n-button:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.n-input .n-input__border,
+.n-base-selection .n-base-selection__border,
+.n-switch .n-switch__rail,
+.n-checkbox .n-checkbox-box {
+    transition:
+        border-color 180ms ease,
+        background-color 180ms ease,
+        box-shadow 180ms ease,
+        transform 120ms ease;
+}
+
+.n-input:hover .n-input__border,
+.n-base-selection:hover .n-base-selection__border {
+    border-color: var(--settings-accent-hover, #16a34a) !important;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.14);
+}
+
+.n-input.n-input--focus .n-input__border,
+.n-base-selection.n-base-selection--focus .n-base-selection__border {
+    border-color: var(--settings-accent, #22c55e) !important;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.22);
+}
+
+.n-switch:hover .n-switch__rail,
+.n-checkbox:hover .n-checkbox-box {
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.16);
+}
+
+.n-switch:active .n-switch__rail,
+.n-checkbox:active .n-checkbox-box {
+    transform: scale(0.97);
 }
