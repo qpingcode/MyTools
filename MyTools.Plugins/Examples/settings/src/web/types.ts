@@ -1,5 +1,18 @@
 export type Option = { value: string; label: string };
 
+export type SettingSchemaProperty = {
+    key: string;
+    type: string;
+    title: string;
+    uiHint?: string;
+    defaultValue?: string;
+    hidden?: boolean;
+};
+
+export type SettingSchema = {
+    properties: SettingSchemaProperty[];
+};
+
 export type Setting = {
     fullPath: string;
     title: string;
@@ -8,12 +21,15 @@ export type Setting = {
     currentValue?: string;
     defaultValue?: string;
     requiresRestart: boolean;
+    uiHint?: string;
+    schema?: SettingSchema;
 };
 
 export type Category = {
     key: string;
     name: string;
     description?: string;
+    icon?: string;
     isSelectable: boolean;
     children: Category[];
     settings: Setting[];

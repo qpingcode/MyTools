@@ -1,4 +1,5 @@
 using MyTools.Common.Localization;
+using MyTools.Protocol.Manifest;
 
 namespace MyTools.Plugins.NodePlugins;
 
@@ -32,6 +33,9 @@ public sealed class NodePluginManifest
     public string? HotKey { get; init; }
     /// <summary>Capability ids declared by this entry (e.g. <c>configuration.write</c>).</summary>
     public IReadOnlyList<string> Capabilities { get; init; } = [];
+    public IReadOnlyList<PluginConfigurationSettingV3> Configuration { get; init; } = [];
+    /// <summary>Settings sidebar MDI icon from plugin.json <c>icon</c>.</summary>
+    public string? Icon { get; init; }
     public string DefaultLocale { get; init; } = "en-US";
     public string? CatalogFullPath { get; init; }
     public string? LocalesDirectoryFullPath { get; init; }

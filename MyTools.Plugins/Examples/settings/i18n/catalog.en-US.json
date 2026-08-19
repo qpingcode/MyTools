@@ -747,6 +747,70 @@
       "references": [],
       "existingTranslations": { "zh-CN": "命令已保存。" },
       "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Table.Search",
+      "defaultValue": "Search",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "搜索" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Table.Add",
+      "defaultValue": "Add",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "新增" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Table.Edit",
+      "defaultValue": "Edit",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "编辑" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Table.Delete",
+      "defaultValue": "Delete",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "删除" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Table.Empty",
+      "defaultValue": "No items",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "暂无数据" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Table.Apply",
+      "defaultValue": "Apply",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "应用" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Table.Yes",
+      "defaultValue": "Yes",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "是" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.Table.No",
+      "defaultValue": "No",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "否" },
+      "sourceHash": "sha256:placeholder"
     }
   ]
 }

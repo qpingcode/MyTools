@@ -99,4 +99,17 @@ public class PluginManifestV3RuntimeFieldsTest
         var settings = LoadSettingsV3();
         Assert.That(settings.Entries[0].Search, Is.Null);
     }
+
+    [Test]
+    public void Deserialize_ShouldReadPluginConfiguration()
+    {
+        var snippet = LoadExampleV3("snippet");
+        Assert.That(snippet.Configuration, Has.Count.EqualTo(1));
+        Assert.That(snippet.Configuration[0].Key, Is.EqualTo("Phrases"));
+        Assert.That(snippet.Configuration[0].Type, Is.EqualTo("array"));
+        Assert.That(snippet.Configuration[0].Schema!.Properties, Has.Count.EqualTo(3));
+        Assert.That(snippet.Icon, Is.EqualTo("mdi-message-text-outline"));
+        Assert.That(snippet.Entries[0].Capabilities, Is.EquivalentTo(new[] { "configuration.readOwn" }));
+        Assert.That(snippet.Entries[0].Search!.Global, Is.True);
+    }
 }

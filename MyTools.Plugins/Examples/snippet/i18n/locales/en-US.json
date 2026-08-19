@@ -1,0 +1,11 @@
+{
+  "Plugin.Snippet.Name": "Snippet",
+  "Plugin.Snippet.Setting.Phrases": "Phrases",
+  "Plugin.Snippet.Setting.Phrases.Description": "Shortcut phrases available in global search. Press Enter to copy and paste.",
+  "Plugin.Snippet.Column.Trigger": "Trigger",
+  "Plugin.Snippet.Column.Timestamp": "Created",
+  "Plugin.Snippet.Column.Content": "Phrase",
+  "Plugin.Snippet.Action.Paste": "Copy and paste",
+  "Plugin.Snippet.Action.PasteDescription": "Copy the phrase and paste it into the previously focused window",
+  "Plugin.Snippet.Untitled": "Untitled phrase"
+}

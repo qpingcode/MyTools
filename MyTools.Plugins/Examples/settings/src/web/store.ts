@@ -23,8 +23,12 @@ const CATEGORY_ICONS: Record<string, string> = {
     CommandRunner: "mdi-console-line",
 };
 
-function categoryIcon(key: string): string {
-    return CATEGORY_ICONS[key] || "mdi-tune-variant";
+function categoryIcon(category: Category): string {
+    const declared = category.icon?.trim();
+    if (declared) {
+        return declared.startsWith("mdi-") ? declared : `mdi-${declared}`;
+    }
+    return CATEGORY_ICONS[category.key] || "mdi-tune-variant";
 }
 
 export const store = reactive({
@@ -84,6 +88,7 @@ export function settingMatchesSearch(setting: Setting): boolean {
     if (!store.searchQuery) return true;
     if (setting.title.toLowerCase().includes(store.searchQuery)) return true;
     if (setting.description && setting.description.toLowerCase().includes(store.searchQuery)) return true;
+    if (setting.currentValue && setting.currentValue.toLowerCase().includes(store.searchQuery)) return true;
     return false;
 }
 
@@ -148,7 +153,7 @@ export const sidebarItems = computed((): SidebarItem[] => {
             key: category.key,
             name: category.name,
             selectable: category.isSelectable,
-            icon: categoryIcon(category.key),
+            icon: categoryIcon(category),
         });
     }
     return items;

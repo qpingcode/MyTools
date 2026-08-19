@@ -58,6 +58,16 @@ public sealed class NodePluginCatalog
                 return [];
             }
 
+            var configurationResult = PluginConfigurationValidator.Validate(fileModel.Configuration);
+            if (!configurationResult.IsValid)
+            {
+                logger.LogWarning(
+                    "Skipping node plugin manifest with invalid configuration: {ManifestPath}. {Reason}",
+                    manifestPath,
+                    configurationResult.Error?.Message);
+                return [];
+            }
+
             var fullPluginDirectory = Path.GetFullPath(pluginDirectory);
             var catalogFullPath = fileModel.I18n == null
                 ? null
@@ -132,6 +142,8 @@ public sealed class NodePluginCatalog
                     SearchGlobal = ResolveSearchGlobal(entryModel.Search),
                     HotKey = entryModel.HotKey,
                     Capabilities = entryModel.Capabilities ?? [],
+                    Configuration = fileModel.Configuration ?? [],
+                    Icon = fileModel.Icon,
                     DefaultLocale = fileModel.I18n?.DefaultLocale ?? "en-US",
                     CatalogFullPath = catalogFullPath,
                     LocalesDirectoryFullPath = localesDirectoryFullPath,
@@ -213,6 +225,8 @@ public sealed class NodePluginCatalog
         public string? ProtocolVersion { get; init; }
         public List<EntryManifestFile>? Entries { get; init; }
         public I18nManifestFile? I18n { get; init; }
+        public string? Icon { get; init; }
+        public List<PluginConfigurationSettingV3>? Configuration { get; init; }
     }
 
     private sealed class EntryManifestFile

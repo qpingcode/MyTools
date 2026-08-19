@@ -92,5 +92,13 @@
   "Plugin.Settings.CommandRunner.WorkingDirectory": "Working directory",
   "Plugin.Settings.CommandRunner.RunAsAdmin": "Run as administrator",
   "Plugin.Settings.CommandRunner.Apply": "Apply",
-  "Plugin.Settings.CommandRunner.Saved": "Commands saved."
+  "Plugin.Settings.CommandRunner.Saved": "Commands saved.",
+  "Plugin.Settings.Table.Search": "Search",
+  "Plugin.Settings.Table.Add": "Add",
+  "Plugin.Settings.Table.Edit": "Edit",
+  "Plugin.Settings.Table.Delete": "Delete",
+  "Plugin.Settings.Table.Empty": "No items",
+  "Plugin.Settings.Table.Apply": "Apply",
+  "Plugin.Settings.Table.Yes": "Yes",
+  "Plugin.Settings.Table.No": "No"
 }

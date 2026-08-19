@@ -84,7 +84,11 @@ public class AppBootstrapper : IDisposable
         // Ensure that NativeMessageWindowHost has been loaded and Windows messages have been properly monitored
         // which is a prerequisite for the clipboard / hotkey
         EnsureNativeMessageWindowHost();
-        
+
+        // Node plugins (and their plugin.json configuration) must exist before settings
+        // are registered, otherwise Tools categories like Snippet never appear.
+        var nodePlugins = LoadNodePlugins();
+
         InitializeConfigurationData();
 
         // Apply the user-configured log level now that settings have been loaded.
@@ -93,8 +97,9 @@ public class AppBootstrapper : IDisposable
         RegisterGlobalHotKey(appConfig.SearchHotKey);
         
         InitializeGestureDetection();
-        
-        LoadPlugins();
+
+        RegisterNodePluginHostCallHandlers(nodePlugins);
+        RegisterNodePluginOverrides(nodePlugins);
 
         // Apply the user-configured theme and keep WPF in sync on hot-swap.
         ThemeManager.ApplyTheme(themeService.CurrentTheme);
@@ -143,15 +148,11 @@ public class AppBootstrapper : IDisposable
         });
     }
     
-    private void LoadPlugins()
+    private List<NodePlugin> LoadNodePlugins()
     {
         CopyExampleWhenConfigNotExists();
-
         nodePluginCatalog.Reload();
-
-        var loadedPlugins = pluginLoader.InitPlugins();
-        RegisterNodePluginHostCallHandlers(loadedPlugins.OfType<NodePlugin>());
-        RegisterNodePluginOverrides(loadedPlugins.OfType<NodePlugin>());
+        return pluginLoader.InitPlugins().OfType<NodePlugin>().ToList();
     }
 
     /// <summary>
@@ -410,9 +411,16 @@ public class AppBootstrapper : IDisposable
                 localization.GetCaption("Plugin.OpenPath.Setting.IntelliJ.Description", "idea64.exe file path or IntelliJ install directory"),
                 string.Empty);
              
-            foreach (var plugin in plugins)
+            foreach (var plugin in pluginLoader.LoadedPlugins)
             {
-                plugin.RegisterSettings(registry);
+                try
+                {
+                    plugin.RegisterSettings(registry);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Failed to register settings for plugin {Plugin}.", plugin.Name);
+                }
             }
             
             // Load configuration from file if exists

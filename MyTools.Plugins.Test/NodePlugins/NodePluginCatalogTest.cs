@@ -473,6 +473,74 @@ public class NodePluginCatalogTest
         Assert.That(plugins, Is.Empty);
     }
 
+    [Test]
+    public void Reload_ShouldParsePluginConfigurationSchema()
+    {
+        WriteBackendOnlyPlugin("""
+        {
+          "id": "snippet",
+          "version": "0.1.0",
+          "protocolVersion": "3.0",
+          "icon": "mdi-message-text-outline",
+          "configuration": [
+            {
+              "key": "Phrases",
+              "label": { "key": "Plugin.Snippet.Setting.Phrases", "defaultValue": "Phrases" },
+              "type": "array",
+              "defaultValue": [],
+              "schema": {
+                "properties": [
+                  { "key": "trigger", "type": "string" },
+                  { "key": "content", "type": "string", "uiHint": "textarea" }
+                ]
+              }
+            }
+          ],
+          "entries": [
+            {
+              "id": "snippet",
+              "name": { "key": "Plugin.Snippet.Name", "defaultValue": "Snippet" },
+              "entry": "backend/index.mjs",
+              "capabilities": ["configuration.readOwn"],
+              "search": { "global": true }
+            }
+          ]
+        }
+        """);
+
+        var plugins = new NodePluginCatalog(rootPath, NullLogger<NodePluginCatalog>.Instance).Reload();
+
+        Assert.That(plugins, Has.Count.EqualTo(1));
+        Assert.That(plugins[0].Capabilities, Is.EquivalentTo(new[] { "configuration.readOwn" }));
+        Assert.That(plugins[0].Icon, Is.EqualTo("mdi-message-text-outline"));
+        Assert.That(plugins[0].Configuration, Has.Count.EqualTo(1));
+        Assert.That(plugins[0].Configuration[0].Key, Is.EqualTo("Phrases"));
+        Assert.That(plugins[0].Configuration[0].Type, Is.EqualTo("array"));
+        Assert.That(plugins[0].Configuration[0].Schema!.Properties, Has.Count.EqualTo(2));
+    }
+
+    [Test]
+    public void Reload_ShouldSkipPluginWithInvalidConfiguration()
+    {
+        WriteBackendOnlyPlugin("""
+        {
+          "id": "bad-config",
+          "version": "0.1.0",
+          "protocolVersion": "3.0",
+          "configuration": [
+            { "key": "Items", "type": "array" }
+          ],
+          "entries": [
+            { "id": "main", "entry": "backend/index.mjs" }
+          ]
+        }
+        """);
+
+        var plugins = new NodePluginCatalog(rootPath, NullLogger<NodePluginCatalog>.Instance).Reload();
+
+        Assert.That(plugins, Is.Empty);
+    }
+
     private string WriteBackendOnlyPlugin(string pluginJson)
     {
         var pluginPath = Path.Combine(rootPath, "list-plugin");

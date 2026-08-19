@@ -17,6 +17,15 @@ public sealed class PluginManifestV3
     public required IReadOnlyList<PluginEntryV3> Entries { get; init; }
     /// <summary>Localization configuration (default locale, catalog path, supported locales).</summary>
     public ManifestI18nV3? I18n { get; init; }
+    /// <summary>
+    /// Settings sidebar icon (Material Design Icons class, e.g. <c>mdi-message-text-outline</c>).
+    /// </summary>
+    public string? Icon { get; init; }
+    /// <summary>
+    /// Plugin-level settings schema. Host registers these under a sidebar category named after the
+    /// plugin, without starting the Node process.
+    /// </summary>
+    public IReadOnlyList<PluginConfigurationSettingV3> Configuration { get; init; } = [];
 }
 
 public sealed class PluginEntryV3
@@ -166,6 +175,13 @@ public static class PluginManifestV3Validator
                 return detailResult;
             }
         }
+
+        var configurationResult = PluginConfigurationValidator.Validate(manifest.Configuration);
+        if (!configurationResult.IsValid)
+        {
+            return configurationResult;
+        }
+
         return ManifestValidation.Ok();
     }
 }
