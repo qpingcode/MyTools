@@ -11,14 +11,14 @@ const ClipboardPreviewLength = 220;
 
 type IdeKey = "rider" | "vscode" | "visual-studio" | "intellij";
 type ClipboardPayload = { kind: "file" | "text"; value: string };
-type SettingMap = Record<string, string>;
 type ResolvedExe = { path: string | null; source: "config" | "auto" | "none" };
+type OwnConfiguration = { values?: Record<string, unknown> };
 
-const SettingPaths = {
-  rider: "openpath.RiderInstallPath",
-  vscode: "openpath.VsCodeInstallPath",
-  visualStudio: "openpath.VisualStudioInstallPath",
-  intellij: "openpath.IntelliJInstallPath",
+const SettingNames = {
+  rider: "RiderInstallPath",
+  vscode: "VsCodeInstallPath",
+  visualStudio: "VisualStudioInstallPath",
+  intellij: "IntelliJInstallPath",
 } as const;
 
 const IdeItems: { id: IdeKey; title: string; subtitle: string; icon: string }[] = [
@@ -109,28 +109,8 @@ function resolveInputPath(clipboardValue: string): { ok: true; path: string } | 
   return { ok: true, path: path.resolve(validation.value) };
 }
 
-type CategoryDto = {
-  key: string;
-  children: CategoryDto[];
-  settings: { fullPath: string; currentValue: string | null }[];
-};
-
-type ConfigPayload = { categories?: CategoryDto[] };
-
-function flattenSettings(categories: CategoryDto[] | undefined): SettingMap {
-  const values: SettingMap = {};
-  if (!categories) return values;
-  const stack = [...categories];
-  while (stack.length > 0) {
-    const category = stack.pop()!;
-    for (const setting of category.settings || []) {
-      values[setting.fullPath] = normalizeText(setting.currentValue);
-    }
-    for (const child of category.children || []) {
-      stack.push(child);
-    }
-  }
-  return values;
+function settingText(values: Record<string, unknown> | undefined, name: string): string {
+  return normalizeText(values?.[name]);
 }
 
 function resolveExecutable(settingValue: string, relativeCandidates: string[]): string | null {
@@ -409,22 +389,26 @@ plugin
     }
     log(`resolvedPath=${pathResult.path}`);
 
-    const config = (await plugin.hostCall("configuration.read")) as ConfigPayload;
-    const settings = flattenSettings(config.categories);
+    const config = (await plugin.hostCall("configuration.readOwn")) as OwnConfiguration;
+    const settings = config?.values ?? {};
+    const riderPath = settingText(settings, SettingNames.rider);
+    const vscodePath = settingText(settings, SettingNames.vscode);
+    const visualStudioPath = settingText(settings, SettingNames.visualStudio);
+    const intellijPath = settingText(settings, SettingNames.intellij);
     log(
-      `settingPaths rider="${settings[SettingPaths.rider] || ""}" vscode="${settings[SettingPaths.vscode] || ""}" vs="${settings[SettingPaths.visualStudio] || ""}" intellij="${settings[SettingPaths.intellij] || ""}"`,
+      `settingPaths rider="${riderPath}" vscode="${vscodePath}" vs="${visualStudioPath}" intellij="${intellijPath}"`,
     );
-    const riderExe = resolveRiderExecutable(settings[SettingPaths.rider]);
-    const vscodeExe = resolveVsCodeExecutable(settings[SettingPaths.vscode]);
-    const vsExe = await resolveVisualStudioExecutable(settings[SettingPaths.visualStudio]);
-    const intellijExe = resolveIntelliJExecutable(settings[SettingPaths.intellij]);
+    const riderExe = resolveRiderExecutable(riderPath);
+    const vscodeExe = resolveVsCodeExecutable(vscodePath);
+    const vsExe = await resolveVisualStudioExecutable(visualStudioPath);
+    const intellijExe = resolveIntelliJExecutable(intellijPath);
     log(
       `resolvedExe rider="${riderExe.path || ""}"(${riderExe.source}) vscode="${vscodeExe.path || ""}"(${vscodeExe.source}) vs="${vsExe.path || ""}"(${vsExe.source}) intellij="${intellijExe.path || ""}"(${intellijExe.source})`,
     );
 
     if (ide === "rider") {
       if (!riderExe.path) {
-        fail(`Rider executable not found. Please set ${SettingPaths.rider} in Settings.`);
+        fail(`Rider executable not found. Please set ${SettingNames.rider} in Settings.`);
       }
       const sln = findNearestSln(pathResult.path);
       log(`rider nearestSln="${sln || ""}"`);
@@ -438,7 +422,7 @@ plugin
 
     if (ide === "visual-studio") {
       if (!vsExe.path) {
-        fail(`Visual Studio executable not found. Please set ${SettingPaths.visualStudio} in Settings.`);
+        fail(`Visual Studio executable not found. Please set ${SettingNames.visualStudio} in Settings.`);
       }
       const sln = findNearestSln(pathResult.path);
       log(`visual-studio nearestSln="${sln || ""}"`);
@@ -452,7 +436,7 @@ plugin
 
     if (ide === "vscode") {
       if (!vscodeExe.path) {
-        fail(`VSCode executable not found. Please set ${SettingPaths.vscode} in Settings.`);
+        fail(`VSCode executable not found. Please set ${SettingNames.vscode} in Settings.`);
       }
       const stat = fs.statSync(pathResult.path);
       const openPath = stat.isDirectory() ? pathResult.path : path.dirname(pathResult.path);
@@ -462,7 +446,7 @@ plugin
     }
 
     if (!intellijExe.path) {
-      fail(`IntelliJ executable not found. Please set ${SettingPaths.intellij} in Settings.`);
+      fail(`IntelliJ executable not found. Please set ${SettingNames.intellij} in Settings.`);
     }
     const projectPath = selectIntelliJProject(pathResult.path);
     log(`launch intellij exe="${intellijExe.path}" arg="${projectPath}"`);

@@ -1,11 +1,37 @@
+export type PathKind = "file" | "directory" | "fileOrDirectory";
+
+const IlSpyPathFullPath = "dllinterfacereader.ilspypathsetting";
+
 export function defaultUiHint(type: string, uiHint?: string | null): string {
     if (uiHint && uiHint.trim()) return uiHint.trim().toLowerCase();
     const normalized = (type || "").trim().toLowerCase();
     if (normalized === "bool") return "checkbox";
     if (normalized === "int" || normalized === "integer" || normalized === "double") return "input-number";
     if (normalized === "array") return "table";
+    if (normalized === "path") return "fileordirectory";
     if (normalized === "hidden") return "";
     return "input";
+}
+
+export function isPathType(type?: string | null, fullPath?: string | null): boolean {
+    if ((type || "").trim().toLowerCase() === "path") return true;
+    return (fullPath || "").toLowerCase() === IlSpyPathFullPath;
+}
+
+export function normalizePathKind(uiHint?: string | null): PathKind {
+    const hint = (uiHint || "").trim().toLowerCase();
+    if (hint === "file") return "file";
+    if (hint === "directory") return "directory";
+    return "fileOrDirectory";
+}
+
+export function resolvePathKind(
+    type?: string | null,
+    uiHint?: string | null,
+    fullPath?: string | null,
+): PathKind {
+    if ((fullPath || "").toLowerCase() === IlSpyPathFullPath) return "file";
+    return normalizePathKind(uiHint);
 }
 
 export function resolveMacros(value: string | undefined | null): string {

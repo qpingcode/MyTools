@@ -2,6 +2,7 @@ using System.IO;
 using System.Text.Json;
 using Microsoft.Win32;
 using MyTools.Plugins.NodePlugins;
+using MyTools.Protocol.Manifest;
 
 namespace MyTools.Desktop.Services;
 
@@ -30,34 +31,14 @@ public sealed class PathPluginHostCallHandler : IPluginHostCapabilityHandler
         var request = payload.Deserialize<PickPathRequest>(JsonOptions) ?? new PickPathRequest();
         var dispatcher = System.Windows.Application.Current?.Dispatcher
             ?? throw new InvalidOperationException("WPF dispatcher is not available.");
+        var kind = PluginConfigurationTypes.NormalizePathKind(request.Kind);
 
         string? selectedPath = null;
         dispatcher.Invoke(() =>
         {
-            var dialog = new OpenFileDialog
-            {
-                Title = string.IsNullOrWhiteSpace(request.Title) ? "Select file" : request.Title,
-                Filter = string.IsNullOrWhiteSpace(request.Filter)
-                    ? "Executable files (*.exe)|*.exe|All files (*.*)|*.*"
-                    : request.Filter,
-                CheckFileExists = true,
-                Multiselect = false
-            };
-
-            if (Directory.Exists(request.InitialPath))
-            {
-                dialog.InitialDirectory = request.InitialPath;
-            }
-            else if (File.Exists(request.InitialPath))
-            {
-                dialog.InitialDirectory = Path.GetDirectoryName(request.InitialPath) ?? string.Empty;
-                dialog.FileName = Path.GetFileName(request.InitialPath);
-            }
-
-            if (dialog.ShowDialog() == true)
-            {
-                selectedPath = dialog.FileName;
-            }
+            selectedPath = kind == PluginConfigurationTypes.PathDirectory
+                ? PickDirectory(request)
+                : PickFile(request, checkFileExists: true);
         });
 
         return JsonSerializer.SerializeToElement(new
@@ -65,6 +46,50 @@ public sealed class PathPluginHostCallHandler : IPluginHostCapabilityHandler
             cancelled = string.IsNullOrWhiteSpace(selectedPath),
             path = selectedPath
         }, JsonOptions);
+    }
+
+    private static string? PickDirectory(PickPathRequest request)
+    {
+        var dialog = new OpenFolderDialog
+        {
+            Title = string.IsNullOrWhiteSpace(request.Title) ? "Select folder" : request.Title,
+            Multiselect = false
+        };
+        if (Directory.Exists(request.InitialPath))
+        {
+            dialog.InitialDirectory = request.InitialPath;
+        }
+        else if (File.Exists(request.InitialPath))
+        {
+            dialog.InitialDirectory = Path.GetDirectoryName(request.InitialPath) ?? string.Empty;
+        }
+
+        return dialog.ShowDialog() == true ? dialog.FolderName : null;
+    }
+
+    private static string? PickFile(PickPathRequest request, bool checkFileExists)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = string.IsNullOrWhiteSpace(request.Title) ? "Select file" : request.Title,
+            Filter = string.IsNullOrWhiteSpace(request.Filter)
+                ? "Executable files (*.exe)|*.exe|All files (*.*)|*.*"
+                : request.Filter,
+            CheckFileExists = checkFileExists,
+            Multiselect = false
+        };
+
+        if (Directory.Exists(request.InitialPath))
+        {
+            dialog.InitialDirectory = request.InitialPath;
+        }
+        else if (File.Exists(request.InitialPath))
+        {
+            dialog.InitialDirectory = Path.GetDirectoryName(request.InitialPath) ?? string.Empty;
+            dialog.FileName = Path.GetFileName(request.InitialPath);
+        }
+
+        return dialog.ShowDialog() == true ? dialog.FileName : null;
     }
 
     private static JsonElement ValidatePath(JsonElement payload)
@@ -78,7 +103,7 @@ public sealed class PathPluginHostCallHandler : IPluginHostCapabilityHandler
         }, JsonOptions);
     }
 
-    internal static PathValidationResult ValidatePathByKind(string? pathText, string? kind)
+    public static PathValidationResult ValidatePathByKind(string? pathText, string? kind)
     {
         var value = pathText?.Trim() ?? string.Empty;
         if (string.IsNullOrEmpty(value))
@@ -98,9 +123,15 @@ public sealed class PathPluginHostCallHandler : IPluginHostCapabilityHandler
             return PathValidationResult.Invalid("Path does not exist.");
         }
 
-        if (string.Equals(kind, "file", StringComparison.OrdinalIgnoreCase) && !fileExists)
+        var normalizedKind = PluginConfigurationTypes.NormalizePathKind(kind);
+        if (normalizedKind == PluginConfigurationTypes.PathFile && !fileExists)
         {
             return PathValidationResult.Invalid("Please select an existing file path.");
+        }
+
+        if (normalizedKind == PluginConfigurationTypes.PathDirectory && !directoryExists)
+        {
+            return PathValidationResult.Invalid("Please select an existing folder path.");
         }
 
         return PathValidationResult.Valid();
@@ -112,6 +143,7 @@ public sealed class PickPathRequest
     public string? Title { get; init; }
     public string? Filter { get; init; }
     public string? InitialPath { get; init; }
+    public string? Kind { get; init; }
 }
 
 public sealed class ValidatePathRequest

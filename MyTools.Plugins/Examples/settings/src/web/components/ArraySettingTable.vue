@@ -190,6 +190,7 @@ function editorFields(): SettingSchemaProperty[] {
                         <SettingField
                             :type="property.type"
                             :ui-hint="property.uiHint"
+                            :title="property.title || property.key"
                             :model-value="draft[property.key]"
                             @update:model-value="draft[property.key] = $event"
                         />

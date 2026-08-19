@@ -23,6 +23,86 @@
         "zh-CN": "打开"
       },
       "sourceHash": "sha256:ed077f3d8125d60dca1979c7133601bd187d47c73ed9975028f677e49e709942"
+    },
+    {
+      "key": "Plugin.OpenPath.Setting.Rider.Title",
+      "defaultValue": "Rider install path",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "Rider 安装路径"
+      },
+      "sourceHash": "sha256:71b243cb101d12cd601444521ee0482a96e88798e112b905cbb38df28e6304e8"
+    },
+    {
+      "key": "Plugin.OpenPath.Setting.Rider.Description",
+      "defaultValue": "Rider.exe file path or Rider install directory",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "Rider.exe 文件路径或 Rider 安装目录"
+      },
+      "sourceHash": "sha256:80850690a5539cf9083cf904564c6d6f12a9a1b36661e6a7b043b3cb0e6965e1"
+    },
+    {
+      "key": "Plugin.OpenPath.Setting.VsCode.Title",
+      "defaultValue": "VSCode install path",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "VSCode 安装路径"
+      },
+      "sourceHash": "sha256:a53d2268c3e50c9a317070f90783151097c60ed41b2642647398d29ca4252d72"
+    },
+    {
+      "key": "Plugin.OpenPath.Setting.VsCode.Description",
+      "defaultValue": "Code.exe file path or VSCode install directory",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "Code.exe 文件路径或 VSCode 安装目录"
+      },
+      "sourceHash": "sha256:5c01f7663f9deb38c274d7dce5c52381ec61bacce0ec2e2385dbe7bebe299cf5"
+    },
+    {
+      "key": "Plugin.OpenPath.Setting.VisualStudio.Title",
+      "defaultValue": "Visual Studio install path",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "Visual Studio 安装路径"
+      },
+      "sourceHash": "sha256:8706a97d48e54ddf5fd101e8d8895dc34faffcf3c8c24980ce0eb28f87938689"
+    },
+    {
+      "key": "Plugin.OpenPath.Setting.VisualStudio.Description",
+      "defaultValue": "devenv.exe file path or Visual Studio install directory",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "devenv.exe 文件路径或 Visual Studio 安装目录"
+      },
+      "sourceHash": "sha256:822cd7af18fa87d5bf9cd98b750206b464931103c219493b8c4eeaf2357193a4"
+    },
+    {
+      "key": "Plugin.OpenPath.Setting.IntelliJ.Title",
+      "defaultValue": "IntelliJ install path",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "IntelliJ 安装路径"
+      },
+      "sourceHash": "sha256:bb1e05f58509ae175051b602e2d5b9421d145e11da6ac64574934951c5f9a647"
+    },
+    {
+      "key": "Plugin.OpenPath.Setting.IntelliJ.Description",
+      "defaultValue": "idea64.exe file path or IntelliJ install directory",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "idea64.exe 文件路径或 IntelliJ 安装目录"
+      },
+      "sourceHash": "sha256:e2f5b004c916579ff710a9e274fd9e98caa0912d378737c5741c402ca4ee2b9f"
     }
   ]
 }

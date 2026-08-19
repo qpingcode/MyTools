@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { t } from "../i18n";
-import { defaultUiHint } from "../setting-utils";
+import { defaultUiHint, isPathType, normalizePathKind } from "../setting-utils";
+import PathField from "./PathField.vue";
 
 const props = defineProps<{
     type: string;
     uiHint?: string | null;
+    title?: string | null;
     modelValue: unknown;
 }>();
 
@@ -14,6 +16,8 @@ const emit = defineEmits<{
 }>();
 
 const hint = computed(() => defaultUiHint(props.type, props.uiHint));
+const showPath = computed(() => isPathType(props.type) || hint.value === "file" || hint.value === "directory" || hint.value === "fileordirectory");
+const pathKind = computed(() => normalizePathKind(hint.value));
 const inputType = computed(() => {
     if (hint.value === "email") return "email";
     if (hint.value === "telephone" || hint.value === "tel") return "tel";
@@ -44,8 +48,15 @@ function emitBool(value: boolean): void {
 </script>
 
 <template>
+    <PathField
+        v-if="showPath"
+        :model-value="textValue"
+        :kind="pathKind"
+        :title="title"
+        @update:model-value="emitText($event)"
+    />
     <n-input
-        v-if="hint === 'textarea'"
+        v-else-if="hint === 'textarea'"
         :value="textValue"
         type="textarea"
         size="small"

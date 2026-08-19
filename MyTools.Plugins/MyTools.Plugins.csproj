@@ -34,9 +34,6 @@
     </None>
     <None Remove="Examples\common\**\*" />
     <None Remove="Examples\sdk-v3\**\*" />
-    <None Include="Examples\CommandRunner.json;Examples\SearchEnginePlugin.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
   <Target Name="ValidateNodePluginExampleOutputs" BeforeTargets="PrepareForBuild">

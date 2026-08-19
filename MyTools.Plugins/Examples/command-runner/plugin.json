@@ -74,13 +74,13 @@
           },
           {
             "key": "workingDirectory",
-            "type": "string",
+            "type": "path",
             "table": false,
             "label": {
               "key": "Plugin.CommandRunner.Column.WorkingDirectory",
               "defaultValue": "Working directory"
             },
-            "uiHint": "input"
+            "uiHint": "directory"
           },
           {
             "key": "runAsAdmin",

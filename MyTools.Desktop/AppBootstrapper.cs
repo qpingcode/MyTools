@@ -280,7 +280,9 @@ public class AppBootstrapper : IDisposable
         foreach (var file in Directory.GetFiles(sourceDirectory))
         {
             var targetFile = Path.Combine(targetDirectory, Path.GetFileName(file));
-            if (!File.Exists(targetFile) || File.GetLastWriteTimeUtc(file) > File.GetLastWriteTimeUtc(targetFile))
+            if (!File.Exists(targetFile)
+                || File.GetLastWriteTimeUtc(file) > File.GetLastWriteTimeUtc(targetFile)
+                || new FileInfo(file).Length != new FileInfo(targetFile).Length)
             {
                 File.Copy(file, targetFile, true);
             }
@@ -368,42 +370,6 @@ public class AppBootstrapper : IDisposable
                 localization.GetCaption("Configuration.Plugins.Name", "Plugins"),
                 localization.GetCaption("Configuration.Plugins.Description", "Plugin Settings"),
                 IsSelectable: true);
-
-            var openPathCategory = registry.AddCategory(
-                "openpath",
-                localization.GetCaption("Plugin.OpenPath.Name", "Open Path"),
-                localization.GetCaption(
-                    "Plugin.OpenPath.Description",
-                    "Open Rider, VSCode, Visual Studio or IntelliJ by clipboard path"),
-                IsSelectable: true);
-
-            registry.AddSetting(
-                openPathCategory,
-                "RiderInstallPath",
-                localization.GetCaption("Plugin.OpenPath.Setting.Rider.Title", "Rider install path"),
-                localization.GetCaption("Plugin.OpenPath.Setting.Rider.Description", "Rider.exe file path or Rider install directory"),
-                string.Empty);
-
-            registry.AddSetting(
-                openPathCategory,
-                "VsCodeInstallPath",
-                localization.GetCaption("Plugin.OpenPath.Setting.VsCode.Title", "VSCode install path"),
-                localization.GetCaption("Plugin.OpenPath.Setting.VsCode.Description", "Code.exe file path or VSCode install directory"),
-                string.Empty);
-
-            registry.AddSetting(
-                openPathCategory,
-                "VisualStudioInstallPath",
-                localization.GetCaption("Plugin.OpenPath.Setting.VisualStudio.Title", "Visual Studio install path"),
-                localization.GetCaption("Plugin.OpenPath.Setting.VisualStudio.Description", "devenv.exe file path or Visual Studio install directory"),
-                string.Empty);
-
-            registry.AddSetting(
-                openPathCategory,
-                "IntelliJInstallPath",
-                localization.GetCaption("Plugin.OpenPath.Setting.IntelliJ.Title", "IntelliJ install path"),
-                localization.GetCaption("Plugin.OpenPath.Setting.IntelliJ.Description", "idea64.exe file path or IntelliJ install directory"),
-                string.Empty);
              
             foreach (var plugin in pluginLoader.LoadedPlugins)
             {

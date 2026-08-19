@@ -95,6 +95,17 @@ public static class PluginConfigurationRegistrar
                 valueType: SettingValueTypes.Array);
             setting.Schema = MapSchema(item.Schema, localization);
         }
+        else if (normalizedType == PluginConfigurationTypes.Path)
+        {
+            setting = registry.AddSetting(
+                category,
+                name,
+                title,
+                description,
+                ToStringValue(item.DefaultValue),
+                valueType: SettingValueTypes.Path);
+            uiHint = PluginConfigurationTypes.NormalizePathKind(uiHint);
+        }
         else
         {
             setting = RegisterScalar(registry, category, name, title, description, normalizedType, item.DefaultValue);
@@ -141,6 +152,10 @@ public static class PluginConfigurationRegistrar
                 var uiHint = string.IsNullOrWhiteSpace(property.UiHint)
                     ? PluginConfigurationTypes.DefaultUiHint(type)
                     : property.UiHint.Trim();
+                if (PluginConfigurationTypes.IsPathType(type))
+                {
+                    uiHint = PluginConfigurationTypes.NormalizePathKind(uiHint);
+                }
                 return new SettingSchemaProperty
                 {
                     Key = property.Key,

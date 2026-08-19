@@ -1,4 +1,12 @@
 {
   "Plugin.OpenPath.Name": "Open Path",
-  "Plugin.OpenPath.Action.Open": "Open"
+  "Plugin.OpenPath.Action.Open": "Open",
+  "Plugin.OpenPath.Setting.Rider.Title": "Rider install path",
+  "Plugin.OpenPath.Setting.Rider.Description": "Rider.exe file path or Rider install directory",
+  "Plugin.OpenPath.Setting.VsCode.Title": "VSCode install path",
+  "Plugin.OpenPath.Setting.VsCode.Description": "Code.exe file path or VSCode install directory",
+  "Plugin.OpenPath.Setting.VisualStudio.Title": "Visual Studio install path",
+  "Plugin.OpenPath.Setting.VisualStudio.Description": "devenv.exe file path or Visual Studio install directory",
+  "Plugin.OpenPath.Setting.IntelliJ.Title": "IntelliJ install path",
+  "Plugin.OpenPath.Setting.IntelliJ.Description": "idea64.exe file path or IntelliJ install directory"
 }

@@ -1,4 +1,12 @@
 {
   "Plugin.OpenPath.Name": "OpenPath",
-  "Plugin.OpenPath.Action.Open": "打开"
+  "Plugin.OpenPath.Action.Open": "打开",
+  "Plugin.OpenPath.Setting.Rider.Title": "Rider 安装路径",
+  "Plugin.OpenPath.Setting.Rider.Description": "Rider.exe 文件路径或 Rider 安装目录",
+  "Plugin.OpenPath.Setting.VsCode.Title": "VSCode 安装路径",
+  "Plugin.OpenPath.Setting.VsCode.Description": "Code.exe 文件路径或 VSCode 安装目录",
+  "Plugin.OpenPath.Setting.VisualStudio.Title": "Visual Studio 安装路径",
+  "Plugin.OpenPath.Setting.VisualStudio.Description": "devenv.exe 文件路径或 Visual Studio 安装目录",
+  "Plugin.OpenPath.Setting.IntelliJ.Title": "IntelliJ 安装路径",
+  "Plugin.OpenPath.Setting.IntelliJ.Description": "idea64.exe 文件路径或 IntelliJ 安装目录"
 }

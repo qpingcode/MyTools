@@ -136,13 +136,13 @@ SDK 把旧式方法名映射到 v3 路由：`initialize` → `plugin.call.initia
 - `capabilities` 必填（可 `[]`）。只有声明过的能力才能 `hostCall`；调用的方法名必须与声明的 capability 完全一致，例如读取配置使用 `plugin.hostCall("configuration.read")` 并声明 `"configuration.read"`。
 - 顶层 `icon` 是 Settings 侧栏图标（Material Design Icons 类名，如 `"mdi-message-text-outline"`）。省略时用默认齿轮变体图标。
 - 插件级设置写在顶层 `configuration`（不是 entry 上）。宿主启动时按 schema 注册到 Settings 侧栏，分类名为插件显示名，设置完整路径为 `{pluginId}.{key}`（例如 `snippet.Phrases`）。`key` 也可以写成 `snippet.Phrases` 或 `Plugins.Snippet.Phrases`，宿主会去掉前缀。
-- `type`：`string` / `bool` / `int` / `double` / `array`。`uiHint` 可选：string 默认 `input`（也可 `textarea` / `email` / `telephone`）；bool 默认 `checkbox`（也可 `radio` / `select`）；int/double 默认 `input-number`；array 默认 `table`，必须带 `schema.properties`。列 `type: "hidden"` 表格和编辑框都不显示（时间戳等）。列 `"table": false` 只在编辑对话框出现，不出现在表格。默认值支持宏 `${DateTime.Now}`（新增行时解析）。
-- 需要读自己的设置时声明 `configuration.readOwn`。不要用 `configuration.read`（那是 settings 插件读全部设置）。
+- `type`：`string` / `bool` / `int` / `double` / `array` / `path`。`uiHint` 可选：string 默认 `input`（也可 `textarea` / `email` / `telephone`）；bool 默认 `checkbox`（也可 `radio` / `select`）；int/double 默认 `input-number`；array 默认 `table`，必须带 `schema.properties`。`path` 默认 `fileOrDirectory`（也可 `file` / `directory`），Settings 显示文件/目录选择器。列 `type: "hidden"` 表格和编辑框都不显示（时间戳等）。列 `"table": false` 只在编辑对话框出现，不出现在表格。默认值支持宏 `${DateTime.Now}`（新增行时解析）。
+- 需要读自己的设置时声明 `configuration.readOwn`。不要用 `configuration.read`（那是 settings 插件读全部设置）。Open Path、Snippet、Command Runner 都走这条路。
 - `detail` 可选。省略（或 `"detail": { "type": "list" }`）时宿主用 `search` 的结果走原生列表：关键词路由停留在列表，热键打开搜索主窗口并锁定该插件。
 - 需要自定义页面时再写 `"detail": { "type": "web", "entry": "web/index.html" }`。`hotKey`、`alias`、`search` 可选。
 - `search.global`：出现在**无关键词**的全局搜索结果中。省略或 `false` 时不参与全局搜索（opt-in，避免设置类插件污染每次搜索）。用户可在设置 → 插件列表的 **全局结果** 中覆盖此项。
-- 有非空 `alias` 就会注册 `alias + 查询串` 的插件级搜索；没有 alias 则只能靠全局搜索或热键进入。只有全局、没有别名时（如 `hello-sWearch`）必须设 `"search": { "global": true }`。
-- 没有顶层 `name` / `runtime`；旧的单 entry（无 `entries[]`）清单会被跳过。
+- 有非空 `alias` 就会注册 `alias + 查询串` 的插件级搜索；没有 alias 则只能靠全局搜索或热键进入。只有全局、没有别名时（如 `hello-search`）必须设 `"search": { "global": true }`。
+- 没有顶层 `name` / `runtime`；
 
 ## 4. 后端（Node）
 
@@ -202,7 +202,7 @@ plugin
 - 环境变量从 `process.env` 读。`start()` 连宿主 Named Pipe，不要自己读 stdin。
 - 数据落盘优先用宿主注入目录：`MYTOOLS_PLUGIN_DATA_DIR`（单插件目录，例如 `%APPDATA%\MyTools.Desktop\pluginsData\deepseek-translator`），其次可读 `MYTOOLS_PLUGINS_DATA_DIR`（所有插件数据根目录）。避免把数据写到 `process.cwd()`。
 
-需要宿主能力时（照 `settings`）：页面 `bus.call("getConfiguration")` → 后端 `handle` → `plugin.hostCall("configuration.read")`。页面不能直接发 `host.call.*`。manifest 必须声明完全相同的 capability；宿主不转换旧方法名。
+需要宿主能力时（照 `settings`）：页面 `bus.call("getConfiguration")` → 后端 `handle` → `plugin.hostCall("configuration.read")`。页面不能直接发 `host.call.*`。manifest 必须声明完全相同的 capability；
 
 ### 可用 capabilities
 
@@ -229,8 +229,8 @@ plugin
 | `hotkeys.resume` | 恢复宿主全局热键注册。 | 无参数；返回空对象。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
 | `hotkeys.validate` | 检查待保存的插件热键是否与搜索热键或其他插件热键冲突。 | `{ hotKeys }`；返回 `{ conflicts }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
 | `action.capture` | 打开宿主原生输入录制窗口，捕获键盘热键或鼠标按钮。 | 录制选项；返回 `{ cancelled, kind, hotKey, mouseButton }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
-| `path.pick` | 打开 Windows 原生文件选择窗口。 | `{ title?, filter?, initialPath? }`；返回 `{ cancelled, path }`。 | [`PathPluginHostCallHandler`](../../../MyTools.Desktop/Services/PathPluginHostCallHandler.cs) |
-| `path.validate` | 校验路径是否为绝对路径、是否存在，以及是否满足文件类型要求。 | `{ path, kind }`，`kind` 为 `file` 或 `fileOrDirectory`；返回 `{ valid, message }`。 | [`PathPluginHostCallHandler`](../../../MyTools.Desktop/Services/PathPluginHostCallHandler.cs) |
+| `path.pick` | 打开 Windows 原生文件或目录选择窗口。`kind: directory` 选文件夹，否则选文件。 | `{ title?, filter?, initialPath?, kind? }`，`kind` 为 `file` / `directory` / `fileOrDirectory`；返回 `{ cancelled, path }`。 | [`PathPluginHostCallHandler`](../../../MyTools.Desktop/Services/PathPluginHostCallHandler.cs) |
+| `path.validate` | 校验路径是否为绝对路径、是否存在，以及是否满足文件/目录类型要求。空路径视为有效。 | `{ path, kind }`，`kind` 为 `file` / `directory` / `fileOrDirectory`；返回 `{ valid, message }`。 | [`PathPluginHostCallHandler`](../../../MyTools.Desktop/Services/PathPluginHostCallHandler.cs) |
 | `restart` | 重启 MyTools Desktop。 | 无参数；返回空对象后执行重启。 | [`RestartPluginHostCallHandler`](../../../MyTools.Desktop/Services/RestartPluginHostCallHandler.cs) |
 
 能力基础设施：
@@ -240,7 +240,7 @@ plugin
 - capability 到 handler 的直接路由：[`NodePluginHostCallRouter`](../../../MyTools.Desktop/Services/NodePluginHostCallRouter.cs)
 - manifest 声明校验与审计：[`CapabilityGateway`](../../../MyTools.Host.Core/Capabilities/CapabilityGateway.cs)
 - 每次 `host.call.*` 的授权入口：[`MessageBus`](../../../MyTools.Host.Core/Bus/MessageBus.cs)
-- 插件热键与 keymap 的共享持久化：[`PluginOverrideProvider`](../../../MyTools.Desktop/Services/PluginOverrideProvider.cs)，写入 `PluginOverrides.json`；不会读取、迁移或删除旧 `Keymap.json`。
+- 插件热键与 keymap 的共享持久化：[`PluginOverrideProvider`](../../../MyTools.Desktop/Services/PluginOverrideProvider.cs)，写入 `PluginOverrides.json`；
 
 不要根据测试或设计文档推断 capability 可用性。例如 `clipboard.read` 当前没有注册
 `IPluginHostCapabilityHandler`，因此尚不是可调用的宿主能力。
