@@ -75,6 +75,41 @@ public class PluginConfigurationRegistrarTest
         Assert.That(((JsonElement)setting.DefaultValue!).GetRawText(), Is.EqualTo("[]"));
     }
 
+    [Test]
+    public void Register_ShouldAddPathSetting()
+    {
+        var registry = new FakeRegistry();
+        var configuration = new List<PluginConfigurationSettingV3>
+        {
+            new()
+            {
+                Key = "RiderInstallPath",
+                Type = "path",
+                Label = new LocalizedNameV3 { Key = "t", DefaultValue = "Rider install path" },
+                DefaultValue = JsonValue.Create(""),
+                UiHint = "fileOrDirectory"
+            },
+            new()
+            {
+                Key = "WorkingDirectory",
+                Type = "path",
+                Label = new LocalizedNameV3 { Key = "w", DefaultValue = "Working directory" },
+                UiHint = "directory"
+            }
+        };
+
+        PluginConfigurationRegistrar.Register(registry, "openpath", "Open Path", "desc", configuration, new FallbackLocalization(), "folder-open-outline");
+
+        Assert.That(registry.Categories[0].Icon, Is.EqualTo("mdi-folder-open-outline"));
+        Assert.That(registry.Settings, Has.Count.EqualTo(2));
+        Assert.That(registry.Settings[0].FullPath, Is.EqualTo("openpath.RiderInstallPath"));
+        Assert.That(registry.Settings[0].ValueType, Is.EqualTo(SettingValueTypes.Path));
+        Assert.That(registry.Settings[0].UiHint, Is.EqualTo("fileOrDirectory"));
+        Assert.That(registry.Settings[1].FullPath, Is.EqualTo("openpath.WorkingDirectory"));
+        Assert.That(registry.Settings[1].ValueType, Is.EqualTo(SettingValueTypes.Path));
+        Assert.That(registry.Settings[1].UiHint, Is.EqualTo("directory"));
+    }
+
     private sealed class FallbackLocalization : ILocalizationService
     {
         public string CurrentLocale => "en-US";

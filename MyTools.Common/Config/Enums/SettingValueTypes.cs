@@ -51,6 +51,11 @@ public enum SettingValueTypes
     Array,
 
     /// <summary>
+    /// 文件/目录路径（由设置页的路径选择器编辑）
+    /// </summary>
+    Path,
+
+    /// <summary>
     /// 自定义类型（需要序列化器）
     /// </summary>
     Custom

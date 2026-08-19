@@ -11,6 +11,7 @@ using MyTools.Desktop.Utils;
 using MyTools.Desktop.Views;
 using MyTools.Plugins;
 using MyTools.Plugins.NodePlugins;
+using MyTools.Protocol.Manifest;
 using Serilog.Events;
 
 namespace MyTools.Desktop.Services;
@@ -38,13 +39,6 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     private readonly AppConfigService appConfigService;
     private readonly InputActionCaptureService inputActionCaptureService;
     private readonly ILogger<SettingsPluginHostCallHandler> logger;
-    private static readonly HashSet<string> FileOrDirectoryPathSettingPaths = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "openpath.RiderInstallPath",
-        "openpath.VsCodeInstallPath",
-        "openpath.VisualStudioInstallPath",
-        "openpath.IntelliJInstallPath"
-    };
     private const string IlSpyPathSettingFullPath = "DllInterfaceReader.ILSpyPathSetting";
 
     private static readonly JsonSerializerOptions JsonCamelCaseOptions = new()
@@ -263,7 +257,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
                 continue;
             }
 
-            ValidatePathSettingIfNeeded(change.FullPath, change.Value);
+            ValidatePathSettingIfNeeded(setting, change.Value);
 
             setting.CurrentValue = ConfigurationSettingValues.Convert(setting, change.Value);
         }
@@ -647,22 +641,31 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         };
     }
 
-    private void ValidatePathSettingIfNeeded(string fullPath, string? value)
+    private void ValidatePathSettingIfNeeded(ConfigurationSetting setting, string? value)
     {
-        if (!FileOrDirectoryPathSettingPaths.Contains(fullPath)
-            && !string.Equals(fullPath, IlSpyPathSettingFullPath, StringComparison.OrdinalIgnoreCase))
+        var kind = PathKindOf(setting);
+        if (kind == null)
         {
             return;
         }
 
-        var kind = string.Equals(fullPath, IlSpyPathSettingFullPath, StringComparison.OrdinalIgnoreCase)
-            ? "file"
-            : "fileOrDirectory";
         var result = PathPluginHostCallHandler.ValidatePathByKind(value, kind);
         if (!result.IsValid)
         {
             throw new InvalidOperationException(result.Message ?? "Invalid path.");
         }
+    }
+
+    private static string? PathKindOf(ConfigurationSetting setting)
+    {
+        if (setting.ValueType == SettingValueTypes.Path)
+        {
+            return PluginConfigurationTypes.NormalizePathKind(setting.UiHint);
+        }
+
+        return string.Equals(setting.FullPath, IlSpyPathSettingFullPath, StringComparison.OrdinalIgnoreCase)
+            ? PluginConfigurationTypes.PathFile
+            : null;
     }
 
 }

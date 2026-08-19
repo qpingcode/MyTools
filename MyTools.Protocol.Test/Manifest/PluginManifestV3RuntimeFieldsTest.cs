@@ -125,6 +125,27 @@ public class PluginManifestV3RuntimeFieldsTest
         Assert.That(
             commandRunner.Configuration[0].Schema.Properties.Where(property => property.Table).Select(property => property.Key),
             Is.EquivalentTo(new[] { "name", "command", "runAsAdmin" }));
+        Assert.That(
+            commandRunner.Configuration[0].Schema.Properties.Single(property => property.Key == "workingDirectory").Type,
+            Is.EqualTo("path"));
+        Assert.That(
+            commandRunner.Configuration[0].Schema.Properties.Single(property => property.Key == "workingDirectory").UiHint,
+            Is.EqualTo("directory"));
         Assert.That(commandRunner.Entries[0].Capabilities, Is.EquivalentTo(new[] { "configuration.readOwn" }));
+    }
+
+    [Test]
+    public void Deserialize_ShouldReadOpenPathConfiguration()
+    {
+        var openPath = LoadExampleV3("openpath");
+        Assert.That(openPath.Icon, Is.EqualTo("mdi-folder-open-outline"));
+        Assert.That(openPath.Configuration, Has.Count.EqualTo(4));
+        Assert.That(openPath.Configuration.Select(item => item.Key), Is.EquivalentTo(new[]
+        {
+            "RiderInstallPath", "VsCodeInstallPath", "VisualStudioInstallPath", "IntelliJInstallPath"
+        }));
+        Assert.That(openPath.Configuration.Select(item => item.Type), Is.All.EqualTo("path"));
+        Assert.That(openPath.Configuration.Select(item => item.UiHint), Is.All.EqualTo("fileOrDirectory"));
+        Assert.That(openPath.Entries[0].Capabilities, Is.EquivalentTo(new[] { "configuration.readOwn" }));
     }
 }

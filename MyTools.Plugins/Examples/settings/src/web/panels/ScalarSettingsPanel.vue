@@ -1,42 +1,47 @@
 <script setup lang="ts">
-import { computed, reactive } from "vue";
+import { computed } from "vue";
 import HighlightText from "../components/HighlightText.vue";
 import HotKeyRecorder from "../components/HotKeyRecorder.vue";
 import ArraySettingTable from "../components/ArraySettingTable.vue";
 import SettingField from "../components/SettingField.vue";
-import { bus } from "../bus";
 import { t } from "../i18n";
+import { isPathType, resolvePathKind } from "../setting-utils";
 import { categorySelfMatches, currentCategory, markSettingDirty, store } from "../store";
 import type { Option, Setting } from "../types";
 
 const category = computed(() => currentCategory.value);
 const noMatch = computed(() =>
     !!store.searchQuery && category.value != null && !categorySelfMatches(category.value));
-const pathErrors = reactive<Record<string, string>>({});
-const pathDraft = reactive<Record<string, string>>({});
-
-type PathMode = "file" | "fileOrDirectory";
-type ValidatePathResult = { valid?: boolean; message?: string };
-type PickPathResult = { cancelled?: boolean; path?: string };
 
 function isArraySetting(setting: Setting): boolean {
     return setting.valueType === "Array";
 }
 
 function usesSchemaControl(setting: Setting): boolean {
-    return !!setting.uiHint && setting.valueType !== "Language"
-        && setting.valueType !== "Theme"
-        && setting.valueType !== "LogLevel"
-        && setting.valueType !== "HotKey"
-        && !isPathSetting(setting);
+    if (setting.valueType === "Language"
+        || setting.valueType === "Theme"
+        || setting.valueType === "LogLevel"
+        || setting.valueType === "HotKey") {
+        return false;
+    }
+    if (isPathType(setting.valueType, setting.fullPath)) return true;
+    return !!setting.uiHint;
 }
 
 function fieldType(setting: Setting): string {
+    if (isPathType(setting.valueType, setting.fullPath)) return "path";
     const valueType = setting.valueType.toLowerCase();
     if (valueType === "integer") return "int";
     if (valueType === "bool") return "bool";
     if (valueType === "double") return "double";
     return "string";
+}
+
+function fieldUiHint(setting: Setting): string | undefined {
+    if (isPathType(setting.valueType, setting.fullPath)) {
+        return resolvePathKind(setting.valueType, setting.uiHint, setting.fullPath);
+    }
+    return setting.uiHint;
 }
 
 function currentRawValue(setting: Setting): unknown {
@@ -61,23 +66,7 @@ function onField(setting: Setting, value: unknown): void {
     onText(setting, value == null ? "" : String(value));
 }
 
-function isPathSetting(setting: Setting): boolean {
-    const fullPath = setting.fullPath.toLowerCase();
-    return fullPath === "dllinterfacereader.ilspypathsetting"
-        || fullPath === "openpath.riderinstallpath"
-        || fullPath === "openpath.vscodeinstallpath"
-        || fullPath === "openpath.visualstudioinstallpath"
-        || fullPath === "openpath.intellijinstallpath";
-}
-
-function pathModeFor(setting: Setting): PathMode {
-    return setting.fullPath.toLowerCase() === "dllinterfacereader.ilspypathsetting" ? "file" : "fileOrDirectory";
-}
-
 function currentValue(setting: Setting): string {
-    if (isPathSetting(setting) && pathDraft[setting.fullPath] !== undefined) {
-        return pathDraft[setting.fullPath];
-    }
     const dirty = store.dirtySettings.get(setting.fullPath);
     if (dirty !== undefined) return dirty;
     return setting.currentValue ?? "";
@@ -100,48 +89,6 @@ function onBool(setting: Setting, value: boolean): void {
 
 function onHotKey(setting: Setting, value: string | null): void {
     markSettingDirty(setting.fullPath, value || "");
-}
-
-function onPathText(setting: Setting, value: string): void {
-    pathDraft[setting.fullPath] = value;
-    pathErrors[setting.fullPath] = "";
-}
-
-async function validatePath(setting: Setting, value: string): Promise<boolean> {
-    const result = await bus.call<ValidatePathResult>("validatePath", {
-        path: value || "",
-        kind: pathModeFor(setting),
-    });
-    if (!result?.valid) {
-        pathErrors[setting.fullPath] = result?.message || t("Plugin.Settings.Path.Invalid", "Invalid path");
-        return false;
-    }
-    pathErrors[setting.fullPath] = "";
-    return true;
-}
-
-async function commitPath(setting: Setting): Promise<void> {
-    const value = pathDraft[setting.fullPath] ?? currentValue(setting);
-    if (!(await validatePath(setting, value))) {
-        return;
-    }
-    markSettingDirty(setting.fullPath, value);
-    delete pathDraft[setting.fullPath];
-}
-
-async function browsePath(setting: Setting): Promise<void> {
-    const result = await bus.call<PickPathResult>("pickPath", {
-        title: setting.title,
-        filter: pathModeFor(setting) === "file"
-            ? "Executable files (*.exe)|*.exe|All files (*.*)|*.*"
-            : "Executable files (*.exe)|*.exe|All files (*.*)|*.*",
-        initialPath: currentValue(setting),
-    });
-    if (!result || result.cancelled || !result.path) {
-        return;
-    }
-    pathDraft[setting.fullPath] = result.path;
-    await commitPath(setting);
 }
 </script>
 
@@ -175,20 +122,6 @@ async function browsePath(setting: Setting): Promise<void> {
                         @update:value="onBool(setting, !!$event)"
                     />
                 </div>
-                <div v-else-if="isPathSetting(setting)" class="path-control">
-                    <n-input
-                        :value="currentValue(setting)"
-                        size="small"
-                        class="control-input"
-                        @update:value="onPathText(setting, String($event || ''))"
-                        @blur="commitPath(setting)"
-                    />
-                    <n-button size="small" secondary class="browse-btn" @click="browsePath(setting)">
-                        <template #icon>
-                            <i class="mdi mdi-folder-open-outline"></i>
-                        </template>
-                    </n-button>
-                </div>
                 <n-select
                     v-else-if="setting.valueType === 'Language' || setting.valueType === 'Theme' || setting.valueType === 'LogLevel'"
                     :value="currentValue(setting)"
@@ -210,7 +143,8 @@ async function browsePath(setting: Setting): Promise<void> {
                 <SettingField
                     v-else-if="usesSchemaControl(setting)"
                     :type="fieldType(setting)"
-                    :ui-hint="setting.uiHint"
+                    :ui-hint="fieldUiHint(setting)"
+                    :title="setting.title"
                     :model-value="currentRawValue(setting)"
                     @update:model-value="onField(setting, $event)"
                 />
@@ -229,9 +163,6 @@ async function browsePath(setting: Setting): Promise<void> {
                     class="control-input"
                     @update:value="onText(setting, $event)"
                 />
-            </div>
-            <div v-if="isPathSetting(setting) && pathErrors[setting.fullPath]" class="path-error">
-                {{ pathErrors[setting.fullPath] }}
             </div>
         </div>
     </div>
@@ -314,27 +245,5 @@ async function browsePath(setting: Setting): Promise<void> {
     width: 220px;
     display: flex;
     justify-content: flex-start;
-}
-
-.path-control {
-    width: 260px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.path-control .control-input {
-    width: 100%;
-}
-
-.browse-btn {
-    flex: 0 0 auto;
-}
-
-.path-error {
-    width: 100%;
-    margin-top: -8px;
-    color: #f44336;
-    font-size: 12px;
 }
 </style>

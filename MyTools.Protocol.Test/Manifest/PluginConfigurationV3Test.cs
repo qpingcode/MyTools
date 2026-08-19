@@ -135,5 +135,27 @@ public class PluginConfigurationV3Test
         Assert.That(PluginConfigurationTypes.DefaultUiHint("int"), Is.EqualTo("input-number"));
         Assert.That(PluginConfigurationTypes.DefaultUiHint("integer"), Is.EqualTo("input-number"));
         Assert.That(PluginConfigurationTypes.DefaultUiHint("array"), Is.EqualTo("table"));
+        Assert.That(PluginConfigurationTypes.DefaultUiHint("path"), Is.EqualTo("fileOrDirectory"));
+        Assert.That(PluginConfigurationTypes.NormalizePathKind("file"), Is.EqualTo("file"));
+        Assert.That(PluginConfigurationTypes.NormalizePathKind("directory"), Is.EqualTo("directory"));
+        Assert.That(PluginConfigurationTypes.NormalizePathKind(""), Is.EqualTo("fileOrDirectory"));
+        Assert.That(PluginConfigurationTypes.NormalizePathKind("input"), Is.EqualTo("fileOrDirectory"));
+    }
+
+    [Test]
+    public void Validate_PathType_ShouldPass()
+    {
+        var m = new PluginManifestV3
+        {
+            Id = "p",
+            ProtocolVersion = "3.0",
+            Entries = [new() { Id = "main", Entry = "index.mjs" }],
+            Configuration =
+            [
+                new() { Key = "InstallPath", Type = "path", UiHint = "directory" }
+            ]
+        };
+
+        Assert.That(PluginManifestV3Validator.Validate(m).IsValid, Is.True);
     }
 }
