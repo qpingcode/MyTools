@@ -385,7 +385,7 @@ public class AppBootstrapper : IDisposable
             
             // Load configuration from file if exists
             registry.Reload();
-            CommandRunnerSettingsMigrator.Migrate(registry, logger);
+       
             // AppConfigService is authoritative for the locale. Ignore a stale legacy copy in Settings.json.
             languageSetting.InitValueWithoutNotify(localization.CurrentLocale);
             // AppConfigService is authoritative for the theme as well.

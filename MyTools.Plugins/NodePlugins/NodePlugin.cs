@@ -381,9 +381,18 @@ public sealed class NodePlugin : IPlugin, IDisposable
             return StringIcon.Empty;
         }
 
-        return string.Equals(icon.Kind, "emoji", StringComparison.OrdinalIgnoreCase)
-            ? new StringIcon(icon.Value)
-            : StringIcon.Empty;
+        if (string.Equals(icon.Kind, "emoji", StringComparison.OrdinalIgnoreCase))
+        {
+            return new StringIcon(icon.Value);
+        }
+
+        if (string.Equals(icon.Kind, "mdi", StringComparison.OrdinalIgnoreCase)
+            || icon.Value.StartsWith("mdi-", StringComparison.OrdinalIgnoreCase))
+        {
+            return new MdiIcon(icon.Value);
+        }
+
+        return StringIcon.Empty;
     }
 
     private static JsonElement CloneJson(JsonElement? element)

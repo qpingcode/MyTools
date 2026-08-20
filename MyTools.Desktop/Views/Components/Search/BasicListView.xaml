@@ -12,12 +12,13 @@
     
     <UserControl.Resources>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
             <converters:TruncateTextConverter x:Key="TruncateTextConverter"/>
             <converters:IconTemplateSelector x:Key="IconTemplateSelector">
                 <converters:IconTemplateSelector.StringIconTemplate>
                     <DataTemplate>
                         <TextBlock Text="{Binding Emoji}"
-                                   Margin="0,0,8,0"
+                                   Margin="{Binding IconMargin, RelativeSource={RelativeSource AncestorType={x:Type components:BasicListView}}}"
                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontSize="20"
                                    VerticalAlignment="Center"
@@ -28,7 +29,7 @@
                 <converters:IconTemplateSelector.ImageIconTemplate>
                     <DataTemplate>
                         <Image Source="{Binding Image}" 
-                               Margin="0,0,8,0"
+                               Margin="{Binding IconMargin, RelativeSource={RelativeSource AncestorType={x:Type components:BasicListView}}}"
                                Width="24" 
                                Height="24" 
                                VerticalAlignment="Center"
@@ -36,6 +37,21 @@
                         />
                     </DataTemplate>
                 </converters:IconTemplateSelector.ImageIconTemplate>
+                <converters:IconTemplateSelector.MdiIconTemplate>
+                    <DataTemplate>
+                        <DataTemplate.Resources>
+                            <converters:MdiGlyphConverter x:Key="MdiGlyphConverter"/>
+                        </DataTemplate.Resources>
+                        <TextBlock Text="{Binding Converter={StaticResource MdiGlyphConverter}}"
+                                   FontFamily="{DynamicResource MdiFontFamily}"
+                                   FontSize="20"
+                                   Margin="{Binding IconMargin, RelativeSource={RelativeSource AncestorType={x:Type components:BasicListView}}}"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   Typography.StandardLigatures="True"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center"/>
+                    </DataTemplate>
+                </converters:IconTemplateSelector.MdiIconTemplate>
             </converters:IconTemplateSelector>
             
             <Style TargetType="ScrollBar">
@@ -149,7 +165,7 @@
                             <ColumnDefinition>
                                 <ColumnDefinition.Style>
                                     <Style TargetType="ColumnDefinition">
-                                        <Setter Property="Width" Value="50"></Setter>
+                                        <Setter Property="Width" Value="{Binding IconColumnWidth, ElementName=root}"></Setter>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IconVisible, ElementName=root}" Value="False">
                                                 <Setter Property="Width" Value="0"></Setter>
@@ -188,10 +204,13 @@
                         
                         <Grid Grid.Column="1">
                             <!-- 图标 -->
-                            <ContentControl Grid.ZIndex="0"
-                                            Content="{Binding Icon}" 
-                                            ContentTemplateSelector="{StaticResource IconTemplateSelector}" 
-                            />
+                            <Border Style="{Binding IconContainerStyle, ElementName=root}">
+                                <ContentControl Grid.ZIndex="0"
+                                                Content="{Binding Icon}"
+                                                ContentTemplateSelector="{StaticResource IconTemplateSelector}"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"/>
+                            </Border>
                         </Grid>
 
                         <!-- 内容区域 -->
@@ -202,11 +221,20 @@
                             </Grid.RowDefinitions>
 
                             <!-- 内容 -->
-                            <TextBlock TextWrapping="Wrap"
-                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                            <TextBlock Foreground="{DynamicResource TextPrimaryBrush}"
                                        FontSize="16"
-                                       ToolTip="{Binding Title}"
-                                       >
+                                       ToolTip="{Binding Title}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="TextWrapping" Value="Wrap"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SingleLineText, ElementName=root}" Value="True">
+                                                <Setter Property="TextWrapping" Value="NoWrap"/>
+                                                <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
                                 <TextBlock.Text>
                                     <MultiBinding StringFormat="{}{0}">
                                         <Binding Path="Title" Converter="{StaticResource TruncateTextConverter}" ConverterParameter="100"/>
@@ -214,10 +242,21 @@
                                 </TextBlock.Text>
                             </TextBlock>
                             <TextBlock Grid.Row="1"
-                                       TextWrapping="Wrap"
                                        Foreground="{DynamicResource TextTertiaryBrush}"
                                        FontSize="12"
-                                       Margin="0,2,0,0">
+                                       Margin="0,2,0,0"
+                                       Visibility="{Binding SubTitle, Converter={StaticResource StringToVisibilityConverter}}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="TextWrapping" Value="Wrap"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SingleLineText, ElementName=root}" Value="True">
+                                                <Setter Property="TextWrapping" Value="NoWrap"/>
+                                                <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
                                 <TextBlock.Text>
                                     <MultiBinding StringFormat="{}{0}">
                                         <Binding Path="SubTitle" Converter="{StaticResource TruncateTextConverter}" ConverterParameter="150"/>

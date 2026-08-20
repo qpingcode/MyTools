@@ -63,6 +63,7 @@ public partial class InputActionCaptureWindow
         this.languageService = languageService;
         this.themeService = themeService;
         InitializeComponent();
+        WindowFocusTopmost.Attach(this);
     }
 
     public bool Confirmed { get; private set; }

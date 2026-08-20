@@ -63,11 +63,14 @@ public class ClipBoardPlugin(ILogger<ClipBoardPlugin> logger) : PluginBase, IWin
         foreach (var item in items)
         {
             var lazyParam = new LazyClipboardParam(_dbHelper, item.Id);
-            var title = item.Summary.Length > 50 ? item.Summary.Substring(0, 50) + "..." : item.Summary;
-            string subTitle = item.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss");
-            resultItems.Add(new ResultItem(StringIcon.Empty, title, subTitle, lazyParam, ResultItemPriorities.Medium)
+            var title = ClipboardItemMeta.FormatListTitle(
+                CollapseToSingleLine(item.Summary),
+                item.PixelWidth,
+                item.PixelHeight);
+            resultItems.Add(new ResultItem(MdiIcon.ForClipboardKind(item.Kind), title, string.Empty, lazyParam, ResultItemPriorities.Medium)
             {
-                ResultKey = item.Id.ToString()
+                ResultKey = item.Id.ToString(),
+                CreatedAt = item.Timestamp
             });
         }
         return await Task.FromResult(Result.CreateSuccessResult(resultItems));
@@ -88,10 +91,12 @@ public class ClipBoardPlugin(ILogger<ClipBoardPlugin> logger) : PluginBase, IWin
             {
                 return;
             }
-            var title = getTitleFromClipboard();
+            var title = CollapseToSingleLine(getTitleFromClipboard());
+            var kind = ClipboardContentKindClassifier.FromClipboard();
+            var (width, height, imageBytes) = ClipboardItemMeta.ReadClipboardImageMeta();
             var content = DataObjectSerializer.SerializeIDataObject();
             var hash = HashHelper.ComputeSha256Hash(content);
-            _dbHelper.AddHistory(content, title, hash);
+            _dbHelper.AddHistory(content, title, hash, kind, width, height, imageBytes);
         }
         catch (Exception ex)
         {
@@ -117,6 +122,12 @@ public class ClipBoardPlugin(ILogger<ClipBoardPlugin> logger) : PluginBase, IWin
         }
 
         return "[Unknown]";
+    }
+
+    private static string CollapseToSingleLine(string text)
+    {
+        return string.Join(' ',
+            text.Split(['\r', '\n', '\t'], StringSplitOptions.RemoveEmptyEntries)).Trim();
     }
     
     int IWindowMessageHandler.Priority => IWindowMessageHandler.LowPriority;

@@ -97,4 +97,9 @@
   <data name="InputActionCapture.MouseMiddle" xml:space="preserve"><value>Molette</value></data>
   <data name="InputActionCapture.MouseBack" xml:space="preserve"><value>Précédent (XButton1)</value></data>
   <data name="InputActionCapture.MouseForward" xml:space="preserve"><value>Suivant (XButton2)</value></data>
+  <data name="Search.Detail.PreviewEmpty" xml:space="preserve"><value>Sélectionnez un élément pour l'aperçu</value></data>
+  <data name="Search.WordWrap" xml:space="preserve"><value>Retour à la ligne</value></data>
+  <data name="Search.Detail.CharacterCount" xml:space="preserve"><value>{{count}} caractères</value></data>
+  <data name="Search.Detail.ImageMeta" xml:space="preserve"><value>{{dimensions}} · {{size}}</value></data>
+  <data name="Search.Detail.ImageDiskSize" xml:space="preserve"><value>{{size}}</value></data>
 </root>

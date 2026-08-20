@@ -21,6 +21,7 @@ public sealed partial class ResultItem(Icon icon, string title, string subTitle,
     public string SourcePluginName { get; set; } = string.Empty;
     public string ResultKey { get; set; } = string.Empty;
     public string SearchQuery { get; set; } = string.Empty;
+    public DateTime? CreatedAt { get; set; }
 
     public string ContentAsString
     {
@@ -61,6 +62,7 @@ public sealed partial class ResultItem(Icon icon, string title, string subTitle,
             NumberLabel = NumberLabel,
             LocalizedTitle = LocalizedTitle,
             LocalizedSubTitle = LocalizedSubTitle,
+            CreatedAt = CreatedAt,
         };
     }
 }

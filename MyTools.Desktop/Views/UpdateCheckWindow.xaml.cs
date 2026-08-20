@@ -23,6 +23,7 @@ public partial class UpdateCheckWindow
     public UpdateCheckWindow(IUpdateService updateService)
     {
         InitializeComponent();
+        WindowFocusTopmost.Attach(this);
 
         _updateService = updateService;
         _logger = ServiceLocator.GetRequiredService<ILogger<UpdateCheckWindow>>();

@@ -15,7 +15,6 @@
         Background="Transparent"
         AllowsTransparency="True"
         WindowStyle="None"
-        Topmost="True"
         ResizeMode="CanResizeWithGrip">
     <Window.Resources>
         <converters:IsNullToVisibilityConverter x:Key="IsNullToVisibilityConverter" />

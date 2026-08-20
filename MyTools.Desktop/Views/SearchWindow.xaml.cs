@@ -22,6 +22,7 @@ namespace MyTools.Desktop.Views
                 Shutdown();
             }
             InitializeComponent();
+            //WindowFocusTopmost.Attach(this);
 
             viewModel = searchViewModel;
             DataContext = viewModel;
