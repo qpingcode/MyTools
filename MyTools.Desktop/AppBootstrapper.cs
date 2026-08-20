@@ -368,7 +368,7 @@ public class AppBootstrapper : IDisposable
             registry.AddCategory(
                 "Plugins",
                 localization.GetCaption("Configuration.Plugins.Name", "Plugins"),
-                localization.GetCaption("Configuration.Plugins.Description", "Plugin Settings"),
+                localization.GetCaption("Configuration.Plugins.Description", "Enable plugins, assign hotkeys, and set aliases used in global search."),
                 IsSelectable: true);
              
             foreach (var plugin in pluginLoader.LoadedPlugins)

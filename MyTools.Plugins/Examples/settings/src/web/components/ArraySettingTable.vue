@@ -2,6 +2,7 @@
 import { computed, reactive, ref } from "vue";
 import HighlightText from "./HighlightText.vue";
 import SettingField from "./SettingField.vue";
+import TableToolbar from "./TableToolbar.vue";
 import { t } from "../i18n";
 import { markSettingDirty, store } from "../store";
 import {
@@ -116,25 +117,14 @@ function editorFields(): SettingSchemaProperty[] {
 
 <template>
     <div class="array-setting">
-        <div class="table-toolbar">
-            <n-input
-                v-model:value="tableQuery"
-                size="small"
-                clearable
-                class="table-search"
-                :placeholder="labels.search"
-            >
-                <template #prefix>
-                    <i class="mdi mdi-magnify"></i>
-                </template>
-            </n-input>
-            <n-button size="small" type="primary" secondary @click="openEditor(null)">
+        <TableToolbar v-model="tableQuery" :placeholder="labels.search">
+            <n-button size="small" secondary @click="openEditor(null)">
                 <template #icon>
                     <i class="mdi mdi-plus"></i>
                 </template>
                 {{ labels.add }}
             </n-button>
-        </div>
+        </TableToolbar>
 
         <div v-if="rows.length === 0" class="empty">{{ labels.empty }}</div>
         <div v-else class="array-table-scroll">
@@ -211,19 +201,6 @@ function editorFields(): SettingSchemaProperty[] {
     max-width: 100%;
     min-width: 0;
     box-sizing: border-box;
-}
-
-.table-toolbar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
-    min-width: 0;
-}
-
-.table-search {
-    flex: 1 1 auto;
-    min-width: 0;
 }
 
 .empty {

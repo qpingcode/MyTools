@@ -56,7 +56,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Remove="Components\Search\test.png" />
+        <None Remove="Views\Components\Search\test.png" />
+        <Page Update="Views\Components\NodePluginDetailView.xaml">
+          <Generator>MSBuild:Compile</Generator>
+        </Page>
         <Page Update="Views\Components\Search\BasicListView.xaml">
           <Generator>MSBuild:Compile</Generator>
         </Page>

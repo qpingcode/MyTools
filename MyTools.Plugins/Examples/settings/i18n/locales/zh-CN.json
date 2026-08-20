@@ -15,6 +15,7 @@
   "Plugin.Settings.Cancel": "取消",
   "Plugin.Settings.Restarting": "请重启 MyTools 以应用新语言。",
   "Plugin.Settings.Category.Plugins": "插件列表",
+  "Plugin.Settings.Category.Plugins.Description": "启用或关闭插件，并为每个插件设置快捷键和搜索别名。",
   "Plugin.Settings.Keymap.HeaderEnabled": "启用",
   "Plugin.Settings.Keymap.HeaderName": "插件名",
   "Plugin.Settings.Keymap.HeaderHotkey": "快捷键",

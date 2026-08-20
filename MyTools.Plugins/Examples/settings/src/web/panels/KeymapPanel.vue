@@ -1,12 +1,29 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import HighlightText from "../components/HighlightText.vue";
 import HotKeyRecorder from "../components/HotKeyRecorder.vue";
+import TableToolbar from "../components/TableToolbar.vue";
 import { t } from "../i18n";
 import { markKeymapDirty, store } from "../store";
 import type { KeymapPlugin } from "../types";
 
 const plugins = computed(() => store.keymapPlugins || []);
+const tableQuery = ref("");
+
+const filteredPlugins = computed(() => {
+    const query = tableQuery.value.trim().toLowerCase();
+    if (!query) return plugins.value;
+    return plugins.value.filter((plugin) => {
+        const haystack = [
+            plugin.name,
+            keywordsOf(plugin),
+            hotKeyOf(plugin) || "",
+        ].join(" ").toLowerCase();
+        return haystack.includes(query);
+    });
+});
+
+const highlightQuery = computed(() => tableQuery.value.trim() || store.searchQuery);
 
 function hotKeyOf(plugin: KeymapPlugin): string | null {
     const dirty = store.keymapDirty.get(plugin.pluginId);
@@ -58,6 +75,24 @@ function onPluginHotKeyChange(plugin: KeymapPlugin, value: string | null): void 
         {{ t("Plugin.Settings.Loading", "Loading...") }}
     </div>
     <div v-else class="keymap-panel">
+        <div class="panel-intro">
+            <div class="panel-title">
+                <HighlightText
+                    :text="t('Plugin.Settings.Category.Plugins', 'Plugins')"
+                    :query="store.searchQuery"
+                />
+            </div>
+            <div class="panel-description">
+                <HighlightText
+                    :text="t('Plugin.Settings.Category.Plugins.Description', 'Enable plugins, assign hotkeys, and set aliases used in global search.')"
+                    :query="store.searchQuery"
+                />
+            </div>
+        </div>
+        <TableToolbar
+            v-model="tableQuery"
+            :placeholder="t('Plugin.Settings.Table.Search', 'Search')"
+        />
         <div class="keymap-header">
             <div class="col-name">{{ t("Plugin.Settings.Keymap.HeaderName", "Plugin") }}</div>
             <div class="col-hotkey">{{ t("Plugin.Settings.Keymap.HeaderHotkey", "Hotkey") }}</div>
@@ -75,10 +110,10 @@ function onPluginHotKeyChange(plugin: KeymapPlugin, value: string | null): void 
             </div>
             <div class="col-enabled">{{ t("Plugin.Settings.Keymap.HeaderEnabled", "Enabled") }}</div>
         </div>
-        <div v-for="plugin in plugins" :key="plugin.pluginId" class="keymap-item">
+        <div v-for="plugin in filteredPlugins" :key="plugin.pluginId" class="keymap-item">
             <div class="keymap-row">
                 <div class="col-name" :title="plugin.name">
-                    <HighlightText :text="plugin.name" :query="store.searchQuery" />
+                    <HighlightText :text="plugin.name" :query="highlightQuery" />
                 </div>
                 <div class="col-hotkey">
                     <HotKeyRecorder
@@ -128,6 +163,24 @@ function onPluginHotKeyChange(plugin: KeymapPlugin, value: string | null): void 
 
 .keymap-panel {
     min-width: 0;
+}
+
+.panel-intro {
+    padding: 18px 0;
+}
+
+.panel-title {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--mt-text, #fff);
+}
+
+.panel-description {
+    margin-top: 4px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--mt-text-tertiary, #aaaaaa);
 }
 
 .keymap-header,

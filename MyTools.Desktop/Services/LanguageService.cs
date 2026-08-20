@@ -31,6 +31,26 @@ public class LanguageService : ILocalizationService
         new(DefaultLocale)
     ];
 
+    /// <summary>
+    /// 语言名称用该语言自己的写法，不随界面语言翻译，方便用户认出自己的语言。
+    /// </summary>
+    public static string GetNativeDisplayName(CultureInfo culture)
+    {
+        ArgumentNullException.ThrowIfNull(culture);
+        return GetNativeDisplayName(culture.Name);
+    }
+
+    public static string GetNativeDisplayName(string locale)
+    {
+        return locale switch
+        {
+            "zh-CN" => "中文",
+            "fr-FR" => "Français",
+            "en-US" => "English",
+            _ => CultureInfo.GetCultureInfo(locale).NativeName
+        };
+    }
+
     private CultureInfo GetDefaultCulture()
     {
         var systemCulture = CultureInfo.CurrentUICulture;

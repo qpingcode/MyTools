@@ -1,7 +1,9 @@
 using System.Windows;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using MyTools.Common.Localization;
 using MyTools.Common.Theming;
 using MyTools.Desktop.Models;
 using MyTools.Desktop.Services;
@@ -46,7 +48,7 @@ public partial class InputActionCaptureWindow
         return brush;
     }
 
-    private readonly LanguageService languageService;
+    private readonly ILocalizationService languageService;
     private readonly IThemeService themeService;
     private InputActionCaptureOptions options = new();
     private string kind = KindHotkey;
@@ -56,7 +58,7 @@ public partial class InputActionCaptureWindow
     private bool allowEmptyConfirm;
     private HwndSource? hwndSource;
 
-    public InputActionCaptureWindow(LanguageService languageService, IThemeService themeService)
+    public InputActionCaptureWindow(ILocalizationService languageService, IThemeService themeService)
     {
         this.languageService = languageService;
         this.themeService = themeService;
@@ -201,6 +203,29 @@ public partial class InputActionCaptureWindow
     }
 
     private void CancelButton_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void CloseButton_OnClick(object sender, RoutedEventArgs e) => Close();
+
+    private void TitleBar_OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton != MouseButton.Left || e.ClickCount != 1)
+        {
+            return;
+        }
+
+        if (IsInteractiveTitleBarSource(e.OriginalSource as DependencyObject))
+        {
+            return;
+        }
+
+        try
+        {
+            DragMove();
+        }
+        catch (InvalidOperationException)
+        {
+        }
+    }
 
     private void OkButton_Click(object sender, RoutedEventArgs e) => ConfirmAndClose();
 
@@ -363,6 +388,23 @@ public partial class InputActionCaptureWindow
             }
 
             current = VisualTreeHelper.GetParent(current);
+        }
+
+        return false;
+    }
+
+    private static bool IsInteractiveTitleBarSource(DependencyObject? source)
+    {
+        while (source != null)
+        {
+            if (source is ButtonBase)
+            {
+                return true;
+            }
+
+            source = source is Visual
+                ? VisualTreeHelper.GetParent(source)
+                : null;
         }
 
         return false;
