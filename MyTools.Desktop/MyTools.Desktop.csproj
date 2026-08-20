@@ -41,9 +41,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Content Include="Assets\**">
+        <Content Include="Assets\**" Exclude="Assets\Fonts\materialdesignicons-webfont.ttf;Assets\Fonts\mdi-glyphs.txt">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
+        <Resource Include="Assets\Fonts\materialdesignicons-webfont.ttf" />
+        <EmbeddedResource Include="Assets\Fonts\mdi-glyphs.txt" />
     </ItemGroup>
 
     <ItemGroup>
@@ -64,9 +66,6 @@
           <Generator>MSBuild:Compile</Generator>
         </Page>
         <Page Update="Views\Components\Search\DetailedListView.xaml">
-          <Generator>MSBuild:Compile</Generator>
-        </Page>
-        <Page Update="Views\Components\Search\LeftRightLayout.xaml">
           <Generator>MSBuild:Compile</Generator>
         </Page>
         <Page Update="Themes\Dark.xaml">

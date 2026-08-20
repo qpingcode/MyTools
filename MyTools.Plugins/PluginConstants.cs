@@ -3,9 +3,6 @@
 public class PluginConstants
 {
     public const string ClipboardHistory = "cb";
-    public static string DllInterfaceReaderKeyword = "dll";
-
-    public const string PluginCachePrefix = "PluginCache_";
     public const string FileSearcherCachePrefix = "FileSearcher_";
 }
 

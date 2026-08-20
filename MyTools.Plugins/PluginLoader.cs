@@ -54,9 +54,6 @@ public class PluginLoader(ILogger<PluginLoader> logger, IKeywordRegistry keyword
         var clipboard = plugins.OfType<ClipBoardPlugin>().First();
         keywordRegistry.Register(PluginConstants.ClipboardHistory, clipboard);
 
-        var DllInterfaceReader = plugins.OfType<DllInterfaceReaderPlugin>().First();
-        keywordRegistry.Register(PluginConstants.DllInterfaceReaderKeyword, DllInterfaceReader);
-
         foreach (var nodePlugin in dynamicPlugins.OfType<NodePlugin>())
         {
             foreach (var keyword in nodePlugin.Keywords)

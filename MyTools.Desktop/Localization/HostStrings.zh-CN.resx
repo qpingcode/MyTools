@@ -183,4 +183,9 @@
   <data name="InputActionCapture.MouseMiddle" xml:space="preserve"><value>中键</value></data>
   <data name="InputActionCapture.MouseBack" xml:space="preserve"><value>后退（XButton1）</value></data>
   <data name="InputActionCapture.MouseForward" xml:space="preserve"><value>前进（XButton2）</value></data>
+  <data name="Search.Detail.PreviewEmpty" xml:space="preserve"><value>选择一项以预览</value></data>
+  <data name="Search.WordWrap" xml:space="preserve"><value>换行</value></data>
+  <data name="Search.Detail.CharacterCount" xml:space="preserve"><value>{{count}} 字</value></data>
+  <data name="Search.Detail.ImageMeta" xml:space="preserve"><value>{{dimensions}} · {{size}}</value></data>
+  <data name="Search.Detail.ImageDiskSize" xml:space="preserve"><value>{{size}}</value></data>
 </root>

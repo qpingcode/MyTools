@@ -22,6 +22,58 @@ public partial class BasicListView : IVisibleItemProvider
         get => (bool)GetValue(IconVisibleProperty);
         set => SetValue(IconVisibleProperty, value);
     }
+
+    public static readonly DependencyProperty SingleLineTextProperty =
+        DependencyProperty.Register(
+            nameof(SingleLineText),
+            typeof(bool),
+            typeof(BasicListView),
+            new PropertyMetadata(false));
+
+    public bool SingleLineText
+    {
+        get => (bool)GetValue(SingleLineTextProperty);
+        set => SetValue(SingleLineTextProperty, value);
+    }
+
+    public static readonly DependencyProperty IconColumnWidthProperty =
+        DependencyProperty.Register(
+            nameof(IconColumnWidth),
+            typeof(GridLength),
+            typeof(BasicListView),
+            new PropertyMetadata(new GridLength(50)));
+
+    public GridLength IconColumnWidth
+    {
+        get => (GridLength)GetValue(IconColumnWidthProperty);
+        set => SetValue(IconColumnWidthProperty, value);
+    }
+
+    public static readonly DependencyProperty IconMarginProperty =
+        DependencyProperty.Register(
+            nameof(IconMargin),
+            typeof(Thickness),
+            typeof(BasicListView),
+            new PropertyMetadata(new Thickness(0, 0, 8, 0)));
+
+    public Thickness IconMargin
+    {
+        get => (Thickness)GetValue(IconMarginProperty);
+        set => SetValue(IconMarginProperty, value);
+    }
+
+    public static readonly DependencyProperty IconContainerStyleProperty =
+        DependencyProperty.Register(
+            nameof(IconContainerStyle),
+            typeof(Style),
+            typeof(BasicListView),
+            new PropertyMetadata(null));
+
+    public Style? IconContainerStyle
+    {
+        get => (Style?)GetValue(IconContainerStyleProperty);
+        set => SetValue(IconContainerStyleProperty, value);
+    }
     
     public BasicListView()
     {

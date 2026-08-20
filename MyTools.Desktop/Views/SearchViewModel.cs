@@ -187,10 +187,6 @@ namespace MyTools.Desktop.ViewModels
             {
                 newVm = CreateViewModel<BasicListViewModel>();
             }
-            else if (required == ViewModelType.LeftRight)
-            {
-                newVm = CreateViewModel<LeftRightLayoutViewModel>();
-            }
             else if (required == ViewModelType.NodeDetail)
             {
                 newVm = CreateViewModel<NodePluginDetailViewModel>();

@@ -408,7 +408,7 @@ public static void ApplyTheme(ThemeKind kind)
    - `Views/UpdateCheckWindow.xaml`
    - `Views/HotKeyEditorWindow.xaml`
    - `Components/NodePluginDetailView.xaml`（外层 Border）
-   - `Views/Components/Search/BasicListView.xaml`、`DetailedListView.xaml`、`LeftRightLayout.xaml`
+   - `Views/Components/Search/BasicListView.xaml`、`DetailedListView.xaml`
 
 ### 9.4 ThemeExtension（未来扩展，本轮不实现）
 

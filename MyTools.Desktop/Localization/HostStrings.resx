@@ -183,4 +183,9 @@
   <data name="InputActionCapture.MouseMiddle" xml:space="preserve"><value>Middle</value></data>
   <data name="InputActionCapture.MouseBack" xml:space="preserve"><value>Back (XButton1)</value></data>
   <data name="InputActionCapture.MouseForward" xml:space="preserve"><value>Forward (XButton2)</value></data>
+  <data name="Search.Detail.PreviewEmpty" xml:space="preserve"><value>Select an item to preview</value></data>
+  <data name="Search.WordWrap" xml:space="preserve"><value>Wrap</value></data>
+  <data name="Search.Detail.CharacterCount" xml:space="preserve"><value>{{count}} characters</value></data>
+  <data name="Search.Detail.ImageMeta" xml:space="preserve"><value>{{dimensions}} · {{size}}</value></data>
+  <data name="Search.Detail.ImageDiskSize" xml:space="preserve"><value>{{size}}</value></data>
 </root>

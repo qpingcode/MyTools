@@ -13,6 +13,7 @@ public partial class ErrorDialog
     private ErrorDialog()
     {
         InitializeComponent();
+        WindowFocusTopmost.Attach(this);
     }
 
     /// <summary>

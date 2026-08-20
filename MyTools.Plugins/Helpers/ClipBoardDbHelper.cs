@@ -8,6 +8,10 @@ public class ClipBoardHistoryItem
 {
     public int Id { get; set; }
     public string Summary { get; set; } = string.Empty;
+    public ClipboardContentKind Kind { get; set; } = ClipboardContentKind.Text;
+    public int PixelWidth { get; set; }
+    public int PixelHeight { get; set; }
+    public int ByteSize { get; set; }
     public byte[] Content { get; set; } = [];
     public DateTime Timestamp { get; set; }
 }
@@ -36,12 +40,23 @@ public class ClipBoardDbHelper
             content BLOB NOT NULL,
             summary TEXT NOT NULL,
             hash TEXT NOT NULL,
-            timestamp TEXT NOT NULL
+            timestamp TEXT NOT NULL,
+            kind TEXT NOT NULL DEFAULT 'text',
+            pixel_width INTEGER NOT NULL DEFAULT 0,
+            pixel_height INTEGER NOT NULL DEFAULT 0,
+            byte_size INTEGER NOT NULL DEFAULT 0
         );";
         cmd.ExecuteNonQuery();
     }
     
-    public void AddHistory(byte[] content, string summary, string hash)
+    public void AddHistory(
+        byte[] content,
+        string summary,
+        string hash,
+        ClipboardContentKind kind = ClipboardContentKind.Text,
+        int pixelWidth = 0,
+        int pixelHeight = 0,
+        int byteSize = 0)
     {
         
         using var conn = new SqliteConnection($"Data Source={_dbPath}");
@@ -54,11 +69,15 @@ public class ClipBoardDbHelper
         }
         
         var cmd = conn.CreateCommand();
-        cmd.CommandText = "INSERT INTO clipboard_history (content, summary,timestamp, hash) VALUES (@content, @summary, @ts, @hash)";
+        cmd.CommandText = "INSERT INTO clipboard_history (content, summary,timestamp, hash, kind, pixel_width, pixel_height, byte_size) VALUES (@content, @summary, @ts, @hash, @kind, @w, @h, @bytes)";
         cmd.Parameters.AddWithValue("@content", content);
         cmd.Parameters.AddWithValue("@summary", summary);
         cmd.Parameters.AddWithValue("@ts", DateTime.UtcNow.ToString("o"));
         cmd.Parameters.AddWithValue("@hash", hash);
+        cmd.Parameters.AddWithValue("@kind", ClipboardContentKindParser.ToStorage(kind));
+        cmd.Parameters.AddWithValue("@w", pixelWidth);
+        cmd.Parameters.AddWithValue("@h", pixelHeight);
+        cmd.Parameters.AddWithValue("@bytes", byteSize);
         cmd.ExecuteNonQuery();
 
         last = new ClipBoardHistoryItem
@@ -93,8 +112,8 @@ public class ClipBoardDbHelper
     private string GetSelectFields(bool includeContent)
     {
         return includeContent 
-            ? "id, content, summary, timestamp" 
-            : "id, summary, timestamp";
+            ? "id, content, summary, timestamp, kind, pixel_width, pixel_height, byte_size" 
+            : "id, summary, timestamp, kind, pixel_width, pixel_height, byte_size";
     }
 
     private string BuildWhereClause(string? query, out bool hasQuery)
@@ -132,7 +151,11 @@ public class ClipBoardDbHelper
                 Id = id,
                 Content = includeContent ? (byte[])reader["content"] : [],
                 Summary = summary,
-                Timestamp = DateTime.Parse(timestamp)
+                Timestamp = DateTime.Parse(timestamp),
+                Kind = ClipboardContentKindParser.Parse(reader.GetString(reader.GetOrdinal("kind"))),
+                PixelWidth = reader.GetInt32(reader.GetOrdinal("pixel_width")),
+                PixelHeight = reader.GetInt32(reader.GetOrdinal("pixel_height")),
+                ByteSize = reader.GetInt32(reader.GetOrdinal("byte_size"))
             };
             list.Add(item);
         }

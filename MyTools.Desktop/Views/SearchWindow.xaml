@@ -15,7 +15,6 @@
         Background="Transparent"
         AllowsTransparency="True"
         WindowStyle="None"
-        Topmost="True"
         ResizeMode="CanResizeWithGrip">
     <Window.Resources>
         <converters:IsNullToVisibilityConverter x:Key="IsNullToVisibilityConverter" />
@@ -23,15 +22,17 @@
         <Style x:Key="ModernTextBox"
                TargetType="TextBox">
             <Setter Property="Background"
-                    Value="{DynamicResource SurfaceBrush}" />
+                    Value="Transparent" />
             <Setter Property="Foreground"
+                    Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="CaretBrush"
                     Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="BorderThickness"
                     Value="0" />
             <Setter Property="Padding"
                     Value="5,3" />
             <Setter Property="FontSize"
-                    Value="16" />
+                    Value="18" />
         </Style>
 
         <Style x:Key="ModernButton"
@@ -84,9 +85,6 @@
         <DataTemplate DataType="{x:Type local:DetailedListViewModel}">
             <local:DetailedListView></local:DetailedListView>
         </DataTemplate>
-        <DataTemplate DataType="{x:Type local:LeftRightLayoutViewModel}">
-            <local:LeftRightLayout />
-        </DataTemplate>
         <DataTemplate DataType="{x:Type local:NodePluginDetailViewModel}">
             <local:NodePluginDetailView />
         </DataTemplate>
@@ -104,114 +102,105 @@
                               BlurRadius="10" />
         </Border.Effect>
 
-        <Grid Margin="15">
+        <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!-- 搜索输入框 -->
+            <!-- 搜索输入框：与内容区同色，底部分割线 -->
             <Border Grid.Row="0"
-                    Margin="0,0,0,15"
-                    CornerRadius="8"
-                    Background="{DynamicResource SurfaceBrush}">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-
-                    <TextBox x:Name="SearchTextBox"
-                             Grid.Column="0"
-                             Style="{StaticResource ModernTextBox}"
-                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                             Margin="8,8"
-                             Height="40"
-                             VerticalContentAlignment="Center">
-                        <TextBox.InputBindings>
-                            <!-- 覆盖默认的上下键行为 -->
-                            <KeyBinding Key="Up"
-                                        Command="{x:Null}" />
-                            <KeyBinding Key="Down"
-                                        Command="{x:Null}" />
-                        </TextBox.InputBindings>
-                    </TextBox>
-                </Grid>
+                    Background="Transparent"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    CornerRadius="12,12,0,0"
+                    Padding="16,8,16,12">
+                <TextBox x:Name="SearchTextBox"
+                         Style="{StaticResource ModernTextBox}"
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         Height="36"
+                         Padding="0"
+                         Margin="0"
+                         Background="Transparent"
+                         VerticalContentAlignment="Center">
+                    <TextBox.InputBindings>
+                        <!-- 覆盖默认的上下键行为 -->
+                        <KeyBinding Key="Up"
+                                    Command="{x:Null}" />
+                        <KeyBinding Key="Down"
+                                    Command="{x:Null}" />
+                    </TextBox.InputBindings>
+                </TextBox>
             </Border>
 
-            <!-- 搜索结果列表 & 状态栏-->
-            <ContentControl Content="{Binding CurrentViewModel}" x:Name="CurrentSearchResultView" Grid.Row="1" />
+            <!-- 搜索结果列表 -->
+            <ContentControl Content="{Binding CurrentViewModel}"
+                            x:Name="CurrentSearchResultView"
+                            Grid.Row="1"
+                            Margin="8,8,0,0" />
 
-            <!-- 状态栏 -->
-            <Grid Grid.Row="2"
-                  VerticalAlignment="Bottom"
-                  Margin="0,8,0,0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
+            <!-- 状态栏：贴齐窗口下沿 -->
+            <Border Grid.Row="2"
+                    Background="{DynamicResource SurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="0,1,0,0"
+                    CornerRadius="0,0,12,12"
+                    Padding="16,8">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                <!-- 状态文本和动作列表 -->
-                <Border Background="{DynamicResource SurfaceBrush}"
-                        CornerRadius="6"
-                        Padding="10,5">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                    <Ellipse Style="{StaticResource StatusDotStyle}"
+                             HorizontalAlignment="Left"
+                             VerticalAlignment="Center" />
 
-                        <!-- 选中插件 -->
-                        <Ellipse Style="{StaticResource StatusDotStyle}"
-                                 HorizontalAlignment="Left"
-                                 Margin="0,5" />
-
-                        <StackPanel Grid.Column="1"
-                                    Orientation="Horizontal"
-                                    VerticalAlignment="Center">
-                            <TextBlock Text="{Binding PluginName}"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                       Margin="8,0,0,0"
-                                       VerticalAlignment="Center"
-                                       Visibility="{Binding PluginName, Converter={StaticResource IsNullToVisibilityConverter}}" />
-                            <TextBlock Text="{Binding PluginVersion, StringFormat=v{0}}"
-                                       Foreground="{DynamicResource TextTertiaryBrush}"
-                                       Margin="8,0,0,0"
-                                       VerticalAlignment="Center"
-                                       Visibility="{Binding PluginVersion, Converter={StaticResource IsNullToVisibilityConverter}}" />
-                        </StackPanel>
-
-                        <!-- 状态文本 -->
-                        <TextBlock Grid.Column="2"
-                                   ToolTip="{Binding DetailedStatusText}"
-                                   Text="{Binding StatusText}"
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center">
+                        <TextBlock Text="{Binding PluginName}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Margin="8,0,0,0"
+                                   VerticalAlignment="Center"
+                                   Visibility="{Binding PluginName, Converter={StaticResource IsNullToVisibilityConverter}}" />
+                        <TextBlock Text="{Binding PluginVersion, StringFormat=v{0}}"
                                    Foreground="{DynamicResource TextTertiaryBrush}"
                                    Margin="8,0,0,0"
-                                   VerticalAlignment="Center" />
+                                   VerticalAlignment="Center"
+                                   Visibility="{Binding PluginVersion, Converter={StaticResource IsNullToVisibilityConverter}}" />
+                    </StackPanel>
 
-                        <!-- 动作列表 -->
-                        <ItemsControl Grid.Column="3"
-                                      ItemsSource="{Binding SelectedResultActions}"
-                                      VerticalAlignment="Center">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Button Content="{Binding Name}"
-                                            Command="{Binding DataContext.ExecuteActionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                            CommandParameter="{Binding Command}"
-                                            Style="{StaticResource ModernButton}"
-                                            Margin="10,0,0,0" />
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </Grid>
-                </Border>
-            </Grid>
+                    <TextBlock Grid.Column="2"
+                               ToolTip="{Binding DetailedStatusText}"
+                               Text="{Binding StatusText}"
+                               Foreground="{DynamicResource TextTertiaryBrush}"
+                               Margin="8,0,0,0"
+                               VerticalAlignment="Center" />
+
+                    <ItemsControl Grid.Column="3"
+                                  ItemsSource="{Binding SelectedResultActions}"
+                                  VerticalAlignment="Center">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Content="{Binding Name}"
+                                        Command="{Binding DataContext.ExecuteActionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding Command}"
+                                        Style="{StaticResource ModernButton}"
+                                        Margin="10,0,0,0" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Grid>
+            </Border>
         </Grid>
     </Border>
 </Window>

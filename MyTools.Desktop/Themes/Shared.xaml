@@ -11,5 +11,6 @@
     <CornerRadius x:Key="WindowCornerRadius">12</CornerRadius>
     <CornerRadius x:Key="SurfaceCornerRadius">8</CornerRadius>
     <CornerRadius x:Key="ControlCornerRadius">4</CornerRadius>
+    <FontFamily x:Key="MdiFontFamily">pack://application:,,,/Assets/Fonts/materialdesignicons-webfont.ttf#Material Design Icons</FontFamily>
 
 </ResourceDictionary>
