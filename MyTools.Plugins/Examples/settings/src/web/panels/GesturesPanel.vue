@@ -586,7 +586,7 @@ onBeforeUnmount(() => {
     position: fixed;
     inset: 0;
     z-index: 300;
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.45);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -596,22 +596,24 @@ onBeforeUnmount(() => {
 }
 
 .gesture-record-hint {
-    color: #fff;
+    color: var(--mt-text, #1e1e1e);
     font-size: 18px;
     font-weight: 500;
     margin-bottom: 20px;
     padding: 12px 28px;
-    background: var(--mt-surface, #2a2a2a);
-    border: 1px solid var(--mt-accent, #4a9eff);
+    background: var(--mt-surface, #ffffff);
+    border: 1px solid var(--mt-accent, #3f51b5);
     border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 
 .gesture-record-trail {
-    color: var(--mt-accent, #4a9eff);
+    color: #ffffff;
     font-size: 48px;
     font-family: "Cascadia Code", Consolas, monospace;
     letter-spacing: 8px;
     min-height: 64px;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
 }
 
 .conflict-icon {
