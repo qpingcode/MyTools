@@ -1,5 +1,5 @@
 {
-  "Plugin.OpenPath.Name": "OpenPath",
+  "Plugin.OpenPath.Name": "打开路径",
   "Plugin.OpenPath.Action.Open": "打开",
   "Plugin.OpenPath.Setting.Rider.Title": "Rider 安装路径",
   "Plugin.OpenPath.Setting.Rider.Description": "Rider.exe 文件路径或 Rider 安装目录",

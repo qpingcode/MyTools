@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import HighlightText from "../components/HighlightText.vue";
+import TableToolbar from "../components/TableToolbar.vue";
 import ScalarSettingsPanel from "./ScalarSettingsPanel.vue";
 import { bus } from "../bus";
 import { captureInputAction } from "../capture-input-action";
@@ -28,6 +29,8 @@ let lastPoint: { x: number; y: number } | null = null;
 let isDrawing = false;
 
 const gestures = computed(() => store.gestureConfigs || []);
+const tableQuery = ref("");
+const highlightQuery = computed(() => tableQuery.value.trim() || store.searchQuery);
 
 const headers = computed(() => ({
     action: t("Plugin.Settings.Gestures.HeaderAction", "Action Name"),
@@ -126,13 +129,54 @@ function appendConflict(map: Map<string, string>, self: GestureConfig, other: Ge
 
 const conflicts = computed(() => conflictMap());
 
+const filteredGestures = computed(() => {
+    const query = tableQuery.value.trim().toLowerCase();
+    if (!query) return gestures.value;
+    return gestures.value.filter((gesture) => {
+        const action = formatActionDisplay(gesture).text;
+        const gestureText = formatGestureDisplay(gesture.directions).full;
+        const haystack = [
+            gesture.actionName,
+            action,
+            gestureText,
+            (gesture.processNames || []).join(" "),
+            gesture.hotKey || "",
+            gesture.mouseButton || "",
+        ].join(" ").toLowerCase();
+        return haystack.includes(query);
+    });
+});
+
+type EditableField = "name" | "process";
+
+const editing = ref<{ gesture: GestureConfig; field: EditableField } | null>(null);
+const editInputRef = ref<{ focus: () => void } | null>(null);
+
+function processText(gesture: GestureConfig): string {
+    return (gesture.processNames || []).join(", ");
+}
+
+function isEditing(gesture: GestureConfig, field: EditableField): boolean {
+    return editing.value?.gesture === gesture && editing.value.field === field;
+}
+
+async function startEdit(gesture: GestureConfig, field: EditableField): Promise<void> {
+    editing.value = { gesture, field };
+    await nextTick();
+    editInputRef.value?.focus();
+}
+
+function stopEdit(): void {
+    editing.value = null;
+}
+
 function markDirty(): void {
     markGesturesDirty();
 }
 
 function addGesture(): void {
     if (!store.gestureConfigs) store.gestureConfigs = [];
-    store.gestureConfigs.push({
+    const created: GestureConfig = {
         id: "",
         directions: [],
         actionName: "",
@@ -141,11 +185,16 @@ function addGesture(): void {
         mouseButton: null,
         processNames: [],
         isEnabled: true,
-    });
+    };
+    store.gestureConfigs.push(created);
     markDirty();
+    void startEdit(created, "name");
 }
 
 function removeGesture(gesture: GestureConfig): void {
+    if (editing.value?.gesture === gesture) {
+        stopEdit();
+    }
     if (!store.gestureConfigs) return;
     const index = store.gestureConfigs.indexOf(gesture);
     if (index >= 0) {
@@ -249,6 +298,17 @@ onBeforeUnmount(() => {
 <template>
     <div>
         <ScalarSettingsPanel />
+        <TableToolbar
+            v-model="tableQuery"
+            :placeholder="t('Plugin.Settings.Table.Search', 'Search')"
+        >
+            <n-button size="small" secondary @click="addGesture">
+                <template #icon>
+                    <i class="mdi mdi-plus"></i>
+                </template>
+                {{ t("Plugin.Settings.Table.Add", "Add") }}
+            </n-button>
+        </TableToolbar>
         <div v-if="gestures.length === 0" class="empty">
             {{ t("Plugin.Settings.Gestures.Empty", "No gestures configured") }}
         </div>
@@ -261,7 +321,7 @@ onBeforeUnmount(() => {
                 <div class="col-enabled" :title="headers.enabledTip">{{ headers.enabled }}</div>
                 <div class="col-actions"></div>
             </div>
-            <div v-for="(gesture, index) in gestures" :key="gesture.id || index" class="gesture-row">
+            <div v-for="(gesture, index) in filteredGestures" :key="gesture.id || index" class="gesture-row">
                 <div class="col-name">
                     <i
                         v-if="conflicts.get(gesture.id)"
@@ -269,6 +329,8 @@ onBeforeUnmount(() => {
                         :title="conflicts.get(gesture.id)"
                     ></i>
                     <n-input
+                        v-if="isEditing(gesture, 'name')"
+                        ref="editInputRef"
                         :value="gesture.actionName"
                         :placeholder="t('Plugin.Settings.Gestures.NamePlaceholder', 'e.g. Close Tab')"
                         size="small"
@@ -276,7 +338,25 @@ onBeforeUnmount(() => {
                             gesture.actionName = String($event || '');
                             markDirty();
                         "
+                        @blur="stopEdit"
+                        @keydown.enter.prevent="stopEdit"
+                        @keydown.esc.prevent="stopEdit"
                     />
+                    <button
+                        v-else
+                        type="button"
+                        class="flat-display"
+                        :class="{ empty: !gesture.actionName }"
+                        :title="gesture.actionName || t('Plugin.Settings.Gestures.NamePlaceholder', 'e.g. Close Tab')"
+                        @click="startEdit(gesture, 'name')"
+                    >
+                        <HighlightText
+                            v-if="gesture.actionName"
+                            :text="gesture.actionName"
+                            :query="highlightQuery"
+                        />
+                        <span v-else>{{ t("Plugin.Settings.Gestures.NamePlaceholder", "e.g. Close Tab") }}</span>
+                    </button>
                 </div>
                 <div class="col-gesture">
                     <button
@@ -296,18 +376,38 @@ onBeforeUnmount(() => {
                         <HighlightText
                             v-else
                             :text="formatGestureDisplay(gesture.directions).visible"
-                            :query="store.searchQuery"
+                            :query="highlightQuery"
                         />
                     </button>
                 </div>
                 <div class="col-process">
                     <n-input
-                        :value="(gesture.processNames || []).join(', ')"
+                        v-if="isEditing(gesture, 'process')"
+                        ref="editInputRef"
+                        :value="processText(gesture)"
                         :placeholder="t('Plugin.Settings.Gestures.ProcessPlaceholder', 'Any')"
                         :title="t('Plugin.Settings.Gestures.ProcessHint', 'Comma-separated process names')"
                         size="small"
                         @update:value="onProcessChange(gesture, String($event || ''))"
+                        @blur="stopEdit"
+                        @keydown.enter.prevent="stopEdit"
+                        @keydown.esc.prevent="stopEdit"
                     />
+                    <button
+                        v-else
+                        type="button"
+                        class="flat-display"
+                        :class="{ empty: !processText(gesture) }"
+                        :title="processText(gesture) || t('Plugin.Settings.Gestures.ProcessHint', 'Comma-separated process names')"
+                        @click="startEdit(gesture, 'process')"
+                    >
+                        <HighlightText
+                            v-if="processText(gesture)"
+                            :text="processText(gesture)"
+                            :query="highlightQuery"
+                        />
+                        <span v-else>{{ t("Plugin.Settings.Gestures.ProcessPlaceholder", "Any") }}</span>
+                    </button>
                 </div>
                 <div class="col-trigger">
                     <button
@@ -340,14 +440,6 @@ onBeforeUnmount(() => {
                     </button>
                 </div>
             </div>
-        </div>
-        <div class="add-bar">
-            <n-button secondary size="small" @click="addGesture">
-                <template #icon>
-                    <i class="mdi mdi-plus"></i>
-                </template>
-                {{ t("Plugin.Settings.Gestures.Add", "Add Gesture") }}
-            </n-button>
         </div>
         <div
             v-if="recording"
@@ -399,6 +491,16 @@ onBeforeUnmount(() => {
     display: flex;
     align-items: center;
     gap: 4px;
+    min-width: 0;
+}
+
+.col-name > .flat-display,
+.col-name :deep(.n-input),
+.col-process > .flat-display,
+.col-process :deep(.n-input) {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
 }
 
 .col-gesture {
@@ -409,6 +511,9 @@ onBeforeUnmount(() => {
 .col-process {
     width: 140px;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    min-width: 0;
 }
 
 .col-trigger {
@@ -463,6 +568,9 @@ onBeforeUnmount(() => {
     cursor: pointer;
     font: inherit;
     min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .flat-display:hover {
@@ -472,10 +580,6 @@ onBeforeUnmount(() => {
 .flat-display.empty {
     font-style: italic;
     opacity: 0.6;
-}
-
-.add-bar {
-    padding: 16px 0;
 }
 
 .gesture-record-overlay {

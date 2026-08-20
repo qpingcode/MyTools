@@ -168,7 +168,7 @@ public partial class App
         foreach (var culture in languageService.SupportedCultures)
         {
             var cultureItem = new MenuItem();
-            cultureItem.Header = GetCaption($"Language.{culture.Name}", culture.NativeName);
+            cultureItem.Header = LanguageService.GetNativeDisplayName(culture);
             cultureItem.IsChecked = languageService.CurrentCulture.Name == culture.Name;
             cultureItem.Click += ChangeLanguage_Click;
             cultureItem.Tag = culture.Name;

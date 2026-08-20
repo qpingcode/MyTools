@@ -3,7 +3,6 @@ namespace MyTools.Desktop.Views;
 internal static class PluginWindowLayoutMetrics
 {
     public const double FrameHorizontalMargin = 10;
-    public const double ContentHorizontalMargin = 15;
     public const double LeadingDragRegionWidth = 16;
     public const double CaptionButtonWidth = 46;
     public const int CaptionButtonCount = 3;
@@ -13,7 +12,6 @@ internal static class PluginWindowLayoutMetrics
     public const double MinimumTitleIdentityRegionWidth = MinimumTitleTextWidth + TitleIdentityHorizontalPadding;
     public const double MinimumWindowWidth =
         (FrameHorizontalMargin * 2) +
-        (ContentHorizontalMargin * 2) +
         LeadingDragRegionWidth +
         CaptionButtonsWidth +
         MinimumTitleIdentityRegionWidth;

@@ -139,7 +139,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         {
             Categories = categories,
             SupportedLocales = languageService.SupportedCultures
-                .Select(c => new OptionDto { Value = c.Name, Label = c.NativeName })
+                .Select(c => new OptionDto { Value = c.Name, Label = LanguageService.GetNativeDisplayName(c) })
                 .ToList(),
             SupportedThemes =
             [

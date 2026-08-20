@@ -117,6 +117,14 @@
       "sourceHash": "sha256:placeholder"
     },
     {
+      "key": "Plugin.Settings.Category.Plugins.Description",
+      "defaultValue": "Enable plugins, assign hotkeys, and set aliases used in global search.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "启用或关闭插件，并为每个插件设置快捷键和搜索别名。" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
       "key": "Plugin.Settings.Keymap.HeaderEnabled",
       "defaultValue": "Enabled",
       "placeholders": [],

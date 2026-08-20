@@ -164,7 +164,16 @@ export const currentTitle = computed(() => {
 });
 
 export const currentDescription = computed(() => {
-    if (SPECIAL_CATEGORY_KEYS.has(store.currentCategoryKey)) return "";
+    void localeRevision.value;
+    store.localeTick;
+    if (store.currentCategoryKey === "Plugins") {
+        return currentCategory.value?.description
+            || t(
+                "Plugin.Settings.Category.Plugins.Description",
+                "Enable plugins, assign hotkeys, and set aliases used in global search.",
+            );
+    }
+
     return currentCategory.value?.description || "";
 });
 

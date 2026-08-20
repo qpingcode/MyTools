@@ -8,14 +8,10 @@
              d:DesignHeight="300"
              d:DesignWidth="300">
     <Grid>
-        <Border Background="{DynamicResource SurfaceBrush}"
-                CornerRadius="8">
-            <wv2:WebView2 x:Name="PluginBrowser" />
-        </Border>
+        <wv2:WebView2 x:Name="PluginBrowser" />
         <Border x:Name="HandshakeErrorOverlay"
                 Panel.ZIndex="1"
                 Background="{DynamicResource SurfaceBrush}"
-                CornerRadius="8"
                 Visibility="Collapsed">
             <StackPanel VerticalAlignment="Center"
                         HorizontalAlignment="Center"

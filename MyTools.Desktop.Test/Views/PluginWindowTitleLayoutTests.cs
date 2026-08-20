@@ -192,32 +192,53 @@ public class PluginWindowTitleLayoutTests
     }
 
     [Test]
-    public void TitleBar_ProvidesDragRowsAboveAndBelowCaption()
+    public void TitleBar_SitsFlushToWindowChromeAndContentFillsRemainingFrame()
     {
         var services = new ServiceCollection().BuildServiceProvider();
         var window = new PluginWindow(new PluginViewModel(services));
         ArrangeWindowContent(window, 1020);
 
-        var topDragRegion = (Border?)window.FindName("TopDragRegion");
+        var windowFrame = (Border?)window.FindName("WindowFrame");
         var titleBarGrid = (Grid?)window.FindName("TitleBarGrid");
-        var contentTopDragRegion = (Border?)window.FindName("ContentTopDragRegion");
+        var captionButtonsPanel = (StackPanel?)window.FindName("CaptionButtonsPanel");
         var pluginContentView = (ContentControl?)window.FindName("PluginContentView");
 
         Assert.Multiple(() =>
         {
-            Assert.That(topDragRegion, Is.Not.Null);
+            Assert.That(windowFrame, Is.Not.Null);
             Assert.That(titleBarGrid, Is.Not.Null);
-            Assert.That(contentTopDragRegion, Is.Not.Null);
+            Assert.That(captionButtonsPanel, Is.Not.Null);
             Assert.That(pluginContentView, Is.Not.Null);
-            Assert.That(topDragRegion is null ? -1 : Grid.GetRow(topDragRegion), Is.EqualTo(0));
-            Assert.That(titleBarGrid is null ? -1 : Grid.GetRow(titleBarGrid), Is.EqualTo(1));
-            Assert.That(contentTopDragRegion is null ? -1 : Grid.GetRow(contentTopDragRegion), Is.EqualTo(2));
-            Assert.That(pluginContentView is null ? -1 : Grid.GetRow(pluginContentView), Is.EqualTo(3));
-            Assert.That(topDragRegion?.ActualHeight, Is.EqualTo(15).Within(0.5));
+            Assert.That(titleBarGrid is null ? -1 : Grid.GetRow(titleBarGrid), Is.EqualTo(0));
+            Assert.That(pluginContentView is null ? -1 : Grid.GetRow(pluginContentView), Is.EqualTo(1));
             Assert.That(titleBarGrid?.ActualHeight, Is.EqualTo(34).Within(0.5));
-            Assert.That(contentTopDragRegion?.ActualHeight, Is.EqualTo(12).Within(0.5));
             Assert.That(pluginContentView?.Margin, Is.EqualTo(new Thickness(0)));
+            Assert.That(titleBarGrid!.Margin, Is.EqualTo(new Thickness(0)));
+            Assert.That(MeasureRightGap(captionButtonsPanel!, windowFrame!), Is.EqualTo(0).Within(0.5));
+            Assert.That(MeasureRightGap(pluginContentView!, windowFrame!), Is.EqualTo(0).Within(0.5));
+            Assert.That(MeasureLeftGap(pluginContentView!, windowFrame!), Is.EqualTo(0).Within(0.5));
+            Assert.That(titleBarGrid.TranslatePoint(new Point(0, 0), windowFrame).Y, Is.EqualTo(0).Within(0.5));
+            Assert.That(pluginContentView!.TranslatePoint(new Point(0, 0), windowFrame).Y,
+                Is.EqualTo(titleBarGrid.ActualHeight).Within(0.5));
         });
+    }
+
+    [Test]
+    public void CloseButton_UsesTopRightCornerRadiusMatchingWindowChrome()
+    {
+        var services = new ServiceCollection().BuildServiceProvider();
+        var window = new PluginWindow(new PluginViewModel(services));
+        ArrangeWindowContent(window, 1020);
+
+        var closeButton = (Button?)window.FindName("CloseButton");
+        Assert.That(closeButton, Is.Not.Null);
+        closeButton!.ApplyTemplate();
+
+        var closeButtonBorder = closeButton.Template.FindName("CloseButtonBorder", closeButton) as Border;
+        var expected = PluginWindowChromeState.From(WindowState.Normal).CloseButtonCornerRadius;
+
+        Assert.That(closeButtonBorder, Is.Not.Null);
+        Assert.That(closeButtonBorder!.CornerRadius, Is.EqualTo(expected));
     }
 
     private static void ArrangeWindowContent(Window window, double width)
@@ -261,6 +282,17 @@ public class PluginWindowTitleLayoutTests
         var nameRight = name.TranslatePoint(new Point(renderedNameWidth, 0), relativeTo).X;
         var versionLeft = version.TranslatePoint(new Point(0, 0), relativeTo).X;
         return versionLeft - nameRight;
+    }
+
+    private static double MeasureLeftGap(FrameworkElement inner, FrameworkElement outer)
+    {
+        return inner.TranslatePoint(new Point(0, 0), outer).X;
+    }
+
+    private static double MeasureRightGap(FrameworkElement inner, FrameworkElement outer)
+    {
+        var innerRight = inner.TranslatePoint(new Point(inner.ActualWidth, 0), outer).X;
+        return outer.ActualWidth - innerRight;
     }
 
     private sealed class TestLocalizationService : ILocalizationService

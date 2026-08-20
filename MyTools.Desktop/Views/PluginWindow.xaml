@@ -81,12 +81,34 @@
         <Style x:Key="CloseWindowControlButtonStyle"
                TargetType="Button"
                BasedOn="{StaticResource WindowControlButtonStyle}">
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#E81123" />
-                    <Setter Property="Foreground" Value="White" />
-                </Trigger>
-            </Style.Triggers>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="CloseButtonBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="0,12,0,0">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#E81123" />
+                                <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter Property="Background" Value="#E81123" />
+                                <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                            <DataTrigger Binding="{Binding WindowState, RelativeSource={RelativeSource AncestorType=Window}}"
+                                         Value="Maximized">
+                                <Setter TargetName="CloseButtonBorder"
+                                        Property="CornerRadius"
+                                        Value="0" />
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style x:Key="StatusDotStyle" TargetType="Ellipse">
@@ -125,25 +147,15 @@
                               BlurRadius="10" />
         </Border.Effect>
 
-        <Grid Margin="15,0,15,15">
+        <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="15" />
                 <RowDefinition Height="34" />
-                <RowDefinition Height="12" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <Border x:Name="TopDragRegion"
-                    Grid.Row="0"
-                    Background="Transparent"
-                    MouseLeftButtonDown="TitleBarDragRegion_OnMouseLeftButtonDown"
-                    MouseLeftButtonUp="TitleBarDragRegion_OnMouseLeftButtonUp"
-                    MouseMove="TitleBarDragRegion_OnMouseMove"
-                    LostMouseCapture="TitleBarDragRegion_OnLostMouseCapture" />
-
             <Grid x:Name="TitleBarGrid"
-                  Grid.Row="1"
+                  Grid.Row="0"
                   Height="34">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -229,7 +241,8 @@
                         </Grid>
                     </Button>
 
-                    <Button Style="{StaticResource CloseWindowControlButtonStyle}"
+                    <Button x:Name="CloseButton"
+                            Style="{StaticResource CloseWindowControlButtonStyle}"
                             AutomationProperties.Name="{loc:Loc PluginWindow.Close, DefaultValue=Close}"
                             ToolTip="Close"
                             Click="CloseButton_OnClick">
@@ -240,29 +253,19 @@
                 </StackPanel>
             </Grid>
 
-            <Border x:Name="ContentTopDragRegion"
-                    Grid.Row="2"
-                    Background="Transparent"
-                    MouseLeftButtonDown="TitleBarDragRegion_OnMouseLeftButtonDown"
-                    MouseLeftButtonUp="TitleBarDragRegion_OnMouseLeftButtonUp"
-                    MouseMove="TitleBarDragRegion_OnMouseMove"
-                    LostMouseCapture="TitleBarDragRegion_OnLostMouseCapture" />
-
-            <!-- 插件内容（无顶部搜索框） -->
+            <!-- 插件内容：铺满标题栏与状态栏之间的区域，边距由插件自己决定 -->
             <ContentControl Content="{Binding CurrentViewModel}"
                             x:Name="PluginContentView"
-                            Grid.Row="3" />
+                            Grid.Row="1" />
 
             <!-- 状态栏 -->
-            <Grid Grid.Row="4"
-                  VerticalAlignment="Bottom"
-                  Margin="0,8,0,0">
+            <Grid Grid.Row="2"
+                  VerticalAlignment="Bottom">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <Border Background="{DynamicResource SurfaceBrush}"
-                        CornerRadius="6"
                         Padding="10,5">
                     <Grid x:Name="StatusBarContentGrid">
                         <Grid.ColumnDefinitions>

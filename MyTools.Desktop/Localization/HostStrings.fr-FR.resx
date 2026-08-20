@@ -11,8 +11,8 @@
   <data name="AutoStart" xml:space="preserve"><value>Démarrage automatique</value></data>
   <data name="Exit" xml:space="preserve"><value>Quitter</value></data>
   <data name="Language" xml:space="preserve"><value>Langue</value></data>
-  <data name="Language.zh-CN" xml:space="preserve"><value>Chinois</value></data>
-  <data name="Language.en-US" xml:space="preserve"><value>Anglais</value></data>
+  <data name="Language.zh-CN" xml:space="preserve"><value>中文</value></data>
+  <data name="Language.en-US" xml:space="preserve"><value>English</value></data>
   <data name="Language.fr-FR" xml:space="preserve"><value>Français</value></data>
   <data name="Error" xml:space="preserve"><value>Erreur</value></data>
   <data name="Info" xml:space="preserve"><value>Information</value></data>
@@ -30,7 +30,7 @@
   <data name="Configuration.Gestures.Name" xml:space="preserve"><value>Gestes</value></data>
   <data name="Configuration.Gestures.Description" xml:space="preserve"><value>Configurer les actions des gestes de souris</value></data>
   <data name="Configuration.Plugins.Name" xml:space="preserve"><value>Extensions</value></data>
-  <data name="Configuration.Plugins.Description" xml:space="preserve"><value>Paramètres des extensions</value></data>
+  <data name="Configuration.Plugins.Description" xml:space="preserve"><value>Activez les extensions, attribuez des raccourcis et définissez des alias pour la recherche globale.</value></data>
   <data name="Plugin.Calculator.Name" xml:space="preserve"><value>Calculatrice</value></data>
   <data name="Plugin.Calculator.Description" xml:space="preserve"><value>Effectuer des calculs arithmétiques de base.</value></data>
   <data name="Language.RestartTitle" xml:space="preserve"><value>Redémarrage requis</value></data>

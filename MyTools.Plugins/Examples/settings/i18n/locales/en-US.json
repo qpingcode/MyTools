@@ -15,6 +15,7 @@
   "Plugin.Settings.Cancel": "Cancel",
   "Plugin.Settings.Restarting": "Please restart MyTools to apply the new language.",
   "Plugin.Settings.Category.Plugins": "Plugins",
+  "Plugin.Settings.Category.Plugins.Description": "Enable plugins, assign hotkeys, and set aliases used in global search.",
   "Plugin.Settings.Keymap.HeaderEnabled": "Enabled",
   "Plugin.Settings.Keymap.HeaderName": "Plugin Name",
   "Plugin.Settings.Keymap.HeaderHotkey": "Hotkey",
