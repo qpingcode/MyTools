@@ -87,7 +87,8 @@
       },
       "type": "path",
       "defaultValue": "",
-      "uiHint": "directory"
+      "uiHint": "directory",
+      "visibility": "${ChromeEnabled == true}"
     },
     {
       "key": "ChromeProfile",
@@ -100,7 +101,8 @@
         "defaultValue": "Optional profile folder or person name (Default, Profile 1, or the name shown in Chrome). Empty searches all profiles under the user data folder."
       },
       "type": "string",
-      "defaultValue": ""
+      "defaultValue": "",
+      "visibility": "${ChromeEnabled == true}"
     },
     {
       "key": "EdgeUserDataDir",
@@ -114,7 +116,8 @@
       },
       "type": "path",
       "defaultValue": "",
-      "uiHint": "directory"
+      "uiHint": "directory",
+      "visibility": "${EdgeEnabled == true}"
     },
     {
       "key": "EdgeProfile",
@@ -127,7 +130,8 @@
         "defaultValue": "Optional profile folder or person name (Default, Profile 1, or the name shown in Edge). Empty searches all profiles under the user data folder."
       },
       "type": "string",
-      "defaultValue": ""
+      "defaultValue": "",
+      "visibility": "${EdgeEnabled == true}"
     },
     {
       "key": "FirefoxProfilesDir",
@@ -141,7 +145,8 @@
       },
       "type": "path",
       "defaultValue": "",
-      "uiHint": "directory"
+      "uiHint": "directory",
+      "visibility": "${FirefoxEnabled == true}"
     },
     {
       "key": "FirefoxProfile",
@@ -154,7 +159,8 @@
         "defaultValue": "Optional Firefox profile name or folder. Empty searches all profiles."
       },
       "type": "string",
-      "defaultValue": ""
+      "defaultValue": "",
+      "visibility": "${FirefoxEnabled == true}"
     }
   ],
   "entries": [

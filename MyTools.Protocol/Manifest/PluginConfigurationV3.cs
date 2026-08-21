@@ -16,6 +16,12 @@ public sealed class PluginConfigurationSettingV3
     public required string Type { get; init; }
     public JsonNode? DefaultValue { get; init; }
     public string? UiHint { get; init; }
+    /// <summary>
+    /// Visibility condition macro, for example <c>${ChromeEnabled == true}</c>.
+    /// The expression may reference sibling configuration keys of the same plugin.
+    /// Empty or omitted means the setting is always shown.
+    /// </summary>
+    public string? Visibility { get; init; }
     public PluginConfigurationSchemaV3? Schema { get; init; }
 }
 

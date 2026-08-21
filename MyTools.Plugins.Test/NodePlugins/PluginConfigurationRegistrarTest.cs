@@ -110,6 +110,34 @@ public class PluginConfigurationRegistrarTest
         Assert.That(registry.Settings[1].UiHint, Is.EqualTo("directory"));
     }
 
+    [Test]
+    public void Register_ShouldCopyVisibilityCondition()
+    {
+        var registry = new FakeRegistry();
+        var configuration = new List<PluginConfigurationSettingV3>
+        {
+            new()
+            {
+                Key = "ChromeEnabled",
+                Type = "bool",
+                Label = new LocalizedNameV3 { Key = "c", DefaultValue = "Search Chrome" },
+                DefaultValue = JsonValue.Create(true)
+            },
+            new()
+            {
+                Key = "ChromeProfile",
+                Type = "string",
+                Label = new LocalizedNameV3 { Key = "p", DefaultValue = "Chrome profile" },
+                Visibility = "${ChromeEnabled == true}"
+            }
+        };
+
+        PluginConfigurationRegistrar.Register(registry, "browser-search", "Browser Search", "desc", configuration, new FallbackLocalization());
+
+        Assert.That(registry.Settings[0].Visibility, Is.Null);
+        Assert.That(registry.Settings[1].Visibility, Is.EqualTo("${ChromeEnabled == true}"));
+    }
+
     private sealed class FallbackLocalization : ILocalizationService
     {
         public string CurrentLocale => "en-US";

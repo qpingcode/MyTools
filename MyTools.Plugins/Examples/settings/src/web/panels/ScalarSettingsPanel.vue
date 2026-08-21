@@ -6,10 +6,14 @@ import ArraySettingTable from "../components/ArraySettingTable.vue";
 import SettingField from "../components/SettingField.vue";
 import { t } from "../i18n";
 import { isPathType, resolvePathKind } from "../setting-utils";
-import { categorySelfMatches, currentCategory, markSettingDirty, store } from "../store";
+import { categorySelfMatches, currentCategory, isSettingVisible, markSettingDirty, store } from "../store";
 import type { Option, Setting } from "../types";
 
 const category = computed(() => currentCategory.value);
+const visibleSettings = computed(() => {
+    const list = category.value?.settings ?? [];
+    return list.filter((setting) => isSettingVisible(setting, list));
+});
 const noMatch = computed(() =>
     !!store.searchQuery && category.value != null && !categorySelfMatches(category.value));
 
@@ -98,12 +102,12 @@ function onHotKey(setting: Setting, value: string | null): void {
     <div v-if="noMatch" class="empty">
         {{ t("Plugin.Settings.NoResults", "No matching settings found") }}
     </div>
-    <div v-else-if="!category || category.settings.length === 0" class="empty">
+    <div v-else-if="!category || visibleSettings.length === 0" class="empty">
         {{ t("Plugin.Settings.NoSettings", "No settings in this category") }}
     </div>
     <div v-else class="scalar-list">
         <div
-            v-for="setting in category.settings"
+            v-for="setting in visibleSettings"
             :key="setting.fullPath"
             class="setting-item"
             :class="{ 'setting-item-block': isArraySetting(setting) }"
