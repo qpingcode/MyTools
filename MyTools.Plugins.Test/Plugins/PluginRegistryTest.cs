@@ -64,6 +64,20 @@ public class PluginRegistryTest
         Assert.That(registry.TryFindPlugin("drop ", out _, out _), Is.False);
     }
 
+    [Test]
+    public void GlobalUnregisterPlugin_ShouldRemoveOnlyThatPlugin()
+    {
+        IGlobalSearchRegistry registry = new PluginRegistry();
+        var keep = new TestPlugin();
+        var drop = new TestPlugin();
+        registry.Register(keep);
+        registry.Register(drop);
+
+        registry.UnregisterPlugin(drop);
+
+        Assert.That(registry.Plugins, Is.EqualTo(new[] { keep }));
+    }
+
     private sealed class TestPlugin : IPlugin
     {
         public string PluginId => "test";

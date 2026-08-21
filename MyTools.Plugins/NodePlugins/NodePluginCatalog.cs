@@ -12,19 +12,27 @@ public sealed class NodePluginCatalog
 {
     private readonly string pluginRoot;
     private readonly ILogger<NodePluginCatalog> logger;
+    private readonly bool includeDevelopmentRegistrations;
 
     public NodePluginCatalog(ILogger<NodePluginCatalog> logger)
-        : this(Path.Combine(ConfigPath.Base, "plugins"), logger)
+        : this(Path.Combine(ConfigPath.Base, "plugins"), logger, true)
     {
     }
 
     public NodePluginCatalog(string pluginRoot, ILogger<NodePluginCatalog> logger)
+        : this(pluginRoot, logger, false)
+    {
+    }
+
+    private NodePluginCatalog(string pluginRoot, ILogger<NodePluginCatalog> logger, bool includeDevelopmentRegistrations)
     {
         this.pluginRoot = pluginRoot;
         this.logger = logger;
+        this.includeDevelopmentRegistrations = includeDevelopmentRegistrations;
     }
 
     public IReadOnlyList<NodePluginManifest> Plugins { get; private set; } = [];
+    public IReadOnlySet<string> DevelopmentPluginIds { get; private set; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
     public IReadOnlyList<NodePluginManifest> Reload()
     {
@@ -42,9 +50,41 @@ public sealed class NodePluginCatalog
             manifests.AddRange(ReadManifests(pluginDirectory, manifestPath));
         }
 
+        var developmentIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var registration in includeDevelopmentRegistrations
+                     ? DevelopmentPluginRegistrationStore.Load().Where(item =>
+                         DevelopmentPluginSession.IsActive(item.PluginId))
+                     : [])
+        {
+            try
+            {
+                var distDirectory = Path.GetFullPath(registration.DistPath);
+                var manifestPath = Path.Combine(distDirectory, "plugin.json");
+                if (!File.Exists(manifestPath))
+                {
+                    continue;
+                }
+
+                manifests.RemoveAll(item => string.Equals(item.ParentId, registration.PluginId, StringComparison.OrdinalIgnoreCase));
+                manifests.AddRange(ReadManifests(distDirectory, manifestPath));
+                developmentIds.Add(registration.PluginId);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Skipping invalid development plugin registration {PluginId}.", registration.PluginId);
+            }
+        }
+
         Plugins = manifests;
+        DevelopmentPluginIds = developmentIds;
         logger.LogInformation("Discovered {Count} node plugin manifests in {PluginRoot}.", Plugins.Count, pluginRoot);
         return Plugins;
+    }
+
+    public bool IsDevelopmentPlugin(string pluginId)
+    {
+        var parentId = pluginId.Split(':', 2)[0];
+        return DevelopmentPluginIds.Contains(parentId);
     }
 
     private IReadOnlyList<NodePluginManifest> ReadManifests(string pluginDirectory, string manifestPath)

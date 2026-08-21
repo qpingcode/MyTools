@@ -1,0 +1,22 @@
+{
+  "name": "mytools-plugin-create-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Create and register development plugins for MyTools.",
+  "type": "module",
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "npm run check && node build-plugin.mjs",
+    "watch": "node build-plugin.mjs --watch",
+    "check": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@qping/plugin-bus": "0.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "esbuild": "^0.25.8",
+    "rimraf": "^6.0.1",
+    "typescript": "^7.0.2"
+  }
+}

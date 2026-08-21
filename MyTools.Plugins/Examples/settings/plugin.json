@@ -32,6 +32,7 @@
         "action.capture",
         "path.pick",
         "path.validate",
+        "development.refresh",
         "restart"
       ],
       "alias": ["settings"],

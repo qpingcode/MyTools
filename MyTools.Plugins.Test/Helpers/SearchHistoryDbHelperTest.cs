@@ -63,6 +63,14 @@ public class SearchHistoryDbHelperTest
         public void Register(IPlugin plugin)
         {
         }
+
+        public void UnregisterPlugin(IPlugin plugin)
+        {
+        }
+
+        public void Clear()
+        {
+        }
     }
 
     private sealed class FakePlugin : PluginBase

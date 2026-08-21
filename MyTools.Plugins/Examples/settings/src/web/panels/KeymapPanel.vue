@@ -4,7 +4,8 @@ import HighlightText from "../components/HighlightText.vue";
 import HotKeyRecorder from "../components/HotKeyRecorder.vue";
 import TableToolbar from "../components/TableToolbar.vue";
 import { t } from "../i18n";
-import { markKeymapDirty, store } from "../store";
+import { loadPluginOverrides, markKeymapDirty, showToast, store } from "../store";
+import { bus } from "../bus";
 import type { KeymapPlugin } from "../types";
 
 const plugins = computed(() => store.keymapPlugins || []);
@@ -68,6 +69,16 @@ function searchHotKey(): string | undefined {
 function onPluginHotKeyChange(plugin: KeymapPlugin, value: string | null): void {
     markKeymapDirty(plugin.pluginId, { hotKey: value ?? "" });
 }
+
+async function refreshDevelopmentPlugins(): Promise<void> {
+    try {
+        await bus.call("refreshDevelopmentPlugins");
+        await loadPluginOverrides();
+        showToast(t("Plugin.Settings.Keymap.DevelopmentRefreshed", "Development plugins refreshed"), "success");
+    } catch {
+        // Reloading the settings plugin itself can reset the bridge before the response arrives.
+    }
+}
 </script>
 
 <template>
@@ -75,10 +86,12 @@ function onPluginHotKeyChange(plugin: KeymapPlugin, value: string | null): void 
         {{ t("Plugin.Settings.Loading", "Loading...") }}
     </div>
     <div v-else class="keymap-panel">
-        <TableToolbar
-            v-model="tableQuery"
-            :placeholder="t('Plugin.Settings.Table.Search', 'Search')"
-        />
+        <div class="plugin-toolbar">
+            <TableToolbar v-model="tableQuery" :placeholder="t('Plugin.Settings.Table.Search', 'Search')" />
+            <n-button quaternary circle :title="t('Plugin.Settings.Keymap.RefreshDevelopment', 'Refresh all development plugins')" @click="refreshDevelopmentPlugins">
+                <span class="refresh-icon">↻</span>
+            </n-button>
+        </div>
         <div class="keymap-header">
             <div class="col-name">{{ t("Plugin.Settings.Keymap.HeaderName", "Plugin") }}</div>
             <div class="col-hotkey">{{ t("Plugin.Settings.Keymap.HeaderHotkey", "Hotkey") }}</div>
@@ -100,6 +113,7 @@ function onPluginHotKeyChange(plugin: KeymapPlugin, value: string | null): void 
             <div class="keymap-row">
                 <div class="col-name" :title="plugin.name">
                     <HighlightText :text="plugin.name" :query="highlightQuery" />
+                    <span v-if="plugin.isDevelopment" class="development-badge">{{ t("Plugin.Settings.Keymap.Development", "Developing") }}</span>
                 </div>
                 <div class="col-hotkey">
                     <HotKeyRecorder
@@ -150,6 +164,10 @@ function onPluginHotKeyChange(plugin: KeymapPlugin, value: string | null): void 
 .keymap-panel {
     min-width: 0;
 }
+.plugin-toolbar { display: flex; align-items: center; gap: 8px; }
+.plugin-toolbar > :first-child { flex: 1; }
+.refresh-icon { font-size: 20px; line-height: 1; }
+.development-badge { margin-left: 6px; padding: 2px 6px; border-radius: 999px; background: #4f7cff22; color: #7ea0ff; font-size: 10px; vertical-align: middle; }
 
 .keymap-header,
 .keymap-row {

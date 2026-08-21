@@ -78,6 +78,10 @@ public static class DesktopServiceCollectionExtensions
         serviceCollection.AddSingleton<RestartPluginHostCallHandler>();
         serviceCollection.AddSingleton<IPluginHostCapabilityHandler>(sp =>
             sp.GetRequiredService<RestartPluginHostCallHandler>());
+        serviceCollection.AddSingleton<DevelopmentPluginService>();
+        serviceCollection.AddSingleton<DevelopmentPluginHostCallHandler>();
+        serviceCollection.AddSingleton<IPluginHostCapabilityHandler>(sp =>
+            sp.GetRequiredService<DevelopmentPluginHostCallHandler>());
         serviceCollection.AddSingleton<NodePluginHostCallRouter>();
         serviceCollection.AddSingleton<InputActionCaptureService>();
         serviceCollection.AddSingleton<PluginOverrideProvider>();

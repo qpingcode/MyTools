@@ -69,6 +69,26 @@ public sealed class PluginHotKeyService
         RegisterAll(nodePlugins, openDetail);
     }
 
+    public void ReRegisterPlugin(
+        string parentPluginId,
+        IEnumerable<NodePlugin> nodePlugins,
+        Action<NodePlugin> openDetail)
+    {
+        var affectedIds = hotKeyIds.Keys
+            .Where(pluginId => IsEntryOf(pluginId, parentPluginId))
+            .ToList();
+        foreach (var pluginId in affectedIds)
+        {
+            hotKeyManager.UnregisterHotKey(hotKeyIds[pluginId]);
+            hotKeyIds.Remove(pluginId);
+        }
+
+        RegisterAll(nodePlugins, openDetail);
+    }
+
+    private static bool IsEntryOf(string pluginId, string parentPluginId) =>
+        pluginId.StartsWith(parentPluginId + ":", StringComparison.OrdinalIgnoreCase);
+
     public List<PluginOverrideConflict> Validate(
         IReadOnlyDictionary<string, string?> pendingHotKeys,
         IReadOnlyDictionary<string, string> pluginNames,

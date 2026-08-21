@@ -185,6 +185,24 @@ public class NodePluginBusHostTest
         Assert.That(reply.Error!.Code, Is.EqualTo(ErrorCode.CapabilityNotDeclared));
     }
 
+    [Test]
+    public async Task DisposeAsync_ShouldStopSessionBeforeCompleting()
+    {
+        var gateway = new CapabilityGateway();
+        var bus = new MessageBus(gateway);
+        var factory = new FakeFactory();
+        var manager = new PluginSessionManager(bus, gateway, factory);
+        var host = new NodePluginBusHost(Manifest(), manager, bus, NullLogger<NodePluginBusHost>.Instance);
+        await host.StartAsync("node", CancellationToken.None);
+        var sessionId = host.SessionId!;
+
+        await host.DisposeAsync();
+
+        Assert.That(manager.TryGetSession("settings", "main", sessionId, out _), Is.False);
+        Assert.That(async () => await host.StartAsync("node", CancellationToken.None),
+            Throws.InstanceOf<ObjectDisposedException>());
+    }
+
     private static async Task<(NodePluginBusHost host, InMemoryTransport nodeT, string sessionId)>
         CreateStartedHostAsync(IReadOnlyList<string>? capabilities = null)
     {

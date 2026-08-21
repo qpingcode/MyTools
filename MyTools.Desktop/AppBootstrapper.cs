@@ -38,6 +38,9 @@ public class AppBootstrapper : IDisposable
     private readonly IConfigurationRegistry registry;
     private readonly ILocalizationService localization;
     private readonly IThemeService themeService;
+    private readonly DevelopmentPluginService developmentPluginService;
+    private readonly PluginWindowManager pluginWindowManager;
+    private readonly SemaphoreSlim nodePluginReloadLock = new(1, 1);
 
     public AppBootstrapper(
         AppConfigService appConfigService,
@@ -56,7 +59,9 @@ public class AppBootstrapper : IDisposable
         PluginKeymapService pluginKeymapService,
         IConfigurationRegistry registry,
         ILocalizationService localization,
-        IThemeService themeService)
+        IThemeService themeService,
+        DevelopmentPluginService developmentPluginService,
+        PluginWindowManager pluginWindowManager)
     {
         this.appConfigService = appConfigService;
         this.nativeMessageWindowHost = nativeMessageWindowHost;
@@ -75,6 +80,8 @@ public class AppBootstrapper : IDisposable
         this.registry = registry;
         this.localization = localization;
         this.themeService = themeService;
+        this.developmentPluginService = developmentPluginService;
+        this.pluginWindowManager = pluginWindowManager;
     }
 
     public void Init()
@@ -84,6 +91,9 @@ public class AppBootstrapper : IDisposable
         // Ensure that NativeMessageWindowHost has been loaded and Windows messages have been properly monitored
         // which is a prerequisite for the clipboard / hotkey
         EnsureNativeMessageWindowHost();
+
+        developmentPluginService.ReloadRequested += OnDevelopmentPluginsReloadRequested;
+        developmentPluginService.Initialize();
 
         // Node plugins (and their plugin.json configuration) must exist before settings
         // are registered, otherwise Tools categories like Snippet never appear.
@@ -104,6 +114,51 @@ public class AppBootstrapper : IDisposable
         // Apply the user-configured theme and keep WPF in sync on hot-swap.
         ThemeManager.ApplyTheme(themeService.CurrentTheme);
         themeService.ThemeChanged += OnThemeChanged;
+    }
+
+    private void OnDevelopmentPluginsReloadRequested(object? sender, DevelopmentPluginReloadRequestedEventArgs e)
+    {
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher == null) return;
+        _ = dispatcher.InvokeAsync(() => _ = ReloadNodePluginsAsync(e.PluginId));
+    }
+
+    private async Task ReloadNodePluginsAsync(string? parentPluginId)
+    {
+        await nodePluginReloadLock.WaitAsync();
+        try
+        {
+            nodePluginCatalog.Reload();
+            if (string.IsNullOrWhiteSpace(parentPluginId))
+            {
+                var nodePlugins = (await pluginLoader.InitPluginsAsync()).OfType<NodePlugin>().ToList();
+                RegisterNodePluginHostCallHandlers(nodePlugins);
+                pluginKeymapService.ApplyOverrides(nodePlugins);
+                pluginHotKeyService.ReRegisterAll(nodePlugins, OpenNodePluginDetail);
+                pluginKeymapService.ReRegisterKeywords(pluginLoader.LoadedPlugins);
+                pluginWindowManager.RefreshOpenPlugins(nodePlugins);
+                logger.LogInformation("Reloaded all {Count} Node plugins.", nodePlugins.Count);
+                return;
+            }
+
+            var replacements = (await pluginLoader.ReloadPluginAsync(parentPluginId)).ToList();
+            RegisterNodePluginHostCallHandlers(replacements);
+            pluginKeymapService.ApplyOverrides(replacements);
+            pluginKeymapService.ReRegisterKeywords(replacements);
+            pluginHotKeyService.ReRegisterPlugin(parentPluginId, replacements, OpenNodePluginDetail);
+            pluginWindowManager.RefreshOpenPlugin(parentPluginId, replacements);
+            logger.LogInformation(
+                "Reloaded development plugin {PluginId} with {Count} entries.",
+                parentPluginId, replacements.Count);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to reload development plugins.");
+        }
+        finally
+        {
+            nodePluginReloadLock.Release();
+        }
     }
 
     private static void OnThemeChanged(object? sender, ThemeChangedEventArgs e)
@@ -421,6 +476,7 @@ public class AppBootstrapper : IDisposable
 
     public void Dispose()
     {
+        developmentPluginService.ReloadRequested -= OnDevelopmentPluginsReloadRequested;
         themeService.ThemeChanged -= OnThemeChanged;
         hotKeyManager?.UnregisterAllHotKeys();
         nativeMessageWindowHost.Dispose();

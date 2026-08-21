@@ -45,6 +45,43 @@ public sealed class PluginWindowManager
 
         windows[plugin.PluginId] = window;
     }
+
+    public void RefreshOpenPlugins(IEnumerable<NodePlugin> plugins)
+    {
+        var current = plugins.ToDictionary(plugin => plugin.PluginId, StringComparer.OrdinalIgnoreCase);
+        foreach (var (pluginId, window) in windows.ToList())
+        {
+            if (!current.TryGetValue(pluginId, out var plugin))
+            {
+                window.Close();
+                continue;
+            }
+            window.SetPlugin(plugin, plugin.CreateHotKeyDetailContext());
+            _ = window.ActivatePluginAsync();
+        }
+    }
+
+    public void RefreshOpenPlugin(string parentPluginId, IEnumerable<NodePlugin> plugins)
+    {
+        var current = plugins.ToDictionary(plugin => plugin.PluginId, StringComparer.OrdinalIgnoreCase);
+        foreach (var (pluginId, window) in windows.ToList())
+        {
+            if (!IsEntryOf(pluginId, parentPluginId))
+            {
+                continue;
+            }
+
+            if (!current.TryGetValue(pluginId, out var plugin))
+            {
+                window.Close();
+                continue;
+            }
+
+            window.SetPlugin(plugin, plugin.CreateHotKeyDetailContext());
+            _ = window.ActivatePluginAsync();
+        }
+    }
+
+    private static bool IsEntryOf(string pluginId, string parentPluginId) =>
+        pluginId.StartsWith(parentPluginId + ":", StringComparison.OrdinalIgnoreCase);
 }
-
-

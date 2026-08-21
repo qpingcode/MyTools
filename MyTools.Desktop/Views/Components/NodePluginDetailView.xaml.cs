@@ -47,6 +47,7 @@ public partial class NodePluginDetailView : UserControl
     private CoreWebView2MessageChannel? _webChannel;
     private WebView2Transport? _webTransport;
     private EndpointId? _webEndpoint;
+    private NodePlugin? loadedPlugin;
     private CancellationTokenSource? _handshakeTimeoutCts;
     private bool _handshakeFailed;
 
@@ -85,6 +86,8 @@ public partial class NodePluginDetailView : UserControl
         localizationService.LocaleChanged -= OnLocaleChanged;
         themeService.ThemeChanged -= OnThemeChanged;
         TearDownWebTransport();
+        loadedEntryPath = null;
+        loadedPlugin = null;
         if (_sessionManager is not null)
         {
             _sessionManager.SessionReplaced -= OnSessionReplaced;
@@ -125,18 +128,21 @@ public partial class NodePluginDetailView : UserControl
 
     private void NavigateIfNeeded()
     {
+        var plugin = viewModel?.CurrentContext?.Plugin;
         var entryPath = viewModel?.CurrentContext?.EntryFullPath;
         if (string.IsNullOrWhiteSpace(entryPath) || !File.Exists(entryPath))
         {
             return;
         }
 
-        if (string.Equals(entryPath, loadedEntryPath, StringComparison.OrdinalIgnoreCase))
+        if (ReferenceEquals(plugin, loadedPlugin)
+            && string.Equals(entryPath, loadedEntryPath, StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
 
         loadedEntryPath = entryPath;
+        loadedPlugin = plugin;
         _ = NavigateAsync(entryPath);
     }
 

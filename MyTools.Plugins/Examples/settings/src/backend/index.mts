@@ -77,4 +77,7 @@ plugin
   .handle("restart", async () => {
     return await plugin.hostCall("restart");
   })
+  .handle("refreshDevelopmentPlugins", async () => {
+    return await plugin.hostCall("development.refresh");
+  })
   .start();

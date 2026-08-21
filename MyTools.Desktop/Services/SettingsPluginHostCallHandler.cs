@@ -40,6 +40,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     private readonly Searcher searcher;
     private readonly AppConfigService appConfigService;
     private readonly InputActionCaptureService inputActionCaptureService;
+    private readonly NodePluginCatalog nodePluginCatalog;
     private readonly ILogger<SettingsPluginHostCallHandler> logger;
     private const string IlSpyPathSettingFullPath = "DllInterfaceReader.ILSpyPathSetting";
 
@@ -77,7 +78,8 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         Searcher searcher,
         AppConfigService appConfigService,
         InputActionCaptureService inputActionCaptureService,
-        ILogger<SettingsPluginHostCallHandler> logger)
+        ILogger<SettingsPluginHostCallHandler> logger,
+        NodePluginCatalog nodePluginCatalog)
     {
         this.registry = registry;
         this.themeService = themeService;
@@ -98,6 +100,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         this.appConfigService = appConfigService;
         this.inputActionCaptureService = inputActionCaptureService;
         this.logger = logger;
+        this.nodePluginCatalog = nodePluginCatalog;
     }
 
     public async Task<JsonElement> HandleAsync(HostCallRequest request, CancellationToken cancellationToken)
@@ -403,7 +406,8 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
                 IsEnabled = p.IsEnabled,
                 DefaultIncludeInGlobalResults = p.DefaultIncludeInGlobalResults,
                 IncludeInGlobalResults = ov?.IncludeInGlobalResults ?? p.DefaultIncludeInGlobalResults,
-                IsNodePlugin = true
+                IsNodePlugin = true,
+                IsDevelopment = nodePluginCatalog.IsDevelopmentPlugin(pluginId)
             };
         }).ToList();
 
@@ -789,6 +793,7 @@ public sealed class KeymapPluginDto
     public bool DefaultIncludeInGlobalResults { get; init; }
     public bool IncludeInGlobalResults { get; init; }
     public bool IsNodePlugin { get; init; }
+    public bool IsDevelopment { get; init; }
 }
 
 public sealed class KeymapSaveRequest

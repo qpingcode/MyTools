@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using MyTools.Host.Core.Bus;
 using MyTools.Host.Core.Transports;
+using MyTools.Protocol.Errors;
 using MyTools.Protocol.Messages;
 using MyTools.Protocol.Versioning;
 using NUnit.Framework;
@@ -84,5 +85,21 @@ public class MessageBusRoutingTest
         nodeT.Deliver(Response(nodeEp, "no-such-request"));
 
         Assert.That(webT.Sent, Is.Empty);
+    }
+
+    [Test]
+    public void InboundRequest_WhenNodeWasRemoved_ShouldReplyWithTransportDisconnected()
+    {
+        var bus = new MessageBus();
+        var webT = new InMemoryTransport();
+        var webEp = WebEp("settings", "main", "s1", "web-1");
+        bus.RegisterEndpoint(webEp, webT);
+
+        webT.Deliver(Request(webEp, "plugin.call.save", "req-1"));
+
+        Assert.That(() => webT.Sent.Count, Is.EqualTo(1).After(1000, 10));
+        var reply = webT.Sent.ToArray()[0];
+        Assert.That(reply.CorrelationId, Is.EqualTo("req-1"));
+        Assert.That(reply.Error?.Code, Is.EqualTo(ErrorCode.TransportDisconnected));
     }
 }

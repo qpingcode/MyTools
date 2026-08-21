@@ -34,6 +34,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
     private readonly IIdGenerator _ids;
     private readonly ConcurrentDictionary<string, TaskCompletionSource<JsonNode?>> _pending = new();
     private readonly SemaphoreSlim _startLock = new(1, 1);
+    private readonly object _disposeGate = new();
 
     private PluginSession? _session;
     private EndpointId? _nodeEndpoint;
@@ -41,6 +42,8 @@ internal sealed class NodePluginBusHost : INodePluginHost
     private HostEndpointTransport? _hostTransport;
     private CancellationTokenSource? _heartbeatCts;
     private int _started; // 0 = not started, 1 = started
+    private int _disposed;
+    private Task? _disposeTask;
 
     /// <summary>Host→Node ping interval.</summary>
     internal static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(2);
@@ -87,11 +90,13 @@ internal sealed class NodePluginBusHost : INodePluginHost
 
     private async Task EnsureStartedAsync(CancellationToken cancellationToken)
     {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) == 1, this);
         if (Volatile.Read(ref _started) == 1) return;
 
         await _startLock.WaitAsync(cancellationToken);
         try
         {
+            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) == 1, this);
             if (_started == 1) return;
 
             var v3 = ToV3Manifest();
@@ -321,19 +326,41 @@ internal sealed class NodePluginBusHost : INodePluginHost
 
     public void Dispose()
     {
-        _sessionManager.SessionReplaced -= OnSessionReplaced;
+        _ = DisposeAsync();
+    }
 
-        try { _heartbeatCts?.Cancel(); } catch { /* ignore */ }
-        _heartbeatCts?.Dispose();
-        _heartbeatCts = null;
-
-        FailLocalPending(ErrorCode.TransportDisconnected, "bus host disposed");
-        UnbindHostEndpoint();
-        _bus.UnregisterHostCallHandler(_manifest.ParentId, _manifest.EntryId);
-
-        if (_session is not null)
+    public Task DisposeAsync()
+    {
+        lock (_disposeGate)
         {
-            _ = _sessionManager.StopSessionAsync(_manifest.ParentId, _manifest.EntryId, _session.SessionId);
+            return _disposeTask ??= DisposeCoreAsync();
+        }
+    }
+
+    private async Task DisposeCoreAsync()
+    {
+        Interlocked.Exchange(ref _disposed, 1);
+        await _startLock.WaitAsync();
+        try
+        {
+            _sessionManager.SessionReplaced -= OnSessionReplaced;
+
+            try { _heartbeatCts?.Cancel(); } catch { /* ignore */ }
+            _heartbeatCts?.Dispose();
+            _heartbeatCts = null;
+
+            FailLocalPending(ErrorCode.TransportDisconnected, "bus host disposed");
+            UnbindHostEndpoint();
+            _bus.UnregisterHostCallHandler(_manifest.ParentId, _manifest.EntryId);
+
+            if (_session is not null)
+            {
+                await _sessionManager.StopSessionAsync(_manifest.ParentId, _manifest.EntryId, _session.SessionId);
+            }
+        }
+        finally
+        {
+            _startLock.Release();
         }
     }
 

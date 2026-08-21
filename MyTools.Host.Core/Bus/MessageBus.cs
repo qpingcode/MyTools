@@ -165,8 +165,43 @@ public sealed class MessageBus
                 }
                 break;
             case MessageKind.Request when Routes.IsPluginCall(stamped.Route):
-                _ = RouteRequestAsync(stamped, source);
+                _ = RouteInboundRequestAsync(stamped, source);
                 break;
+        }
+    }
+
+    private async Task RouteInboundRequestAsync(Envelope request, EndpointId origin)
+    {
+        try
+        {
+            await RouteRequestAsync(request, origin);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex,
+                "Cannot route inbound request id={Id} route={Route} origin={Origin}",
+                request.Id, request.Route, origin.EndpointLabel);
+            try
+            {
+                var key = SessionKey(origin.PluginId, origin.EntryId, origin.SessionId);
+                if (_sessions.TryGetValue(key, out var session))
+                {
+                    await session.WriteOnAsync(origin.EndpointLabel, BuildErrorReply(request, origin,
+                        BusError.For(ErrorCode.TransportDisconnected, ex.Message, retryable: true)));
+                }
+            }
+            catch (Exception replyException)
+            {
+                _logger.LogDebug(replyException,
+                    "Could not deliver route failure id={Id} to origin={Origin}",
+                    request.Id, origin.EndpointLabel);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Failed to route inbound request id={Id} route={Route} origin={Origin}",
+                request.Id, request.Route, origin.EndpointLabel);
         }
     }
 

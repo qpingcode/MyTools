@@ -1,0 +1,28 @@
+{
+  "id": "create-plugin",
+  "version": "0.1.0",
+  "protocolVersion": "3.0",
+  "icon": "mdi-puzzle-plus-outline",
+  "i18n": {
+    "defaultLocale": "en-US",
+    "catalog": "i18n/catalog.en-US.json",
+    "localesPath": "i18n/locales",
+    "supportedLocales": ["en-US", "zh-CN"]
+  },
+  "entries": [
+    {
+      "id": "main",
+      "name": { "key": "Plugin.CreatePlugin.Name", "defaultValue": "Create Plugin" },
+      "entry": "backend/index.mjs",
+      "capabilities": [
+        "development.create",
+        "development.list",
+        "development.refresh",
+        "development.openFolder",
+        "development.openCode"
+      ],
+      "alias": ["create"],
+      "detail": { "type": "web", "entry": "web/index.html" }
+    }
+  ]
+}

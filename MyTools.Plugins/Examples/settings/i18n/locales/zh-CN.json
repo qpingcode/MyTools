@@ -102,5 +102,8 @@
   "Plugin.Settings.Table.Apply": "应用",
   "Plugin.Settings.Table.Yes": "是",
   "Plugin.Settings.Table.No": "否",
-  "Plugin.Settings.PleaseInput": "请输入"
+  "Plugin.Settings.PleaseInput": "请输入",
+  "Plugin.Settings.Keymap.Development": "开发中",
+  "Plugin.Settings.Keymap.RefreshDevelopment": "强制刷新所有开发中的插件",
+  "Plugin.Settings.Keymap.DevelopmentRefreshed": "已刷新开发中的插件"
 }

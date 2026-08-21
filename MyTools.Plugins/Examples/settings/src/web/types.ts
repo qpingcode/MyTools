@@ -57,6 +57,7 @@ export type KeymapPlugin = {
     defaultIncludeInGlobalResults: boolean;
     includeInGlobalResults: boolean;
     isNodePlugin: boolean;
+    isDevelopment: boolean;
 };
 
 export type KeymapDirty = {

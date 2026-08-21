@@ -102,5 +102,8 @@
   "Plugin.Settings.Table.Apply": "Apply",
   "Plugin.Settings.Table.Yes": "Yes",
   "Plugin.Settings.Table.No": "No",
-  "Plugin.Settings.PleaseInput": "Please input"
+  "Plugin.Settings.PleaseInput": "Please input",
+  "Plugin.Settings.Keymap.Development": "Developing",
+  "Plugin.Settings.Keymap.RefreshDevelopment": "Refresh all development plugins",
+  "Plugin.Settings.Keymap.DevelopmentRefreshed": "Development plugins refreshed"
 }

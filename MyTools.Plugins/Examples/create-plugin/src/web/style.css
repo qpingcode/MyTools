@@ -1,0 +1,51 @@
+:root { font-family: "Segoe UI", sans-serif; color-scheme: light dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--mt-surface-bg, #141414); color: var(--mt-text, #f4f4f4); }
+main { max-width: 680px; margin: auto; padding: 18px 24px; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+h1 { font-size: 23px; line-height: 1.2; margin: 0 0 2px; }
+h2 { font-size: 19px; line-height: 1.25; margin: 8px 0 4px; }
+h3 { font-size: 15px; }
+p { margin: 0; color: var(--mt-text-muted, #c4c9d4); }
+header p { font-size: 13px; }
+button { border: 0; border-radius: 7px; padding: 8px 14px; background: var(--mt-accent, #3f51b5); color: var(--mt-accent-foreground, #fff); font-weight: 600; cursor: pointer; }
+button:hover { background: var(--mt-accent-hover, #4d5fc5); }
+button:active { background: var(--mt-accent-pressed, #32429d); }
+button:focus-visible { outline: 2px solid var(--mt-accent, #3f51b5); outline-offset: 2px; }
+.ghost { background: transparent; color: var(--mt-text-muted, #c4c9d4); }
+.ghost:hover { background: var(--mt-surface-hover, rgba(255, 255, 255, .1)); }
+#refreshAll { padding: 7px 9px; font-size: 12px; }
+nav { display: flex; align-items: center; margin: 18px 0 16px; color: var(--mt-text-tertiary, #8d93a1); font-size: 13px; }
+nav span { display: flex; gap: 7px; align-items: center; white-space: nowrap; }
+nav i { flex: 1; margin: 0 7px; }
+.active { color: var(--mt-accent, #7ea0ff); }
+section { padding: 4px 0; }
+label:not(.choice) { display: block; margin-bottom: 12px; font-size: 13px; font-weight: 600; }
+input[type="text"], input:not([type]) { display: block; width: 100%; margin-top: 5px; border: 1px solid var(--mt-border-subtle, rgba(255, 255, 255, .12)); border-radius: 7px; background: var(--mt-surface-alt, #181818); color: var(--mt-text, #f4f4f4); padding: 9px 10px; outline: none; }
+input::placeholder { color: var(--mt-text-disabled, #777); }
+input:focus { border-color: var(--mt-accent, #668cff); box-shadow: 0 0 0 2px var(--mt-selection, rgba(102, 140, 255, .2)); }
+small { display: block; color: var(--mt-text-tertiary, #9298a5); font-weight: 400; margin-top: 4px; }
+fieldset { border: 0; padding: 0; margin: 2px 0; }
+legend { font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+.choice { display: flex; gap: 8px; border-radius: 7px; padding: 9px 10px; margin: 4px 0; cursor: pointer; }
+.choice:hover { background: var(--mt-surface-hover, rgba(255, 255, 255, .08)); }
+.choice.selected { background: var(--mt-selection, rgba(102, 140, 255, .12)); }
+.choice span { display: flex; flex-direction: column; }
+.choice small { margin-top: 3px; }
+footer { display: flex; justify-content: flex-end; margin-top: 14px; }
+.error { color: var(--mt-accent, #ff7777); min-height: 18px; margin-top: 7px; font-size: 13px; }
+#step2, #step3 { text-align: center; padding: 30px 18px; }
+.spinner { width: 38px; height: 38px; margin: auto; border: 3px solid var(--mt-border, #444); border-top-color: var(--mt-accent, #668cff); border-radius: 50%; animation: spin .8s linear infinite; }
+.success { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; margin: auto; background: var(--mt-accent, #2e9d63); color: var(--mt-accent-foreground, #fff); font-size: 28px; }
+code { display: block; margin: 14px auto 8px; padding: 8px; border-radius: 6px; background: var(--mt-surface-alt, #111); color: var(--mt-text, #a8c0ff); word-break: break-all; }
+.actions { display: flex; justify-content: center; gap: 8px; margin-top: 16px; }
+.next-steps { text-align: left; margin-top: 18px; padding-top: 14px; }
+.next-steps h3 { margin: 0 0 7px; }
+.next-steps ol { margin: 0; padding-left: 22px; color: var(--mt-text-muted, #c4c9d4); }
+.next-steps li { margin: 5px 0; }
+.next-steps code { display: inline; margin: 0 0 0 6px; padding: 3px 7px; }
+.next-steps small { margin-top: 9px; }
+#toast { position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 20px); opacity: 0; background: var(--mt-accent, #2e9d63); color: var(--mt-accent-foreground, #fff); padding: 10px 18px; border-radius: 8px; box-shadow: 0 8px 24px var(--mt-shadow, rgba(0, 0, 0, .28)); transition: .2s; pointer-events: none; }
+#toast.show { opacity: 1; transform: translate(-50%, 0); }
+#toast.error-toast { background: var(--mt-accent-pressed, #c84545); }
+@keyframes spin { to { transform: rotate(360deg); } }

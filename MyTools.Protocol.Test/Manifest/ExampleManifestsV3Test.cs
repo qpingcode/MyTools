@@ -75,6 +75,7 @@ public class ExampleManifestsV3Test
             "gestures.read", "gestures.write", "gestures.suspend", "gestures.resume",
             "action.capture",
             "path.pick", "path.validate",
+            "development.refresh",
             "restart"
         }));
     }

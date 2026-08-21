@@ -449,6 +449,8 @@ public sealed class NodePlugin : IPlugin, IDisposable
         processHost.Dispose();
     }
 
+    internal Task DisposeAsync() => processHost.DisposeAsync();
+
     /// <summary>Test-only accessor for the backend host.</summary>
     internal INodePluginHost GetHostForTest() => processHost;
 }

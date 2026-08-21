@@ -33,5 +33,6 @@ internal interface INodePluginHost
     /// <summary>Current bus session id.</summary>
     string? SessionId { get; }
 
+    Task DisposeAsync();
     void Dispose();
 }

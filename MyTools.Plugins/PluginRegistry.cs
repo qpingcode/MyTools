@@ -19,6 +19,14 @@ public class PluginRegistry : IKeywordRegistry, IGlobalSearchRegistry, IActionRe
 
     IEnumerable<IPlugin> IGlobalSearchRegistry.Plugins => _globalSearchPlugins;
 
+    void IGlobalSearchRegistry.UnregisterPlugin(IPlugin plugin)
+    {
+        ArgumentNullException.ThrowIfNull(plugin);
+        _globalSearchPlugins.RemoveAll(item => ReferenceEquals(item, plugin));
+    }
+
+    void IGlobalSearchRegistry.Clear() => _globalSearchPlugins.Clear();
+
     void IKeywordRegistry.Register(string keyword, IPlugin plugin)
     {
         ArgumentNullException.ThrowIfNull(keyword);
@@ -147,4 +155,4 @@ public class PluginRegistry : IKeywordRegistry, IGlobalSearchRegistry, IActionRe
 
         return keyword;
     }
-} 
+}
