@@ -102,24 +102,45 @@ $Version = $Version.TrimStart("v")
 New-Item -ItemType Directory -Path $CacheDirectory -Force | Out-Null
 New-Item -ItemType Directory -Path $Destination -Force | Out-Null
 
-$matchedExe = $null
-foreach ($candidate in Get-PreferredNodeCandidates) {
-    $foundVersion = Get-NodeFileVersion $candidate
-    if ($foundVersion -eq $Version) {
-        $matchedExe = (Resolve-Path -LiteralPath $candidate).Path
-        Write-Host "Using existing Node v$Version at $matchedExe"
-        break
-    }
+Write-Host "=== Bundle Node runtime ==="
+Write-Host "Requested version: v$Version"
+Write-Host "PreferredNodeExe:  $(if ([string]::IsNullOrWhiteSpace($PreferredNodeExe)) { '(not set)' } else { $PreferredNodeExe })"
+Write-Host "Env preferred exe: $(if ([string]::IsNullOrWhiteSpace($env:MYTOOLS_PREFERRED_NODE_EXE)) { '(not set)' } else { $env:MYTOOLS_PREFERRED_NODE_EXE })"
+Write-Host "Cache directory:   $CacheDirectory"
+Write-Host "Destination:       $Destination"
 
-    if ($null -eq $foundVersion) {
-        Write-Host "Skipping Node candidate (unreadable): $candidate"
-    }
-    else {
-        Write-Host "Skipping Node candidate v$foundVersion (want v$Version): $candidate"
+$cachedFiles = @(Get-ChildItem -LiteralPath $CacheDirectory -Force -File -ErrorAction SilentlyContinue)
+if ($cachedFiles.Count -eq 0) {
+    Write-Host "Zip cache contents: (empty)"
+} else {
+    Write-Host "Zip cache contents:"
+    foreach ($file in $cachedFiles) {
+        Write-Host ("  {0,12} bytes  {1}" -f $file.Length, $file.Name)
     }
 }
 
+$candidates = @(Get-PreferredNodeCandidates)
+if ($candidates.Count -eq 0) {
+    Write-Host "Local Node candidates: (none)"
+} else {
+    Write-Host "Local Node candidates:"
+}
+
+$matchedExe = $null
+foreach ($candidate in $candidates) {
+    $foundVersion = Get-NodeFileVersion $candidate
+    $label = if ($null -eq $foundVersion) { 'unreadable' } else { "v$foundVersion" }
+    if ($foundVersion -eq $Version) {
+        $matchedExe = (Resolve-Path -LiteralPath $candidate).Path
+        Write-Host "  MATCH $label  $candidate"
+        break
+    }
+
+    Write-Host "  skip  $label  $candidate"
+}
+
 if ($null -ne $matchedExe) {
+    Write-Host "Using existing Node v$Version at $matchedExe (official zip cache not needed)."
     Copy-NodeRuntime $matchedExe
 }
 else {
@@ -131,13 +152,15 @@ else {
     if (Test-Path $cacheZip -PathType Leaf) {
         $actual = Get-Sha256Hex $cacheZip
         if ($actual -ne $expected) {
-            Write-Host "Cached Node zip hash mismatch; downloading again."
+            Write-Host "Zip cache hit but hash mismatch ($actual); downloading again."
             Remove-Item -Force $cacheZip
+        } else {
+            Write-Host "Zip cache hit: $cacheZip"
         }
     }
 
     if (-not (Test-Path $cacheZip -PathType Leaf)) {
-        Write-Host "No matching local Node v$Version; downloading $downloadUri"
+        Write-Host "Zip cache miss; downloading $downloadUri"
         Invoke-WebRequest -Uri $downloadUri -OutFile $cacheZip -UseBasicParsing
     }
 

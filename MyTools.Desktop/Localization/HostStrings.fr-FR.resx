@@ -19,6 +19,7 @@
   <data name="EditHotKey" xml:space="preserve"><value>Modifier le raccourci</value></data>
   <data name="PressKey" xml:space="preserve"><value>Appuyez sur la nouvelle combinaison de touches...</value></data>
   <data name="Confirm" xml:space="preserve"><value>OK</value></data>
+  <data name="Retry" xml:space="preserve"><value>Réessayer</value></data>
   <data name="Save" xml:space="preserve"><value>Enregistrer</value></data>
   <data name="Cancel" xml:space="preserve"><value>Annuler</value></data>
   <data name="QuickSearch" xml:space="preserve"><value>Recherche rapide</value></data>

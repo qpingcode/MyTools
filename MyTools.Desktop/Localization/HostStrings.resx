@@ -33,6 +33,7 @@
   <data name="UpdateAvailable" xml:space="preserve"><value>Version {0} is available. Download and restart MyTools now?</value></data>
   <data name="UpdateFailed" xml:space="preserve"><value>Update failed: {0}</value></data>
   <data name="UpdateRateLimitExceeded" xml:space="preserve"><value>GitHub's update-check request limit has been reached. The proxy IP may be shared by multiple users. Please try again later or switch the update proxy node.</value></data>
+  <data name="Retry" xml:space="preserve"><value>Retry</value></data>
   <data name="Error" xml:space="preserve"><value>Error</value></data>
   <data name="Success" xml:space="preserve"><value>Success</value></data>
   <data name="Warning" xml:space="preserve"><value>Warning</value></data>

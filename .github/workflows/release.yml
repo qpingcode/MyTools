@@ -84,10 +84,54 @@ jobs:
       - name: Record runner Node for bundling
         shell: pwsh
         run: |
-          $node = (Get-Command node).Source
+          $ErrorActionPreference = "Stop"
+          Write-Host "=== Requested bundled Node ==="
+          Write-Host "MyTools.Desktop NodeRuntimeVersion is pinned in csproj (currently 24.19.0)"
+          Write-Host "setup-node requested: 24.19.0"
+
+          $nodeCmd = Get-Command node -ErrorAction SilentlyContinue
+          if ($null -eq $nodeCmd) {
+              throw "node was not found on PATH after setup-node."
+          }
+
+          $node = $nodeCmd.Source
           $version = (& $node -v).Trim()
-          Write-Host "Runner Node $version at $node"
+          $npmCmd = Get-Command npm -ErrorAction SilentlyContinue
+          $npmVersion = if ($null -eq $npmCmd) { '(npm not on PATH)' } else { (& npm -v).Trim() }
+
+          Write-Host "=== Active Node on PATH ==="
+          Write-Host "node.exe: $node"
+          Write-Host "node -v:  $version"
+          Write-Host "npm -v:   $npmVersion"
+
+          Write-Host "=== node.exe on PATH ==="
+          $pathNodes = Get-Command node -All -ErrorAction SilentlyContinue
+          if ($null -eq $pathNodes) {
+              Write-Host "(none)"
+          } else {
+              foreach ($entry in @($pathNodes)) {
+                  $entryVersion = $null
+                  try { $entryVersion = (& $entry.Source -v 2>$null).Trim() } catch { }
+                  Write-Host ("{0,-10} {1,-12} {2}" -f $entry.CommandType, $(if ($entryVersion) { $entryVersion } else { '?' }), $entry.Source)
+              }
+          }
+
+          $toolCache = $env:RUNNER_TOOL_CACHE
+          Write-Host "=== Hosted tool cache (RUNNER_TOOL_CACHE=$toolCache) ==="
+          $nodeToolRoot = Join-Path $toolCache 'node'
+          if ([string]::IsNullOrWhiteSpace($toolCache) -or -not (Test-Path -LiteralPath $nodeToolRoot)) {
+              Write-Host "No Node installs under the Actions tool cache."
+          } else {
+              Get-ChildItem -LiteralPath $nodeToolRoot -Recurse -Filter 'node.exe' |
+                  ForEach-Object {
+                      $toolVersion = $null
+                      try { $toolVersion = (& $_.FullName -v 2>$null).Trim() } catch { }
+                      Write-Host ("{0}  {1}" -f $(if ($toolVersion) { $toolVersion } else { '?' }), $_.FullName)
+                  }
+          }
+
           "MYTOOLS_PREFERRED_NODE_EXE=$node" >> $env:GITHUB_ENV
+          Write-Host "Recorded MYTOOLS_PREFERRED_NODE_EXE=$node"
 
       - name: Build Node plugin examples
         shell: pwsh
@@ -303,11 +347,41 @@ jobs:
               $global:LASTEXITCODE = 0
           }
 
-      - name: Cache bundled Node runtime
+      - name: Cache bundled Node runtime zip
+        id: node-runtime-cache
         uses: actions/cache@v5
         with:
           path: artifacts/node-runtime
           key: node-runtime-win-x64-v24.19.0
+
+      - name: Inspect Node zip cache
+        shell: pwsh
+        env:
+          NODE_RUNTIME_CACHE_HIT: ${{ steps.node-runtime-cache.outputs.cache-hit }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $cacheDir = Join-Path $PWD 'artifacts\node-runtime'
+          $hit = $env:NODE_RUNTIME_CACHE_HIT
+          Write-Host "=== actions/cache for artifacts/node-runtime ==="
+          Write-Host "key: node-runtime-win-x64-v24.19.0"
+          Write-Host "cache-hit: $(if ([string]::IsNullOrWhiteSpace($hit)) { 'false' } else { $hit })"
+          Write-Host "This cache only stores the official nodejs.org zip. It is a miss until a job downloads that zip and later saves the cache."
+          Write-Host "If setup-node already provided v24.19.0, bundling copies that node.exe and never fills this directory."
+
+          if (-not (Test-Path -LiteralPath $cacheDir)) {
+              Write-Host "Cache directory does not exist yet: $cacheDir"
+              return
+          }
+
+          $files = @(Get-ChildItem -LiteralPath $cacheDir -Force -File -Recurse)
+          if ($files.Count -eq 0) {
+              Write-Host "Cache directory is empty: $cacheDir"
+              return
+          }
+
+          foreach ($file in $files) {
+              Write-Host ("{0,12} bytes  {1}" -f $file.Length, $file.FullName)
+          }
 
       - name: Create Velopack packages
         shell: pwsh

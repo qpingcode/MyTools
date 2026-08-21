@@ -19,6 +19,7 @@ public partial class UpdateCheckWindow
     private readonly ILogger<UpdateCheckWindow> _logger;
     private readonly IThemeService _themeService;
     private readonly CancellationTokenSource _checkCts = new();
+    private bool _isChecking;
 
     public UpdateCheckWindow(IUpdateService updateService)
     {
@@ -44,12 +45,29 @@ public partial class UpdateCheckWindow
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
     {
+        await CheckForUpdatesAsync();
+    }
+
+    private async void RetryButton_Click(object sender, RoutedEventArgs e)
+    {
+        await CheckForUpdatesAsync();
+    }
+
+    private async Task CheckForUpdatesAsync()
+    {
+        if (_isChecking || _checkCts.IsCancellationRequested)
+        {
+            return;
+        }
+
+        _isChecking = true;
+        ShowChecking();
+
         try
         {
             var result = await _updateService.CheckForUpdatesAsync(_checkCts.Token);
             if (_checkCts.IsCancellationRequested)
             {
-                // User cancelled while checking; the window is already closing.
                 return;
             }
 
@@ -62,13 +80,24 @@ public partial class UpdateCheckWindow
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to check for updates.");
-            var message = UpdateService.IsGithubRateLimitException(ex)
-                ? GetCaption(
-                    "UpdateRateLimitExceeded",
-                    "GitHub's update-check request limit has been reached. The proxy IP may be shared by multiple users. Please try again later or switch the update proxy node.")
-                : GetCaption("UpdateFailed", "Update failed: {0}", ex.Message);
-            ShowMessage(message);
+            if (_checkCts.IsCancellationRequested)
+            {
+                return;
+            }
+
+            ShowMessage(FormatCheckError(ex), showRetry: true);
         }
+        finally
+        {
+            _isChecking = false;
+        }
+    }
+
+    private void ShowChecking()
+    {
+        ResultState.Visibility = Visibility.Collapsed;
+        DownloadingState.Visibility = Visibility.Collapsed;
+        CheckingState.Visibility = Visibility.Visible;
     }
 
     private void ShowResult(UpdateCheckResult result)
@@ -85,7 +114,7 @@ public partial class UpdateCheckWindow
                 ShowMessage(GetCaption("NoUpdateAvailable", "You are using the latest version ({0}).", result.Version));
                 break;
             case UpdateCheckStatus.Busy:
-                ShowMessage(GetCaption("UpdateBusy", "An update operation is already running."));
+                ShowMessage(GetCaption("UpdateBusy", "An update operation is already running."), showRetry: true);
                 break;
             case UpdateCheckStatus.UpdateAvailable:
                 ShowMessage(GetCaption("UpdateAvailable", "Version {0} is available. Download and restart MyTools now?", result.Version), showDownload: true);
@@ -93,20 +122,27 @@ public partial class UpdateCheckWindow
         }
     }
 
-    /// <summary>
-    /// Switches to the result state with the given message.
-    /// </summary>
-    private void ShowMessage(string message, bool showDownload = false)
+    private void ShowMessage(string message, bool showDownload = false, bool showRetry = false)
     {
         ResultMessage.Text = message;
-        // Show only the relevant action: download-and-restart when an update is available,
-        // otherwise a single OK button to dismiss the message.
+        RetryButton.Visibility = showRetry ? Visibility.Visible : Visibility.Collapsed;
         DownloadButton.Visibility = showDownload ? Visibility.Visible : Visibility.Collapsed;
+        DownloadButton.IsEnabled = true;
         OkButton.Visibility = showDownload ? Visibility.Collapsed : Visibility.Visible;
+        OkButton.Style = (Style)FindResource(showRetry ? "CancelButtonStyle" : "ModernButton");
 
         CheckingState.Visibility = Visibility.Collapsed;
         DownloadingState.Visibility = Visibility.Collapsed;
         ResultState.Visibility = Visibility.Visible;
+    }
+
+    private static string FormatCheckError(Exception ex)
+    {
+        return UpdateService.IsGithubRateLimitException(ex)
+            ? GetCaption(
+                "UpdateRateLimitExceeded",
+                "GitHub's update-check request limit has been reached. The proxy IP may be shared by multiple users. Please try again later or switch the update proxy node.")
+            : GetCaption("UpdateFailed", "Update failed: {0}", ex.Message);
     }
 
     private async void DownloadButton_Click(object sender, RoutedEventArgs e)
@@ -136,12 +172,7 @@ public partial class UpdateCheckWindow
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to download the update.");
-            var message = UpdateService.IsGithubRateLimitException(ex)
-                ? GetCaption(
-                    "UpdateRateLimitExceeded",
-                    "GitHub's update-check request limit has been reached. The proxy IP may be shared by multiple users. Please try again later or switch the update proxy node.")
-                : GetCaption("UpdateFailed", "Update failed: {0}", ex.Message);
-            ShowMessage(message);
+            ShowMessage(FormatCheckError(ex), showRetry: true);
         }
     }
 

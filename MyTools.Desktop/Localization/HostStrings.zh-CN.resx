@@ -33,6 +33,7 @@
   <data name="UpdateAvailable" xml:space="preserve"><value>发现版本 {0}，是否立即下载并重启 MyTools？</value></data>
   <data name="UpdateFailed" xml:space="preserve"><value>更新失败：{0}</value></data>
   <data name="UpdateRateLimitExceeded" xml:space="preserve"><value>GitHub 检查更新的请求次数已达上限。当前代理出口 IP 可能由多人共享，请稍后重试或切换更新代理节点。</value></data>
+  <data name="Retry" xml:space="preserve"><value>重试</value></data>
   <data name="Error" xml:space="preserve"><value>错误</value></data>
   <data name="Success" xml:space="preserve"><value>成功</value></data>
   <data name="Warning" xml:space="preserve"><value>警告</value></data>
