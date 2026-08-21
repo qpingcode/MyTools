@@ -7,6 +7,7 @@ public sealed class NodePluginManifest
 {
     public string Id { get; init; } = string.Empty;
     public LocalizedMessage? NameMessage { get; init; }
+    public LocalizedMessage? DescriptionMessage { get; init; }
 
     /// <summary>
     /// 未翻译的显示名称（NameMessage.DefaultValue），fallback 到 EntryId。

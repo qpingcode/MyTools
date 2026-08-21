@@ -13,6 +13,11 @@ export function defaultUiHint(type: string, uiHint?: string | null): string {
     return "input";
 }
 
+export function isHeadingType(type?: string | null): boolean {
+    const normalized = (type || "").trim().toLowerCase();
+    return normalized === "h1" || normalized === "h2";
+}
+
 export function isPathType(type?: string | null, fullPath?: string | null): boolean {
     if ((type || "").trim().toLowerCase() === "path") return true;
     return (fullPath || "").toLowerCase() === IlSpyPathFullPath;

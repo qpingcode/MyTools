@@ -22,6 +22,10 @@ public sealed class PluginManifestV3
     /// </summary>
     public string? Icon { get; init; }
     /// <summary>
+    /// Optional plugin description shown as the settings category subtitle.
+    /// </summary>
+    public LocalizedNameV3? Description { get; init; }
+    /// <summary>
     /// Plugin-level settings schema. Host registers these under a sidebar category named after the
     /// plugin, without starting the Node process.
     /// </summary>

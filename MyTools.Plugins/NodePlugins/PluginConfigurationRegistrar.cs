@@ -73,10 +73,21 @@ public static class PluginConfigurationRegistrar
         PluginConfigurationSettingV3 item,
         ILocalizationService localization)
     {
-        var name = SettingName(pluginId, item.Key);
-        var title = ResolveLabel(item.Label, name, localization);
-        var description = ResolveLabel(item.Description, "", localization);
         var normalizedType = PluginConfigurationTypes.Normalize(item.Type);
+        if (PluginConfigurationTypes.IsHeadingType(normalizedType))
+        {
+            RegisterHeading(registry, category, item, localization, normalizedType);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(item.Key))
+        {
+            return;
+        }
+
+        var name = SettingName(pluginId, item.Key);
+        var title = ResolveLabel(item.Label, "", localization);
+        var description = ResolveLabel(item.Description, "", localization);
         var uiHint = string.IsNullOrWhiteSpace(item.UiHint)
             ? PluginConfigurationTypes.DefaultUiHint(normalizedType)
             : item.UiHint.Trim();
@@ -112,6 +123,30 @@ public static class PluginConfigurationRegistrar
         }
 
         setting.UiHint = uiHint;
+        setting.Visibility = string.IsNullOrWhiteSpace(item.Visibility) ? null : item.Visibility.Trim();
+    }
+
+    private static void RegisterHeading(
+        IConfigurationRegistry registry,
+        ConfigurationCategory category,
+        PluginConfigurationSettingV3 item,
+        ILocalizationService localization,
+        string normalizedType)
+    {
+        var name = $"__heading_{normalizedType}_{category.Settings.Count}";
+        var title = ResolveLabel(item.Label, "", localization);
+        var description = ResolveLabel(item.Description, "", localization);
+        var valueType = normalizedType == PluginConfigurationTypes.H2
+            ? SettingValueTypes.H2
+            : SettingValueTypes.H1;
+        var setting = registry.AddSetting(
+            category,
+            name,
+            title,
+            description,
+            string.Empty,
+            options: SettingOptions.DisplayOnly,
+            valueType: valueType);
         setting.Visibility = string.IsNullOrWhiteSpace(item.Visibility) ? null : item.Visibility.Trim();
     }
 
@@ -164,7 +199,8 @@ public static class PluginConfigurationRegistrar
                     Title = ResolveLabel(property.Label, property.Key, localization),
                     UiHint = string.IsNullOrEmpty(uiHint) ? null : uiHint,
                     DefaultValue = ToStringValue(property.DefaultValue),
-                    Table = property.Table
+                    Table = property.Table,
+                    Visibility = string.IsNullOrWhiteSpace(property.Visibility) ? null : property.Visibility.Trim()
                 };
             }).ToList()
         };

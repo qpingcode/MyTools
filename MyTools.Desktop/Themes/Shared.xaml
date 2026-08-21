@@ -11,6 +11,12 @@
     <CornerRadius x:Key="WindowCornerRadius">12</CornerRadius>
     <CornerRadius x:Key="SurfaceCornerRadius">8</CornerRadius>
     <CornerRadius x:Key="ControlCornerRadius">4</CornerRadius>
+    <!--
+        Windows UI stack: Latin from Segoe UI (Variable on Win11), CJK from Microsoft YaHei UI.
+        Segoe UI alone has no Chinese glyphs and then falls back to SimSun / 微软雅黑,
+        which makes titles and body text look mismatched.
+    -->
+    <FontFamily x:Key="UiFontFamily">Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI, Microsoft YaHei</FontFamily>
     <FontFamily x:Key="MdiFontFamily">pack://application:,,,/Assets/Fonts/materialdesignicons-webfont.ttf#Material Design Icons</FontFamily>
 
 </ResourceDictionary>

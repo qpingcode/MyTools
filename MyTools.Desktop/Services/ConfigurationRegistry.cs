@@ -73,7 +73,10 @@ public class ConfigurationRegistry(IConfigurationStorage storage) : IConfigurati
         
         setting.InitValueWithoutNotify(defaultValue);
         category.AddSetting(setting);
-        _settingsByName[setting.FullPath] = setting;
+        if ((options & SettingOptions.DisplayOnly) == 0)
+        {
+            _settingsByName[setting.FullPath] = setting;
+        }
 
         return setting;
     }
@@ -163,6 +166,23 @@ public class ConfigurationRegistry(IConfigurationStorage storage) : IConfigurati
                 results.Add(setting);
             }
         }
+
+        foreach (var category in GetAllCategories())
+        {
+            foreach (var setting in category.Settings)
+            {
+                if (!setting.IsDisplayOnly)
+                {
+                    continue;
+                }
+
+                if (setting.Title.ToLowerInvariant().Contains(searchQuery) ||
+                    setting.Description.ToLowerInvariant().Contains(searchQuery))
+                {
+                    results.Add(setting);
+                }
+            }
+        }
         
         return results.OrderBy(x => x is ConfigurationCategory ? 0 : 1);
     }
@@ -203,6 +223,12 @@ public class ConfigurationRegistry(IConfigurationStorage storage) : IConfigurati
 
     private void SaveSetting(ConfigurationSetting setting)
     {
+        if (setting.IsDisplayOnly)
+        {
+            setting.IsDirty = false;
+            return;
+        }
+
         if (setting.CurrentValue == null)
         {
             storage.Delete(setting.FullPath);
@@ -226,6 +252,11 @@ public class ConfigurationRegistry(IConfigurationStorage storage) : IConfigurati
     
     public void Reload(ConfigurationSetting setting)
     {
+        if (setting.IsDisplayOnly)
+        {
+            return;
+        }
+
         var storedValue = GetStoredValue(setting);
         if (storedValue != null)
         {

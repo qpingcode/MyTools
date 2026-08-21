@@ -131,6 +131,9 @@ public sealed class NodePluginCatalog
                     NameMessage = entryModel.Name != null
                         ? new LocalizedMessage(entryModel.Name.Key ?? "", entryModel.Name.DefaultValue ?? "")
                         : null,
+                    DescriptionMessage = fileModel.Description != null
+                        ? new LocalizedMessage(fileModel.Description.Key ?? "", fileModel.Description.DefaultValue ?? "")
+                        : null,
                     Version = fileModel.Version!,
                     Entry = entryModel.Entry!,
                     ProtocolVersion = fileModel.ProtocolVersion!,
@@ -226,6 +229,7 @@ public sealed class NodePluginCatalog
         public List<EntryManifestFile>? Entries { get; init; }
         public I18nManifestFile? I18n { get; init; }
         public string? Icon { get; init; }
+        public LocalizedNameDto? Description { get; init; }
         public List<PluginConfigurationSettingV3>? Configuration { get; init; }
     }
 

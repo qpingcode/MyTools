@@ -15,6 +15,16 @@
       "sourceHash": "sha256:8577cef8d0f972d012669372e47db2e516f03e0237c2bb05034df8d5e9c5369e"
     },
     {
+      "key": "Plugin.OpenPath.Description",
+      "defaultValue": "Choose the IDE install locations used when opening a path.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "配置用搜索打开路径时所使用的 IDE 安装位置。"
+      },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
       "key": "Plugin.OpenPath.Action.Open",
       "defaultValue": "Open",
       "placeholders": [],

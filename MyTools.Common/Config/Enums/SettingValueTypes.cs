@@ -56,6 +56,16 @@ public enum SettingValueTypes
     Path,
 
     /// <summary>
+    /// Display-only large heading. Not persisted.
+    /// </summary>
+    H1,
+
+    /// <summary>
+    /// Display-only section heading. Not persisted.
+    /// </summary>
+    H2,
+
+    /// <summary>
     /// 自定义类型（需要序列化器）
     /// </summary>
     Custom

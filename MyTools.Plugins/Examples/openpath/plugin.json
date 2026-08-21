@@ -11,6 +11,17 @@
   },
   "configuration": [
     {
+      "label": {
+        "key": "Plugin.OpenPath.Name",
+        "defaultValue": "Open Path"
+      },
+      "description": {
+        "key": "Plugin.OpenPath.Description",
+        "defaultValue": "Choose the IDE install locations used when opening a path."
+      },
+      "type": "h1"
+    },
+    {
       "key": "RiderInstallPath",
       "label": {
         "key": "Plugin.OpenPath.Setting.Rider.Title",

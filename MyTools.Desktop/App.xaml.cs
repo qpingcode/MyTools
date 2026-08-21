@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Threading;
 using Hardcodet.Wpf.TaskbarNotification;
 using Hardcodet.Wpf.TaskbarNotification.Interop;
@@ -107,6 +108,10 @@ public partial class App
         EnsureDpiFactorsLoadSuccessfully();    
 
         _notifyIcon.ContextMenu = new ContextMenu();
+        if (TryFindResource("UiFontFamily") is FontFamily uiFont)
+        {
+            _notifyIcon.ContextMenu.FontFamily = uiFont;
+        }
         UpdateNotifyIconMenu();
         
         _notifyIcon.TrayMouseDoubleClick += (_, _) => WindowHelper.ShowSearchWindow();

@@ -20,6 +20,10 @@ public partial class MouseTrailWindow
     private double _dpiScale = -1;
     private readonly ILogger<MouseTrailWindow> _logger;
 
+    private static FontFamily UiFontFamily =>
+        System.Windows.Application.Current?.TryFindResource("UiFontFamily") as FontFamily
+        ?? new FontFamily("Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI, Microsoft YaHei");
+
     private int _originalTop;
     private int _originalLeft;
 
@@ -72,6 +76,7 @@ public partial class MouseTrailWindow
         {
             Text = string.Empty,
             Foreground = Brushes.White,
+            FontFamily = UiFontFamily,
             FontSize = 24,
             FontWeight = FontWeights.Normal,
             Background = Brushes.Transparent,
@@ -114,6 +119,7 @@ public partial class MouseTrailWindow
         {
             Text = string.Empty,
             Foreground = Brushes.Orange,
+            FontFamily = UiFontFamily,
             FontSize = 24,
             FontWeight = FontWeights.Normal,
             Background = Brushes.Transparent,
@@ -197,6 +203,7 @@ public partial class MouseTrailWindow
         // 先计算所有 actionName 的最大宽度（每次重新计算，不累积）
         var tempTextBlock = new TextBlock
         {
+            FontFamily = UiFontFamily,
             FontSize = 24,
             FontWeight = FontWeights.Normal
         };
@@ -227,6 +234,7 @@ public partial class MouseTrailWindow
             {
                 Text = gesture.ActionName,
                 Foreground = Brushes.LightGreen,
+                FontFamily = UiFontFamily,
                 FontSize = 24,
                 FontWeight = FontWeights.Normal,
                 VerticalAlignment = VerticalAlignment.Center,
@@ -239,6 +247,7 @@ public partial class MouseTrailWindow
             
             var directionTextBlock = new TextBlock
             {
+                FontFamily = UiFontFamily,
                 FontSize = 32,
                 FontWeight = FontWeights.Bold,
                 HorizontalAlignment = HorizontalAlignment.Left,

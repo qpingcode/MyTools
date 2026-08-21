@@ -80,6 +80,14 @@ public sealed class NodePlugin : IPlugin, IDisposable
         return manifest.NameMessage.Resolve(PluginLocalization);
     }
 
+    /// <summary>
+    /// Optional plugin-level description. Settings copy comes from configuration label/description.
+    /// </summary>
+    public string Description =>
+        manifest.DescriptionMessage == null
+            ? ""
+            : manifest.DescriptionMessage.Resolve(PluginLocalization);
+
     public string PluginId => manifest.Id;
 
     /// <summary>Bus session id after the Node process has been started.</summary>
@@ -100,8 +108,6 @@ public sealed class NodePlugin : IPlugin, IDisposable
     /// ParentId 为 "settings"。用于匹配同一插件的所有 entry。
     /// </summary>
     public string ParentId => manifest.ParentId;
-
-    public string Description => $"Node plugin: {Name}";
 
     public List<IActionWithCommand> Actions { get; } = [];
 
@@ -176,7 +182,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
             configurationRegistry,
             ParentId,
             GetDisplayName(),
-            Description,
+            "",
             manifest.Configuration,
             PluginLocalization,
             manifest.Icon);

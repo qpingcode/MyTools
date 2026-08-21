@@ -63,6 +63,7 @@
         
         <!-- 分类按钮样式 -->
         <Style x:Key="CategoryButtonStyle" TargetType="Button">
+            <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}"/>
             <Setter Property="Background" Value="{DynamicResource BorderBrush}"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
@@ -170,6 +171,7 @@
         
         <!-- 更多分类按钮样式 -->
         <Style x:Key="MoreCategoriesButtonStyle" TargetType="Button">
+            <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}"/>
             <Setter Property="Background" Value="{DynamicResource BorderBrush}"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
@@ -202,6 +204,7 @@
         
         <!-- 下拉菜单分类按钮样式 -->
         <Style x:Key="DropdownCategoryButtonStyle" TargetType="Button">
+            <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
@@ -234,6 +237,7 @@
         </Style>
 
         <Style x:Key="PreviewTextBoxStyle" TargetType="TextBox">
+            <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
             <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}"/>

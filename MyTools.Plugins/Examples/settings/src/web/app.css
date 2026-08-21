@@ -5,7 +5,7 @@ html, body, #app {
     overflow: hidden;
     font-size: 14px;
     line-height: 1.4;
-    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+    font-family: var(--mt-font-ui);
     background: var(--mt-surface-bg, #1e1e1e);
     color: var(--mt-text, #e0e0e0);
 }
@@ -14,6 +14,7 @@ html, body, #app {
     --settings-accent: #22c55e;
     --settings-accent-hover: #16a34a;
     --settings-accent-pressed: #15803d;
+    --mt-font-ui: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
 }
 
 #app {

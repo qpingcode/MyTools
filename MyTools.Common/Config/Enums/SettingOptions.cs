@@ -30,6 +30,11 @@ public enum SettingOptions
     /// 需要重启应用
     /// </summary>
     RequiresRestart = 1 << 3,
+
+    /// <summary>
+    /// Display-only heading. Not saved or loaded from storage.
+    /// </summary>
+    DisplayOnly = 1 << 4,
 }
 
 

@@ -48,7 +48,7 @@ public class PluginConfigurationRegistrarTest
                     [
                         new() { Key = "trigger", Type = "string", Label = new LocalizedNameV3 { Key = "t", DefaultValue = "Trigger" } },
                         new() { Key = "timestamp", Type = "hidden", DefaultValue = JsonValue.Create("${DateTime.Now}") },
-                        new() { Key = "content", Type = "string", UiHint = "textarea", Table = false }
+                        new() { Key = "content", Type = "string", UiHint = "textarea", Table = false, Visibility = "${enabled == true}" }
                     ]
                 }
             }
@@ -71,7 +71,9 @@ public class PluginConfigurationRegistrarTest
         Assert.That(setting.Schema.Properties[1].DefaultValue, Is.EqualTo("${DateTime.Now}"));
         Assert.That(setting.Schema.Properties[2].UiHint, Is.EqualTo("textarea"));
         Assert.That(setting.Schema.Properties[2].Table, Is.False);
+        Assert.That(setting.Schema.Properties[2].Visibility, Is.EqualTo("${enabled == true}"));
         Assert.That(setting.Schema.Properties[0].Table, Is.True);
+        Assert.That(setting.Schema.Properties[0].Visibility, Is.Null);
         Assert.That(((JsonElement)setting.DefaultValue!).GetRawText(), Is.EqualTo("[]"));
     }
 
@@ -136,6 +138,56 @@ public class PluginConfigurationRegistrarTest
 
         Assert.That(registry.Settings[0].Visibility, Is.Null);
         Assert.That(registry.Settings[1].Visibility, Is.EqualTo("${ChromeEnabled == true}"));
+    }
+
+    [Test]
+    public void Register_ShouldAddDisplayOnlyHeadingWithoutKey()
+    {
+        var registry = new FakeRegistry();
+        var configuration = new List<PluginConfigurationSettingV3>
+        {
+            new()
+            {
+                Type = "h1",
+                Label = new LocalizedNameV3 { Key = "n", DefaultValue = "Custom Commands" },
+                Description = new LocalizedNameV3 { Key = "d", DefaultValue = "Configure commands." }
+            },
+            new()
+            {
+                Key = "Commands",
+                Type = "array",
+                Schema = new PluginConfigurationSchemaV3
+                {
+                    Properties = [new() { Key = "name", Type = "string" }]
+                }
+            }
+        };
+
+        PluginConfigurationRegistrar.Register(registry, "command-runner", "Custom Commands", "", configuration, new FallbackLocalization());
+
+        Assert.That(registry.Settings, Has.Count.EqualTo(2));
+        Assert.That(registry.Settings[0].ValueType, Is.EqualTo(SettingValueTypes.H1));
+        Assert.That(registry.Settings[0].IsDisplayOnly, Is.True);
+        Assert.That(registry.Settings[0].Title, Is.EqualTo("Custom Commands"));
+        Assert.That(registry.Settings[0].Description, Is.EqualTo("Configure commands."));
+        Assert.That(registry.Settings[0].Name, Does.StartWith("__heading_h1_"));
+        Assert.That(registry.Settings[1].FullPath, Is.EqualTo("command-runner.Commands"));
+        Assert.That(registry.Settings[1].Title, Is.EqualTo(""));
+    }
+
+    [Test]
+    public void Register_ShouldLeaveScalarLabelBlankWhenOmitted()
+    {
+        var registry = new FakeRegistry();
+        var configuration = new List<PluginConfigurationSettingV3>
+        {
+            new() { Key = "ChromeEnabled", Type = "bool", DefaultValue = JsonValue.Create(true) }
+        };
+
+        PluginConfigurationRegistrar.Register(registry, "browser-search", "Browser Search", "", configuration, new FallbackLocalization());
+
+        Assert.That(registry.Settings[0].Title, Is.EqualTo(""));
+        Assert.That(registry.Settings[0].Description, Is.EqualTo(""));
     }
 
     private sealed class FallbackLocalization : ILocalizationService

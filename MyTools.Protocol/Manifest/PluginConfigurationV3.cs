@@ -4,13 +4,17 @@ using System.Text.Json.Nodes;
 namespace MyTools.Protocol.Manifest;
 
 /// <summary>
-/// A plugin-declared setting in <c>plugin.json</c> <c>configuration</c>.
-/// <c>key</c> is the setting name within the plugin category; the host stores it as
-/// <c>{pluginId}.{key}</c> (for example <c>snippet.Phrases</c>).
+/// A plugin-declared item in <c>plugin.json</c> <c>configuration</c>.
+/// Persisted settings use <c>key</c> (stored as <c>{pluginId}.{key}</c>).
+/// Display-only <c>h1</c>/<c>h2</c> headings omit <c>key</c>.
 /// </summary>
 public sealed class PluginConfigurationSettingV3
 {
-    public required string Key { get; init; }
+    /// <summary>
+    /// Setting name within the plugin category. Required for persisted types; omitted for
+    /// display-only <c>h1</c>/<c>h2</c> headings.
+    /// </summary>
+    public string Key { get; init; } = "";
     public LocalizedNameV3? Label { get; init; }
     public LocalizedNameV3? Description { get; init; }
     public required string Type { get; init; }
@@ -44,6 +48,12 @@ public sealed class PluginConfigurationPropertyV3
     /// Omitted means <c>true</c>.
     /// </summary>
     public bool Table { get; init; } = true;
+    /// <summary>
+    /// Visibility condition macro, for example <c>${isBashScript == true}</c>.
+    /// The expression may reference sibling schema property keys of the same row.
+    /// Empty or omitted means the field is always shown in the edit dialog.
+    /// </summary>
+    public string? Visibility { get; init; }
 }
 
 /// <summary>Allowed <c>configuration[].type</c> values in plugin.json.</summary>
@@ -57,9 +67,13 @@ public static class PluginConfigurationTypes
     public const string Array = "array";
     public const string Path = "path";
     public const string Hidden = "hidden";
+    public const string H1 = "h1";
+    public const string H2 = "h2";
     public const string PathFile = "file";
     public const string PathDirectory = "directory";
     public const string PathFileOrDirectory = "fileOrDirectory";
+
+    public static bool IsHeadingType(string? type) => Normalize(type) is H1 or H2;
 
     public static bool IsSettingType(string? type) => Normalize(type) is
         String or Bool or Int or Double or Array or Path;

@@ -9,6 +9,7 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
 
         <Style x:Key="ActionPillButtonStyle" TargetType="Button">
+            <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}"/>
             <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}"/>
             <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -74,6 +75,7 @@
                     <ContextMenu x:Name="OverflowMenu"
                                  Focusable="True"
                                  OverridesDefaultStyle="True"
+                                 FontFamily="{StaticResource UiFontFamily}"
                                  Background="{DynamicResource SurfaceAltBrush}"
                                  Foreground="{DynamicResource TextPrimaryBrush}"
                                  BorderBrush="{DynamicResource BorderSubtleBrush}"
@@ -94,6 +96,7 @@
                         </ContextMenu.Template>
                         <ContextMenu.ItemContainerStyle>
                             <Style TargetType="MenuItem">
+                                <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}"/>
                                 <Setter Property="Header" Value="{Binding Name}"/>
                                 <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
                                 <Setter Property="Background" Value="Transparent"/>
@@ -146,6 +149,7 @@
                 </Button.ContextMenu>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="{loc:Loc Search.Actions.Overflow, DefaultValue=Actions}"
+                               FontFamily="{StaticResource UiFontFamily}"
                                FontSize="12"
                                VerticalAlignment="Center"/>
                     <components:HotkeyKeycaps Command="Ctrl+K"/>

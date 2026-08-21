@@ -11,15 +11,18 @@
   },
   "configuration": [
     {
-      "key": "Commands",
       "label": {
-        "key": "Plugin.CommandRunner.Setting.Commands",
-        "defaultValue": "Commands"
+        "key": "Plugin.CommandRunner.Name",
+        "defaultValue": "Custom Commands"
       },
       "description": {
         "key": "Plugin.CommandRunner.Setting.Commands.Description",
         "defaultValue": "Custom commands available in global search. Press Enter to run."
       },
+      "type": "h1"
+    },
+    {
+      "key": "Commands",
       "type": "array",
       "defaultValue": [],
       "uiHint": "table",
@@ -46,6 +49,8 @@
           {
             "key": "command",
             "type": "string",
+            "table": false,
+            "visibility": "${isBashScript == false}",
             "label": {
               "key": "Plugin.CommandRunner.Column.Command",
               "defaultValue": "Command / URL"
@@ -56,6 +61,7 @@
             "key": "args",
             "type": "string",
             "table": false,
+            "visibility": "${isBashScript == false}",
             "label": {
               "key": "Plugin.CommandRunner.Column.Args",
               "defaultValue": "Arguments"
@@ -66,6 +72,7 @@
             "key": "scripts",
             "type": "string",
             "table": false,
+            "visibility": "${isBashScript == true}",
             "label": {
               "key": "Plugin.CommandRunner.Column.Scripts",
               "defaultValue": "Script lines"

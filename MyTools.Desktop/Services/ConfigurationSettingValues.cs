@@ -123,7 +123,7 @@ public static class ConfigurationSettingValues
         {
             var fullPath = pluginId + "." + property.Name;
             var setting = registry.FindSetting(fullPath);
-            if (setting == null || !Owns(pluginId, setting.FullPath))
+            if (setting == null || setting.IsDisplayOnly || !Owns(pluginId, setting.FullPath))
             {
                 continue;
             }

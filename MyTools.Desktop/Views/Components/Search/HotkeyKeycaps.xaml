@@ -33,6 +33,7 @@
                 <Border Style="{StaticResource HotkeyKeycapStyle}">
                     <Grid>
                         <TextBlock Text="{Binding Text}"
+                                   FontFamily="{StaticResource UiFontFamily}"
                                    FontSize="11"
                                    Foreground="{DynamicResource TextTertiaryBrush}"
                                    HorizontalAlignment="Center"
