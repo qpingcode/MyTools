@@ -102,6 +102,12 @@
             <StackPanel Grid.Row="1"
                         Orientation="Horizontal"
                         HorizontalAlignment="Right">
+                <Button x:Name="RetryButton"
+                        Content="{loc:Loc Retry, DefaultValue=Retry}"
+                        Style="{StaticResource ModernButton}"
+                        Margin="0,0,10,0"
+                        Visibility="Collapsed"
+                        Click="RetryButton_Click"/>
                 <Button x:Name="DownloadButton"
                         Content="{loc:Loc UpdateDownloadAndRestart, DefaultValue=Download and Restart}"
                         Style="{StaticResource ModernButton}"
