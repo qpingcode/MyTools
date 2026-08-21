@@ -174,4 +174,25 @@ public class PluginManifestV3RuntimeFieldsTest
         Assert.That(pluginSearch.Entries[0].HotKey, Is.Null.Or.Empty);
         Assert.That(pluginSearch.Entries[0].Detail!.Type, Is.EqualTo("list"));
     }
+
+    [Test]
+    public void Deserialize_ShouldReadBrowserSearchManifest()
+    {
+        var browserSearch = LoadExampleV3("browser-search");
+        Assert.That(browserSearch.Icon, Is.EqualTo("mdi-web"));
+        Assert.That(browserSearch.Entries[0].Capabilities, Is.EquivalentTo(new[] { "configuration.readOwn" }));
+        Assert.That(browserSearch.Entries[0].Search!.Global, Is.True);
+        Assert.That(browserSearch.Entries[0].Keywords, Is.Empty);
+        Assert.That(browserSearch.Entries[0].Detail!.Type, Is.EqualTo("list"));
+        Assert.That(browserSearch.Configuration.Select(item => item.Key), Is.EquivalentTo(new[]
+        {
+            "ChromeEnabled", "EdgeEnabled", "FirefoxEnabled",
+            "SearchBookmarks", "SearchHistory",
+            "ChromeUserDataDir", "ChromeProfile",
+            "EdgeUserDataDir", "EdgeProfile",
+            "FirefoxProfilesDir", "FirefoxProfile"
+        }));
+        Assert.That(browserSearch.Configuration.Count(item => item.Type == "bool"), Is.EqualTo(5));
+        Assert.That(browserSearch.Configuration.Count(item => item.Type == "path"), Is.EqualTo(3));
+    }
 }

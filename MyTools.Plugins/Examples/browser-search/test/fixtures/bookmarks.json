@@ -1,0 +1,33 @@
+{
+  "roots": {
+    "bookmark_bar": {
+      "children": [
+        {
+          "type": "url",
+          "name": "GitLab",
+          "url": "http://git.qping.me/"
+        },
+        {
+          "type": "folder",
+          "name": "Dev",
+          "children": [
+            {
+              "type": "url",
+              "name": "SharpLab",
+              "url": "https://sharplab.io/"
+            }
+          ]
+        }
+      ]
+    },
+    "other": {
+      "children": [
+        {
+          "type": "url",
+          "name": "GitHub",
+          "url": "https://github.com/"
+        }
+      ]
+    }
+  }
+}

@@ -96,8 +96,6 @@
   <data name="Plugin.PluginSearcher.Description" xml:space="preserve"><value>搜索所有可用插件</value></data>
   <data name="Plugin.ClipBoard.Name" xml:space="preserve"><value>剪贴板历史</value></data>
   <data name="Plugin.ClipBoard.Description" xml:space="preserve"><value>管理剪贴板历史记录</value></data>
-  <data name="Plugin.ChromeBookmarks.Name" xml:space="preserve"><value>Chrome 书签</value></data>
-  <data name="Plugin.ChromeBookmarks.Description" xml:space="preserve"><value>搜索本地 Chrome 书签并在浏览器中打开</value></data>
   <data name="Plugin.SearchEngine.Name" xml:space="preserve"><value>网页搜索</value></data>
   <data name="Plugin.SearchEngine.Description" xml:space="preserve"><value>使用不同的搜索引擎进行搜索</value></data>
   <data name="Plugin.JsonFormatter.Name" xml:space="preserve"><value>JSON 格式化</value></data>
