@@ -11,6 +11,7 @@ using MyTools.Desktop.Services;
 using MyTools.Plugins;
 using MyTools.Plugins.NodePlugins;
 using Application = System.Windows.Application;
+using Key = System.Windows.Input.Key;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 
 namespace MyTools.Desktop.ViewModels
@@ -225,11 +226,17 @@ namespace MyTools.Desktop.ViewModels
                 logger.LogWarning("SearchViewModel has been disposed, ignoring HandlePreviewKeyUp.");
                 return;
             }
-            var isHandled = ((ISwitchableViewModel)CurrentViewModel).HandleKeyUp(e.Key);
-            if (isHandled)
+            NotifyKeyUp(e.Key);
+        }
+
+        public void NotifyKeyUp(Key key)
+        {
+            if (disposed)
             {
-                e.Handled = true;
+                return;
             }
+
+            ((ISwitchableViewModel)CurrentViewModel).HandleKeyUp(key);
         }
         
         #region ISearchViewModelCallback

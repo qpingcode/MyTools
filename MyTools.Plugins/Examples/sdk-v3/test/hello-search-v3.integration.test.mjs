@@ -102,4 +102,6 @@ test("hello-search v3 backend answers plugin.call.search over the pipe", async (
   assert.equal(searchResponse.correlationId, "search-1");
   assert.ok(Array.isArray(searchResponse.payload.items), "response items not an array");
   assert.equal(searchResponse.payload.items[0].id, "hello:world");
+  assert.equal(searchResponse.payload.items[0].icon.kind, "mdi");
+  assert.equal(searchResponse.payload.items[0].icon.value, "mdi-hand-wave-outline");
 });

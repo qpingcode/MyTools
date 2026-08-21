@@ -46,6 +46,94 @@ public static class LnkParser
     }
 
     /// <summary>
+    /// 解析快捷方式用于取图标：优先自定义图标，否则用目标文件（避免 Shell 叠快捷方式箭头）。
+    /// </summary>
+    public static LnkIconSource? TryGetIconSource(string lnkPath)
+    {
+        if (string.IsNullOrWhiteSpace(lnkPath)
+            || !lnkPath.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase)
+            || !File.Exists(lnkPath))
+        {
+            return null;
+        }
+
+        var shellLink = (IShellLink)new ShellLink();
+        try
+        {
+            var persistFile = (IPersistFile)shellLink;
+            persistFile.Load(lnkPath, STGM_READ);
+
+            string? customIconPath = null;
+            var customIconIndex = 0;
+            var iconLocation = new StringBuilder(MAX_PATH);
+            try
+            {
+                shellLink.GetIconLocation(iconLocation, MAX_PATH, out customIconIndex);
+                var raw = iconLocation.ToString().Trim();
+                if (!string.IsNullOrEmpty(raw))
+                {
+                    customIconPath = ResolveIconPath(lnkPath, Environment.ExpandEnvironmentVariables(raw));
+                }
+            }
+            catch
+            {
+                // Some shortcuts omit icon location; fall back to the target.
+            }
+
+            var targetPath = ReadTargetPath(shellLink);
+            if (string.IsNullOrEmpty(customIconPath) && string.IsNullOrEmpty(targetPath))
+            {
+                return null;
+            }
+
+            return new LnkIconSource(customIconPath, customIconIndex, targetPath);
+        }
+        catch
+        {
+            return null;
+        }
+        finally
+        {
+            Marshal.ReleaseComObject(shellLink);
+        }
+    }
+
+    private static string? ReadTargetPath(IShellLink shellLink)
+    {
+        var targetPath = new StringBuilder(MAX_PATH);
+        if (shellLink.GetPath(targetPath, MAX_PATH, IntPtr.Zero, SLGP_RAWPATH) == 0)
+        {
+            var raw = targetPath.ToString();
+            if (!string.IsNullOrWhiteSpace(raw))
+            {
+                return raw;
+            }
+        }
+
+        targetPath.Clear();
+        if (shellLink.GetPath(targetPath, MAX_PATH, IntPtr.Zero, 0) == 0)
+        {
+            var raw = targetPath.ToString();
+            return string.IsNullOrWhiteSpace(raw) ? null : raw;
+        }
+
+        return null;
+    }
+
+    private static string ResolveIconPath(string lnkPath, string iconPath)
+    {
+        if (Path.IsPathRooted(iconPath))
+        {
+            return iconPath;
+        }
+
+        var lnkDirectory = Path.GetDirectoryName(lnkPath);
+        return string.IsNullOrEmpty(lnkDirectory)
+            ? iconPath
+            : Path.GetFullPath(Path.Combine(lnkDirectory, iconPath));
+    }
+
+    /// <summary>
     /// 解析.lnk文件，获取目标程序所在的目录
     /// </summary>
     /// <param name="lnkPath">.lnk文件的完整路径</param>
@@ -64,6 +152,7 @@ public static class LnkParser
     private const int MAX_PATH = 260;
     private const uint STGM_READ = 0x00000000;
     private const uint SLGP_SHORTPATH = 0x00000001;
+    private const uint SLGP_RAWPATH = 0x00000004;
 
     // COM接口定义（用于解析.lnk文件）
     [ComImport]
@@ -113,4 +202,9 @@ public static class LnkParser
         [PreserveSig]
         int GetCurFile(out string ppszFileName);
     }
+}
+
+public sealed record LnkIconSource(string? CustomIconPath, int CustomIconIndex, string? TargetPath)
+{
+    public bool HasCustomIcon => !string.IsNullOrWhiteSpace(CustomIconPath);
 }

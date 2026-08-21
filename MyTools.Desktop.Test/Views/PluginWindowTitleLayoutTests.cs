@@ -148,7 +148,7 @@ public class PluginWindowTitleLayoutTests
         var pluginVersionTextBlock = (TextBlock?)window.FindName("PluginVersionTextBlock");
         var statusBarContentGrid = (Grid?)window.FindName("StatusBarContentGrid");
         var statusTextBlock = (TextBlock?)window.FindName("StatusTextBlock");
-        var statusActions = (ItemsControl?)window.FindName("StatusActions");
+        var statusActions = (FrameworkElement?)window.FindName("StatusActions");
 
         Assert.Multiple(() =>
         {

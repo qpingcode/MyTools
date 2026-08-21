@@ -28,10 +28,10 @@ namespace MyTools.Desktop.Views
             DataContext = viewModel;
 
             SearchTextBox.PreviewKeyDown += SearchTextBox_PreviewKeyDown;
-            SearchTextBox.PreviewKeyDown += (s, e) => viewModel.HandlePreviewKeyDown(e);
+            SearchTextBox.PreviewKeyDown += SearchTextBox_HandleViewModelPreviewKeyDown;
             SearchTextBox.Focus();
 
-            PreviewKeyDown += (s, e) => viewModel.HandlePreviewKeyDown(e);
+            PreviewKeyDown += Window_HandlePreviewKeyDown;
             PreviewKeyUp += (sender, e) => viewModel.HandlePreviewKeyUp(e);;
             KeyDown += Window_KeyDown;
             Closed += Window_OnClosed;
@@ -113,6 +113,26 @@ namespace MyTools.Desktop.Views
                     break;
                 }
             }
+        }
+
+        private void Window_HandlePreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (ResultActionBar.TryHandleOverflowHotkey(e, StatusActionBar))
+            {
+                return;
+            }
+
+            viewModel.HandlePreviewKeyDown(e);
+        }
+
+        private void SearchTextBox_HandleViewModelPreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Handled)
+            {
+                return;
+            }
+
+            viewModel.HandlePreviewKeyDown(e);
         }
 
         private async void SearchTextBox_PreviewKeyDown(object sender, KeyEventArgs e)

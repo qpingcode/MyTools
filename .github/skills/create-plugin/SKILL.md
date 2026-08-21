@@ -180,23 +180,58 @@ plugin
 
 搜索 item：
 
-```ts
+```json
 {
   id: "my-plugin:item-1",
   title: "...",
   subtitle: "...",
   priority: 100,
-  icon: { kind: "emoji", value: "🌐" },
+  icon: { kind: "mdi", value: "mdi-hand-wave-outline" },
   actions: [
     { id: "open-detail", title: "Open", kind: "detail", description: "..." },
-  ],
+  ]
 }
 ```
 
+- `icon.kind`：`emoji` 显示 emoji；`mdi`（或 `value` 以 `mdi-` 开头）在 **SearchWindow / 原生列表** 里用宿主内嵌的 Material Design Icons 画图标。Settings 侧栏仍用顶层 `plugin.json` 的 `icon`。
 - `initialize` 的 params 是 `{ locale, fallbackLocale, messages, theme }`（`PluginInitializeParams`）。`theme` 为 `"light"` | `"dark"`，不含 CSS token。`mytoolsI18n.configure(params)` 装进 i18n。
 - `search` 的 params 是 `{ query, mode, locale, fallbackLocale, theme }`（`PluginSearchParams`）。`mode` 为 `"global"` | `"plugin"`：全局搜索（无关键词）为 `"global"`，用户输入 `keyword + 查询串` 进入该插件时为 `"plugin"`。返回 `{ items }`。
-- `action` 的 params 是 `{ itemId, actionId, query, locale, fallbackLocale, theme }`（`PluginActionParams`）。返回 `{ message, actionType, detail? }`。
-- 搜索 item 的 `actions[].kind`：`copy` 复制到剪贴板；`copyAndPaste` 复制并粘贴到之前聚焦的窗口（需提供 `copyText`）；`detail` 打开 Web 详情页；`run` / `kill` 见现有插件。
+- `action` 的 params 是 `{ itemId, actionId, query, locale, fallbackLocale, theme }`（`PluginActionParams`）。返回 `{ message, actionType, detail?, hostAction? }`。
+- 搜索 item 的 `actions[].kind` 分两类：
+
+**宿主 well-known（不调用插件 `action`，由 MyTools 进程执行）**
+
+| kind | 宿主动作 | 参数从哪来 |
+| --- | --- | --- |
+| `copy` | 复制到剪贴板 | item.`copyText`，否则 title |
+| `copyAndPaste` | 复制并粘贴到先前窗口 | 同上 |
+| `execute` | 用宿主 Shell 打开程序/文件（脱离插件 Job，MyTools 退出后子进程仍在） | item.`path` + 可选 `args`，否则 `copyText` |
+| `openInExplorer` | 资源管理器中定位 | `path` / `copyText` |
+| `openInBrowser` | 默认浏览器打开 URL | `path` / `copyText` |
+| `kill` | 结束进程 | `copyText` 为 PID |
+
+**插件自己处理**
+
+| kind | 行为 |
+| --- | --- |
+| `detail` | 调用插件 `action`，可返回 `detail` 打开 Web 详情页 |
+| 其它（如 Open Path 的 `open`） | 调用插件 `action` 做计算 |
+
+若目标路径要在按下 Enter 之后才算出来（剪贴板、找 `.sln` 等），**不要在 Node 里 `spawn`/`exec`**。插件 Job 开了 kill-on-close，MyTools 退出会把子进程一起杀掉。插件算完后返回 `hostAction`，由宿主 `execute`：
+
+```ts
+return {
+  message: "Opened Rider with D:\\work\\app.sln",
+  actionType: "close",
+  hostAction: {
+    kind: "execute",
+    path: "C:\\...\\rider64.exe",
+    args: "\"D:\\work\\app.sln\"",
+  },
+};
+```
+
+`hostAction.kind` 同表中的 well-known（常用 `execute`）。参考 `hello-search`（`mdi` 图标）和 `openpath`（`hostAction`）。
 - `handle(name, fn)` 给详情页 `bus.call(name)` 用。`context` 有 `action / itemId / query / locale / fallbackLocale / theme`（由宿主注入，页面不必带）。
 - 纯前端工具（如 json-formatter）可以只有 `initialize/search/action`，不注册 `handle`。
 - 环境变量从 `process.env` 读。`start()` 连宿主 Named Pipe，不要自己读 stdin。

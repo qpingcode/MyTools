@@ -44,6 +44,8 @@ internal sealed class NodePluginSearchItem
     public NodePluginIconDto? Icon { get; init; }
     public List<NodePluginActionDto> Actions { get; init; } = [];
     public string? CopyText { get; init; }
+    public string? Path { get; init; }
+    public string? Args { get; init; }
 }
 
 internal sealed class NodePluginIconDto
@@ -65,6 +67,14 @@ internal sealed class NodePluginActionResponse
     public string Message { get; init; } = string.Empty;
     public string ActionType { get; init; } = "none";
     public NodePluginDetailViewDto? Detail { get; init; }
+    public NodePluginHostActionDto? HostAction { get; init; }
+}
+
+internal sealed class NodePluginHostActionDto
+{
+    public string Kind { get; init; } = "execute";
+    public string Path { get; init; } = string.Empty;
+    public string Args { get; init; } = string.Empty;
 }
 
 internal sealed class NodePluginDetailViewDto

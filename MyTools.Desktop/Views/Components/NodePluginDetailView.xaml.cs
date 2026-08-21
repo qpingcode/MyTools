@@ -596,8 +596,11 @@ public partial class NodePluginDetailView : UserControl
     {
         if (!browserReady || _webTransport is not { IsHandshaken: true })
         {
-            StaticLogger.LogWarning(
-                "SendHostEvent: dropped (browserReady={BrowserReady}, handshaken={Handshaken}), route={Route}",
+            // Expected while the plugin window is still loading: SetContext / DataContextChanged
+            // can raise CurrentQuery before WebView2 navigation and protocol handshake finish.
+            // TrySendPageReadyMessages() resends initialize + search once both are ready.
+            StaticLogger.LogDebug(
+                "SendHostEvent: deferred (browserReady={BrowserReady}, handshaken={Handshaken}), route={Route}",
                 browserReady, _webTransport?.IsHandshaken == true, route);
             return;
         }
