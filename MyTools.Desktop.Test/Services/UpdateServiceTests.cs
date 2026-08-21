@@ -27,11 +27,9 @@ public class UpdateServiceTests
     [TestCase(null, "stable")]
     [TestCase("", "stable")]
     [TestCase("   ", "stable")]
-    [TestCase("win", "stable")]
-    [TestCase("WIN", "stable")]
     [TestCase("stable", "stable")]
     [TestCase("beta", "beta")]
-    public void ResolveChannel_NormalizesKnownAliases(string? channel, string expected)
+    public void ResolveChannel_UsesSettingOrDefault(string? channel, string expected)
     {
         Assert.That(UpdateService.ResolveChannel(channel), Is.EqualTo(expected));
     }
@@ -162,7 +160,7 @@ public class UpdateServiceTests
         registry.Setup(x => x.FindSetting("General.UpdateUrl"))
             .Returns(CreateStringSetting(TestContext.CurrentContext.WorkDirectory));
         registry.Setup(x => x.FindSetting("General.UpdateChannel"))
-            .Returns(CreateStringSetting("win"));
+            .Returns(CreateStringSetting("stable"));
         var service = CreateService(registry);
 
         var result = await service.CheckForUpdatesAsync();

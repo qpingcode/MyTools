@@ -35,7 +35,7 @@ MyTools is published on two channels:
 <!-- mytools-downloads:end -->
 
 
-Stable is the recommended channel. Push a git tag named `release-YYYY-MM-DD` (for example `release-2026-08-21`) to publish a stable build. Every push to `main` publishes a beta. In Settings, set **Update channel** to `stable` or `beta` to receive in-app updates from that channel.
+Stable is the recommended channel. Push a git tag named `release-YYYY-MM-DD` (for example `release-2026-08-21`) to publish a stable build. Every push to `main` publishes a beta. In Settings, set **Update channel** to `stable` or `beta`.
 
 A portable package can be extracted and run as `MyTools.Desktop.exe`. Portable installations do not support in-app Velopack updates.
 

@@ -4,6 +4,7 @@ using System.Reflection;
 using Microsoft.Extensions.Logging;
 using MyTools.Common.Config.Interfaces;
 using Velopack;
+using Velopack.Exceptions;
 using Velopack.Locators;
 using Velopack.Sources;
 
@@ -85,21 +86,24 @@ public sealed class UpdateService(
             }
 
             var channel = ResolveChannel(GetStringSetting(UpdateChannelSettingPath));
+            var includePrereleases = IncludeGitHubPrereleases(channel);
             var options = new UpdateOptions
             {
-                ExplicitChannel = channel
+                ExplicitChannel = channel,
+                AllowVersionDowngrade = true
             };
             var proxyUri = ParseProxyUri(GetStringSetting(UpdateProxyUrlSettingPath));
-            var updateManager = CreateUpdateManager(updateUrl, options, proxyUri, IncludeGitHubPrereleases(channel));
+            var updateManager = CreateUpdateManager(updateUrl, options, proxyUri, includePrereleases);
             if (!updateManager.IsInstalled)
             {
                 return new UpdateCheckResult(UpdateCheckStatus.NotInstalled);
             }
 
             logger.LogInformation(
-                "Checking the configured update source on channel {Channel} ({ConnectionMode}).",
+                "Checking the configured update source on channel {Channel} ({ConnectionMode}, prerelease={IncludePrereleases}).",
                 options.ExplicitChannel,
-                proxyUri == null ? "direct connection" : "proxy");
+                proxyUri == null ? "direct connection" : "proxy",
+                includePrereleases);
             cancellationToken.ThrowIfCancellationRequested();
 
             // Velopack's CheckForUpdatesAsync does not honor our cancellation token, so race it
@@ -115,7 +119,15 @@ public sealed class UpdateService(
                 cancellationToken.ThrowIfCancellationRequested();
             }
 
-            var update = await checkTask;
+            UpdateInfo? update;
+            try
+            {
+                update = await checkTask;
+            }
+            catch (NotInstalledException)
+            {
+                return new UpdateCheckResult(UpdateCheckStatus.NotInstalled);
+            }
             cancellationToken.ThrowIfCancellationRequested();
             if (update == null)
             {
@@ -178,10 +190,7 @@ public sealed class UpdateService(
             return DefaultChannel;
         }
 
-        var trimmed = channel.Trim();
-        return trimmed.Equals("win", StringComparison.OrdinalIgnoreCase)
-            ? DefaultChannel
-            : trimmed;
+        return channel.Trim();
     }
 
     internal static bool IncludeGitHubPrereleases(string channel)

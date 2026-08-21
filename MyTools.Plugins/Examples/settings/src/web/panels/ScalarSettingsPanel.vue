@@ -216,6 +216,7 @@ function onHotKey(setting: Setting, value: string | null): void {
     font-size: 13px;
     line-height: 1.45;
     color: var(--mt-text-tertiary, #aaaaaa);
+    white-space: pre-line;
 }
 
 .setting-control {
