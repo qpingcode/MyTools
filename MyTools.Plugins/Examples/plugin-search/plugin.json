@@ -1,0 +1,26 @@
+{
+  "id": "plugin-search",
+  "version": "0.1.0",
+  "protocolVersion": "3.0",
+  "icon": "mdi-puzzle-outline",
+  "i18n": {
+    "defaultLocale": "en-US",
+    "catalog": "i18n/catalog.en-US.json",
+    "localesPath": "i18n/locales",
+    "supportedLocales": ["en-US", "zh-CN"]
+  },
+  "entries": [
+    {
+      "id": "plugin-search",
+      "name": {
+        "key": "Plugin.PluginSearch.Name",
+        "defaultValue": "Plugin Search"
+      },
+      "entry": "backend/index.mjs",
+      "capabilities": ["plugins.list"],
+      "alias": [],
+      "search": { "global": true },
+      "detail": { "type": "list" }
+    }
+  ]
+}

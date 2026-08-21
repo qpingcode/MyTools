@@ -1,0 +1,7 @@
+{
+  "Plugin.PluginSearch.Name": "插件搜索",
+  "Plugin.PluginSearch.Description": "按名称、热键或别名搜索已安装的插件",
+  "Plugin.PluginSearch.Result.Subtitle": "热键：{{hotKey}}    别名：{{alias}}",
+  "Plugin.PluginSearch.Action.Open": "打开插件",
+  "Plugin.PluginSearch.Action.OpenDescription": "打开插件窗口"
+}

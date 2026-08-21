@@ -19,6 +19,8 @@ public class NodePluginWellKnownActionsTest
             Assert.That(NodePluginWellKnownActions.Resolve("execute"), Is.SameAs(WellKnownActions.Execute));
             Assert.That(NodePluginWellKnownActions.Resolve("openInExplorer"), Is.SameAs(WellKnownActions.OpenInExplorer));
             Assert.That(NodePluginWellKnownActions.Resolve("openInBrowser"), Is.SameAs(WellKnownActions.OpenInBrowser));
+            Assert.That(NodePluginWellKnownActions.Resolve("openPlugin"), Is.SameAs(WellKnownActions.OpenPlugin));
+            Assert.That(NodePluginWellKnownActions.Resolve("open-plugin"), Is.SameAs(WellKnownActions.OpenPlugin));
             Assert.That(NodePluginWellKnownActions.Resolve("detail"), Is.Null);
             Assert.That(NodePluginWellKnownActions.IsWellKnown("run"), Is.True);
             Assert.That(NodePluginWellKnownActions.IsWellKnown("open"), Is.False);
@@ -57,5 +59,21 @@ public class NodePluginWellKnownActionsTest
 
         Assert.That(args, Is.InstanceOf<IActionStringParam>());
         Assert.That(((IActionStringParam)args).GetValue(), Is.EqualTo("hello"));
+    }
+
+    [Test]
+    public void CreateParams_OpenPlugin_UsesPath()
+    {
+        var args = NodePluginWellKnownActions.CreateParams(
+            "openPlugin",
+            path: "settings:settings",
+            args: null,
+            copyText: null,
+            itemId: "plugin-search:settings",
+            title: "Settings",
+            query: "");
+
+        Assert.That(args, Is.InstanceOf<IActionStringParam>());
+        Assert.That(((IActionStringParam)args).GetValue(), Is.EqualTo("settings:settings"));
     }
 }

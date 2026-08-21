@@ -135,6 +135,20 @@ public class PluginManifestV3RuntimeFieldsTest
     }
 
     [Test]
+    public void Deserialize_ShouldReadSearchEngineConfiguration()
+    {
+        var searchEngine = LoadExampleV3("search-engine");
+        Assert.That(searchEngine.Icon, Is.EqualTo("mdi-web"));
+        Assert.That(searchEngine.Configuration, Has.Count.EqualTo(1));
+        Assert.That(searchEngine.Configuration[0].Key, Is.EqualTo("Engines"));
+        Assert.That(searchEngine.Configuration[0].Type, Is.EqualTo("array"));
+        Assert.That(searchEngine.Configuration[0].Schema!.Properties.Select(property => property.Key),
+            Is.EquivalentTo(new[] { "name", "url", "shortcut" }));
+        Assert.That(searchEngine.Entries[0].Capabilities, Is.EquivalentTo(new[] { "configuration.readOwn" }));
+        Assert.That(searchEngine.Entries[0].Search!.Global, Is.True);
+    }
+
+    [Test]
     public void Deserialize_ShouldReadOpenPathConfiguration()
     {
         var openPath = LoadExampleV3("openpath");
@@ -147,5 +161,17 @@ public class PluginManifestV3RuntimeFieldsTest
         Assert.That(openPath.Configuration.Select(item => item.Type), Is.All.EqualTo("path"));
         Assert.That(openPath.Configuration.Select(item => item.UiHint), Is.All.EqualTo("fileOrDirectory"));
         Assert.That(openPath.Entries[0].Capabilities, Is.EquivalentTo(new[] { "configuration.readOwn" }));
+    }
+
+    [Test]
+    public void Deserialize_ShouldReadPluginSearchManifest()
+    {
+        var pluginSearch = LoadExampleV3("plugin-search");
+        Assert.That(pluginSearch.Icon, Is.EqualTo("mdi-puzzle-outline"));
+        Assert.That(pluginSearch.Entries[0].Capabilities, Is.EquivalentTo(new[] { "plugins.list" }));
+        Assert.That(pluginSearch.Entries[0].Search!.Global, Is.True);
+        Assert.That(pluginSearch.Entries[0].Keywords, Is.Empty);
+        Assert.That(pluginSearch.Entries[0].HotKey, Is.Null.Or.Empty);
+        Assert.That(pluginSearch.Entries[0].Detail!.Type, Is.EqualTo("list"));
     }
 }

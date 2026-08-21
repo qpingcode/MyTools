@@ -150,6 +150,13 @@
   <data name="Action.KillProcess.InvalidParameters" xml:space="preserve"><value>结束进程操作的参数无效</value></data>
   <data name="Action.KillProcess.Success" xml:space="preserve"><value>进程 {{processName}}（PID：{{processId}}）已成功终止</value></data>
   <data name="Action.KillProcess.Failed" xml:space="preserve"><value>结束进程失败：{{message}}</value></data>
+  <data name="Action.OpenPlugin.Name" xml:space="preserve"><value>打开插件</value></data>
+  <data name="Action.OpenPlugin.Description" xml:space="preserve"><value>打开插件窗口</value></data>
+  <data name="Action.OpenPlugin.InvalidParameters" xml:space="preserve"><value>打开插件操作的参数无效</value></data>
+  <data name="Action.OpenPlugin.EmptyId" xml:space="preserve"><value>插件 ID 为空</value></data>
+  <data name="Action.OpenPlugin.NotFound" xml:space="preserve"><value>未找到插件：{{pluginId}}</value></data>
+  <data name="Action.OpenPlugin.Success" xml:space="preserve"><value>已打开 {{pluginId}}</value></data>
+  <data name="Action.OpenPlugin.Failed" xml:space="preserve"><value>打开插件失败：{{message}}</value></data>
   <data name="Action.ExecuteFailed.Title" xml:space="preserve"><value>操作执行失败</value></data>
   <data name="Action.ExecuteFailed.Message" xml:space="preserve"><value>无法执行“{{action}}”：{{message}}</value></data>
   <data name="UpdateDownloadAndRestart" xml:space="preserve"><value>下载并重启</value></data>

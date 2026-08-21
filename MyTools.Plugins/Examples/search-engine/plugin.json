@@ -1,0 +1,99 @@
+{
+  "id": "search-engine",
+  "version": "0.1.0",
+  "protocolVersion": "3.0",
+  "icon": "mdi-web",
+  "i18n": {
+    "defaultLocale": "en-US",
+    "catalog": "i18n/catalog.en-US.json",
+    "localesPath": "i18n/locales",
+    "supportedLocales": ["en-US", "zh-CN"]
+  },
+  "configuration": [
+    {
+      "key": "Engines",
+      "label": {
+        "key": "Plugin.SearchEngine.Setting.Engines",
+        "defaultValue": "Search engines"
+      },
+      "description": {
+        "key": "Plugin.SearchEngine.Setting.Engines.Description",
+        "defaultValue": "Search engines shown in global search. Put {query} in the URL; multiple URLs go on separate lines."
+      },
+      "type": "array",
+      "defaultValue": [
+        {
+          "name": "GitHub",
+          "url": "https://github.com/search?q=org%3AWiseTechGlobal+{query}&type=code"
+        },
+        {
+          "name": "Devops Code",
+          "url": "https://devops.wisetechglobal.com/wtg/_search?text={query}&type=code"
+        },
+        {
+          "name": "Devops Wiki",
+          "url": "https://devops.wisetechglobal.com/wtg/_search?text={query}&type=wiki"
+        },
+        {
+          "name": "ediprod",
+          "url": "edient:Command=ShortCode&Id={query}&Type=WI"
+        },
+        {
+          "name": "Aggregate",
+          "url": "https://devops.wisetechglobal.com/wtg/_search?action=contents&text={query}&type=code\nhttps://github.com/search?q=org%3AWiseTechGlobal+{query}&type=code"
+        },
+        {
+          "name": "Google",
+          "url": "https://www.google.com/search?q={query}",
+          "shortcut": "gg"
+        }
+      ],
+      "uiHint": "table",
+      "schema": {
+        "properties": [
+          {
+            "key": "name",
+            "type": "string",
+            "label": {
+              "key": "Plugin.SearchEngine.Column.Name",
+              "defaultValue": "Name"
+            },
+            "uiHint": "input"
+          },
+          {
+            "key": "url",
+            "type": "string",
+            "label": {
+              "key": "Plugin.SearchEngine.Column.Url",
+              "defaultValue": "URL"
+            },
+            "uiHint": "textarea"
+          },
+          {
+            "key": "shortcut",
+            "type": "string",
+            "label": {
+              "key": "Plugin.SearchEngine.Column.Shortcut",
+              "defaultValue": "Shortcut"
+            },
+            "uiHint": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "entries": [
+    {
+      "id": "search-engine",
+      "name": {
+        "key": "Plugin.SearchEngine.Name",
+        "defaultValue": "Web Search"
+      },
+      "entry": "backend/index.mjs",
+      "capabilities": ["configuration.readOwn"],
+      "alias": [],
+      "search": { "global": true },
+      "detail": { "type": "list" }
+    }
+  ]
+}
