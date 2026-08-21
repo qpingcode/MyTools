@@ -3,7 +3,6 @@ using MyTools.Common;
 using MyTools.Common.Config;
 using MyTools.Common.Plugins;
 using MyTools.Plugins.Param;
-using MyTools.Plugins.Translator;
 using Newtonsoft.Json;
 
 namespace MyTools.Plugins;
@@ -29,31 +28,15 @@ public sealed class SearchEnginePlugin : PluginBase, IPlugin
 
         var items = _searchEngines.Select(engine =>
         {
-            var engineQuery = TryTranslateQuery(query, engine);
             return new ResultItem(
                 _icon,
-                $"Search {engine.Name}: {engineQuery} ",
+                $"Search {engine.Name}: {query} ",
                 $"Search using {engine.Name}",
-                ActionStringParam.From(GetUrl(engine, engineQuery)),
+                ActionStringParam.From(GetUrl(engine, query)),
                 ResultItemPriorities.Low);
         });
         var result = Result.CreateSuccessResult(items);
         return Task.FromResult(result);
-    }
-
-    private string TryTranslateQuery(string query, SearchEngineConfig engine)
-    {
-        if (engine.Url?.StartsWith("https://github.com") == true)
-        {
-            return GithubTranslator.Translate(query);
-        }
-
-        if (engine.Url?.StartsWith("https://devops.wisetechglobal.com/") == true)
-        {
-            return DevopsTranslator.Translate(query);
-        }
-
-        return query;
     }
 
     private string GetUrl(SearchEngineConfig engineConfig, string query)

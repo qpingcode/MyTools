@@ -1,8 +1,8 @@
 using System.Windows;
 using MyTools.Common.DependencyInjection;
+using MyTools.Desktop.Services;
 using MyTools.Desktop.Views;
 using MyTools.Plugins;
-using MyTools.Plugins.NodePlugins;
 
 namespace MyTools.Desktop.Utils;
 
@@ -32,10 +32,14 @@ public static class WindowHelper
         }
 
         var searchWindow = ServiceLocator.GetRequiredService<SearchWindow>();
+        var placement = ServiceLocator.GetRequiredService<WindowPlacementService>();
         if (plugin != null)
         {
             searchWindow.SetPluginWindow(plugin);
         }
+
+        placement.Restore(searchWindow, WindowPlacementService.SearchKey);
+        placement.Track(searchWindow, WindowPlacementService.SearchKey);
 
         var searchText = text ?? previousSearchText;
         searchWindow.Show();

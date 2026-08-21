@@ -52,6 +52,7 @@ public static class DesktopServiceCollectionExtensions
         serviceCollection.AddTransient<PluginWindow>();
         serviceCollection.AddTransient<PluginViewModel>();
         serviceCollection.AddSingleton<PluginWindowManager>();
+        serviceCollection.AddSingleton<WindowPlacementService>();
         
         // services
         serviceCollection.AddSingleton<AppConfigService>();

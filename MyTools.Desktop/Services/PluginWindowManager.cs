@@ -14,10 +14,12 @@ public sealed class PluginWindowManager
 {
     private readonly Dictionary<string, PluginWindow> windows = new();
     private readonly IServiceProvider serviceProvider;
+    private readonly WindowPlacementService windowPlacement;
 
-    public PluginWindowManager(IServiceProvider serviceProvider)
+    public PluginWindowManager(IServiceProvider serviceProvider, WindowPlacementService windowPlacement)
     {
         this.serviceProvider = serviceProvider;
+        this.windowPlacement = windowPlacement;
     }
 
     /// <summary>
@@ -35,6 +37,9 @@ public sealed class PluginWindowManager
         var window = serviceProvider.GetRequiredService<PluginWindow>();
         window.Closed += (_, _) => windows.Remove(plugin.PluginId);
         window.SetPlugin(plugin, context);
+        var placementKey = WindowPlacementService.PluginKey(plugin.PluginId);
+        windowPlacement.Restore(window, placementKey);
+        windowPlacement.Track(window, placementKey);
         window.Show();
         _ = window.ActivatePluginAsync();
 
