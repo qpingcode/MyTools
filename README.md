@@ -31,8 +31,9 @@ MyTools is published on two channels:
 | Channel | Version | Installer (full setup) | Portable |
 | --- | --- | --- | --- |
 | **Stable** | — | Not published yet | Not published yet |
-| **Beta** | — | Not published yet | Not published yet |
+| **Beta** | 0.0.1 | [Download](https://github.com/qpingcode/MyTools/releases/download/v0.0.1/MyTools-0.0.1-windows-x64-setup.exe) | [Download](https://github.com/qpingcode/MyTools/releases/download/v0.0.1/MyTools-0.0.1-windows-x64-portable.zip) |
 <!-- mytools-downloads:end -->
+
 
 Stable is the recommended channel. Push a git tag named `release-YYYY-MM-DD` (for example `release-2026-08-21`) to publish a stable build. Every push to `main` publishes a beta. In Settings, set **Update channel** to `stable` or `beta` to receive in-app updates from that channel.
 

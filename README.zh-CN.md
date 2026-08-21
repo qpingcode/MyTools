@@ -31,8 +31,9 @@ MyTools 提供两个发布通道：
 | 通道 | 版本 | 完整安装包 | 便携版 |
 | --- | --- | --- | --- |
 | **Stable** | — | 尚未发布 | 尚未发布 |
-| **Beta** | — | 尚未发布 | 尚未发布 |
+| **Beta** | 0.0.1 | [下载](https://github.com/qpingcode/MyTools/releases/download/v0.0.1/MyTools-0.0.1-windows-x64-setup.exe) | [下载](https://github.com/qpingcode/MyTools/releases/download/v0.0.1/MyTools-0.0.1-windows-x64-portable.zip) |
 <!-- mytools-downloads:end -->
+
 
 Stable 是推荐通道。推送名为 `release-YYYY-MM-DD` 的 git tag（例如 `release-2026-08-21`）会发布稳定版。每次推送到 `main` 都会发布 Beta。在设置中将 **更新通道** 设为 `stable` 或 `beta`，即可接收对应通道的应用内更新。
 
