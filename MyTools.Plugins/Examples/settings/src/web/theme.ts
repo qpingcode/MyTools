@@ -13,6 +13,10 @@ export function readThemeOverrides(): GlobalThemeOverrides {
 
     return {
         common: {
+            fontFamily: cssVar(
+                "--mt-font-ui",
+                '"Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif',
+            ),
             primaryColor: accent,
             primaryColorHover: accentHover,
             primaryColorPressed: accentPressed,

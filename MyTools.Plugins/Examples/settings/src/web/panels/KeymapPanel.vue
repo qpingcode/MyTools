@@ -170,15 +170,15 @@ function onPluginHotKeyChange(plugin: KeymapPlugin, value: string | null): void 
 }
 
 .panel-title {
-    font-size: 14px;
-    font-weight: 600;
-    line-height: 1.35;
+    font-size: 20px;
+    font-weight: 650;
+    line-height: 1.3;
     color: var(--mt-text, #fff);
 }
 
 .panel-description {
-    margin-top: 4px;
-    font-size: 13px;
+    margin-top: 6px;
+    font-size: 14px;
     line-height: 1.45;
     color: var(--mt-text-tertiary, #aaaaaa);
 }

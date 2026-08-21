@@ -30,6 +30,7 @@
         </Button.Template>
         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
             <TextBlock Text="{Binding Name}"
+                       FontFamily="{StaticResource UiFontFamily}"
                        FontSize="12"
                        VerticalAlignment="Center"/>
             <components:HotkeyKeycaps Command="{Binding Command}"/>

@@ -66,6 +66,54 @@ public class PluginConfigurationV3Test
     }
 
     [Test]
+    public void Deserialize_ShouldReadSchemaPropertyVisibility()
+    {
+        const string json = """
+            {
+              "id": "command-runner",
+              "version": "0.1.0",
+              "protocolVersion": "3.0",
+              "configuration": [
+                {
+                  "key": "Commands",
+                  "type": "array",
+                  "schema": {
+                    "properties": [
+                      { "key": "name", "type": "string" },
+                      { "key": "isBashScript", "type": "bool" },
+                      {
+                        "key": "command",
+                        "type": "string",
+                        "table": false,
+                        "visibility": "${isBashScript == false}"
+                      },
+                      {
+                        "key": "scripts",
+                        "type": "string",
+                        "table": false,
+                        "visibility": "${isBashScript == true}"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "entries": [{ "id": "command-runner", "entry": "backend/index.mjs" }]
+            }
+            """;
+
+        var m = JsonSerializer.Deserialize<PluginManifestV3>(json, ProtocolJsonOptions.Default)!;
+        var schema = m.Configuration[0].Schema!;
+
+        Assert.That(schema.Properties.Single(property => property.Key == "command").Visibility,
+            Is.EqualTo("${isBashScript == false}"));
+        Assert.That(schema.Properties.Single(property => property.Key == "scripts").Visibility,
+            Is.EqualTo("${isBashScript == true}"));
+        Assert.That(schema.Properties.Single(property => property.Key == "command").Table, Is.False);
+        Assert.That(schema.Properties.Single(property => property.Key == "name").Table, Is.True);
+        Assert.That(PluginManifestV3Validator.Validate(m).IsValid, Is.True);
+    }
+
+    [Test]
     public void Deserialize_ShouldReadVisibilityCondition()
     {
         const string json = """
@@ -89,6 +137,85 @@ public class PluginConfigurationV3Test
 
         Assert.That(m.Configuration[1].Visibility, Is.EqualTo("${ChromeEnabled == true}"));
         Assert.That(PluginManifestV3Validator.Validate(m).IsValid, Is.True);
+    }
+
+    [Test]
+    public void Deserialize_ShouldReadHeadingWithoutKey()
+    {
+        const string json = """
+            {
+              "id": "command-runner",
+              "version": "0.1.0",
+              "protocolVersion": "3.0",
+              "configuration": [
+                {
+                  "label": { "key": "Plugin.CommandRunner.Name", "defaultValue": "Custom Commands" },
+                  "description": { "key": "d", "defaultValue": "Configure commands." },
+                  "type": "h1"
+                },
+                {
+                  "key": "Commands",
+                  "type": "array",
+                  "schema": { "properties": [{ "key": "name", "type": "string" }] }
+                }
+              ],
+              "entries": [{ "id": "command-runner", "entry": "backend/index.mjs" }]
+            }
+            """;
+
+        var m = JsonSerializer.Deserialize<PluginManifestV3>(json, ProtocolJsonOptions.Default)!;
+
+        Assert.That(m.Configuration[0].Type, Is.EqualTo("h1"));
+        Assert.That(m.Configuration[0].Key, Is.Null.Or.Empty);
+        Assert.That(m.Configuration[0].Label?.DefaultValue, Is.EqualTo("Custom Commands"));
+        Assert.That(PluginManifestV3Validator.Validate(m).IsValid, Is.True);
+    }
+
+    [Test]
+    public void Validate_HeadingWithSchema_ShouldFail()
+    {
+        var m = new PluginManifestV3
+        {
+            Id = "p",
+            ProtocolVersion = "3.0",
+            Entries = [new() { Id = "main", Entry = "index.mjs" }],
+            Configuration =
+            [
+                new()
+                {
+                    Type = "h2",
+                    Schema = new PluginConfigurationSchemaV3
+                    {
+                        Properties = [new() { Key = "name", Type = "string" }]
+                    }
+                }
+            ]
+        };
+
+        var result = PluginManifestV3Validator.Validate(m);
+
+        Assert.That(result.IsValid, Is.False);
+        Assert.That(result.Error!.Message, Does.Contain("heading"));
+    }
+
+    [Test]
+    public void Validate_SettingWithoutKey_ShouldFail()
+    {
+        var m = new PluginManifestV3
+        {
+            Id = "p",
+            ProtocolVersion = "3.0",
+            Entries = [new() { Id = "main", Entry = "index.mjs" }],
+            Configuration =
+            [
+                new() { Type = "bool" }
+            ]
+        };
+
+        var result = PluginManifestV3Validator.Validate(m);
+
+        Assert.That(result.IsValid, Is.False);
+        Assert.That(result.Error!.Message, Does.Contain("missing key"));
     }
 
     [Test]

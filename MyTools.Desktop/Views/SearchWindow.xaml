@@ -15,12 +15,14 @@
         Background="Transparent"
         AllowsTransparency="True"
         WindowStyle="None"
-        ResizeMode="CanResizeWithGrip">
+        ResizeMode="CanResizeWithGrip"
+        FontFamily="{StaticResource UiFontFamily}">
     <Window.Resources>
         <converters:IsNullToVisibilityConverter x:Key="IsNullToVisibilityConverter" />
 
         <Style x:Key="ModernTextBox"
                TargetType="TextBox">
+            <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
             <Setter Property="Background"
                     Value="Transparent" />
             <Setter Property="Foreground"
@@ -37,6 +39,7 @@
 
         <Style x:Key="ModernButton"
                TargetType="Button">
+            <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
             <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}" />
             <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
             <Setter Property="BorderThickness" Value="0" />

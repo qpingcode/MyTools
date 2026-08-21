@@ -31,6 +31,7 @@ public partial class ConfigurationSetting : ObservableObject
     public string? Visibility { get; set; }
     public SettingSchema? Schema { get; set; }
     public bool IsVisible => (Options & SettingOptions.Hidden) != 0;
+    public bool IsDisplayOnly => (Options & SettingOptions.DisplayOnly) != 0;
     public bool IsDirty { get; set; }
 
     public string FullPath => Category != null ? $"{Category.FullPath}.{Name}" : Name;

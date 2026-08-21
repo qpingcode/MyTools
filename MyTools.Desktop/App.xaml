@@ -9,6 +9,70 @@
                 <ResourceDictionary Source="pack://application:,,,/Themes/Shared.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/Themes/Dark.xaml" />
             </ResourceDictionary.MergedDictionaries>
+
+            <!--
+                Override the theme's system font keys here (not in a merged dictionary).
+                Putting {x:Static SystemFonts.*Key} in Shared.xaml crashes BAML load.
+            -->
+            <FontFamily x:Key="{x:Static SystemFonts.MessageFontFamilyKey}">Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI, Microsoft YaHei</FontFamily>
+            <FontFamily x:Key="{x:Static SystemFonts.CaptionFontFamilyKey}">Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI, Microsoft YaHei</FontFamily>
+            <FontFamily x:Key="{x:Static SystemFonts.SmallCaptionFontFamilyKey}">Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI, Microsoft YaHei</FontFamily>
+            <FontFamily x:Key="{x:Static SystemFonts.MenuFontFamilyKey}">Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI, Microsoft YaHei</FontFamily>
+            <FontFamily x:Key="{x:Static SystemFonts.StatusFontFamilyKey}">Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI, Microsoft YaHei</FontFamily>
+            <FontFamily x:Key="{x:Static SystemFonts.IconFontFamilyKey}">Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI, Microsoft YaHei</FontFamily>
+
+            <!--
+                Only types without a complex theme ControlTemplate. An implicit style
+                replaces the theme style, so Button/MenuItem/TextBox must not be listed.
+            -->
+            <Style TargetType="{x:Type Window}">
+                <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
+            </Style>
+            <Style TargetType="{x:Type UserControl}">
+                <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
+            </Style>
+            <Style TargetType="{x:Type TextBlock}">
+                <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
+            </Style>
+            <Style TargetType="{x:Type AccessText}">
+                <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
+            </Style>
+            <Style TargetType="{x:Type Run}">
+                <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
+            </Style>
+            <Style TargetType="{x:Type Hyperlink}">
+                <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
+            </Style>
+            <Style TargetType="{x:Type TextBox}">
+                <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
+            </Style>
+            <Style TargetType="{x:Type PasswordBox}">
+                <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
+            </Style>
+            <Style TargetType="{x:Type Button}">
+                <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
+            </Style>
+            <Style TargetType="{x:Type Label}">
+                <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
+            </Style>
+            <Style TargetType="{x:Type ComboBox}">
+                <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
+            </Style>
+            <Style TargetType="{x:Type ListBox}">
+                <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
+            </Style>
+            <Style TargetType="{x:Type ListBoxItem}">
+                <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
+            </Style>
+            <Style TargetType="{x:Type MenuItem}">
+                <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
+            </Style>
+            <Style TargetType="{x:Type ContextMenu}">
+                <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
+            </Style>
+            <Style TargetType="{x:Type ToolTip}">
+                <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
-</Application> 
+</Application>

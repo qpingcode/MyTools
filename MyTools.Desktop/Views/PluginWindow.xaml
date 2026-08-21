@@ -15,12 +15,14 @@
         Background="Transparent"
         AllowsTransparency="True"
         WindowStyle="None"
-        ResizeMode="CanResizeWithGrip">
+        ResizeMode="CanResizeWithGrip"
+        FontFamily="{StaticResource UiFontFamily}">
     <Window.Resources>
         <converters:IsNullToVisibilityConverter x:Key="IsNullToVisibilityConverter" />
 
         <Style x:Key="ModernButton"
                TargetType="Button">
+            <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
             <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}" />
             <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
             <Setter Property="BorderThickness" Value="0" />
@@ -48,6 +50,7 @@
 
         <Style x:Key="WindowControlButtonStyle"
                TargetType="Button">
+            <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
             <Setter Property="Width" Value="46" />
             <Setter Property="Height" Value="34" />
             <Setter Property="Background" Value="Transparent" />
@@ -185,6 +188,7 @@
                         <TextBlock x:Name="PluginVersionTextBlock"
                                   DockPanel.Dock="Right"
                                   Text="{Binding PluginVersion, StringFormat=v{0}}"
+                                  FontFamily="{StaticResource UiFontFamily}"
                                   Foreground="{DynamicResource TextTertiaryBrush}"
                                   Margin="4,0,0,0"
                                    MaxWidth="160"
@@ -194,6 +198,7 @@
                                    Visibility="{Binding PluginVersion, Converter={StaticResource IsNullToVisibilityConverter}}" />
                         <TextBlock x:Name="PluginNameTextBlock"
                                    Text="{Binding PluginName}"
+                                   FontFamily="{StaticResource UiFontFamily}"
                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontSize="14"
                                    FontWeight="SemiBold"

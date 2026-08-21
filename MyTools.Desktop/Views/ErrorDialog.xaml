@@ -12,10 +12,12 @@
         AllowsTransparency="True"
         WindowStyle="None"
         ResizeMode="CanResizeWithGrip"
-        ShowInTaskbar="False">
+        ShowInTaskbar="False"
+        FontFamily="{StaticResource UiFontFamily}">
     <Window.Resources>
         <Style x:Key="DialogButton"
                TargetType="Button">
+            <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
             <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}" />
             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="BorderThickness" Value="0" />

@@ -11,6 +11,17 @@
   },
   "configuration": [
     {
+      "label": {
+        "key": "Plugin.BrowserSearch.Name",
+        "defaultValue": "Browser Search"
+      },
+      "description": {
+        "key": "Plugin.BrowserSearch.Description",
+        "defaultValue": "Search Chrome, Edge, and Firefox bookmarks and history"
+      },
+      "type": "h1"
+    },
+    {
       "key": "ChromeEnabled",
       "label": {
         "key": "Plugin.BrowserSearch.Setting.ChromeEnabled",

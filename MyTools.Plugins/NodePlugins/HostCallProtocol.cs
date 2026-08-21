@@ -61,6 +61,7 @@ public sealed class SettingSchemaPropertyDto
     public string? DefaultValue { get; init; }
     public bool Hidden { get; init; }
     public bool Table { get; init; } = true;
+    public string? Visibility { get; init; }
 }
 
 public sealed class OptionDto

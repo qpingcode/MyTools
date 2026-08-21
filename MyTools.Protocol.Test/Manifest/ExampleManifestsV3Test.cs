@@ -74,4 +74,25 @@ public class ExampleManifestsV3Test
             "restart"
         }));
     }
+
+    [Test]
+    public void PluginsWithConfiguration_ShouldStartWithH1Heading()
+    {
+        var manifests = FindExampleManifests().ToList();
+        Assert.That(manifests, Is.Not.Empty, "no plugin.json manifests found");
+
+        foreach (var path in manifests)
+        {
+            var m = JsonSerializer.Deserialize<PluginManifestV3>(File.ReadAllText(path), ProtocolJsonOptions.Default)!;
+            if (m.Configuration.Count == 0)
+            {
+                continue;
+            }
+
+            Assert.That(
+                m.Configuration[0].Type,
+                Is.EqualTo("h1").IgnoreCase,
+                $"{Path.GetFileName(Path.GetDirectoryName(path))}/plugin.json configuration must start with type h1");
+        }
+    }
 }

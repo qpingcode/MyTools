@@ -15,6 +15,7 @@ export default defineConfig({
         outDir: path.resolve("dist/web"),
         emptyOutDir: true,
         cssCodeSplit: false,
+        chunkSizeWarningLimit: 2000,
         rollupOptions: {
             output: {
                 entryFileNames: "main.js",

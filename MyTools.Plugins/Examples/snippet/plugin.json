@@ -11,15 +11,18 @@
   },
   "configuration": [
     {
-      "key": "Phrases",
       "label": {
-        "key": "Plugin.Snippet.Setting.Phrases",
-        "defaultValue": "Phrases"
+        "key": "Plugin.Snippet.Name",
+        "defaultValue": "Snippet"
       },
       "description": {
         "key": "Plugin.Snippet.Setting.Phrases.Description",
         "defaultValue": "Shortcut phrases available in global search. Press Enter to copy and paste."
       },
+      "type": "h1"
+    },
+    {
+      "key": "Phrases",
       "type": "array",
       "defaultValue": [],
       "uiHint": "table",

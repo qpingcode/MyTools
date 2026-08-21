@@ -14,7 +14,8 @@
         Width="{Binding Source={x:Static SystemParameters.PrimaryScreenWidth}}"
         Height="{Binding Source={x:Static SystemParameters.PrimaryScreenHeight}}"
         UseLayoutRounding="True"
-        SnapsToDevicePixels="True">
+        SnapsToDevicePixels="True"
+        FontFamily="{StaticResource UiFontFamily}">
     
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />

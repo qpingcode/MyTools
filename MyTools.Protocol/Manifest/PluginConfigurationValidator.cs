@@ -15,6 +15,16 @@ public static class PluginConfigurationValidator
         var settingKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var setting in configuration)
         {
+            if (PluginConfigurationTypes.IsHeadingType(setting.Type))
+            {
+                if (setting.Schema?.Properties is { Count: > 0 })
+                {
+                    return ManifestValidation.Fail("heading configuration must not declare schema");
+                }
+
+                continue;
+            }
+
             if (string.IsNullOrWhiteSpace(setting.Key))
             {
                 return ManifestValidation.Fail("configuration item is missing key");

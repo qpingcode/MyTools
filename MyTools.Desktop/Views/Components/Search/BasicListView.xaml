@@ -132,6 +132,7 @@
             </Setter>
         </Style>
         <Style TargetType="ToolTip">
+            <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}"/>
             <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
             <Setter Property="Padding" Value="10"/>
@@ -242,6 +243,7 @@
                                        ToolTip="{Binding Title}">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
+                                        <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}"/>
                                         <Setter Property="TextWrapping" Value="Wrap"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding SingleLineText, ElementName=root}" Value="True">
@@ -264,6 +266,7 @@
                                        Visibility="{Binding SubTitle, Converter={StaticResource StringToVisibilityConverter}}">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
+                                        <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}"/>
                                         <Setter Property="TextWrapping" Value="Wrap"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding SingleLineText, ElementName=root}" Value="True">

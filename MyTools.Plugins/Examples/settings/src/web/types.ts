@@ -8,6 +8,7 @@ export type SettingSchemaProperty = {
     defaultValue?: string;
     hidden?: boolean;
     table?: boolean;
+    visibility?: string;
 };
 
 export type SettingSchema = {

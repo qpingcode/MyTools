@@ -189,7 +189,12 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
             FullPath = setting.FullPath,
             Title = setting.Title,
             Description = setting.Description,
-            ValueType = setting.ValueType.ToString(),
+            ValueType = setting.ValueType switch
+            {
+                SettingValueTypes.H1 => PluginConfigurationTypes.H1,
+                SettingValueTypes.H2 => PluginConfigurationTypes.H2,
+                _ => setting.ValueType.ToString()
+            },
             CurrentValue = ConfigurationSettingValues.ToDtoString(setting.CurrentValue),
             DefaultValue = ConfigurationSettingValues.ToDtoString(setting.DefaultValue),
             RequiresRestart = (setting.Options & SettingOptions.RequiresRestart) != 0,
@@ -216,7 +221,8 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
                 UiHint = property.UiHint,
                 DefaultValue = property.DefaultValue,
                 Hidden = property.Hidden,
-                Table = property.Table
+                Table = property.Table,
+                Visibility = property.Visibility
             }).ToList()
         };
     }
@@ -256,7 +262,8 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     {
         foreach (var setting in category.Settings)
         {
-            if (!ConfigurationSettingValues.Owns(pluginId, setting.FullPath))
+            if (!ConfigurationSettingValues.Owns(pluginId, setting.FullPath)
+                || setting.IsDisplayOnly)
             {
                 continue;
             }
@@ -281,7 +288,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         foreach (var change in request.Changes)
         {
             var setting = registry.FindSetting(change.FullPath);
-            if (setting == null)
+            if (setting == null || setting.IsDisplayOnly)
             {
                 logger.LogWarning("Setting not found: {FullPath}", change.FullPath);
                 continue;

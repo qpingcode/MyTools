@@ -1,5 +1,6 @@
 {
   "Plugin.OpenPath.Name": "Open Path",
+  "Plugin.OpenPath.Description": "Choose the IDE install locations used when opening a path.",
   "Plugin.OpenPath.Action.Open": "Open",
   "Plugin.OpenPath.Setting.Rider.Title": "Rider install path",
   "Plugin.OpenPath.Setting.Rider.Description": "Rider.exe file path or Rider install directory",

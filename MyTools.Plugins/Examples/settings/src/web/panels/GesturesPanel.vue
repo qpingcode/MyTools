@@ -2,11 +2,18 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import HighlightText from "../components/HighlightText.vue";
 import TableToolbar from "../components/TableToolbar.vue";
-import ScalarSettingsPanel from "./ScalarSettingsPanel.vue";
 import { bus } from "../bus";
 import { captureInputAction } from "../capture-input-action";
 import { t } from "../i18n";
-import { markGesturesDirty, store } from "../store";
+import {
+    currentCategory,
+    currentDescription,
+    currentSettingRawValue,
+    currentTitle,
+    markGesturesDirty,
+    markSettingDirty,
+    store,
+} from "../store";
 import type { GestureConfig } from "../types";
 
 const DIRECTION_ARROWS: Record<string, string> = {
@@ -29,8 +36,15 @@ let lastPoint: { x: number; y: number } | null = null;
 let isDrawing = false;
 
 const gestures = computed(() => store.gestureConfigs || []);
+const enableSetting = computed(() =>
+    currentCategory.value?.settings.find((setting) => setting.fullPath === "Gestures.EnableGesture") ?? null);
 const tableQuery = ref("");
 const highlightQuery = computed(() => tableQuery.value.trim() || store.searchQuery);
+
+function onEnableChange(value: boolean): void {
+    if (!enableSetting.value) return;
+    markSettingDirty(enableSetting.value.fullPath, value ? "True" : "False");
+}
 
 const headers = computed(() => ({
     action: t("Plugin.Settings.Gestures.HeaderAction", "Action Name"),
@@ -297,7 +311,28 @@ onBeforeUnmount(() => {
 
 <template>
     <div>
-        <ScalarSettingsPanel />
+        <div class="gesture-intro">
+            <div class="gesture-title">
+                <HighlightText :text="currentTitle" :query="store.searchQuery" />
+            </div>
+            <div v-if="currentDescription" class="gesture-description">
+                <HighlightText :text="currentDescription" :query="store.searchQuery" />
+            </div>
+        </div>
+        <div v-if="enableSetting" class="enable-setting">
+            <div class="enable-heading">
+                <div class="enable-title">
+                    <HighlightText :text="enableSetting.title" :query="store.searchQuery" />
+                </div>
+                <n-switch
+                    :value="currentSettingRawValue(enableSetting) === 'True'"
+                    @update:value="onEnableChange(!!$event)"
+                />
+            </div>
+            <div v-if="enableSetting.description" class="enable-description">
+                <HighlightText :text="enableSetting.description" :query="store.searchQuery" />
+            </div>
+        </div>
         <TableToolbar
             v-model="tableQuery"
             :placeholder="t('Plugin.Settings.Table.Search', 'Search')"
@@ -459,6 +494,47 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.gesture-intro {
+    padding: 4px 0 14px;
+}
+
+.gesture-title {
+    font-size: 20px;
+    font-weight: 650;
+    line-height: 1.3;
+    color: var(--mt-text, #fff);
+}
+
+.gesture-description,
+.enable-description {
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--mt-text-tertiary, #aaaaaa);
+    white-space: pre-line;
+}
+
+.enable-setting {
+    padding: 18px 0;
+}
+
+.enable-heading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.enable-title {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--mt-text, #fff);
+}
+
+.enable-description {
+    margin-top: 4px;
+}
+
 .empty {
     padding: 24px 0;
     text-align: center;

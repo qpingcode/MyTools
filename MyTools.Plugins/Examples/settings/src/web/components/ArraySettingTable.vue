@@ -8,6 +8,7 @@ import { markSettingDirty, store } from "../store";
 import {
     coercePropertyValue,
     defaultPropertyValue,
+    evaluateVisibility,
     formatCellText,
     isTruthyBool,
     parseArrayValue,
@@ -28,6 +29,13 @@ const editorProperties = computed(() =>
     properties.value.filter((property) => !property.hidden && property.type.toLowerCase() !== "hidden"));
 const tableProperties = computed(() =>
     editorProperties.value.filter((property) => property.table !== false));
+const visibleEditorProperties = computed(() => {
+    const lookup = (name: string) => {
+        const match = properties.value.find((property) => property.key.toLowerCase() === name.toLowerCase());
+        return match ? draft[match.key] : undefined;
+    };
+    return editorProperties.value.filter((property) => evaluateVisibility(property.visibility, lookup));
+});
 
 const rows = computed(() => {
     const dirty = store.dirtySettings.get(props.setting.fullPath);
@@ -110,9 +118,6 @@ function removeRow(index: number): void {
     persist(next);
 }
 
-function editorFields(): SettingSchemaProperty[] {
-    return editorProperties.value;
-}
 </script>
 
 <template>
@@ -149,11 +154,10 @@ function editorFields(): SettingSchemaProperty[] {
                         :class="property.type.toLowerCase() === 'bool' ? 'col-bool' : 'col-text'"
                     >
                         <i
-                            v-if="property.type.toLowerCase() === 'bool'"
-                            class="mdi"
-                            :class="isTruthyBool(item.row[property.key]) ? 'mdi-check' : 'mdi-minus'"
+                            v-if="property.type.toLowerCase() === 'bool' && isTruthyBool(item.row[property.key])"
+                            class="mdi mdi-check"
                         ></i>
-                        <span v-else class="cell-text" :title="formatCellText(item.row[property.key])">
+                        <span v-else-if="property.type.toLowerCase() !== 'bool'" class="cell-text" :title="formatCellText(item.row[property.key])">
                             <HighlightText :text="formatCellText(item.row[property.key])" :query="tableQuery || store.searchQuery" />
                         </span>
                     </div>
@@ -175,7 +179,7 @@ function editorFields(): SettingSchemaProperty[] {
                     {{ editingIndex == null ? labels.add : labels.edit }}
                 </div>
                 <div class="editor-form">
-                    <template v-for="property in editorFields()" :key="property.key">
+                    <template v-for="property in visibleEditorProperties" :key="property.key">
                         <div class="form-label">{{ property.title || property.key }}</div>
                         <SettingField
                             :type="property.type"
@@ -269,9 +273,11 @@ function editorFields(): SettingSchemaProperty[] {
 }
 
 .col-bool {
-    flex: 0 0 64px;
+    flex: 0 0 120px;
+    width: 120px;
     display: flex;
     justify-content: center;
+    white-space: nowrap;
 }
 
 .col-actions {
