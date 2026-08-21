@@ -24,7 +24,7 @@
         <RuntimeIdentifier Condition="'$(CreateVelopackRelease)' == 'true' and '$(RuntimeIdentifier)' == ''">$(VelopackRuntime)</RuntimeIdentifier>
         <SelfContained Condition="'$(CreateVelopackRelease)' == 'true' and '$(SelfContained)' == ''">true</SelfContained>
         <PublishSingleFile Condition="'$(CreateVelopackRelease)' == 'true' and '$(PublishSingleFile)' == ''">false</PublishSingleFile>
-        <VelopackChannel Condition="'$(VelopackChannel)' == ''">win</VelopackChannel>
+        <VelopackChannel Condition="'$(VelopackChannel)' == ''">stable</VelopackChannel>
         <VelopackDeltaMode Condition="'$(VelopackDeltaMode)' == ''">BestSpeed</VelopackDeltaMode>
         <VelopackRepositoryRoot>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..'))</VelopackRepositoryRoot>
         <VelopackToolManifest>$(VelopackRepositoryRoot)\.config\dotnet-tools.json</VelopackToolManifest>

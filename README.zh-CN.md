@@ -25,9 +25,18 @@ MyTools 是一款使用 .NET 8 和 WPF 开发的 Windows 桌面效率工具。�
 
 ## 安装
 
-从 [最新的 GitHub Release](https://github.com/qpingcode/MyTools/releases/latest) 下载并运行 `MyTools.Desktop-win-Setup.exe`。
+MyTools 提供两个发布通道：
 
-每个 Release 还提供完整的便携包 `MyTools.Desktop-win-Portable.zip`。解压后直接运行 `MyTools.Desktop.exe` 即可。便携版不支持应用内 Velopack 自动更新。
+<!-- mytools-downloads:start -->
+| 通道 | 版本 | 完整安装包 | 便携版 |
+| --- | --- | --- | --- |
+| **Stable** | — | 尚未发布 | 尚未发布 |
+| **Beta** | — | 尚未发布 | 尚未发布 |
+<!-- mytools-downloads:end -->
+
+Stable 是推荐通道。推送名为 `release-YYYY-MM-DD` 的 git tag（例如 `release-2026-08-21`）会发布稳定版。每次推送到 `main` 都会发布 Beta。在设置中将 **更新通道** 设为 `stable` 或 `beta`，即可接收对应通道的应用内更新。
+
+便携包解压后直接运行 `MyTools.Desktop.exe` 即可。便携版不支持应用内 Velopack 自动更新。
 
 > Authenticode 签名尚未启用。Windows SmartScreen 可能显示“未知发布者”警告，请仅从本仓库的 Releases 页面下载 MyTools。
 

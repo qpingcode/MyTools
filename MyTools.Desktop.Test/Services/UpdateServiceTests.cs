@@ -18,6 +18,32 @@ public class UpdateServiceTests
         Assert.That(UpdateService.DefaultUpdateUrl, Is.EqualTo("https://github.com/qpingcode/MyTools/releases"));
     }
 
+    [Test]
+    public void DefaultChannel_IsStable()
+    {
+        Assert.That(UpdateService.DefaultChannel, Is.EqualTo("stable"));
+    }
+
+    [TestCase(null, "stable")]
+    [TestCase("", "stable")]
+    [TestCase("   ", "stable")]
+    [TestCase("win", "stable")]
+    [TestCase("WIN", "stable")]
+    [TestCase("stable", "stable")]
+    [TestCase("beta", "beta")]
+    public void ResolveChannel_NormalizesKnownAliases(string? channel, string expected)
+    {
+        Assert.That(UpdateService.ResolveChannel(channel), Is.EqualTo(expected));
+    }
+
+    [TestCase("stable", false)]
+    [TestCase("beta", true)]
+    [TestCase("BETA", true)]
+    public void IncludeGitHubPrereleases_IsEnabledForBeta(string channel, bool expected)
+    {
+        Assert.That(UpdateService.IncludeGitHubPrereleases(channel), Is.EqualTo(expected));
+    }
+
     [TestCase("https://github.com/qpingcode/MyTools", "https://github.com/qpingcode/MyTools")]
     [TestCase("https://github.com/qpingcode/MyTools/", "https://github.com/qpingcode/MyTools")]
     [TestCase("https://github.com/qpingcode/MyTools/releases", "https://github.com/qpingcode/MyTools")]
