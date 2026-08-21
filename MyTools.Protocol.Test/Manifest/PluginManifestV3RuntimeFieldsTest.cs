@@ -57,7 +57,7 @@ public class PluginManifestV3RuntimeFieldsTest
         var m = LoadSettingsV3();
         Assert.That(m.Entries[0].Name, Is.Not.Null);
         Assert.That(m.Entries[0].Name!.Key, Is.EqualTo("Plugin.Settings.Name"));
-        Assert.That(m.Entries[0].Name.DefaultValue, Is.EqualTo("Settings"));
+        Assert.That(m.Entries[0].Name!.DefaultValue, Is.EqualTo("Settings"));
     }
 
     [Test]
@@ -66,7 +66,7 @@ public class PluginManifestV3RuntimeFieldsTest
         var m = LoadSettingsV3();
         Assert.That(m.I18n, Is.Not.Null);
         Assert.That(m.I18n!.DefaultLocale, Is.EqualTo("en-US"));
-        Assert.That(m.I18n.SupportedLocales, Is.EquivalentTo(new[] { "en-US", "zh-CN" }));
+        Assert.That(m.I18n!.SupportedLocales, Is.EquivalentTo(new[] { "en-US", "zh-CN" }));
     }
 
     [Test]
@@ -75,7 +75,7 @@ public class PluginManifestV3RuntimeFieldsTest
         var m = LoadSettingsV3();
         Assert.That(m.Entries[0].Detail, Is.Not.Null);
         Assert.That(m.Entries[0].Detail!.Type, Is.EqualTo("web"));
-        Assert.That(m.Entries[0].Detail.Entry, Is.EqualTo("web/index.html"));
+        Assert.That(m.Entries[0].Detail!.Entry, Is.EqualTo("web/index.html"));
     }
 
     [Test]
@@ -121,15 +121,17 @@ public class PluginManifestV3RuntimeFieldsTest
         Assert.That(commandRunner.Configuration, Has.Count.EqualTo(1));
         Assert.That(commandRunner.Configuration[0].Key, Is.EqualTo("Commands"));
         Assert.That(commandRunner.Configuration[0].Type, Is.EqualTo("array"));
-        Assert.That(commandRunner.Configuration[0].Schema!.Properties, Has.Count.EqualTo(7));
+        var schema = commandRunner.Configuration[0].Schema;
+        Assert.That(schema, Is.Not.Null);
+        Assert.That(schema!.Properties, Has.Count.EqualTo(7));
         Assert.That(
-            commandRunner.Configuration[0].Schema.Properties.Where(property => property.Table).Select(property => property.Key),
+            schema.Properties.Where(property => property.Table).Select(property => property.Key),
             Is.EquivalentTo(new[] { "name", "command", "runAsAdmin" }));
         Assert.That(
-            commandRunner.Configuration[0].Schema.Properties.Single(property => property.Key == "workingDirectory").Type,
+            schema.Properties.Single(property => property.Key == "workingDirectory").Type,
             Is.EqualTo("path"));
         Assert.That(
-            commandRunner.Configuration[0].Schema.Properties.Single(property => property.Key == "workingDirectory").UiHint,
+            schema.Properties.Single(property => property.Key == "workingDirectory").UiHint,
             Is.EqualTo("directory"));
         Assert.That(commandRunner.Entries[0].Capabilities, Is.EquivalentTo(new[] { "configuration.readOwn" }));
     }

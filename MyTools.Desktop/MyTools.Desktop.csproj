@@ -26,8 +26,8 @@
         <PublishSingleFile Condition="'$(CreateVelopackRelease)' == 'true' and '$(PublishSingleFile)' == ''">false</PublishSingleFile>
         <BundleNodeRuntime Condition="'$(BundleNodeRuntime)' == '' and '$(CreateVelopackRelease)' == 'true'">true</BundleNodeRuntime>
         <BundleNodeRuntime Condition="'$(BundleNodeRuntime)' == ''">false</BundleNodeRuntime>
-        <NodeRuntimeVersion Condition="'$(NodeRuntimeVersion)' == ''">22.23.2</NodeRuntimeVersion>
-        <NodeRuntimeSha256 Condition="'$(NodeRuntimeSha256)' == ''">1177b4137ba5adaa56354ae40f1080c7450e8ae09cecb47da459d1c52ac99f97</NodeRuntimeSha256>
+        <NodeRuntimeVersion Condition="'$(NodeRuntimeVersion)' == ''">24.19.0</NodeRuntimeVersion>
+        <NodeRuntimeSha256 Condition="'$(NodeRuntimeSha256)' == ''">57f71ab3652e797d84acddc79c81cc9ff1c6ddb2a1974cdb83f00fee9bff4c73</NodeRuntimeSha256>
         <VelopackChannel Condition="'$(VelopackChannel)' == ''">stable</VelopackChannel>
         <VelopackDeltaMode Condition="'$(VelopackDeltaMode)' == ''">BestSpeed</VelopackDeltaMode>
         <VelopackRepositoryRoot>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..'))</VelopackRepositoryRoot>
