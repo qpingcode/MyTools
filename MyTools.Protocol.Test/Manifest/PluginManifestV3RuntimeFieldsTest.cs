@@ -143,7 +143,7 @@ public class PluginManifestV3RuntimeFieldsTest
         Assert.That(searchEngine.Configuration[0].Key, Is.EqualTo("Engines"));
         Assert.That(searchEngine.Configuration[0].Type, Is.EqualTo("array"));
         Assert.That(searchEngine.Configuration[0].Schema!.Properties.Select(property => property.Key),
-            Is.EquivalentTo(new[] { "name", "url", "shortcut" }));
+            Is.EquivalentTo(new[] { "name", "url" }));
         Assert.That(searchEngine.Entries[0].Capabilities, Is.EquivalentTo(new[] { "configuration.readOwn" }));
         Assert.That(searchEngine.Entries[0].Search!.Global, Is.True);
     }

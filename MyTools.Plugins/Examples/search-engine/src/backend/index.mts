@@ -7,7 +7,6 @@ type SearchEngine = {
   name?: string;
   url?: string;
   urls?: string | string[];
-  shortcut?: string;
 };
 
 type OwnConfiguration = {

@@ -44,8 +44,7 @@
         },
         {
           "name": "Google",
-          "url": "https://www.google.com/search?q={query}",
-          "shortcut": "gg"
+          "url": "https://www.google.com/search?q={query}"
         }
       ],
       "uiHint": "table",
@@ -68,15 +67,6 @@
               "defaultValue": "URL"
             },
             "uiHint": "textarea"
-          },
-          {
-            "key": "shortcut",
-            "type": "string",
-            "label": {
-              "key": "Plugin.SearchEngine.Column.Shortcut",
-              "defaultValue": "Shortcut"
-            },
-            "uiHint": "input"
           }
         ]
       }

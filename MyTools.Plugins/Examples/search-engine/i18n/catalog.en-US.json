@@ -53,14 +53,6 @@
       "sourceHash": "sha256:e7a241debad56609ee660a5d2ef258a1aceb7357ff210ac66d7280b3add02a9a"
     },
     {
-      "key": "Plugin.SearchEngine.Column.Shortcut",
-      "defaultValue": "Shortcut",
-      "placeholders": [],
-      "references": [],
-      "existingTranslations": { "zh-CN": "快捷方式" },
-      "sourceHash": "sha256:5753ea3780f34ad1295fb9957f1575e7e7578aa0e891d89524c26ad6f504cb1d"
-    },
-    {
       "key": "Plugin.SearchEngine.Result.Title",
       "defaultValue": "Search {{engine}}: {{query}}",
       "placeholders": ["engine", "query"],
