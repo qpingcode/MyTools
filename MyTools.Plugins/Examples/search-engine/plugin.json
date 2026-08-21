@@ -11,17 +11,6 @@
   },
   "configuration": [
     {
-      "label": {
-        "key": "Plugin.SearchEngine.Name",
-        "defaultValue": "Web Search"
-      },
-      "description": {
-        "key": "Plugin.SearchEngine.Setting.Engines.Description",
-        "defaultValue": "Search engines shown in global search. Put {query} in the URL; multiple URLs go on separate lines."
-      },
-      "type": "h1"
-    },
-    {
       "key": "Engines",
       "type": "array",
       "defaultValue": [

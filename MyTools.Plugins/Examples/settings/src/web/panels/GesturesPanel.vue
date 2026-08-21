@@ -7,9 +7,7 @@ import { captureInputAction } from "../capture-input-action";
 import { t } from "../i18n";
 import {
     currentCategory,
-    currentDescription,
     currentSettingRawValue,
-    currentTitle,
     markGesturesDirty,
     markSettingDirty,
     store,
@@ -311,14 +309,6 @@ onBeforeUnmount(() => {
 
 <template>
     <div>
-        <div class="gesture-intro">
-            <div class="gesture-title">
-                <HighlightText :text="currentTitle" :query="store.searchQuery" />
-            </div>
-            <div v-if="currentDescription" class="gesture-description">
-                <HighlightText :text="currentDescription" :query="store.searchQuery" />
-            </div>
-        </div>
         <div v-if="enableSetting" class="enable-setting">
             <div class="enable-heading">
                 <div class="enable-title">
@@ -328,9 +318,6 @@ onBeforeUnmount(() => {
                     :value="currentSettingRawValue(enableSetting) === 'True'"
                     @update:value="onEnableChange(!!$event)"
                 />
-            </div>
-            <div v-if="enableSetting.description" class="enable-description">
-                <HighlightText :text="enableSetting.description" :query="store.searchQuery" />
             </div>
         </div>
         <TableToolbar
@@ -494,26 +481,6 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.gesture-intro {
-    padding: 4px 0 14px;
-}
-
-.gesture-title {
-    font-size: 20px;
-    font-weight: 650;
-    line-height: 1.3;
-    color: var(--mt-text, #fff);
-}
-
-.gesture-description,
-.enable-description {
-    margin-top: 6px;
-    font-size: 13px;
-    line-height: 1.45;
-    color: var(--mt-text-tertiary, #aaaaaa);
-    white-space: pre-line;
-}
-
 .enable-setting {
     padding: 18px 0;
 }

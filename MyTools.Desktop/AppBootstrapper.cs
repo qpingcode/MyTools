@@ -347,12 +347,12 @@ public class AppBootstrapper : IDisposable
             var gesturesCategory = registry.AddCategory(
                 "Gestures",
                 localization.GetCaption("Configuration.Gestures.Name", "Gestures"),
-                localization.GetCaption("Configuration.Gestures.Description", "Configure mouse gesture actions"),
+                localization.GetCaption("Configuration.Gestures.Description", "Hold the right mouse button and draw a gesture, then release it to run the assigned action. Each gesture can be limited to specific processes and mapped to a keyboard shortcut or mouse button."),
                 IsSelectable: true);
 
             registry.AddSetting(gesturesCategory, "EnableGesture",
                 localization.GetCaption("Configuration.Gestures.Enable.Title", "Enable"),
-                localization.GetCaption("Configuration.Gestures.Enable.Description", "Enable right-button mouse gesture detection. Requires restart to take effect."),
+                string.Empty,
                 false,
                 options: SettingOptions.RequiresRestart);
 

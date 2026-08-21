@@ -75,20 +75,6 @@ function onPluginHotKeyChange(plugin: KeymapPlugin, value: string | null): void 
         {{ t("Plugin.Settings.Loading", "Loading...") }}
     </div>
     <div v-else class="keymap-panel">
-        <div class="panel-intro">
-            <div class="panel-title">
-                <HighlightText
-                    :text="t('Plugin.Settings.Category.Plugins', 'Plugins')"
-                    :query="store.searchQuery"
-                />
-            </div>
-            <div class="panel-description">
-                <HighlightText
-                    :text="t('Plugin.Settings.Category.Plugins.Description', 'Enable plugins, assign hotkeys, and set aliases used in global search.')"
-                    :query="store.searchQuery"
-                />
-            </div>
-        </div>
         <TableToolbar
             v-model="tableQuery"
             :placeholder="t('Plugin.Settings.Table.Search', 'Search')"
@@ -163,24 +149,6 @@ function onPluginHotKeyChange(plugin: KeymapPlugin, value: string | null): void 
 
 .keymap-panel {
     min-width: 0;
-}
-
-.panel-intro {
-    padding: 18px 0;
-}
-
-.panel-title {
-    font-size: 20px;
-    font-weight: 650;
-    line-height: 1.3;
-    color: var(--mt-text, #fff);
-}
-
-.panel-description {
-    margin-top: 6px;
-    font-size: 14px;
-    line-height: 1.45;
-    color: var(--mt-text-tertiary, #aaaaaa);
 }
 
 .keymap-header,

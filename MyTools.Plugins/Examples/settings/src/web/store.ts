@@ -1,7 +1,7 @@
 import { computed, reactive } from "vue";
 import { bus } from "./bus";
 import { localeRevision, t } from "./i18n";
-import { evaluateVisibility, settingKey } from "./setting-utils";
+import { evaluateVisibility, isTopLevelHeading, settingKey } from "./setting-utils";
 import type {
     Category,
     Config,
@@ -107,6 +107,7 @@ export function categorySelfMatches(category: Category): boolean {
     if (category.name.toLowerCase().includes(store.searchQuery)) return true;
     if (category.description && category.description.toLowerCase().includes(store.searchQuery)) return true;
     for (const setting of category.settings) {
+        if (isTopLevelHeading(setting.valueType)) continue;
         if (!isSettingVisible(setting, category.settings)) continue;
         if (settingMatchesSearch(setting)) return true;
     }
@@ -117,7 +118,7 @@ export function categorySelfMatches(category: Category): boolean {
 
 export function shouldShowCategory(category: Category): boolean {
     if (SPECIAL_CATEGORY_KEYS.has(category.key)) return true;
-    return category.settings.length > 0;
+    return category.settings.some((setting) => !isTopLevelHeading(setting.valueType));
 }
 
 function keymapMatchesSearch(): boolean {
@@ -165,32 +166,6 @@ export const sidebarItems = computed((): SidebarItem[] => {
 export const currentCategory = computed((): Category | null => {
     if (!store.config || !store.currentCategoryKey) return null;
     return findCategory(store.config.categories, store.currentCategoryKey);
-});
-
-export const currentTitle = computed(() => {
-    void localeRevision.value;
-    store.localeTick;
-    if (store.currentCategoryKey === "Plugins") {
-        return t("Plugin.Settings.Category.Plugins", "Plugins");
-    }
-    if (store.currentCategoryKey === "Gestures") {
-        return t("Plugin.Settings.Category.Gestures", "Mouse Gestures");
-    }
-    return currentCategory.value?.name || "";
-});
-
-export const currentDescription = computed(() => {
-    void localeRevision.value;
-    store.localeTick;
-    if (store.currentCategoryKey === "Plugins") {
-        return currentCategory.value?.description
-            || t(
-                "Plugin.Settings.Category.Plugins.Description",
-                "Enable plugins, assign hotkeys, and set aliases used in global search.",
-            );
-    }
-
-    return currentCategory.value?.description || "";
 });
 
 export function findFirstSelectable(categories: Category[]): Category | null {
