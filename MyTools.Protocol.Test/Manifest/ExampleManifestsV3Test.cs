@@ -28,13 +28,16 @@ public class ExampleManifestsV3Test
                     {
                         var relative = Path.GetRelativePath(candidate, path);
                         return !relative.Contains($"{Path.DirectorySeparatorChar}dist{Path.DirectorySeparatorChar}")
-                               && !relative.Contains($"{Path.DirectorySeparatorChar}node_modules{Path.DirectorySeparatorChar}")
+                               && !relative.Contains(
+                                   $"{Path.DirectorySeparatorChar}node_modules{Path.DirectorySeparatorChar}")
                                && !relative.StartsWith("sdk-v3", StringComparison.OrdinalIgnoreCase)
                                && !relative.StartsWith("common", StringComparison.OrdinalIgnoreCase);
                     });
             }
+
             dir = Path.GetDirectoryName(dir);
         }
+
         return [];
     }
 
@@ -62,7 +65,8 @@ public class ExampleManifestsV3Test
         var settingsPath = manifests.FirstOrDefault(p => p.Contains("settings"));
         Assert.That(settingsPath, Is.Not.Null, "settings plugin.json not found");
 
-        var m = JsonSerializer.Deserialize<PluginManifestV3>(File.ReadAllText(settingsPath!), ProtocolJsonOptions.Default)!;
+        var m = JsonSerializer.Deserialize<PluginManifestV3>(File.ReadAllText(settingsPath!),
+            ProtocolJsonOptions.Default)!;
         Assert.That(m.Entries[0].Capabilities, Is.EquivalentTo(new[]
         {
             "configuration.read", "configuration.write",
@@ -73,26 +77,5 @@ public class ExampleManifestsV3Test
             "path.pick", "path.validate",
             "restart"
         }));
-    }
-
-    [Test]
-    public void PluginsWithConfiguration_ShouldStartWithH1Heading()
-    {
-        var manifests = FindExampleManifests().ToList();
-        Assert.That(manifests, Is.Not.Empty, "no plugin.json manifests found");
-
-        foreach (var path in manifests)
-        {
-            var m = JsonSerializer.Deserialize<PluginManifestV3>(File.ReadAllText(path), ProtocolJsonOptions.Default)!;
-            if (m.Configuration.Count == 0)
-            {
-                continue;
-            }
-
-            Assert.That(
-                m.Configuration[0].Type,
-                Is.EqualTo("h1").IgnoreCase,
-                $"{Path.GetFileName(Path.GetDirectoryName(path))}/plugin.json configuration must start with type h1");
-        }
     }
 }

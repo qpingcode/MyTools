@@ -104,13 +104,12 @@ public class PluginManifestV3RuntimeFieldsTest
     public void Deserialize_ShouldReadPluginConfiguration()
     {
         var snippet = LoadExampleV3("snippet");
-        Assert.That(snippet.Configuration, Has.Count.EqualTo(2));
-        Assert.That(snippet.Configuration[0].Type, Is.EqualTo("h1"));
-        Assert.That(snippet.Configuration[1].Key, Is.EqualTo("Phrases"));
-        Assert.That(snippet.Configuration[1].Type, Is.EqualTo("array"));
-        Assert.That(snippet.Configuration[1].Label, Is.Null);
-        Assert.That(snippet.Configuration[1].Description, Is.Null);
-        Assert.That(snippet.Configuration[1].Schema!.Properties, Has.Count.EqualTo(3));
+        Assert.That(snippet.Configuration, Has.Count.EqualTo(1));
+        Assert.That(snippet.Configuration[0].Key, Is.EqualTo("Phrases"));
+        Assert.That(snippet.Configuration[0].Type, Is.EqualTo("array"));
+        Assert.That(snippet.Configuration[0].Label, Is.Null);
+        Assert.That(snippet.Configuration[0].Description, Is.Null);
+        Assert.That(snippet.Configuration[0].Schema!.Properties, Has.Count.EqualTo(3));
         Assert.That(snippet.Icon, Is.EqualTo("mdi-message-text-outline"));
         Assert.That(snippet.Entries[0].Capabilities, Is.EquivalentTo(new[] { "configuration.readOwn" }));
         Assert.That(snippet.Entries[0].Search!.Global, Is.True);
@@ -121,12 +120,11 @@ public class PluginManifestV3RuntimeFieldsTest
     {
         var commandRunner = LoadExampleV3("command-runner");
         Assert.That(commandRunner.Icon, Is.EqualTo("mdi-console-line"));
-        Assert.That(commandRunner.Configuration, Has.Count.EqualTo(2));
-        Assert.That(commandRunner.Configuration[0].Type, Is.EqualTo("h1"));
-        Assert.That(commandRunner.Configuration[1].Key, Is.EqualTo("Commands"));
-        Assert.That(commandRunner.Configuration[1].Type, Is.EqualTo("array"));
-        Assert.That(commandRunner.Configuration[1].Label, Is.Null);
-        var schema = commandRunner.Configuration[1].Schema;
+        Assert.That(commandRunner.Configuration, Has.Count.EqualTo(1));
+        Assert.That(commandRunner.Configuration[0].Key, Is.EqualTo("Commands"));
+        Assert.That(commandRunner.Configuration[0].Type, Is.EqualTo("array"));
+        Assert.That(commandRunner.Configuration[0].Label, Is.Null);
+        var schema = commandRunner.Configuration[0].Schema;
         Assert.That(schema, Is.Not.Null);
         Assert.That(schema!.Properties, Has.Count.EqualTo(7));
         Assert.That(
@@ -155,11 +153,10 @@ public class PluginManifestV3RuntimeFieldsTest
     {
         var searchEngine = LoadExampleV3("search-engine");
         Assert.That(searchEngine.Icon, Is.EqualTo("mdi-web"));
-        Assert.That(searchEngine.Configuration, Has.Count.EqualTo(2));
-        Assert.That(searchEngine.Configuration[0].Type, Is.EqualTo("h1"));
-        Assert.That(searchEngine.Configuration[1].Key, Is.EqualTo("Engines"));
-        Assert.That(searchEngine.Configuration[1].Type, Is.EqualTo("array"));
-        Assert.That(searchEngine.Configuration[1].Schema!.Properties.Select(property => property.Key),
+        Assert.That(searchEngine.Configuration, Has.Count.EqualTo(1));
+        Assert.That(searchEngine.Configuration[0].Key, Is.EqualTo("Engines"));
+        Assert.That(searchEngine.Configuration[0].Type, Is.EqualTo("array"));
+        Assert.That(searchEngine.Configuration[0].Schema!.Properties.Select(property => property.Key),
             Is.EquivalentTo(new[] { "name", "url" }));
         Assert.That(searchEngine.Entries[0].Capabilities, Is.EquivalentTo(new[] { "configuration.readOwn" }));
         Assert.That(searchEngine.Entries[0].Search!.Global, Is.True);
@@ -170,14 +167,13 @@ public class PluginManifestV3RuntimeFieldsTest
     {
         var openPath = LoadExampleV3("openpath");
         Assert.That(openPath.Icon, Is.EqualTo("mdi-folder-open-outline"));
-        Assert.That(openPath.Configuration, Has.Count.EqualTo(5));
-        Assert.That(openPath.Configuration[0].Type, Is.EqualTo("h1"));
-        Assert.That(openPath.Configuration.Skip(1).Select(item => item.Key), Is.EquivalentTo(new[]
+        Assert.That(openPath.Configuration, Has.Count.EqualTo(4));
+        Assert.That(openPath.Configuration.Select(item => item.Key), Is.EquivalentTo(new[]
         {
             "RiderInstallPath", "VsCodeInstallPath", "VisualStudioInstallPath", "IntelliJInstallPath"
         }));
-        Assert.That(openPath.Configuration.Skip(1).Select(item => item.Type), Is.All.EqualTo("path"));
-        Assert.That(openPath.Configuration.Skip(1).Select(item => item.UiHint), Is.All.EqualTo("fileOrDirectory"));
+        Assert.That(openPath.Configuration.Select(item => item.Type), Is.All.EqualTo("path"));
+        Assert.That(openPath.Configuration.Select(item => item.UiHint), Is.All.EqualTo("fileOrDirectory"));
         Assert.That(openPath.Entries[0].Capabilities, Is.EquivalentTo(new[] { "configuration.readOwn" }));
     }
 
@@ -202,8 +198,7 @@ public class PluginManifestV3RuntimeFieldsTest
         Assert.That(browserSearch.Entries[0].Search!.Global, Is.True);
         Assert.That(browserSearch.Entries[0].Keywords, Is.Empty);
         Assert.That(browserSearch.Entries[0].Detail!.Type, Is.EqualTo("list"));
-        Assert.That(browserSearch.Configuration[0].Type, Is.EqualTo("h1"));
-        Assert.That(browserSearch.Configuration.Skip(1).Select(item => item.Key), Is.EquivalentTo(new[]
+        Assert.That(browserSearch.Configuration.Select(item => item.Key), Is.EquivalentTo(new[]
         {
             "ChromeEnabled", "EdgeEnabled", "FirefoxEnabled",
             "SearchBookmarks", "SearchHistory",
