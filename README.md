@@ -25,9 +25,18 @@ MyTools is a Windows desktop productivity application built with .NET 8 and WPF.
 
 ## Installation
 
-Download and run `MyTools.Desktop-win-Setup.exe` from the [latest GitHub Release](https://github.com/qpingcode/MyTools/releases/latest).
+MyTools is published on two channels:
 
-A complete portable package, `MyTools.Desktop-win-Portable.zip`, is also available in each release. Extract it and run `MyTools.Desktop.exe` directly. Portable installations do not support in-app Velopack updates.
+<!-- mytools-downloads:start -->
+| Channel | Version | Installer (full setup) | Portable |
+| --- | --- | --- | --- |
+| **Stable** | — | Not published yet | Not published yet |
+| **Beta** | — | Not published yet | Not published yet |
+<!-- mytools-downloads:end -->
+
+Stable is the recommended channel. Push a git tag named `release-YYYY-MM-DD` (for example `release-2026-08-21`) to publish a stable build. Every push to `main` publishes a beta. In Settings, set **Update channel** to `stable` or `beta` to receive in-app updates from that channel.
+
+A portable package can be extracted and run as `MyTools.Desktop.exe`. Portable installations do not support in-app Velopack updates.
 
 > Authenticode signing is not yet enabled. Windows SmartScreen may display an unknown publisher warning, so download MyTools only from this repository's Releases page.
 

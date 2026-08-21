@@ -32,10 +32,11 @@ public sealed class UpdateService(
     ILogger<UpdateService> logger) : IUpdateService
 {
     public const string DefaultUpdateUrl = "https://github.com/qpingcode/MyTools/releases";
+    public const string DefaultChannel = "stable";
+    public const string BetaChannel = "beta";
     private const string UpdateUrlSettingPath = "General.UpdateUrl";
     private const string UpdateChannelSettingPath = "General.UpdateChannel";
     private const string UpdateProxyUrlSettingPath = "General.UpdateProxyUrl";
-    private const string DefaultChannel = "win";
     private static readonly HashSet<string> SupportedProxySchemes = new(StringComparer.OrdinalIgnoreCase)
     {
         Uri.UriSchemeHttp,
@@ -83,13 +84,13 @@ public sealed class UpdateService(
                 return new UpdateCheckResult(UpdateCheckStatus.NotInstalled);
             }
 
-            var channel = GetStringSetting(UpdateChannelSettingPath);
+            var channel = ResolveChannel(GetStringSetting(UpdateChannelSettingPath));
             var options = new UpdateOptions
             {
-                ExplicitChannel = string.IsNullOrWhiteSpace(channel) ? DefaultChannel : channel.Trim()
+                ExplicitChannel = channel
             };
             var proxyUri = ParseProxyUri(GetStringSetting(UpdateProxyUrlSettingPath));
-            var updateManager = CreateUpdateManager(updateUrl, options, proxyUri);
+            var updateManager = CreateUpdateManager(updateUrl, options, proxyUri, IncludeGitHubPrereleases(channel));
             if (!updateManager.IsInstalled)
             {
                 return new UpdateCheckResult(UpdateCheckStatus.NotInstalled);
@@ -170,14 +171,38 @@ public sealed class UpdateService(
         return configurationRegistry.FindSetting(path)?.GetValue<string>();
     }
 
-    private static UpdateManager CreateUpdateManager(string updateUrl, UpdateOptions options, Uri? proxyUri)
+    internal static string ResolveChannel(string? channel)
+    {
+        if (string.IsNullOrWhiteSpace(channel))
+        {
+            return DefaultChannel;
+        }
+
+        var trimmed = channel.Trim();
+        return trimmed.Equals("win", StringComparison.OrdinalIgnoreCase)
+            ? DefaultChannel
+            : trimmed;
+    }
+
+    internal static bool IncludeGitHubPrereleases(string channel)
+    {
+        return channel.Equals(BetaChannel, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static UpdateManager CreateUpdateManager(
+        string updateUrl,
+        UpdateOptions options,
+        Uri? proxyUri,
+        bool includeGitHubPrereleases)
     {
         var trimmedUpdateUrl = updateUrl.Trim();
         var githubRepositoryUrl = GetGithubRepositoryUrl(trimmedUpdateUrl);
         var downloader = new UpdateProxyFileDownloader(proxyUri);
         if (githubRepositoryUrl != null)
         {
-            return new UpdateManager(new GithubSource(githubRepositoryUrl, null, false, downloader), options);
+            return new UpdateManager(
+                new GithubSource(githubRepositoryUrl, null, includeGitHubPrereleases, downloader),
+                options);
         }
 
         return Uri.TryCreate(trimmedUpdateUrl, UriKind.Absolute, out var updateUri)

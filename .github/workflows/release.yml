@@ -5,17 +5,29 @@ on:
     branches:
       - main
       - master
+    tags:
+      - 'release-*'
 
 permissions:
   contents: write
 
 concurrency:
-  group: mytools-master-release
+  group: mytools-release
   cancel-in-progress: false
 
 jobs:
   release:
     name: Test and create Velopack release
+    if: >
+      github.event_name == 'push' &&
+      (
+        startsWith(github.ref, 'refs/tags/release-') ||
+        (
+          (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') &&
+          github.actor != 'github-actions[bot]' &&
+          !contains(github.event.head_commit.message, '[skip release]')
+        )
+      )
     runs-on: windows-latest
     timeout-minutes: 45
 
@@ -24,6 +36,31 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Determine release channel
+        id: channel
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          if ($env:GITHUB_REF -like 'refs/tags/release-*') {
+              $tag = $env:GITHUB_REF_NAME
+              if ($tag -notmatch '^release-(?:\d{4}-\d{2}-\d{2}|\d{8})(?:-\d+)?$') {
+                  throw "Stable tags must look like release-2026-08-21 or release-20260821. Got: $tag"
+              }
+
+              "name=stable" >> $env:GITHUB_OUTPUT
+              "velopack=stable" >> $env:GITHUB_OUTPUT
+              "prerelease=false" >> $env:GITHUB_OUTPUT
+              "label=Stable" >> $env:GITHUB_OUTPUT
+              Write-Host "Channel: stable (tag $tag)"
+          } else {
+              "name=beta" >> $env:GITHUB_OUTPUT
+              "velopack=beta" >> $env:GITHUB_OUTPUT
+              "prerelease=true" >> $env:GITHUB_OUTPUT
+              "label=Beta" >> $env:GITHUB_OUTPUT
+              Write-Host "Channel: beta"
+          }
 
       - name: Set up .NET 8
         uses: actions/setup-dotnet@v4
@@ -140,12 +177,23 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_CHANNEL: ${{ steps.channel.outputs.name }}
+          RELEASE_LABEL: ${{ steps.channel.outputs.label }}
         run: |
           $ErrorActionPreference = "Stop"
-          $pattern = '^(?:v)?(?<major>0|[1-9]\d*)\.(?<minor>0|[1-9]\d*)\.(?<patch>0|[1-9]\d*)$'
+          $tagPattern = '^(?:v)?(?<major>0|[1-9]\d*)\.(?<minor>0|[1-9]\d*)\.(?<patch>0|[1-9]\d*)$'
+          $titlePattern = 'MyTools v(?<major>0|[1-9]\d*)\.(?<minor>0|[1-9]\d*)\.(?<patch>0|[1-9]\d*)'
 
           function ConvertTo-VersionInfo([string] $value) {
-              $match = [regex]::Match($value.Trim(), $pattern)
+              if ([string]::IsNullOrWhiteSpace($value)) {
+                  return $null
+              }
+
+              $trimmed = $value.Trim()
+              $match = [regex]::Match($trimmed, $tagPattern)
+              if (-not $match.Success) {
+                  $match = [regex]::Match($trimmed, $titlePattern)
+              }
               if (-not $match.Success) {
                   return $null
               }
@@ -154,7 +202,6 @@ jobs:
                   Major = [System.Numerics.BigInteger]::Parse($match.Groups['major'].Value)
                   Minor = [System.Numerics.BigInteger]::Parse($match.Groups['minor'].Value)
                   Patch = [System.Numerics.BigInteger]::Parse($match.Groups['patch'].Value)
-                  Tag = $value.Trim()
               }
           }
 
@@ -164,20 +211,30 @@ jobs:
           }
 
           $releaseCandidates = @()
-          $releaseList = gh release list --repo $env:GITHUB_REPOSITORY --limit 100 --json tagName | ConvertFrom-Json
+          $sameChannelCandidates = @()
+          $releaseList = gh release list --repo $env:GITHUB_REPOSITORY --limit 100 --json tagName,name,isPrerelease,isDraft | ConvertFrom-Json
           foreach ($release in $releaseList) {
+              if ($release.isDraft) {
+                  continue
+              }
+
               $candidate = ConvertTo-VersionInfo $release.tagName
-              if ($null -ne $candidate) {
-                  $releaseCandidates += $candidate
+              if ($null -eq $candidate) {
+                  $candidate = ConvertTo-VersionInfo $release.name
+              }
+              if ($null -eq $candidate) {
+                  continue
+              }
+
+              $candidate | Add-Member -NotePropertyName Tag -NotePropertyValue $release.tagName
+              $releaseCandidates += $candidate
+
+              $isBetaRelease = [bool]$release.isPrerelease
+              $isCurrentBeta = $env:RELEASE_CHANNEL -eq 'beta'
+              if ($isBetaRelease -eq $isCurrentBeta) {
+                  $sameChannelCandidates += $candidate
               }
           }
-
-          $latestRelease = $releaseCandidates |
-              Sort-Object -Property `
-                  @{ Expression = 'Major'; Descending = $true },
-                  @{ Expression = 'Minor'; Descending = $true },
-                  @{ Expression = 'Patch'; Descending = $true } |
-              Select-Object -First 1
 
           $current = @($baseline) + @($releaseCandidates) |
               Sort-Object -Property `
@@ -187,12 +244,19 @@ jobs:
               Select-Object -First 1
 
           $version = '{0}.{1}.{2}' -f $current.Major, $current.Minor, ($current.Patch + 1)
-          $previousTag = if ($null -eq $latestRelease) { '' } else { $latestRelease.Tag }
+          $previous = $sameChannelCandidates |
+              Sort-Object -Property `
+                  @{ Expression = 'Major'; Descending = $true },
+                  @{ Expression = 'Minor'; Descending = $true },
+                  @{ Expression = 'Patch'; Descending = $true } |
+              Select-Object -First 1
+          $previousTag = if ($null -eq $previous) { '' } else { $previous.Tag }
+          $tag = if ($env:RELEASE_CHANNEL -eq 'stable') { $env:GITHUB_REF_NAME } else { "v$version" }
 
           "version=$version" >> $env:GITHUB_OUTPUT
-          "tag=v$version" >> $env:GITHUB_OUTPUT
+          "tag=$tag" >> $env:GITHUB_OUTPUT
           "previous_tag=$previousTag" >> $env:GITHUB_OUTPUT
-          Write-Host "Release version: $version"
+          Write-Host "$env:RELEASE_LABEL version: $version (tag $tag)"
 
       - name: Prepare clean release directory
         shell: pwsh
@@ -213,7 +277,7 @@ jobs:
             --dir .\Releases
 
           if ($LASTEXITCODE -ne 0) {
-              Write-Host 'No package from the new MyTools release line was found. Starting without a delta base.'
+              Write-Host 'No package from the previous MyTools release on this channel was found. Starting without a delta base.'
               $global:LASTEXITCODE = 0
           }
 
@@ -221,43 +285,60 @@ jobs:
         shell: pwsh
         env:
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
+          VELOPACK_CHANNEL: ${{ steps.channel.outputs.velopack }}
         run: >-
           dotnet publish .\MyTools.Desktop\MyTools.Desktop.csproj
           --configuration Release
           --runtime win-x64
           --self-contained true
           --property:CreateVelopackRelease=true
-          --property:VelopackChannel=win
+          --property:VelopackChannel=$env:VELOPACK_CHANNEL
           --property:Version=$env:RELEASE_VERSION
 
       - name: Verify release outputs
         shell: pwsh
         env:
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
+          VELOPACK_CHANNEL: ${{ steps.channel.outputs.velopack }}
         run: |
-          $installerName = 'MyTools-win-Setup.exe'
-          $portableName = 'MyTools-win-Portable.zip'
+          $channel = $env:VELOPACK_CHANNEL
+          $installerName = "MyTools-$channel-Setup.exe"
+          $portableName = "MyTools-$channel-Portable.zip"
           $installerAssetName = "MyTools-$env:RELEASE_VERSION-windows-x64-setup.exe"
           $portableAssetName = "MyTools-$env:RELEASE_VERSION-windows-x64-portable.zip"
-          $requiredPatterns = @(
-              "MyTools-$env:RELEASE_VERSION-full.nupkg",
+          $assetsManifestName = "assets.$channel.json"
+          $releasesManifestName = "releases.$channel.json"
+          $fullPackage = Get-ChildItem .\Releases -File |
+              Where-Object { $_.Name -like "MyTools-$env:RELEASE_VERSION-*-full.nupkg" -or $_.Name -eq "MyTools-$env:RELEASE_VERSION-full.nupkg" } |
+              Select-Object -First 1
+
+          $requiredFiles = @(
               $installerName,
               $portableName,
-              'RELEASES',
-              'assets.win.json',
-              'releases.win.json'
+              $assetsManifestName,
+              $releasesManifestName
           )
 
-          foreach ($pattern in $requiredPatterns) {
-              if (-not (Test-Path (Join-Path .\Releases $pattern) -PathType Leaf)) {
-                  throw "Required Velopack output is missing: $pattern"
+          foreach ($fileName in $requiredFiles) {
+              if (-not (Test-Path (Join-Path .\Releases $fileName) -PathType Leaf)) {
+                  Get-ChildItem .\Releases -File | Sort-Object Name | Format-Table Name, Length
+                  throw "Required Velopack output is missing: $fileName"
               }
+          }
+
+          if ($null -eq $fullPackage) {
+              Get-ChildItem .\Releases -File | Sort-Object Name | Format-Table Name, Length
+              throw "Required Velopack full package is missing for version $env:RELEASE_VERSION"
           }
 
           Copy-Item (Join-Path .\Releases $installerName) (Join-Path .\Releases $installerAssetName)
           Copy-Item (Join-Path .\Releases $portableName) (Join-Path .\Releases $portableAssetName)
 
-          $assetsManifestPath = Join-Path .\Releases 'assets.win.json'
+          if ($channel -eq 'stable') {
+              Copy-Item (Join-Path .\Releases $releasesManifestName) (Join-Path .\Releases 'releases.win.json')
+          }
+
+          $assetsManifestPath = Join-Path .\Releases $assetsManifestName
           $assetsManifest = Get-Content $assetsManifestPath -Raw | ConvertFrom-Json
           foreach ($asset in $assetsManifest) {
               switch ($asset.Type) {
@@ -275,24 +356,46 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
+          RELEASE_CHANNEL: ${{ steps.channel.outputs.name }}
+          RELEASE_LABEL: ${{ steps.channel.outputs.label }}
+          VELOPACK_CHANNEL: ${{ steps.channel.outputs.velopack }}
+          IS_PRERELEASE: ${{ steps.channel.outputs.prerelease }}
         run: |
+          $channel = $env:VELOPACK_CHANNEL
           $installerName = "MyTools-$env:RELEASE_VERSION-windows-x64-setup.exe"
           $portableName = "MyTools-$env:RELEASE_VERSION-windows-x64-portable.zip"
-          $fullPackageName = "MyTools-$env:RELEASE_VERSION-full.nupkg"
-          $deltaPackageName = "MyTools-$env:RELEASE_VERSION-delta.nupkg"
+          $fullPackage = Get-ChildItem .\Releases -File |
+              Where-Object { $_.Name -like "MyTools-$env:RELEASE_VERSION-*-full.nupkg" -or $_.Name -eq "MyTools-$env:RELEASE_VERSION-full.nupkg" } |
+              Select-Object -First 1
+          $deltaPackage = Get-ChildItem .\Releases -File |
+              Where-Object { $_.Name -like "MyTools-$env:RELEASE_VERSION-*-delta.nupkg" -or $_.Name -eq "MyTools-$env:RELEASE_VERSION-delta.nupkg" } |
+              Select-Object -First 1
 
           $assets = @(
               "$(Resolve-Path (Join-Path .\Releases $installerName))#Windows x64 Installer (Recommended)"
               "$(Resolve-Path (Join-Path .\Releases $portableName))#Windows x64 Portable"
-              "$(Resolve-Path (Join-Path .\Releases $fullPackageName))#Automatic updater package"
-              "$(Resolve-Path .\Releases\RELEASES)#Automatic updater metadata"
-              "$(Resolve-Path .\Releases\assets.win.json)#Automatic updater asset metadata"
-              "$(Resolve-Path .\Releases\releases.win.json)#Automatic updater release metadata"
+              "$(Resolve-Path $fullPackage.FullName)#Automatic updater package"
+              "$(Resolve-Path (Join-Path .\Releases "assets.$channel.json"))#Automatic updater asset metadata"
+              "$(Resolve-Path (Join-Path .\Releases "releases.$channel.json"))#Automatic updater release metadata"
           )
 
-          $deltaPackagePath = Join-Path .\Releases $deltaPackageName
-          if (Test-Path $deltaPackagePath -PathType Leaf) {
-              $assets += "$(Resolve-Path $deltaPackagePath)#Automatic updater delta package"
+          if ($null -ne $deltaPackage) {
+              $assets += "$(Resolve-Path $deltaPackage.FullName)#Automatic updater delta package"
+          }
+
+          $legacyReleasesPath = Join-Path .\Releases 'RELEASES'
+          if (Test-Path $legacyReleasesPath -PathType Leaf) {
+              $assets += "$(Resolve-Path $legacyReleasesPath)#Automatic updater metadata"
+          }
+
+          $legacyChannelReleasesPath = Join-Path .\Releases "RELEASES-$channel"
+          if (Test-Path $legacyChannelReleasesPath -PathType Leaf) {
+              $assets += "$(Resolve-Path $legacyChannelReleasesPath)#Automatic updater metadata"
+          }
+
+          $winFeedPath = Join-Path .\Releases 'releases.win.json'
+          if ($channel -eq 'stable' -and (Test-Path $winFeedPath -PathType Leaf)) {
+              $assets += "$(Resolve-Path $winFeedPath)#Automatic updater release metadata (win channel alias)"
           }
 
           $repositoryUrl = "https://github.com/$env:GITHUB_REPOSITORY"
@@ -305,17 +408,148 @@ jobs:
 
           [Download Windows x64 Portable]($downloadBaseUrl/$portableName)
 
+          Channel: **$env:RELEASE_LABEL** ($channel)
+
           > The `.nupkg`, `.json`, and `RELEASES` assets are used by the automatic updater. Most users do not need to download them.
 
           ## What's Changed
           "@ | Set-Content -Path $releaseNotesPath -Encoding utf8
 
-          gh release create $env:RELEASE_TAG `
-            --repo $env:GITHUB_REPOSITORY `
-            --target $env:GITHUB_SHA `
-            --title "MyTools v$env:RELEASE_VERSION" `
-            --notes-file $releaseNotesPath `
-            --generate-notes `
-            @assets
+          $createArgs = @(
+              'release', 'create', $env:RELEASE_TAG,
+              '--repo', $env:GITHUB_REPOSITORY,
+              '--target', $env:GITHUB_SHA,
+              '--title', "MyTools v$env:RELEASE_VERSION ($env:RELEASE_LABEL)",
+              '--notes-file', $releaseNotesPath,
+              '--generate-notes'
+          )
 
+          if ($env:IS_PRERELEASE -eq 'true') {
+              $createArgs += '--prerelease'
+          } else {
+              $createArgs += '--latest'
+          }
 
+          $createArgs += $assets
+          gh @createArgs
+
+      - name: Update README download matrix
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          function Get-ChannelLinks([bool] $Prerelease) {
+              $releases = gh release list --repo $env:GITHUB_REPOSITORY --limit 100 --json tagName,name,isPrerelease,isDraft | ConvertFrom-Json
+              $match = $releases |
+                  Where-Object { -not $_.isDraft -and ([bool]$_.isPrerelease) -eq $Prerelease } |
+                  Select-Object -First 1
+
+              if ($null -eq $match) {
+                  return [pscustomobject]@{
+                      Version = '—'
+                      InstallerUrl = ''
+                      PortableUrl = ''
+                  }
+              }
+
+              $details = gh release view $match.tagName --repo $env:GITHUB_REPOSITORY --json assets,tagName,name | ConvertFrom-Json
+              $installer = $details.assets | Where-Object { $_.name -like '*-windows-x64-setup.exe' } | Select-Object -First 1
+              $portable = $details.assets | Where-Object { $_.name -like '*-windows-x64-portable.zip' } | Select-Object -First 1
+              $versionMatch = [regex]::Match("$($details.name) $($installer?.name)", '(?<version>(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))')
+              $version = if ($versionMatch.Success) { $versionMatch.Groups['version'].Value } else { $details.tagName }
+              $downloadBase = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/$($details.tagName)"
+
+              return [pscustomobject]@{
+                  Version = $version
+                  InstallerUrl = if ($null -eq $installer) { '' } else { "$downloadBase/$($installer.name)" }
+                  PortableUrl = if ($null -eq $portable) { '' } else { "$downloadBase/$($portable.name)" }
+              }
+          }
+
+          function Format-Link([string] $Url, [string] $PublishedText, [string] $MissingText) {
+              if ([string]::IsNullOrWhiteSpace($Url)) {
+                  return $MissingText
+              }
+
+              return "[$PublishedText]($Url)"
+          }
+
+          function Update-DownloadMatrix {
+              param(
+                  [string] $Path,
+                  [string] $ChannelHeader,
+                  [string] $VersionHeader,
+                  [string] $InstallerHeader,
+                  [string] $PortableHeader,
+                  [string] $DownloadText,
+                  [string] $MissingText,
+                  $Stable,
+                  $Beta
+              )
+
+              $content = Get-Content -LiteralPath $Path -Raw
+              $start = '<!-- mytools-downloads:start -->'
+              $end = '<!-- mytools-downloads:end -->'
+              $startIndex = $content.IndexOf($start)
+              $endIndex = $content.IndexOf($end)
+              if ($startIndex -lt 0 -or $endIndex -lt 0 -or $endIndex -le $startIndex) {
+                  throw "Download matrix markers are missing in $Path"
+              }
+
+              $newline = if ($content.Contains("`r`n")) { "`r`n" } else { "`n" }
+              $table = @"
+          $start
+          | $ChannelHeader | $VersionHeader | $InstallerHeader | $PortableHeader |
+          | --- | --- | --- | --- |
+          | **Stable** | $($Stable.Version) | $(Format-Link $Stable.InstallerUrl $DownloadText $MissingText) | $(Format-Link $Stable.PortableUrl $DownloadText $MissingText) |
+          | **Beta** | $($Beta.Version) | $(Format-Link $Beta.InstallerUrl $DownloadText $MissingText) | $(Format-Link $Beta.PortableUrl $DownloadText $MissingText) |
+          $end
+          "@
+              $table = ($table -replace "`r`n", "`n" -replace "`n", $newline).TrimEnd()
+              $updated = $content.Substring(0, $startIndex) + $table + $newline + $content.Substring($endIndex + $end.Length)
+              [System.IO.File]::WriteAllText((Resolve-Path $Path), $updated.TrimEnd() + $newline)
+          }
+
+          $stable = Get-ChannelLinks -Prerelease $false
+          $beta = Get-ChannelLinks -Prerelease $true
+          $branch = if ([string]::IsNullOrWhiteSpace($env:DEFAULT_BRANCH)) { 'main' } else { $env:DEFAULT_BRANCH }
+
+          git fetch origin $branch
+          git checkout --force -B $branch "origin/$branch"
+
+          Update-DownloadMatrix `
+              -Path .\README.md `
+              -ChannelHeader 'Channel' `
+              -VersionHeader 'Version' `
+              -InstallerHeader 'Installer (full setup)' `
+              -PortableHeader 'Portable' `
+              -DownloadText 'Download' `
+              -MissingText 'Not published yet' `
+              -Stable $stable `
+              -Beta $beta
+
+          Update-DownloadMatrix `
+              -Path .\README.zh-CN.md `
+              -ChannelHeader '通道' `
+              -VersionHeader '版本' `
+              -InstallerHeader '完整安装包' `
+              -PortableHeader '便携版' `
+              -DownloadText '下载' `
+              -MissingText '尚未发布' `
+              -Stable $stable `
+              -Beta $beta
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add README.md README.zh-CN.md
+          $changedFiles = @(git diff --cached --name-only -- README.md README.zh-CN.md)
+          if ($changedFiles.Count -eq 0) {
+              Write-Host 'README download matrix is already up to date.'
+              exit 0
+          }
+
+          git commit -m "docs: update download links [skip release]"
+          git push origin $branch

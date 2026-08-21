@@ -18,7 +18,7 @@
            --property:SelfContained=true `
            --property:CreateVelopackRelease=true `
            --property:Version=1.0.2 `
-           --property:VelopackChannel=win
+           --property:VelopackChannel=stable
 
     主要参数：
       --configuration Release
@@ -40,7 +40,7 @@
           但手动 dotnet publish 不会自动执行 patch + 1。
 
       --property:VelopackChannel=<channel>
-          指定更新通道，例如 win 或 beta；默认值为 win。客户端的 UpdateChannel 必须与之匹配。
+          指定更新通道，例如 stable 或 beta；默认值为 stable。客户端的 UpdateChannel 必须与之匹配。
 
     可选 MSBuild 属性：
       --property:VelopackDeltaMode=BestSpeed
@@ -147,7 +147,7 @@ if (-not (Test-Path -LiteralPath $versionFile -PathType Leaf)) {
 
 $currentVersion = (Get-Content -LiteralPath $versionFile -Raw).Trim()
 $releaseVersion = Get-NextPatchVersion -CurrentVersion $currentVersion
-$channel = "win"
+$channel = "stable"
 $frameworkDependent = $true
 $selfContained = if ($frameworkDependent) { "false" } else { "true" }
 
