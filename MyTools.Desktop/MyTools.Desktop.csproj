@@ -38,6 +38,7 @@
         <NodeRuntimeCacheDirectory Condition="'$(NodeRuntimeCacheDirectory)' == ''">$(VelopackRepositoryRoot)\artifacts\node-runtime</NodeRuntimeCacheDirectory>
         <NodeRuntimePublishDirectory>$(VelopackPublishDirectory)\runtime\node</NodeRuntimePublishDirectory>
         <NodeRuntimeBundleScript>$(VelopackRepositoryRoot)\build\bundle-node-runtime.ps1</NodeRuntimeBundleScript>
+        <NodeRuntimePreferredExe Condition="'$(NodeRuntimePreferredExe)' == ''">$(MYTOOLS_PREFERRED_NODE_EXE)</NodeRuntimePreferredExe>
     </PropertyGroup>
 
     <ItemGroup>
@@ -124,7 +125,7 @@
                Text="The Node runtime bundle script was not found at '$(NodeRuntimeBundleScript)'." />
         <Message Importance="high"
                  Text="Bundling Node.js $(NodeRuntimeVersion) into '$(NodeRuntimePublishDirectory)'." />
-        <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(NodeRuntimeBundleScript)&quot; -Version &quot;$(NodeRuntimeVersion)&quot; -Destination &quot;$(NodeRuntimePublishDirectory)&quot; -Sha256 &quot;$(NodeRuntimeSha256)&quot; -CacheDirectory &quot;$(NodeRuntimeCacheDirectory)&quot;" />
+        <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(NodeRuntimeBundleScript)&quot; -Version &quot;$(NodeRuntimeVersion)&quot; -Destination &quot;$(NodeRuntimePublishDirectory)&quot; -Sha256 &quot;$(NodeRuntimeSha256)&quot; -CacheDirectory &quot;$(NodeRuntimeCacheDirectory)&quot; -PreferredNodeExe &quot;$(NodeRuntimePreferredExe)&quot;" />
         <Error Condition="!Exists('$(NodeRuntimePublishDirectory)\node.exe')"
                Text="Bundled Node runtime is missing: '$(NodeRuntimePublishDirectory)\node.exe'." />
     </Target>
