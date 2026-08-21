@@ -112,6 +112,7 @@ public static class PluginConfigurationRegistrar
         }
 
         setting.UiHint = uiHint;
+        setting.Visibility = string.IsNullOrWhiteSpace(item.Visibility) ? null : item.Visibility.Trim();
     }
 
     private static ConfigurationSetting RegisterScalar(

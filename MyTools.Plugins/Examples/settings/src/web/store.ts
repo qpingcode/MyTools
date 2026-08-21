@@ -1,6 +1,7 @@
 import { computed, reactive } from "vue";
 import { bus } from "./bus";
 import { localeRevision, t } from "./i18n";
+import { evaluateVisibility, settingKey } from "./setting-utils";
 import type {
     Category,
     Config,
@@ -79,6 +80,20 @@ export function findCategory(categories: Category[], key: string): Category | nu
     return null;
 }
 
+export function currentSettingRawValue(setting: Setting): string {
+    const dirty = store.dirtySettings.get(setting.fullPath);
+    if (dirty !== undefined) return dirty;
+    return setting.currentValue ?? "";
+}
+
+export function isSettingVisible(setting: Setting, siblings: Setting[]): boolean {
+    const needle = (name: string) => {
+        const match = siblings.find((item) => settingKey(item).toLowerCase() === name.toLowerCase());
+        return match ? currentSettingRawValue(match) : undefined;
+    };
+    return evaluateVisibility(setting.visibility, needle);
+}
+
 export function settingMatchesSearch(setting: Setting): boolean {
     if (!store.searchQuery) return true;
     if (setting.title.toLowerCase().includes(store.searchQuery)) return true;
@@ -92,6 +107,7 @@ export function categorySelfMatches(category: Category): boolean {
     if (category.name.toLowerCase().includes(store.searchQuery)) return true;
     if (category.description && category.description.toLowerCase().includes(store.searchQuery)) return true;
     for (const setting of category.settings) {
+        if (!isSettingVisible(setting, category.settings)) continue;
         if (settingMatchesSearch(setting)) return true;
     }
     if (category.key === "Plugins" && keymapMatchesSearch()) return true;

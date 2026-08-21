@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using MyTools.Common.Config;
 using NUnit.Framework;
 
@@ -22,5 +23,58 @@ public class SettingMacroResolverTest
         Assert.That(SettingMacroResolver.Resolve("hello"), Is.EqualTo("hello"));
         Assert.That(SettingMacroResolver.Resolve(null), Is.EqualTo(string.Empty));
         Assert.That(SettingMacroResolver.Resolve(""), Is.EqualTo(""));
+    }
+
+    [Test]
+    public void EvaluateVisibility_EmptyOrMissingMacro_ShouldBeVisible()
+    {
+        var values = new Dictionary<string, object?>();
+        Assert.That(SettingMacroResolver.EvaluateVisibility(null, values), Is.True);
+        Assert.That(SettingMacroResolver.EvaluateVisibility("", values), Is.True);
+        Assert.That(SettingMacroResolver.EvaluateVisibility("ChromeEnabled == true", values), Is.True);
+    }
+
+    [Test]
+    public void EvaluateVisibility_ShouldCompareSiblingBools()
+    {
+        var values = new Dictionary<string, object?> { ["ChromeEnabled"] = true };
+
+        Assert.That(SettingMacroResolver.EvaluateVisibility("${ChromeEnabled == true}", values), Is.True);
+        Assert.That(SettingMacroResolver.EvaluateVisibility("${ChromeEnabled == false}", values), Is.False);
+        Assert.That(SettingMacroResolver.EvaluateVisibility("${ChromeEnabled}", values), Is.True);
+
+        values["ChromeEnabled"] = "False";
+        Assert.That(SettingMacroResolver.EvaluateVisibility("${ChromeEnabled == true}", values), Is.False);
+        Assert.That(SettingMacroResolver.EvaluateVisibility("${ChromeEnabled == false}", values), Is.True);
+    }
+
+    [Test]
+    public void EvaluateVisibility_ShouldCombineAndOr()
+    {
+        var values = new Dictionary<string, object?>
+        {
+            ["ChromeEnabled"] = true,
+            ["EdgeEnabled"] = false
+        };
+
+        Assert.That(
+            SettingMacroResolver.EvaluateVisibility("${ChromeEnabled == true && EdgeEnabled == true}", values),
+            Is.False);
+        Assert.That(
+            SettingMacroResolver.EvaluateVisibility("${ChromeEnabled == true || EdgeEnabled == true}", values),
+            Is.True);
+        Assert.That(
+            SettingMacroResolver.EvaluateVisibility("${(ChromeEnabled == true || EdgeEnabled == true) && ChromeEnabled}", values),
+            Is.True);
+    }
+
+    [Test]
+    public void EvaluateVisibility_ShouldCompareStringsAndMissingKeys()
+    {
+        var values = new Dictionary<string, object?> { ["ChromeProfile"] = "Default" };
+
+        Assert.That(SettingMacroResolver.EvaluateVisibility("${ChromeProfile == \"Default\"}", values), Is.True);
+        Assert.That(SettingMacroResolver.EvaluateVisibility("${ChromeProfile != \"Guest\"}", values), Is.True);
+        Assert.That(SettingMacroResolver.EvaluateVisibility("${UnknownKey == true}", values), Is.False);
     }
 }

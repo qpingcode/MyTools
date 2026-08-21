@@ -194,5 +194,24 @@ public class PluginManifestV3RuntimeFieldsTest
         }));
         Assert.That(browserSearch.Configuration.Count(item => item.Type == "bool"), Is.EqualTo(5));
         Assert.That(browserSearch.Configuration.Count(item => item.Type == "path"), Is.EqualTo(3));
+        Assert.That(
+            browserSearch.Configuration.Single(item => item.Key == "ChromeUserDataDir").Visibility,
+            Is.EqualTo("${ChromeEnabled == true}"));
+        Assert.That(
+            browserSearch.Configuration.Single(item => item.Key == "ChromeProfile").Visibility,
+            Is.EqualTo("${ChromeEnabled == true}"));
+        Assert.That(
+            browserSearch.Configuration.Single(item => item.Key == "EdgeUserDataDir").Visibility,
+            Is.EqualTo("${EdgeEnabled == true}"));
+        Assert.That(
+            browserSearch.Configuration.Single(item => item.Key == "EdgeProfile").Visibility,
+            Is.EqualTo("${EdgeEnabled == true}"));
+        Assert.That(
+            browserSearch.Configuration.Single(item => item.Key == "FirefoxProfilesDir").Visibility,
+            Is.EqualTo("${FirefoxEnabled == true}"));
+        Assert.That(
+            browserSearch.Configuration.Single(item => item.Key == "FirefoxProfile").Visibility,
+            Is.EqualTo("${FirefoxEnabled == true}"));
+        Assert.That(browserSearch.Configuration.Single(item => item.Key == "ChromeEnabled").Visibility, Is.Null);
     }
 }

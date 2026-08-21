@@ -66,6 +66,32 @@ public class PluginConfigurationV3Test
     }
 
     [Test]
+    public void Deserialize_ShouldReadVisibilityCondition()
+    {
+        const string json = """
+            {
+              "id": "browser-search",
+              "version": "0.1.0",
+              "protocolVersion": "3.0",
+              "configuration": [
+                { "key": "ChromeEnabled", "type": "bool", "defaultValue": true },
+                {
+                  "key": "ChromeProfile",
+                  "type": "string",
+                  "visibility": "${ChromeEnabled == true}"
+                }
+              ],
+              "entries": [{ "id": "main", "entry": "backend/index.mjs" }]
+            }
+            """;
+
+        var m = JsonSerializer.Deserialize<PluginManifestV3>(json, ProtocolJsonOptions.Default)!;
+
+        Assert.That(m.Configuration[1].Visibility, Is.EqualTo("${ChromeEnabled == true}"));
+        Assert.That(PluginManifestV3Validator.Validate(m).IsValid, Is.True);
+    }
+
+    [Test]
     public void Validate_ArrayWithoutSchema_ShouldFail()
     {
         var m = new PluginManifestV3

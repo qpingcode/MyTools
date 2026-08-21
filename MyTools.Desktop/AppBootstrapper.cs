@@ -332,7 +332,7 @@ public class AppBootstrapper : IDisposable
             
             registry.AddSetting(generalCategory, "UpdateChannel",
                 localization.GetCaption("Configuration.General.UpdateChannel.Title", "Update channel"),
-                localization.GetCaption("Configuration.General.UpdateChannel.Description", "Velopack update channel, such as win, stable or beta"), "win");
+                localization.GetCaption("Configuration.General.UpdateChannel.Description", "Velopack update channel, such as stable or beta"), UpdateService.DefaultChannel);
             
             registry.AddSetting(generalCategory, "UpdateProxyUrl",
                 localization.GetCaption("Configuration.General.UpdateProxyUrl.Title", "Update proxy"),

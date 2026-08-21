@@ -194,6 +194,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
             DefaultValue = ConfigurationSettingValues.ToDtoString(setting.DefaultValue),
             RequiresRestart = (setting.Options & SettingOptions.RequiresRestart) != 0,
             UiHint = setting.UiHint,
+            Visibility = setting.Visibility,
             Schema = MapSchema(setting.Schema)
         };
     }

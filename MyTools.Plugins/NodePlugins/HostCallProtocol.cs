@@ -43,6 +43,7 @@ public sealed class SettingDto
     public string? DefaultValue { get; init; }
     public bool RequiresRestart { get; init; }
     public string? UiHint { get; init; }
+    public string? Visibility { get; init; }
     public SettingSchemaDto? Schema { get; init; }
 }
 
