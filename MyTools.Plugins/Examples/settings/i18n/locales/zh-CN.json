@@ -101,5 +101,6 @@
   "Plugin.Settings.Table.Empty": "暂无数据",
   "Plugin.Settings.Table.Apply": "应用",
   "Plugin.Settings.Table.Yes": "是",
-  "Plugin.Settings.Table.No": "否"
+  "Plugin.Settings.Table.No": "否",
+  "Plugin.Settings.PleaseInput": "请输入"
 }

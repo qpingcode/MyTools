@@ -69,6 +69,42 @@ public class NodePluginBusHostTest
     }
 
     [Test]
+    public async Task SearchAsync_WhenCallerCancels_ShouldFailWithCancelledNotTimeout()
+    {
+        var (host, nodeT, _) = await CreateStartedHostAsync();
+        using var cts = new CancellationTokenSource();
+
+        var searchTask = host.SearchAsync("hello", "global", "en-US", "en-US", "dark", cts.Token);
+
+        Envelope? sentRequest = null;
+        for (var i = 0; i < 20 && sentRequest is null; i++)
+        {
+            await Task.Delay(25);
+            sentRequest = nodeT.Sent.FirstOrDefault(e => e.Route == "plugin.call.search");
+        }
+
+        Assert.That(sentRequest, Is.Not.Null, "request must be on the wire before cancel");
+        cts.Cancel();
+
+        var ex = Assert.ThrowsAsync<BusCallException>(async () => await searchTask);
+        Assert.That(ex!.Code, Is.EqualTo(ErrorCode.Cancelled));
+        Assert.That(ex.Message, Does.Contain("cancelled").IgnoreCase);
+        Assert.That(ex.Message, Does.Not.Contain("timed out"));
+    }
+
+    [Test]
+    public async Task SearchAsync_WhenNoResponse_ShouldFailWithRequestTimeout()
+    {
+        var (host, _, _) = await CreateStartedHostAsync();
+        host.RequestTimeoutMs = 80;
+
+        var ex = Assert.ThrowsAsync<BusCallException>(async () =>
+            await host.SearchAsync("hello", "global", "en-US", "en-US", "dark", CancellationToken.None));
+        Assert.That(ex!.Code, Is.EqualTo(ErrorCode.RequestTimeout));
+        Assert.That(ex.Message, Does.Contain("timed out"));
+    }
+
+    [Test]
     public async Task EventReceived_ShouldFireWhenPluginPublishesAnEvent()
     {
         var (host, nodeT, sessionId) = await CreateStartedHostAsync();

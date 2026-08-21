@@ -136,7 +136,8 @@ public sealed class MessageBus
         }
 
         _pending[request.Id] = new PendingOrigin(origin, request.Route, Stopwatch.GetTimestamp());
-        _logger.LogDebug(
+        _logger.Log(
+            Routes.IsPing(request.Route) ? LogLevel.Trace : LogLevel.Debug,
             "RouteRequest id={Id} traceId={TraceId} route={Route} origin={Origin} -> node",
             request.Id, request.TraceId, request.Route, origin.EndpointLabel);
         await session.WriteOnAsync(session.NodeLabel, request);
@@ -288,7 +289,8 @@ public sealed class MessageBus
 
         session.Release(pending.Origin.EndpointLabel, env.CorrelationId, pending.Route);
         var elapsedMs = Stopwatch.GetElapsedTime(pending.StartedAt).TotalMilliseconds;
-        _logger.LogDebug(
+        _logger.Log(
+            Routes.IsPing(pending.Route) ? LogLevel.Trace : LogLevel.Debug,
             "Response correlated id={Corr} route={Route} result={Result} elapsedMs={ElapsedMs:0}",
             env.CorrelationId, env.Route, env.Error is null ? "ok" : env.Error.Code.ToString(), elapsedMs);
         _ = session.WriteOnAsync(pending.Origin.EndpointLabel, env);

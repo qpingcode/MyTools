@@ -153,6 +153,7 @@
   <data name="Action.ExecuteFailed.Title" xml:space="preserve"><value>操作执行失败</value></data>
   <data name="Action.ExecuteFailed.Message" xml:space="preserve"><value>无法执行“{{action}}”：{{message}}</value></data>
   <data name="UpdateDownloadAndRestart" xml:space="preserve"><value>下载并重启</value></data>
+  <data name="LogLevel.Verbose" xml:space="preserve"><value>冗长</value></data>
   <data name="LogLevel.Debug" xml:space="preserve"><value>调试</value></data>
   <data name="LogLevel.Information" xml:space="preserve"><value>信息</value></data>
   <data name="LogLevel.Warning" xml:space="preserve"><value>警告</value></data>

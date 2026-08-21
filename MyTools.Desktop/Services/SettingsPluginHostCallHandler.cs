@@ -12,7 +12,6 @@ using MyTools.Desktop.Views;
 using MyTools.Plugins;
 using MyTools.Plugins.NodePlugins;
 using MyTools.Protocol.Manifest;
-using Serilog.Events;
 
 namespace MyTools.Desktop.Services;
 
@@ -146,10 +145,14 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
                 new() { Value = "light", Label = languageService.GetCaption("Theme.light", "Light") },
                 new() { Value = "dark", Label = languageService.GetCaption("Theme.dark", "Dark") }
             ],
-            SupportedLogLevels = Enum.GetNames<LogEventLevel>().Select(name => new OptionDto
+            SupportedLogLevels = LogLevelService.SelectableLevels.Select(level =>
             {
-                Value = name,
-                Label = languageService.GetCaption($"LogLevel.{name}", name)
+                var name = level.ToString();
+                return new OptionDto
+                {
+                    Value = name,
+                    Label = languageService.GetCaption($"LogLevel.{name}", name)
+                };
             }).ToList()
         };
 

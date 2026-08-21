@@ -50,12 +50,29 @@ public static class ConfigurationSettingValues
         return setting.ValueType switch
         {
             SettingValueTypes.Bool => string.Equals(stringValue, "True", StringComparison.OrdinalIgnoreCase),
-            SettingValueTypes.Integer => int.TryParse(stringValue, out var i) ? i : stringValue,
-            SettingValueTypes.Double => double.TryParse(stringValue, out var d) ? d : stringValue,
+            SettingValueTypes.Integer => ConvertOrDefault(stringValue, setting, int.TryParse, 0),
+            SettingValueTypes.Double => ConvertOrDefault(stringValue, setting, double.TryParse, 0d),
             SettingValueTypes.Array => ParseArray(stringValue),
             _ => stringValue
         };
     }
+
+    private static object ConvertOrDefault<T>(
+        string stringValue,
+        ConfigurationSetting setting,
+        TryParseHandler<T> tryParse,
+        T fallback)
+        where T : struct
+    {
+        if (!string.IsNullOrWhiteSpace(stringValue) && tryParse(stringValue, out var parsed))
+        {
+            return parsed;
+        }
+
+        return setting.DefaultValue is T defaultValue ? defaultValue : fallback;
+    }
+
+    private delegate bool TryParseHandler<T>(string value, out T result);
 
     private static JsonElement ParseArray(string stringValue)
     {

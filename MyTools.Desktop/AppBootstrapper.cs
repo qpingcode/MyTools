@@ -332,7 +332,7 @@ public class AppBootstrapper : IDisposable
             
             registry.AddSetting(generalCategory, "SearchDelay",
                 localization.GetCaption("Configuration.General.SearchDelay.Title", "Search delay"),
-                localization.GetCaption("Configuration.General.SearchDelay.Description", "Search debounce delay in milliseconds"), 100.0);
+                localization.GetCaption("Configuration.General.SearchDelay.Description", "Search debounce delay in milliseconds"), 250.0);
             
             registry.AddSetting(generalCategory, "UpdateUrl",
                 localization.GetCaption("Configuration.General.UpdateUrl.Title", "Update URL"),

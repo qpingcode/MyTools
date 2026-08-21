@@ -39,7 +39,7 @@ function emitText(value: string | null): void {
 }
 
 function emitNumber(value: number | null): void {
-    emit("update:modelValue", value ?? 0);
+    emit("update:modelValue", value);
 }
 
 function emitBool(value: boolean): void {
@@ -66,6 +66,7 @@ function emitBool(value: boolean): void {
     <n-input-number
         v-else-if="hint === 'input-number'"
         :value="numberValue"
+        :placeholder="t('Plugin.Settings.PleaseInput', 'Please input')"
         size="small"
         class="field-stretch"
         @update:value="emitNumber($event)"

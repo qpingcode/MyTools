@@ -5,7 +5,7 @@ namespace MyTools.Desktop.ViewModels;
 internal sealed class SearchDebouncer : IDisposable
 {
     private const string SearchDelaySettingPath = "General.SearchDelay";
-    private const double DefaultDelayMilliseconds = 100;
+    private const double DefaultDelayMilliseconds = 250;
     private const double MaximumTimerDelayMilliseconds = uint.MaxValue - 1d;
     private readonly IConfigurationRegistry configurationRegistry;
     private readonly Action callback;

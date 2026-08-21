@@ -51,7 +51,10 @@ internal sealed class NodePluginBusHost : INodePluginHost
     /// <summary>Consecutive missed pongs before declaring the peer dead.</summary>
     internal const int HeartbeatDeadAfter = 3;
 
-    private const int DefaultTimeoutMs = 30000;
+    internal const int DefaultTimeoutMs = 30000;
+
+    /// <summary>Host wait budget for <c>plugin.call.*</c>. Overridable in tests.</summary>
+    internal int RequestTimeoutMs { get; set; } = DefaultTimeoutMs;
 
     public string NodeExePath { get; set; } = "node";
 
@@ -156,7 +159,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
     {
         foreach (var (_, tcs) in _pending)
         {
-            tcs.TrySetException(new BusCallException(code.ToString(), message));
+            tcs.TrySetException(new BusCallException(code, message));
         }
 
         _pending.Clear();
@@ -210,7 +213,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(ex, "bus.ping send failed");
+                _logger.LogTrace(ex, "bus.ping send failed");
                 _pending.TryRemove(pingId, out _);
                 continue;
             }
@@ -373,30 +376,49 @@ internal sealed class NodePluginBusHost : INodePluginHost
             EndpointId = EndpointIds.Host,
             Kind = MessageKind.Request,
             Route = route,
-            TimeoutMs = DefaultTimeoutMs,
+            TimeoutMs = RequestTimeoutMs,
             Payload = JsonNode.Parse(JsonSerializer.Serialize(parameters, ProtocolJsonOptions.Default)),
         };
 
         var tcs = new TaskCompletionSource<JsonNode?>(TaskCreationOptions.RunContinuationsAsynchronously);
         _pending[id] = tcs;
 
-        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(DefaultTimeoutMs);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        using var timeoutCts = new CancellationTokenSource();
+        timeoutCts.CancelAfter(RequestTimeoutMs);
         var requestStartedAt = System.Diagnostics.Stopwatch.GetTimestamp();
         _logger.LogInformation("id: {Id}, start", id);
-        using var _ = timeoutCts.Token.Register(() =>
+
+        void CompletePending(bool timedOut)
         {
-            if (_pending.TryRemove(id, out var timedOutTcs))
+            if (!_pending.TryRemove(id, out var pendingTcs))
             {
-                var elapsedMs = System.Diagnostics.Stopwatch.GetElapsedTime(requestStartedAt).TotalMilliseconds;
-                _logger.LogWarning(
-                    "plugin.call '{Route}' timed out after {ElapsedMs}ms (expected {TimeoutMs}ms)",
-                    route, elapsedMs, DefaultTimeoutMs);
-                timedOutTcs.TrySetException(new BusCallException(
-                    ErrorCode.RequestTimeout.ToString(),
-                    $"plugin.call '{route}' timed out after {DefaultTimeoutMs}ms"));
+                return;
             }
-        });
+
+            var elapsedMs = System.Diagnostics.Stopwatch.GetElapsedTime(requestStartedAt).TotalMilliseconds;
+            if (!timedOut || cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogDebug(
+                    "plugin.call '{Route}' cancelled after {ElapsedMs}ms",
+                    route, elapsedMs);
+                pendingTcs.TrySetException(new BusCallException(
+                    ErrorCode.Cancelled,
+                    $"plugin.call '{route}' was cancelled"));
+                return;
+            }
+
+            _logger.LogWarning(
+                "plugin.call '{Route}' timed out after {ElapsedMs}ms (expected {TimeoutMs}ms)",
+                route, elapsedMs, RequestTimeoutMs);
+            pendingTcs.TrySetException(new BusCallException(
+                ErrorCode.RequestTimeout,
+                $"plugin.call '{route}' timed out after {RequestTimeoutMs}ms"));
+        }
+
+        using var timeoutRegistration = timeoutCts.Token.Register(() => CompletePending(timedOut: true));
+        using var cancelRegistration = cancellationToken.Register(() => CompletePending(timedOut: false));
 
         await _bus.RouteRequestAsync(env, _hostEndpoint);
         _logger.LogInformation("Sent plugin.call '{Route}' id={Id}, waiting for response", route, id);
@@ -411,7 +433,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
 
         if (env.Error is not null)
         {
-            tcs.TrySetException(new BusCallException(env.Error.Code.ToString(), env.Error.Message));
+            tcs.TrySetException(new BusCallException(env.Error.Code, env.Error.Message));
         }
         else
         {
@@ -449,8 +471,13 @@ internal sealed class NodePluginBusHost : INodePluginHost
     }
 }
 
-/// <summary>Thrown when a plugin.call.* response carries an error or times out.</summary>
+/// <summary>Thrown when a plugin.call.* response carries an error, is cancelled, or times out.</summary>
 internal sealed class BusCallException : Exception
 {
-    public BusCallException(string code, string message) : base($"{code}: {message}") { }
+    public ErrorCode Code { get; }
+
+    public BusCallException(ErrorCode code, string message) : base($"{code}: {message}")
+    {
+        Code = code;
+    }
 }
