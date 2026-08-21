@@ -99,7 +99,6 @@ function Get-PreferredNodeCandidates {
 }
 
 $Version = $Version.TrimStart("v")
-New-Item -ItemType Directory -Path $CacheDirectory -Force | Out-Null
 New-Item -ItemType Directory -Path $Destination -Force | Out-Null
 
 Write-Host "=== Bundle Node runtime ==="
@@ -109,7 +108,10 @@ Write-Host "Env preferred exe: $(if ([string]::IsNullOrWhiteSpace($env:MYTOOLS_P
 Write-Host "Cache directory:   $CacheDirectory"
 Write-Host "Destination:       $Destination"
 
-$cachedFiles = @(Get-ChildItem -LiteralPath $CacheDirectory -Force -File -ErrorAction SilentlyContinue)
+$cachedFiles = @()
+if (Test-Path -LiteralPath $CacheDirectory) {
+    $cachedFiles = @(Get-ChildItem -LiteralPath $CacheDirectory -Force -File -ErrorAction SilentlyContinue)
+}
 if ($cachedFiles.Count -eq 0) {
     Write-Host "Zip cache contents: (empty)"
 } else {
@@ -142,12 +144,23 @@ foreach ($candidate in $candidates) {
 if ($null -ne $matchedExe) {
     Write-Host "Using existing Node v$Version at $matchedExe (official zip cache not needed)."
     Copy-NodeRuntime $matchedExe
+
+    # Do not leave an empty cache dir for actions/cache to save.
+    if (Test-Path -LiteralPath $CacheDirectory) {
+        $remaining = @(Get-ChildItem -LiteralPath $CacheDirectory -Force -File -ErrorAction SilentlyContinue)
+        if ($remaining.Count -eq 0) {
+            Remove-Item -LiteralPath $CacheDirectory -Recurse -Force
+            Write-Host "Removed empty zip cache directory so CI will not save a blank cache."
+        }
+    }
 }
 else {
     $zipName = "node-v$Version-win-x64.zip"
     $downloadUri = "https://nodejs.org/dist/v$Version/$zipName"
     $cacheZip = Join-Path $CacheDirectory $zipName
     $expected = $Sha256.ToLowerInvariant()
+
+    New-Item -ItemType Directory -Path $CacheDirectory -Force | Out-Null
 
     if (Test-Path $cacheZip -PathType Leaf) {
         $actual = Get-Sha256Hex $cacheZip

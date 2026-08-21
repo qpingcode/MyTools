@@ -352,7 +352,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: artifacts/node-runtime
-          key: node-runtime-win-x64-v24.19.0
+          key: node-runtime-win-x64-v24.19.0-zip
 
       - name: Inspect Node zip cache
         shell: pwsh
@@ -362,20 +362,26 @@ jobs:
           $ErrorActionPreference = "Stop"
           $cacheDir = Join-Path $PWD 'artifacts\node-runtime'
           $hit = $env:NODE_RUNTIME_CACHE_HIT
-          Write-Host "=== actions/cache for artifacts/node-runtime ==="
-          Write-Host "key: node-runtime-win-x64-v24.19.0"
-          Write-Host "cache-hit: $(if ([string]::IsNullOrWhiteSpace($hit)) { 'false' } else { $hit })"
-          Write-Host "This cache only stores the official nodejs.org zip. It is a miss until a job downloads that zip and later saves the cache."
-          Write-Host "If setup-node already provided v24.19.0, bundling copies that node.exe and never fills this directory."
+          if ([string]::IsNullOrWhiteSpace($hit)) { $hit = 'false' }
 
-          if (-not (Test-Path -LiteralPath $cacheDir)) {
-              Write-Host "Cache directory does not exist yet: $cacheDir"
+          Write-Host "=== actions/cache for artifacts/node-runtime ==="
+          Write-Host "key: node-runtime-win-x64-v24.19.0-zip"
+          Write-Host "cache-hit: $hit"
+          Write-Host "This cache only stores the official nodejs.org zip used when runner Node is not v24.19.0."
+
+          $files = @()
+          if (Test-Path -LiteralPath $cacheDir) {
+              $files = @(Get-ChildItem -LiteralPath $cacheDir -Force -File -Recurse)
+          }
+
+          if ($hit -eq 'true' -and $files.Count -eq 0) {
+              Write-Host "Cache hit restored an empty directory. Treating it as a miss and deleting $cacheDir so the job will not re-save a blank cache."
+              Remove-Item -LiteralPath $cacheDir -Recurse -Force -ErrorAction SilentlyContinue
               return
           }
 
-          $files = @(Get-ChildItem -LiteralPath $cacheDir -Force -File -Recurse)
           if ($files.Count -eq 0) {
-              Write-Host "Cache directory is empty: $cacheDir"
+              Write-Host "No zip on disk yet. If bundling copies setup-node's node.exe, this directory stays empty and actions/cache will skip saving."
               return
           }
 
