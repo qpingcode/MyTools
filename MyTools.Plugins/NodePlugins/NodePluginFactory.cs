@@ -34,7 +34,10 @@ public sealed class NodePluginFactory
             .Select(manifest =>
             {
                 INodePluginHost host = new NodePluginBusHost(
-                    manifest, sessionManager, bus, loggerFactory.CreateLogger<NodePluginBusHost>());
+                    manifest, sessionManager, bus, loggerFactory.CreateLogger<NodePluginBusHost>())
+                {
+                    NodeExePath = NodeRuntimeLocator.Resolve()
+                };
                 return new NodePlugin(
                     manifest, host, loggerFactory.CreateLogger<NodePlugin>(),
                     localizationService, themeService);
