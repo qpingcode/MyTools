@@ -1,0 +1,23 @@
+{
+  "id": {{{pluginIdJson}}},
+  "version": "0.1.0",
+  "protocolVersion": "3.0",
+  "icon": "mdi-puzzle-outline",
+  "i18n": {
+    "defaultLocale": "en-US",
+    "catalog": "i18n/catalog.en-US.json",
+    "localesPath": "i18n/locales",
+    "supportedLocales": ["en-US", "zh-CN"]
+  },
+  "entries": [
+    {
+      "id": "main",
+      "name": { "key": "{{keyRoot}}.Name", "defaultValue": {{{nameJson}}} },
+      "entry": "backend/index.mjs",
+      "capabilities": [],
+      "alias": [{{{pluginIdJson}}}],
+      "search": { "global": false }{{#customUi}},
+      "detail": { "type": "web", "entry": "web/index.html" }{{/customUi}}
+    }
+  ]
+}

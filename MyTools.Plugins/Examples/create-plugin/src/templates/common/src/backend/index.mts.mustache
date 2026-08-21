@@ -1,0 +1,23 @@
+import { createPlugin } from "@qping/plugin-bus/node";
+import { mytoolsI18n } from "@qping/plugin-bus/i18n";
+
+const plugin = createPlugin();
+plugin
+  .initialize((params) => { mytoolsI18n.configure(params); return {}; })
+  .search((params) => {
+    const text = String(params.query || "").trim();
+    return { items: [{
+      id: {{{resultIdJson}}},
+      title: text || mytoolsI18n.t("{{keyRoot}}.Name", { defaultValue: {{{nameJson}}} }),
+      subtitle: mytoolsI18n.t("{{keyRoot}}.Result.Subtitle", { defaultValue: {{{subtitleJson}}} }),
+      icon: { kind: "mdi", value: "mdi-puzzle-outline" },
+      actions: []{{#customUi}},
+      detail: {
+        type: "web-detail",
+        htmlEntry: "web/index.html",
+        title: mytoolsI18n.t("{{keyRoot}}.Name", { defaultValue: {{{nameJson}}} }),
+        initialState: { query: text }
+      }{{/customUi}}
+    }] };
+  })
+  .start();

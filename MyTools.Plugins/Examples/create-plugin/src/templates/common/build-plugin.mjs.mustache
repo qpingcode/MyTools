@@ -1,0 +1,79 @@
+import { build, context } from "esbuild";
+import fs from "node:fs";
+import path from "node:path";
+import net from "node:net";
+
+const watching = process.argv.includes("--watch");
+const refreshPipe = "\\\\.\\pipe\\MyTools.DevelopmentPlugins.Refresh";
+const pluginId = {{{pluginIdJson}}};
+
+function requestMyToolsRefresh(attempt = 0) {
+  const socket = net.createConnection(refreshPipe);
+  socket.once("connect", () => socket.end(pluginId + "\n"));
+  socket.once("error", (error) => {
+    socket.destroy();
+    if (attempt === 0) {
+      setTimeout(() => requestMyToolsRefresh(1), 250);
+      return;
+    }
+    console.warn("[MyTools] Failed to request refresh for " + pluginId
+      + " after one retry: " + error.message);
+  });
+}
+
+const refreshPlugin = {
+  name: "refresh-mytools",
+  setup(build) {
+    build.onEnd((result) => {
+      if (watching && result.errors.length === 0) requestMyToolsRefresh();
+    });
+  }
+};
+
+const builds = [
+  {
+    entryPoints: ["src/backend/index.mts"],
+    bundle: true,
+    platform: "node",
+    format: "esm",
+    target: "es2024",
+    outfile: "dist/backend/index.mjs",
+    plugins: [refreshPlugin]
+  }{{#customUi}},
+  {
+    entryPoints: ["src/web/main.ts"],
+    bundle: true,
+    format: "iife",
+    target: "es2024",
+    outfile: "dist/web/main.js",
+    plugins: [refreshPlugin]
+  }{{/customUi}}
+];
+
+function copyStatic() {
+  fs.mkdirSync("dist", { recursive: true });
+  fs.copyFileSync("plugin.json", "dist/plugin.json");
+  fs.cpSync("i18n", "dist/i18n", { recursive: true });{{#customUi}}
+  fs.mkdirSync("dist/web", { recursive: true });
+  fs.copyFileSync("src/web/index.html", "dist/web/index.html");
+  fs.copyFileSync("src/web/style.css", "dist/web/style.css");{{/customUi}}
+}
+
+if (!watching) {
+  fs.rmSync(path.resolve("dist"), { recursive: true, force: true });
+  await Promise.all(builds.map((options) => build(options)));
+  copyStatic();
+} else {
+  copyStatic();
+  const contexts = await Promise.all(builds.map((options) => context(options)));
+  await Promise.all(contexts.map((item) => item.watch()));
+  fs.watch("plugin.json", () => { copyStatic(); requestMyToolsRefresh(); });
+  fs.watch("i18n", { recursive: true }, () => { copyStatic(); requestMyToolsRefresh(); });{{#customUi}}
+  fs.watch("src/web", { recursive: true }, (_event, file) => {
+    if (file === "index.html" || file === "style.css") {
+      copyStatic();
+      requestMyToolsRefresh();
+    }
+  });{{/customUi}}
+  console.log("Watching plugin sources...");
+}

@@ -1,0 +1,15 @@
+import { createWebBusClient, HostEvents } from "@qping/plugin-bus/web";
+
+const bus = createWebBusClient();
+let query = "";
+
+function render() {
+  document.getElementById("query")!.textContent = query
+    || bus.i18n.t("{{keyRoot}}.Detail.Ready", { defaultValue: "Ready" });
+}
+
+bus.on(HostEvents.Initialize, (payload: any) => {
+  query = String(payload?.initialState?.query || "");
+  render();
+});
+bus.on(HostEvents.LanguageChanged, render);

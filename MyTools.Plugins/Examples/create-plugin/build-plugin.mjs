@@ -9,6 +9,7 @@ const copyStatic = () => {
   fs.copyFileSync("src/web/index.html", "dist/web/index.html");
   fs.copyFileSync("src/web/style.css", "dist/web/style.css");
   fs.cpSync("i18n", "dist/i18n", { recursive: true });
+  fs.cpSync("src/templates", "dist/templates", { recursive: true });
 };
 const builds = [
   { entryPoints: ["src/backend/index.mts"], bundle: true, platform: "node", format: "esm", target: "es2024", outfile: "dist/backend/index.mjs" },
@@ -25,6 +26,7 @@ if (!watching) {
   await Promise.all(contexts.map((item) => item.watch()));
   fs.watch("plugin.json", copyStatic);
   fs.watch("i18n", { recursive: true }, copyStatic);
+  fs.watch("src/templates", { recursive: true }, copyStatic);
   fs.watch("src/web", { recursive: true }, (_event, file) => {
     if (file === "index.html" || file === "style.css") copyStatic();
   });
