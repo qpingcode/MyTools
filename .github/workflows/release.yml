@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: read
 
 concurrency:
   group: mytools-release
@@ -33,7 +34,7 @@ jobs:
 
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -63,7 +64,7 @@ jobs:
           }
 
       - name: Set up .NET 8
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 8.0.x
           cache: true
@@ -73,10 +74,10 @@ jobs:
             .config/dotnet-tools.json
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          # Keep in sync with MyTools.Desktop NodeRuntimeVersion so the installer can reuse this node.exe.
-          node-version: 22.23.2
+          # Keep in sync with MyTools.Desktop NodeRuntimeVersion so bundling can reuse this node.exe.
+          node-version: 24.19.0
           cache: npm
           cache-dependency-path: MyTools.Plugins/Examples/package-lock.json
 
@@ -129,7 +130,7 @@ jobs:
           }
 
           # Node SDK v3 unit tests (protocol codec + framing + transport + router), mirroring the C# side.
-          # Glob the files: Node 22 on Windows treats `node --test path\to\dir\` as a single CJS
+          # Glob the files: Node on Windows treats `node --test path\to\dir\` as a single CJS
           # module (`Cannot find module ...\test`) instead of expanding the directory.
           node --test "MyTools.Plugins/Examples/sdk-v3/test/**/*.test.mjs"
           if ($LASTEXITCODE -ne 0) {
@@ -221,6 +222,18 @@ jobs:
 
           $releaseCandidates = @()
           $sameChannelCandidates = @()
+
+          git fetch origin --tags --force
+          foreach ($existingTag in @(git tag -l 'v*')) {
+              $candidate = ConvertTo-VersionInfo $existingTag
+              if ($null -eq $candidate) {
+                  continue
+              }
+
+              $candidate | Add-Member -NotePropertyName Tag -NotePropertyValue $existingTag
+              $releaseCandidates += $candidate
+          }
+
           $releaseList = gh release list --repo $env:GITHUB_REPOSITORY --limit 100 --json tagName,name,isPrerelease,isDraft | ConvertFrom-Json
           foreach ($release in $releaseList) {
               if ($release.isDraft) {
@@ -291,10 +304,10 @@ jobs:
           }
 
       - name: Cache bundled Node runtime
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: artifacts/node-runtime
-          key: node-runtime-win-x64-v22.23.2
+          key: node-runtime-win-x64-v24.19.0
 
       - name: Create Velopack packages
         shell: pwsh
@@ -425,10 +438,29 @@ jobs:
           ## What's Changed
           "@ | Set-Content -Path $releaseNotesPath -Encoding utf8
 
+          $tag = $env:RELEASE_TAG
+          $sha = $env:GITHUB_SHA
+          $tagCommit = git rev-list -n 1 $tag 2>$null
+          if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($tagCommit)) {
+              git tag $tag $sha
+              git push origin "refs/tags/$tag"
+              if ($LASTEXITCODE -ne 0) {
+                  throw "Failed to push tag $tag"
+              }
+          } else {
+              $tagCommit = $tagCommit.Trim()
+              if ($tagCommit -ne $sha) {
+                  throw "Tag $tag already points to $tagCommit, expected $sha."
+              }
+              Write-Host "Tag $tag already points at $sha"
+          }
+
+          # Create the release against the existing git tag. Do not pass --target:
+          # the Releases API will try to create/move the tag, and GITHUB_TOKEN
+          # gets HTTP 403 when that commit changed workflow files.
           $createArgs = @(
-              'release', 'create', $env:RELEASE_TAG,
+              'release', 'create', $tag,
               '--repo', $env:GITHUB_REPOSITORY,
-              '--target', $env:GITHUB_SHA,
               '--title', "MyTools v$env:RELEASE_VERSION ($env:RELEASE_LABEL)",
               '--notes-file', $releaseNotesPath,
               '--generate-notes'
