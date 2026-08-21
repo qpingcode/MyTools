@@ -42,6 +42,7 @@ export type Config = {
     categories: Category[];
     supportedLocales: Option[];
     supportedThemes: Option[];
+    supportedUpdateChannels: Option[];
     supportedLogLevels: Option[];
 };
 

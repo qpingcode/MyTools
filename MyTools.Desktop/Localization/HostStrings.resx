@@ -74,8 +74,7 @@
   <data name="Configuration.General.UpdateUrl.Title" xml:space="preserve"><value>Update URL</value></data>
   <data name="Configuration.General.UpdateUrl.Description" xml:space="preserve"><value>HTTPS or local path containing Velopack releases</value></data>
   <data name="Configuration.General.UpdateChannel.Title" xml:space="preserve"><value>Update channel</value></data>
-  <data name="Configuration.General.UpdateChannel.Description" xml:space="preserve"><value>• stable is stable
-• beta is testing</value></data>
+  <data name="Configuration.General.UpdateChannel.Description" xml:space="preserve"><value>Choose between stable releases and beta previews</value></data>
   <data name="Configuration.General.UpdateProxyUrl.Title" xml:space="preserve"><value>Update proxy</value></data>
   <data name="Configuration.General.UpdateProxyUrl.Description" xml:space="preserve"><value>Optional proxy URL; leave empty for a direct connection</value></data>
   <data name="Configuration.General.LogLevel.Title" xml:space="preserve"><value>Log level</value></data>

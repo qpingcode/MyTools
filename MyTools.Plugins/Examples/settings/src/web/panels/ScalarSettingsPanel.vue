@@ -33,6 +33,7 @@ function hasSettingCopy(setting: Setting): boolean {
 function usesSchemaControl(setting: Setting): boolean {
     if (setting.valueType === "Language"
         || setting.valueType === "Theme"
+        || setting.valueType === "UpdateChannel"
         || setting.valueType === "LogLevel"
         || setting.valueType === "HotKey") {
         return false;
@@ -90,6 +91,7 @@ function currentValue(setting: Setting): string {
 function optionsFor(setting: Setting): Option[] {
     if (setting.valueType === "Language") return store.config?.supportedLocales ?? [];
     if (setting.valueType === "Theme") return store.config?.supportedThemes ?? [];
+    if (setting.valueType === "UpdateChannel") return store.config?.supportedUpdateChannels ?? [];
     if (setting.valueType === "LogLevel") return store.config?.supportedLogLevels ?? [];
     return [];
 }
@@ -153,7 +155,7 @@ function onHotKey(setting: Setting, value: string | null): void {
                     />
                 </div>
                 <n-select
-                    v-else-if="setting.valueType === 'Language' || setting.valueType === 'Theme' || setting.valueType === 'LogLevel'"
+                    v-else-if="setting.valueType === 'Language' || setting.valueType === 'Theme' || setting.valueType === 'UpdateChannel' || setting.valueType === 'LogLevel'"
                     :value="currentValue(setting)"
                     :options="optionsFor(setting)"
                     value-field="value"

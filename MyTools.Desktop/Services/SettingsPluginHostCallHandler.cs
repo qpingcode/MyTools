@@ -154,6 +154,11 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
                 new() { Value = "light", Label = languageService.GetCaption("Theme.light", "Light") },
                 new() { Value = "dark", Label = languageService.GetCaption("Theme.dark", "Dark") }
             ],
+            SupportedUpdateChannels =
+            [
+                new() { Value = "stable", Label = "stable" },
+                new() { Value = "beta", Label = "beta" }
+            ],
             SupportedLogLevels = LogLevelService.SelectableLevels.Select(level =>
             {
                 var name = level.ToString();

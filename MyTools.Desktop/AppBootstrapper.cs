@@ -322,7 +322,9 @@ public class AppBootstrapper : IDisposable
             
             registry.AddSetting(generalCategory, "UpdateChannel",
                 localization.GetCaption("Configuration.General.UpdateChannel.Title", "Update channel"),
-                localization.GetCaption("Configuration.General.UpdateChannel.Description", "• stable is stable\n• beta is testing"), UpdateService.DefaultChannel);
+                localization.GetCaption("Configuration.General.UpdateChannel.Description", "Choose between stable releases and beta previews"),
+                UpdateService.DefaultChannel,
+                valueType: SettingValueTypes.UpdateChannel);
             
             registry.AddSetting(generalCategory, "UpdateProxyUrl",
                 localization.GetCaption("Configuration.General.UpdateProxyUrl.Title", "Update proxy"),

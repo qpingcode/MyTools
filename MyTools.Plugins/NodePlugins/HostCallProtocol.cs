@@ -19,6 +19,7 @@ public sealed class ConfigurationDto
     public List<CategoryDto> Categories { get; init; } = new();
     public List<OptionDto> SupportedLocales { get; init; } = new();
     public List<OptionDto> SupportedThemes { get; init; } = new();
+    public List<OptionDto> SupportedUpdateChannels { get; init; } = new();
     public List<OptionDto> SupportedLogLevels { get; init; } = new();
 }
 
