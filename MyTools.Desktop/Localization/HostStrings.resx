@@ -96,8 +96,6 @@
   <data name="Plugin.PluginSearcher.Description" xml:space="preserve"><value>All available plugins</value></data>
   <data name="Plugin.ClipBoard.Name" xml:space="preserve"><value>Clipboard History</value></data>
   <data name="Plugin.ClipBoard.Description" xml:space="preserve"><value>Clipboard history management plugin</value></data>
-  <data name="Plugin.ChromeBookmarks.Name" xml:space="preserve"><value>Chrome Bookmarks</value></data>
-  <data name="Plugin.ChromeBookmarks.Description" xml:space="preserve"><value>Search local Chrome bookmarks and open them in browser</value></data>
   <data name="Plugin.SearchEngine.Name" xml:space="preserve"><value>Web Search</value></data>
   <data name="Plugin.SearchEngine.Description" xml:space="preserve"><value>Search using different search engines</value></data>
   <data name="Plugin.JsonFormatter.Name" xml:space="preserve"><value>JSON Formatter</value></data>

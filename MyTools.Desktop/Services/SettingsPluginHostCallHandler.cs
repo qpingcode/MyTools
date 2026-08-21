@@ -51,7 +51,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
 
     public IReadOnlyCollection<string> Capabilities { get; } =
     [
-        "configuration.read", "configuration.write", "configuration.readOwn",
+        "configuration.read", "configuration.write", "configuration.readOwn", "configuration.writeOwn",
         "keymap.read", "keymap.write", "keymap.validate",
         "gestures.read", "gestures.write", "gestures.suspend", "gestures.resume",
         "hotkeys.read", "hotkeys.write", "hotkeys.suspend", "hotkeys.resume", "hotkeys.validate",
@@ -114,6 +114,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
                 "configuration.read" => GetConfiguration(),
                 "configuration.readOwn" => GetOwnConfiguration(request.PluginId),
                 "configuration.write" => SaveConfiguration(request.Params),
+                "configuration.writeOwn" => SaveOwnConfiguration(request.PluginId, request.Params),
                 "keymap.read" => GetKeymap(),
                 "keymap.write" => SaveKeymap(request.Params),
                 "keymap.validate" => ValidateKeymap(request.Params),
@@ -228,6 +229,23 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         }
 
         return JsonSerializer.SerializeToElement(new { values }, JsonCamelCaseOptions);
+    }
+
+    private JsonElement SaveOwnConfiguration(string pluginId, JsonElement payload)
+    {
+        if (string.IsNullOrWhiteSpace(pluginId))
+        {
+            throw new InvalidOperationException("configuration.writeOwn requires a plugin id.");
+        }
+
+        if (!payload.TryGetProperty("values", out var values) || values.ValueKind != JsonValueKind.Object)
+        {
+            throw new InvalidOperationException("configuration.writeOwn requires a values object.");
+        }
+
+        ConfigurationSettingValues.ApplyOwnedValues(registry, pluginId, values);
+        registry.SaveChanges();
+        return JsonSerializer.SerializeToElement(new { success = true }, JsonCamelCaseOptions);
     }
 
     private static void CollectOwnSettings(

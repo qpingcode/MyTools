@@ -1,5 +1,6 @@
 using System.Text.Json;
 using MyTools.Common.Config.Enums;
+using MyTools.Common.Config.Interfaces;
 using MyTools.Common.Config.Models;
 using MyTools.Plugins.NodePlugins;
 
@@ -83,5 +84,54 @@ public static class ConfigurationSettingValues
         }
 
         return document.RootElement.Clone();
+    }
+
+    public static object? ConvertOwnedJson(ConfigurationSetting setting, JsonElement value)
+    {
+        if (setting.ValueType == SettingValueTypes.Array)
+        {
+            if (value.ValueKind != JsonValueKind.Array)
+            {
+                throw new InvalidOperationException("Array setting value must be a JSON array.");
+            }
+
+            return value.Clone();
+        }
+
+        var stringValue = value.ValueKind switch
+        {
+            JsonValueKind.String => value.GetString(),
+            JsonValueKind.True => "True",
+            JsonValueKind.False => "False",
+            JsonValueKind.Null => null,
+            JsonValueKind.Undefined => null,
+            _ => value.GetRawText()
+        };
+
+        return Convert(setting, stringValue);
+    }
+
+    public static int ApplyOwnedValues(IConfigurationRegistry registry, string pluginId, JsonElement values)
+    {
+        if (string.IsNullOrWhiteSpace(pluginId) || values.ValueKind != JsonValueKind.Object)
+        {
+            return 0;
+        }
+
+        var applied = 0;
+        foreach (var property in values.EnumerateObject())
+        {
+            var fullPath = pluginId + "." + property.Name;
+            var setting = registry.FindSetting(fullPath);
+            if (setting == null || !Owns(pluginId, setting.FullPath))
+            {
+                continue;
+            }
+
+            setting.CurrentValue = ConvertOwnedJson(setting, property.Value);
+            applied++;
+        }
+
+        return applied;
     }
 }

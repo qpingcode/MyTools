@@ -1,5 +1,6 @@
 using System.Text.Json;
 using MyTools.Common.Config.Enums;
+using MyTools.Common.Config.Interfaces;
 using MyTools.Common.Config.Models;
 using MyTools.Desktop.Services;
 using MyTools.Desktop.Serializers;
@@ -95,6 +96,35 @@ public class ConfigurationSettingValuesTest
         Assert.That(ConfigurationSettingValues.ToDtoString(true), Is.EqualTo("True"));
     }
 
+    [Test]
+    public void ConvertOwnedJson_Array_ShouldCloneJsonArray()
+    {
+        var setting = CreateArraySetting();
+        using var document = JsonDocument.Parse("""[{"name":"Google","url":"https://www.google.com/search?q={query}"}]""");
+
+        var value = ConfigurationSettingValues.ConvertOwnedJson(setting, document.RootElement);
+        Assert.That(value, Is.TypeOf<JsonElement>());
+        var json = (JsonElement)value!;
+        Assert.That(json.GetArrayLength(), Is.EqualTo(1));
+        Assert.That(json[0].GetProperty("name").GetString(), Is.EqualTo("Google"));
+    }
+
+    [Test]
+    public void ApplyOwnedValues_ShouldWriteOnlyTheCallingPlugin()
+    {
+        var registry = new FakeRegistry();
+        var searchEngine = registry.AddArraySetting("search-engine", "Engines");
+        var snippet = registry.AddArraySetting("snippet", "Phrases");
+        using var document = JsonDocument.Parse("""{"Engines":[{"name":"Google"}],"Phrases":[{"trigger":"x"}]}""");
+
+        var applied = ConfigurationSettingValues.ApplyOwnedValues(registry, "search-engine", document.RootElement);
+
+        Assert.That(applied, Is.EqualTo(1));
+        Assert.That(((JsonElement)searchEngine.CurrentValue!).GetArrayLength(), Is.EqualTo(1));
+        Assert.That(((JsonElement)searchEngine.CurrentValue).GetRawText(), Does.Contain("Google"));
+        Assert.That(((JsonElement)snippet.CurrentValue!).GetRawText(), Is.EqualTo("[]"));
+    }
+
     private static ConfigurationSetting CreateArraySetting()
     {
         return new ConfigurationSetting
@@ -103,5 +133,52 @@ public class ConfigurationSettingValuesTest
             ValueType = SettingValueTypes.Array,
             Serializer = new JsonElementSettingSerializer()
         };
+    }
+
+    private sealed class FakeRegistry : IConfigurationRegistry
+    {
+        public List<ConfigurationSetting> Settings { get; } = [];
+
+        public ConfigurationSetting AddArraySetting(string pluginId, string name)
+        {
+            var category = new ConfigurationCategory { Key = pluginId, Name = pluginId };
+            var setting = new ConfigurationSetting
+            {
+                Name = name,
+                Category = category,
+                ValueType = SettingValueTypes.Array,
+                Serializer = new JsonElementSettingSerializer()
+            };
+            setting.InitValueWithoutNotify(JsonSerializer.SerializeToElement(Array.Empty<object>()));
+            Settings.Add(setting);
+            return setting;
+        }
+
+        public ConfigurationCategory AddCategory(string name, string description, ConfigurationCategory? parent = null, bool IsSelectable = true) =>
+            throw new NotSupportedException();
+
+        public ConfigurationCategory AddCategory(string key, string name, string description, ConfigurationCategory? parent = null, bool IsSelectable = true) =>
+            throw new NotSupportedException();
+
+        public ConfigurationSetting AddSetting<T>(
+            ConfigurationCategory category,
+            string name,
+            string title,
+            string description,
+            T defaultValue,
+            IRegistrySerializer? serializer = null,
+            SettingOptions options = SettingOptions.None,
+            SettingValueTypes? valueType = null) =>
+            throw new NotSupportedException();
+
+        public IEnumerable<ConfigurationCategory> GetRootCategories() => [];
+        public ConfigurationCategory? FindCategory(string path) => null;
+        public ConfigurationSetting? FindSetting(string path) =>
+            Settings.FirstOrDefault(s => string.Equals(s.FullPath, path, StringComparison.OrdinalIgnoreCase));
+        public IEnumerable<object> Search(string query) => [];
+        public IEnumerable<ConfigurationSetting> GetModifiedSettings() => [];
+        public void SaveChanges() { }
+        public void Reload() { }
+        public void Reload(ConfigurationSetting setting) { }
     }
 }

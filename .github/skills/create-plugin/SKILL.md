@@ -137,7 +137,7 @@ SDK 把旧式方法名映射到 v3 路由：`initialize` → `plugin.call.initia
 - 顶层 `icon` 是 Settings 侧栏图标（Material Design Icons 类名，如 `"mdi-message-text-outline"`）。省略时用默认齿轮变体图标。
 - 插件级设置写在顶层 `configuration`（不是 entry 上）。宿主启动时按 schema 注册到 Settings 侧栏，分类名为插件显示名，设置完整路径为 `{pluginId}.{key}`（例如 `snippet.Phrases`）。`key` 也可以写成 `snippet.Phrases` 或 `Plugins.Snippet.Phrases`，宿主会去掉前缀。
 - `type`：`string` / `bool` / `int` / `double` / `array` / `path`。`uiHint` 可选：string 默认 `input`（也可 `textarea` / `email` / `telephone`）；bool 默认 `checkbox`（也可 `radio` / `select`）；int/double 默认 `input-number`；array 默认 `table`，必须带 `schema.properties`。`path` 默认 `fileOrDirectory`（也可 `file` / `directory`），Settings 显示文件/目录选择器。列 `type: "hidden"` 表格和编辑框都不显示（时间戳等）。列 `"table": false` 只在编辑对话框出现，不出现在表格。默认值支持宏 `${DateTime.Now}`（新增行时解析）。
-- 需要读自己的设置时声明 `configuration.readOwn`。不要用 `configuration.read`（那是 settings 插件读全部设置）。Open Path、Snippet、Command Runner 都走这条路。
+- 需要读自己的设置时声明 `configuration.readOwn`。需要写入自己的设置时再声明 `configuration.writeOwn`。不要用 `configuration.read` / `configuration.write`（那是 settings 插件读写全部设置）。Open Path、Snippet、Command Runner、Search Engine 都走 `readOwn`。
 - `detail` 可选。省略（或 `"detail": { "type": "list" }`）时宿主用 `search` 的结果走原生列表：关键词路由停留在列表，热键打开搜索主窗口并锁定该插件。
 - 需要自定义页面时再写 `"detail": { "type": "web", "entry": "web/index.html" }`。`hotKey`、`alias`、`search` 可选。
 - `search.global`：出现在**无关键词**的全局搜索结果中。省略或 `false` 时不参与全局搜索（opt-in，避免设置类插件污染每次搜索）。用户可在设置 → 插件列表的 **全局结果** 中覆盖此项。
@@ -251,6 +251,7 @@ return {
 | --- | --- | --- | --- |
 | `configuration.read` | 读取宿主全部设置分类、设置项及支持的语言、主题、日志级别。 | 无参数；返回 settings 配置 DTO。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
 | `configuration.readOwn` | 读取**当前插件自己的**设置值。按 `pluginId` 过滤，不能读其他插件。 | 无参数；返回 `{ values: { [settingName]: value } }`，数组保持 JSON 数组。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
+| `configuration.writeOwn` | 写入**当前插件自己的**设置值。按 `pluginId` 过滤，不能改其他插件。 | `{ values: { [settingName]: value } }`；返回 `{ success }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
 | `configuration.write` | 保存设置值，并应用主题、语言、日志级别、开机启动和搜索热键等变更。 | `{ changes }`；返回 `{ requiresRestart }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
 | `keymap.read` | 读取插件 Alias、全局搜索和启用状态。 | 无参数；返回插件 keymap 列表，不包含热键。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
 | `keymap.write` | 保存插件 Alias、全局搜索和启用状态，并刷新关键词及搜索缓存。 | `{ overrides }`；返回 `{ success }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |

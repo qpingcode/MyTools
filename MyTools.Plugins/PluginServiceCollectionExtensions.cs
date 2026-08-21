@@ -45,7 +45,6 @@ public static class PluginServiceCollectionExtensions
         services.AddSingleton<ISearcher>(sp => sp.GetRequiredService<Searcher>());
 
         services.AddSingleton<IPlugin, FileSearcher>();
-        services.AddSingleton<IPlugin, ChromeBookmarksPlugin>();
 
         services.AddSingleton<ClipBoardPlugin>();
         services.AddSingleton<IPlugin>(sp => sp.GetRequiredService<ClipBoardPlugin>());

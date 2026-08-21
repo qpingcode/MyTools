@@ -47,6 +47,18 @@ function engineUrls(engine: SearchEngine, query: string): string {
     .join(",");
 }
 
+function hasUrl(engine: SearchEngine): boolean {
+  return urlTemplates(engine).length > 0;
+}
+
+function parseEngineList(value: unknown): SearchEngine[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter(hasUrl);
+}
+
 function openAction() {
   return {
     id: "open",
@@ -67,8 +79,7 @@ function loadLegacyEngines(): SearchEngine[] {
   const configPath = path.join(appData, "MyTools.Desktop", "SearchEnginePlugin.json");
   try {
     const json = fs.readFileSync(configPath, "utf8");
-    const parsed = JSON.parse(json);
-    return Array.isArray(parsed) ? parsed : [];
+    return parseEngineList(JSON.parse(json));
   } catch {
     return [];
   }
@@ -77,8 +88,8 @@ function loadLegacyEngines(): SearchEngine[] {
 async function loadEngines(): Promise<SearchEngine[]> {
   try {
     const result = (await plugin.hostCall("configuration.readOwn")) as OwnConfiguration;
-    const engines = result?.values?.Engines;
-    if (Array.isArray(engines) && engines.length > 0) {
+    const engines = parseEngineList(result?.values?.Engines);
+    if (engines.length > 0) {
       return engines;
     }
   } catch {
