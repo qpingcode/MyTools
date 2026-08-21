@@ -207,16 +207,6 @@ public class AppBootstrapper : IDisposable
         
         if (Directory.Exists(examplePath))
         {
-            foreach (var file in Directory.GetFiles(examplePath))
-            {
-                var fileName = Path.GetFileName(file);
-                var configFile = Path.Combine(configPath, fileName);
-                if (!File.Exists(configFile) && File.Exists(file))
-                {
-                    File.Copy(file, configFile);
-                }
-            }
-
             Directory.CreateDirectory(pluginTargetPath);
             foreach (var sourcePluginDirectory in Directory.GetDirectories(examplePath))
             {
