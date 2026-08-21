@@ -56,7 +56,7 @@ public class SearchDebouncerTests
 
         debouncer.Restart();
 
-        Assert.That(scheduled.Single().Delay, Is.EqualTo(TimeSpan.FromMilliseconds(100)));
+        Assert.That(scheduled.Single().Delay, Is.EqualTo(TimeSpan.FromMilliseconds(250)));
     }
 
     [Test]

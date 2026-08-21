@@ -819,6 +819,14 @@
       "references": [],
       "existingTranslations": { "zh-CN": "否" },
       "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.Settings.PleaseInput",
+      "defaultValue": "Please input",
+      "placeholders": [],
+      "references": ["src/web/components/SettingField.vue"],
+      "existingTranslations": { "zh-CN": "请输入" },
+      "sourceHash": "sha256:placeholder"
     }
   ]
 }

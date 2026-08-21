@@ -7,6 +7,7 @@ using MyTools.Common.DependencyInjection;
 using MyTools.Common.Localization;
 using MyTools.Common.Plugins;
 using MyTools.Common.Theming;
+using MyTools.Protocol.Errors;
 
 namespace MyTools.Plugins.NodePlugins;
 
@@ -148,6 +149,10 @@ public sealed class NodePlugin : IPlugin, IDisposable
         catch (OperationCanceledException)
         {
             throw;
+        }
+        catch (BusCallException ex) when (ex.Code == ErrorCode.Cancelled)
+        {
+            throw new OperationCanceledException(ex.Message, ex, cancellationToken);
         }
         catch (Exception ex)
         {

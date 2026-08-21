@@ -13,6 +13,19 @@ public sealed class LogLevelService
     public const string LogLevelSettingPath = "General.LogLevel";
     private const LogEventLevel DefaultLevel = LogEventLevel.Debug;
 
+    /// <summary>
+    /// Levels offered in settings. <see cref="LogEventLevel.Fatal"/> is omitted because
+    /// nothing in the app logs at that level.
+    /// </summary>
+    public static readonly IReadOnlyList<LogEventLevel> SelectableLevels =
+    [
+        LogEventLevel.Verbose,
+        LogEventLevel.Debug,
+        LogEventLevel.Information,
+        LogEventLevel.Warning,
+        LogEventLevel.Error,
+    ];
+
     public LoggingLevelSwitch LevelSwitch { get; } = new(DefaultLevel);
 
     /// <summary>

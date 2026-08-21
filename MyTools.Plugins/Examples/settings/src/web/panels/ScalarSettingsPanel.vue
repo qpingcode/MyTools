@@ -48,12 +48,14 @@ function currentRawValue(setting: Setting): unknown {
     const text = currentValue(setting);
     if (setting.valueType === "Bool") return text === "True";
     if (setting.valueType === "Integer") {
-        const parsed = Number.parseInt(text || "0", 10);
-        return Number.isFinite(parsed) ? parsed : 0;
+        if (!text.trim()) return null;
+        const parsed = Number.parseInt(text, 10);
+        return Number.isFinite(parsed) ? parsed : null;
     }
     if (setting.valueType === "Double") {
-        const parsed = Number.parseFloat(text || "0");
-        return Number.isFinite(parsed) ? parsed : 0;
+        if (!text.trim()) return null;
+        const parsed = Number.parseFloat(text);
+        return Number.isFinite(parsed) ? parsed : null;
     }
     return text;
 }

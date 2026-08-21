@@ -101,5 +101,6 @@
   "Plugin.Settings.Table.Empty": "No items",
   "Plugin.Settings.Table.Apply": "Apply",
   "Plugin.Settings.Table.Yes": "Yes",
-  "Plugin.Settings.Table.No": "No"
+  "Plugin.Settings.Table.No": "No",
+  "Plugin.Settings.PleaseInput": "Please input"
 }
