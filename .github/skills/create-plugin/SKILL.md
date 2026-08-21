@@ -209,6 +209,7 @@ plugin
 | `openInExplorer` | 资源管理器中定位 | `path` / `copyText` |
 | `openInBrowser` | 默认浏览器打开 URL | `path` / `copyText` |
 | `kill` | 结束进程 | `copyText` 为 PID |
+| `openPlugin` | 打开目标插件（有 Web 详情则独立插件窗，否则锁定搜索窗） | item.`path` / `copyText` / `id` 为插件 `pluginId` |
 
 **插件自己处理**
 
@@ -267,6 +268,7 @@ return {
 | `path.pick` | 打开 Windows 原生文件或目录选择窗口。`kind: directory` 选文件夹，否则选文件。 | `{ title?, filter?, initialPath?, kind? }`，`kind` 为 `file` / `directory` / `fileOrDirectory`；返回 `{ cancelled, path }`。 | [`PathPluginHostCallHandler`](../../../MyTools.Desktop/Services/PathPluginHostCallHandler.cs) |
 | `path.validate` | 校验路径是否为绝对路径、是否存在，以及是否满足文件/目录类型要求。空路径视为有效。 | `{ path, kind }`，`kind` 为 `file` / `directory` / `fileOrDirectory`；返回 `{ valid, message }`。 | [`PathPluginHostCallHandler`](../../../MyTools.Desktop/Services/PathPluginHostCallHandler.cs) |
 | `restart` | 重启 MyTools Desktop。 | 无参数；返回空对象后执行重启。 | [`RestartPluginHostCallHandler`](../../../MyTools.Desktop/Services/RestartPluginHostCallHandler.cs) |
+| `plugins.list` | 列出当前已启用的插件（名称、Alias、热键）。调用方自己的插件会被排除。 | 无参数；返回 `{ plugins: [{ pluginId, name, aliases, hotKey }] }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
 
 能力基础设施：
 

@@ -150,6 +150,13 @@
   <data name="Action.KillProcess.InvalidParameters" xml:space="preserve"><value>Invalid parameters for Kill Process action</value></data>
   <data name="Action.KillProcess.Success" xml:space="preserve"><value>Process {{processName}} (PID: {{processId}}) terminated successfully</value></data>
   <data name="Action.KillProcess.Failed" xml:space="preserve"><value>Failed to kill process: {{message}}</value></data>
+  <data name="Action.OpenPlugin.Name" xml:space="preserve"><value>Open Plugin</value></data>
+  <data name="Action.OpenPlugin.Description" xml:space="preserve"><value>Open the plugin window</value></data>
+  <data name="Action.OpenPlugin.InvalidParameters" xml:space="preserve"><value>Invalid parameters for Open Plugin action</value></data>
+  <data name="Action.OpenPlugin.EmptyId" xml:space="preserve"><value>Plugin id is empty</value></data>
+  <data name="Action.OpenPlugin.NotFound" xml:space="preserve"><value>Plugin not found: {{pluginId}}</value></data>
+  <data name="Action.OpenPlugin.Success" xml:space="preserve"><value>Opened {{pluginId}}</value></data>
+  <data name="Action.OpenPlugin.Failed" xml:space="preserve"><value>Failed to open plugin: {{message}}</value></data>
   <data name="Action.ExecuteFailed.Title" xml:space="preserve"><value>Action execution failed</value></data>
   <data name="Action.ExecuteFailed.Message" xml:space="preserve"><value>Cannot execute {{action}}: {{message}}</value></data>
   <data name="UpdateDownloadAndRestart" xml:space="preserve"><value>Download and Restart</value></data>

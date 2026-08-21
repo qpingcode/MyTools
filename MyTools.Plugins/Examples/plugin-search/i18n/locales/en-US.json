@@ -1,0 +1,7 @@
+{
+  "Plugin.PluginSearch.Name": "Plugin Search",
+  "Plugin.PluginSearch.Description": "Search installed plugins by name, hotkey, or alias",
+  "Plugin.PluginSearch.Result.Subtitle": "Hotkey: {{hotKey}}    Alias: {{alias}}",
+  "Plugin.PluginSearch.Action.Open": "Open Plugin",
+  "Plugin.PluginSearch.Action.OpenDescription": "Open the plugin window"
+}

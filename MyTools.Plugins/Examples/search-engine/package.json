@@ -1,0 +1,22 @@
+{
+  "name": "mytools-plugin-search-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Web search engines for MyTools.",
+  "type": "commonjs",
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "npm run check && node build-plugin.mjs",
+    "check": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@qping/plugin-bus": "0.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "esbuild": "^0.25.8",
+    "esbuild-plugin-copy": "^2.1.1",
+    "rimraf": "^6.0.1",
+    "typescript": "^7.0.2"
+  }
+}

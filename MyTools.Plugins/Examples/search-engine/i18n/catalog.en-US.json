@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "scope": "plugin:search-engine",
+  "pluginId": "search-engine",
+  "sourceLocale": "en-US",
+  "entries": [
+    {
+      "key": "Plugin.SearchEngine.Name",
+      "defaultValue": "Web Search",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "网页搜索" },
+      "sourceHash": "sha256:d04fc7d7e19702f8b611fcda0d0dc2596d59f54731d2d6099d10ad22eb74304b"
+    },
+    {
+      "key": "Plugin.SearchEngine.Description",
+      "defaultValue": "Search using different search engines",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "使用不同的搜索引擎进行搜索" },
+      "sourceHash": "sha256:5795089a370a6b31337846faaf133d929cba6d2b5bcaf0849814ed5a903fbcfd"
+    },
+    {
+      "key": "Plugin.SearchEngine.Setting.Engines",
+      "defaultValue": "Search engines",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "搜索引擎" },
+      "sourceHash": "sha256:228fee1cb38f23200e42cf04ba9fb10a2a9b36e713f715b0618c130898e8beef"
+    },
+    {
+      "key": "Plugin.SearchEngine.Setting.Engines.Description",
+      "defaultValue": "Search engines shown in global search. Put {query} in the URL; multiple URLs go on separate lines.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "显示在全局搜索中的搜索引擎。在网址中使用 {query}；多个网址请分行填写。" },
+      "sourceHash": "sha256:a812c4b8ea4bc9d3ac3497bfabe677e9acad11c32ef65bb3213137f860b0bea7"
+    },
+    {
+      "key": "Plugin.SearchEngine.Column.Name",
+      "defaultValue": "Name",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "名称" },
+      "sourceHash": "sha256:dcd1d5223f73b3a965c07e3ff5dbee3eedcfedb806686a05b9b3868a2c3d6d50"
+    },
+    {
+      "key": "Plugin.SearchEngine.Column.Url",
+      "defaultValue": "URL",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "网址" },
+      "sourceHash": "sha256:e7a241debad56609ee660a5d2ef258a1aceb7357ff210ac66d7280b3add02a9a"
+    },
+    {
+      "key": "Plugin.SearchEngine.Column.Shortcut",
+      "defaultValue": "Shortcut",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "快捷方式" },
+      "sourceHash": "sha256:5753ea3780f34ad1295fb9957f1575e7e7578aa0e891d89524c26ad6f504cb1d"
+    },
+    {
+      "key": "Plugin.SearchEngine.Result.Title",
+      "defaultValue": "Search {{engine}}: {{query}}",
+      "placeholders": ["engine", "query"],
+      "references": [],
+      "existingTranslations": { "zh-CN": "用 {{engine}} 搜索：{{query}}" },
+      "sourceHash": "sha256:caa7b7354d32522e93d124a4a09e34ae464af62cfd5307cc0392812623c0f770"
+    },
+    {
+      "key": "Plugin.SearchEngine.Result.Subtitle",
+      "defaultValue": "Search using {{engine}}",
+      "placeholders": ["engine"],
+      "references": [],
+      "existingTranslations": { "zh-CN": "使用 {{engine}} 搜索" },
+      "sourceHash": "sha256:406cc239538f3d00f83e7fab833bb7c695ea5e2ff0be1f5e1a6b56bd63d688d3"
+    },
+    {
+      "key": "Plugin.SearchEngine.Action.Open",
+      "defaultValue": "Open in Browser",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "在浏览器中打开" },
+      "sourceHash": "sha256:32f8dcaafb6ccafc0f9acfebc5c8131a1a5072f2e5212a0c52aba80ce8255cac"
+    },
+    {
+      "key": "Plugin.SearchEngine.Action.OpenDescription",
+      "defaultValue": "Open the search URL in the default browser",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "用默认浏览器打开搜索网址" },
+      "sourceHash": "sha256:d80e64f285519a4a8bac207a769bb1b66f010b86a57e8b6106dcf7214cf72ff6"
+    }
+  ]
+}

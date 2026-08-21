@@ -1,0 +1,13 @@
+{
+  "Plugin.SearchEngine.Name": "网页搜索",
+  "Plugin.SearchEngine.Description": "使用不同的搜索引擎进行搜索",
+  "Plugin.SearchEngine.Setting.Engines": "搜索引擎",
+  "Plugin.SearchEngine.Setting.Engines.Description": "显示在全局搜索中的搜索引擎。在网址中使用 {query}；多个网址请分行填写。",
+  "Plugin.SearchEngine.Column.Name": "名称",
+  "Plugin.SearchEngine.Column.Url": "网址",
+  "Plugin.SearchEngine.Column.Shortcut": "快捷方式",
+  "Plugin.SearchEngine.Result.Title": "用 {{engine}} 搜索：{{query}}",
+  "Plugin.SearchEngine.Result.Subtitle": "使用 {{engine}} 搜索",
+  "Plugin.SearchEngine.Action.Open": "在浏览器中打开",
+  "Plugin.SearchEngine.Action.OpenDescription": "用默认浏览器打开搜索网址"
+}

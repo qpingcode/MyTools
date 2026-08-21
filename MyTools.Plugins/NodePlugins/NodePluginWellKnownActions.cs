@@ -19,6 +19,7 @@ public static class NodePluginWellKnownActions
             "execute" => WellKnownActions.Execute,
             "openinexplorer" => WellKnownActions.OpenInExplorer,
             "openinbrowser" => WellKnownActions.OpenInBrowser,
+            "openplugin" => WellKnownActions.OpenPlugin,
             "run" => new RunCommandAction(),
             "kill" => new KillProcessAction(),
             _ => null
@@ -57,6 +58,11 @@ public static class NodePluginWellKnownActions
         if (normalized is "kill" or "run")
         {
             return ActionStringParam.From(FirstNonEmpty(copyText, itemId));
+        }
+
+        if (normalized is "openplugin")
+        {
+            return ActionStringParam.From(FirstNonEmpty(path, copyText, itemId));
         }
 
         return new NodePluginActionArgs(itemId, query);

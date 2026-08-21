@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
+using MyTools.Common;
 using MyTools.Common.Config;
 using MyTools.Common.Config.Enums;
 using MyTools.Common.Config.Interfaces;
@@ -33,6 +34,8 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     private readonly GestureRegistry gestureRegistry;
     private readonly MouseHelper mouseHelper;
     private readonly PluginLoader pluginLoader;
+    private readonly IKeywordRegistry keywordRegistry;
+    private readonly IPluginLauncher pluginLauncher;
     private readonly HotKeyManager hotKeyManager;
     private readonly Searcher searcher;
     private readonly AppConfigService appConfigService;
@@ -52,7 +55,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         "keymap.read", "keymap.write", "keymap.validate",
         "gestures.read", "gestures.write", "gestures.suspend", "gestures.resume",
         "hotkeys.read", "hotkeys.write", "hotkeys.suspend", "hotkeys.resume", "hotkeys.validate",
-        "action.capture"
+        "action.capture", "plugins.list"
     ];
 
     public SettingsPluginHostCallHandler(
@@ -68,6 +71,8 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         GestureRegistry gestureRegistry,
         MouseHelper mouseHelper,
         PluginLoader pluginLoader,
+        IKeywordRegistry keywordRegistry,
+        IPluginLauncher pluginLauncher,
         HotKeyManager hotKeyManager,
         Searcher searcher,
         AppConfigService appConfigService,
@@ -86,6 +91,8 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         this.gestureRegistry = gestureRegistry;
         this.mouseHelper = mouseHelper;
         this.pluginLoader = pluginLoader;
+        this.keywordRegistry = keywordRegistry;
+        this.pluginLauncher = pluginLauncher;
         this.hotKeyManager = hotKeyManager;
         this.searcher = searcher;
         this.appConfigService = appConfigService;
@@ -119,6 +126,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
                 "hotkeys.suspend" => SuspendHotkeys(),
                 "hotkeys.resume" => ResumeHotkeys(),
                 "hotkeys.validate" => ValidateHotKeys(request.Params),
+                "plugins.list" => GetPluginList(request.PluginId),
                 _ => throw new NotSupportedException($"Unknown hostCall method: {request.Method}")
             };
         }
@@ -449,6 +457,75 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         return JsonSerializer.SerializeToElement(new HotKeysDto { Plugins = plugins }, JsonCamelCaseOptions);
     }
 
+    private JsonElement GetPluginList(string callerPluginId)
+    {
+        var aliasesByPlugin = new Dictionary<IPlugin, List<string>>();
+        foreach (var (keyword, mapped) in keywordRegistry.Match(string.Empty))
+        {
+            if (string.IsNullOrWhiteSpace(keyword))
+            {
+                continue;
+            }
+
+            if (!aliasesByPlugin.TryGetValue(mapped, out var aliases))
+            {
+                aliases = [];
+                aliasesByPlugin[mapped] = aliases;
+            }
+
+            if (!aliases.Contains(keyword, StringComparer.OrdinalIgnoreCase))
+            {
+                aliases.Add(keyword);
+            }
+        }
+
+        var items = new List<PluginListItemDto>();
+        foreach (var plugin in pluginLoader.LoadedPlugins)
+        {
+            if (!plugin.IsEnabled)
+            {
+                continue;
+            }
+
+            if (plugin is NodePlugin nodePlugin &&
+                !string.IsNullOrWhiteSpace(callerPluginId) &&
+                string.Equals(nodePlugin.ParentId, callerPluginId, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            items.Add(new PluginListItemDto
+            {
+                PluginId = plugin.PluginId,
+                Name = plugin is NodePlugin node ? node.GetDisplayName() : plugin.Name,
+                Aliases = GetAliases(plugin, aliasesByPlugin),
+                HotKey = GetHotKey(plugin)
+            });
+        }
+
+        return JsonSerializer.SerializeToElement(new PluginListDto { Plugins = items }, JsonCamelCaseOptions);
+    }
+
+    private List<string> GetAliases(IPlugin plugin, Dictionary<IPlugin, List<string>> aliasesByPlugin)
+    {
+        if (plugin is NodePlugin nodePlugin)
+        {
+            return pluginOverrideProvider.GetKeywords(nodePlugin.PluginId) ?? nodePlugin.Keywords.ToList();
+        }
+
+        return aliasesByPlugin.GetValueOrDefault(plugin) ?? [];
+    }
+
+    private string GetHotKey(IPlugin plugin)
+    {
+        if (plugin is not NodePlugin nodePlugin)
+        {
+            return "";
+        }
+
+        return pluginOverrideProvider.GetHotKey(nodePlugin.PluginId) ?? nodePlugin.HotKey ?? "";
+    }
+
     private JsonElement SaveHotKeys(JsonElement payload)
     {
         var request = payload.Deserialize<HotKeysSaveRequest>(JsonCamelCaseOptions);
@@ -504,16 +581,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
 
     private void OpenPluginDetail(NodePlugin plugin)
     {
-        var context = plugin.CreateHotKeyDetailContext();
-        if (context == null)
-        {
-            Utils.WindowHelper.ShowSearchWindow(plugin);
-            return;
-        }
-
-        var pwm = System.Windows.Application.Current.Dispatcher.Invoke(() =>
-            MyTools.Common.DependencyInjection.ServiceLocator.GetRequiredService<PluginWindowManager>());
-        pwm.ShowOrFocus(plugin, context);
+        pluginLauncher.Open(plugin);
     }
 
     private JsonElement SuspendGestures()
@@ -719,6 +787,19 @@ public sealed class HotKeyPluginDto
     public string PluginId { get; init; } = "";
     public string DefaultHotKey { get; init; } = "";
     public string CurrentHotKey { get; init; } = "";
+}
+
+public sealed class PluginListDto
+{
+    public List<PluginListItemDto> Plugins { get; init; } = [];
+}
+
+public sealed class PluginListItemDto
+{
+    public string PluginId { get; init; } = "";
+    public string Name { get; init; } = "";
+    public List<string> Aliases { get; init; } = [];
+    public string HotKey { get; init; } = "";
 }
 
 public sealed class HotKeysSaveRequest
