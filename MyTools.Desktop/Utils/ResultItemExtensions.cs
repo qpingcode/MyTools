@@ -1,5 +1,6 @@
 using System.Windows;
 using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.Extensions.Logging;
 using MyTools.Common.DependencyInjection;
 using MyTools.Common.Localization;
 using MyTools.Desktop.Components;
@@ -27,8 +28,9 @@ public static class ResultItemExtensions
     public static async Task ExecuteAction(this ResultItem item, IActionWithCommand action)
     {
         var actionResult = await action.ExecuteAsync(item.Args).ConfigureAwait(false);
-        Console.WriteLine(
-            "[action-result] action={0} success={1} actionType={2} message={3}",
+        var logger = ServiceLocator.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(ResultItemExtensions));
+        logger.LogDebug(
+            "Action result action={Action} success={Success} actionType={ActionType} message={Message}",
             action.Name,
             actionResult.Success,
             actionResult.ActionType,

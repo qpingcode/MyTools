@@ -5,6 +5,7 @@ public static class Commands
     public const string DefaultCommand = "Enter";
     
     public const string Ctrl_D = "Ctrl+D";
+    public const string Ctrl_K = "Ctrl+K";
     public const string Ctrl_Enter = "Ctrl+Enter";
     public const string Ctrl_E = "Ctrl+E";
     public const string Ctrl_O = "Ctrl+O";

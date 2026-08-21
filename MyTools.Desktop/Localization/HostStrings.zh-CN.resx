@@ -188,4 +188,5 @@
   <data name="Search.Detail.CharacterCount" xml:space="preserve"><value>{{count}} 字</value></data>
   <data name="Search.Detail.ImageMeta" xml:space="preserve"><value>{{dimensions}} · {{size}}</value></data>
   <data name="Search.Detail.ImageDiskSize" xml:space="preserve"><value>{{size}}</value></data>
+  <data name="Search.Actions.Overflow" xml:space="preserve"><value>操作</value></data>
 </root>

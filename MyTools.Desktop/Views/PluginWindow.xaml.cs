@@ -88,6 +88,11 @@ public partial class PluginWindow
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (ResultActionBar.TryHandleOverflowHotkey(e, StatusActions))
+        {
+            return;
+        }
+
         if ((Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.W) || e.Key == Key.Escape)
         {
             e.Handled = true;

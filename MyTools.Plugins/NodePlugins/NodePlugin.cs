@@ -7,7 +7,6 @@ using MyTools.Common.DependencyInjection;
 using MyTools.Common.Localization;
 using MyTools.Common.Plugins;
 using MyTools.Common.Theming;
-using MyTools.Plugins.Param;
 
 namespace MyTools.Plugins.NodePlugins;
 
@@ -301,14 +300,19 @@ public sealed class NodePlugin : IPlugin, IDisposable
 
     private static IActionParams CreateActionArgs(NodePluginSearchItem item, string query, string title)
     {
-        if (HasKind(item, "copy") || HasKind(item, "copyAndPaste"))
+        var wellKnownKind = item.Actions
+            .Select(action => action.Kind)
+            .FirstOrDefault(NodePluginWellKnownActions.IsWellKnown);
+        if (wellKnownKind != null)
         {
-            return ActionStringParam.From(item.CopyText ?? title);
-        }
-
-        if (HasKind(item, "kill") || HasKind(item, "run"))
-        {
-            return ActionStringParam.From(item.CopyText ?? item.Id);
+            return NodePluginWellKnownActions.CreateParams(
+                wellKnownKind,
+                item.Path,
+                item.Args,
+                item.CopyText,
+                item.Id,
+                title,
+                query);
         }
 
         return new NodePluginActionArgs(item.Id, query);
@@ -325,27 +329,10 @@ public sealed class NodePlugin : IPlugin, IDisposable
         {
             var action = item.Actions[index];
             var command = index == 0 ? Commands.DefaultCommand : $"NodeAction:{index}";
-            if (string.Equals(action.Kind, "copy", StringComparison.OrdinalIgnoreCase))
+            var wellKnown = NodePluginWellKnownActions.Resolve(action.Kind);
+            if (wellKnown != null)
             {
-                yield return WellKnownActions.Copy.WithCommand(command);
-                continue;
-            }
-
-            if (string.Equals(action.Kind, "copyAndPaste", StringComparison.OrdinalIgnoreCase))
-            {
-                yield return WellKnownActions.CopyAndPaste.WithCommand(command);
-                continue;
-            }
-
-            if (string.Equals(action.Kind, "kill", StringComparison.OrdinalIgnoreCase))
-            {
-                yield return new KillProcessAction().WithCommand(command);
-                continue;
-            }
-
-            if (string.Equals(action.Kind, "run", StringComparison.OrdinalIgnoreCase))
-            {
-                yield return new RunCommandAction().WithCommand(command);
+                yield return wellKnown.WithCommand(command);
                 continue;
             }
 
@@ -353,9 +340,6 @@ public sealed class NodePlugin : IPlugin, IDisposable
                 .WithCommand(command);
         }
     }
-
-    private static bool HasKind(NodePluginSearchItem item, string kind) =>
-        item.Actions.Any(action => string.Equals(action.Kind, kind, StringComparison.OrdinalIgnoreCase));
 
     private string? ResolveDetailEntryFullPath(string? relativePath)
     {
@@ -489,6 +473,18 @@ internal sealed class NodePluginInvokeAction : IAction
         try
         {
             var response = await plugin.InvokeActionAsync(actionArgs.ItemId, actionId, actionArgs.Query);
+            if (response.HostAction != null && !string.IsNullOrWhiteSpace(response.HostAction.Path))
+            {
+                var launched = await NodePluginWellKnownActions.ExecuteHostActionAsync(
+                    response.HostAction.Kind,
+                    response.HostAction.Path,
+                    response.HostAction.Args);
+                if (!launched.Success)
+                {
+                    return launched;
+                }
+            }
+
             var detailContext = plugin.CreateDetailContext(actionArgs.ItemId, BuildSearchText(actionArgs.Query), actionArgs.Query, response.Detail);
             if (detailContext != null)
             {

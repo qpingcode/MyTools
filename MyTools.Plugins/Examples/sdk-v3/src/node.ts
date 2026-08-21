@@ -46,6 +46,19 @@ export type PluginSearchParams = PluginHostEnv & {
   mode: "global" | "plugin";
 };
 
+export type PluginHostAction = {
+  kind: "execute" | "openInExplorer" | "openInBrowser" | "copy" | "copyAndPaste";
+  path: string;
+  args?: string;
+};
+
+export type PluginActionResult = {
+  message?: string;
+  actionType?: "none" | "close";
+  detail?: unknown;
+  hostAction?: PluginHostAction;
+};
+
 /** Payload of plugin.call.invokeAction. */
 export type PluginActionParams = PluginHostEnv & {
   itemId: string;

@@ -1,4 +1,4 @@
-import { execFile, spawn } from "node:child_process";
+import { execFile } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -318,13 +318,22 @@ function selectIntelliJProject(startPath: string): string {
   return initialDir;
 }
 
-function launch(exePath: string, args: string[]) {
-  const child = spawn(exePath, args, {
-    detached: true,
-    stdio: "ignore",
-    windowsHide: false,
-  });
-  child.unref();
+function quoteArg(value: string): string {
+  if (!value) return value;
+  if (value.startsWith('"') && value.endsWith('"')) return value;
+  return `"${value.replaceAll('"', '\\"')}"`;
+}
+
+function hostExecute(filePath: string, argument: string, message: string) {
+  return {
+    message,
+    actionType: "close",
+    hostAction: {
+      kind: "execute",
+      path: filePath,
+      args: quoteArg(argument),
+    },
+  };
 }
 
 function invalidClipboardMessage(reason: string, rawClipboard: string): string {
@@ -416,8 +425,7 @@ plugin
         fail("No .sln found in current path or parent paths.");
       }
       log(`launch rider exe="${riderExe.path}" arg="${sln}"`);
-      launch(riderExe.path, [sln]);
-      return { message: `Opened Rider with ${sln}`, actionType: "close" };
+      return hostExecute(riderExe.path, sln, `Opened Rider with ${sln}`);
     }
 
     if (ide === "visual-studio") {
@@ -430,8 +438,7 @@ plugin
         fail("No .sln found in current path or parent paths.");
       }
       log(`launch visual-studio exe="${vsExe.path}" arg="${sln}"`);
-      launch(vsExe.path, [sln]);
-      return { message: `Opened Visual Studio with ${sln}`, actionType: "close" };
+      return hostExecute(vsExe.path, sln, `Opened Visual Studio with ${sln}`);
     }
 
     if (ide === "vscode") {
@@ -441,8 +448,7 @@ plugin
       const stat = fs.statSync(pathResult.path);
       const openPath = stat.isDirectory() ? pathResult.path : path.dirname(pathResult.path);
       log(`launch vscode exe="${vscodeExe.path}" arg="${openPath}"`);
-      launch(vscodeExe.path, [openPath]);
-      return { message: `Opened VSCode with ${openPath}`, actionType: "close" };
+      return hostExecute(vscodeExe.path, openPath, `Opened VSCode with ${openPath}`);
     }
 
     if (!intellijExe.path) {
@@ -450,7 +456,6 @@ plugin
     }
     const projectPath = selectIntelliJProject(pathResult.path);
     log(`launch intellij exe="${intellijExe.path}" arg="${projectPath}"`);
-    launch(intellijExe.path, [projectPath]);
-    return { message: `Opened IntelliJ with ${projectPath}`, actionType: "close" };
+    return hostExecute(intellijExe.path, projectPath, `Opened IntelliJ with ${projectPath}`);
   })
   .start();

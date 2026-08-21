@@ -2,6 +2,7 @@
 using System.IO;
 using MyTools.Common;
 using MyTools.Common.Localization;
+using MyTools.Plugins.Param;
 
 namespace MyTools.Plugins;
 
@@ -28,7 +29,10 @@ public class Execute : IAction
 
         try
         {
-            await ExecuteCoreAsync(filePath, string.Empty, false).ConfigureAwait(false);
+            var extraArgs = args is ExecuteActionParams executeParams
+                ? executeParams.Arguments
+                : string.Empty;
+            await ExecuteCoreAsync(filePath, extraArgs, false).ConfigureAwait(false);
             return ActionResult.CreateSuccess(new LocalizedMessage(
                 "Action.Execute.Success", "Executed: {{path}}", new { path = filePath }));
         }

@@ -6,6 +6,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:converters="clr-namespace:MyTools.Desktop.Converters"
              xmlns:components="clr-namespace:MyTools.Desktop.Components"
+             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="300"
              d:DataContext="{d:DesignInstance components:BasicListViewModel, IsDesignTimeCreatable=false}">
@@ -54,8 +55,13 @@
                 </converters:IconTemplateSelector.MdiIconTemplate>
             </converters:IconTemplateSelector>
             
+            <sys:Double x:Key="{x:Static SystemParameters.VerticalScrollBarWidthKey}">6</sys:Double>
+            <sys:Double x:Key="{x:Static SystemParameters.HorizontalScrollBarHeightKey}">6</sys:Double>
             <Style TargetType="ScrollBar">
                 <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Width" Value="6"/>
+                <Setter Property="MinWidth" Value="6"/>
+                <Setter Property="MaxWidth" Value="6"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="ScrollBar">
@@ -79,6 +85,16 @@
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
+                <Style.Triggers>
+                    <Trigger Property="Orientation" Value="Horizontal">
+                        <Setter Property="Width" Value="Auto"/>
+                        <Setter Property="MinWidth" Value="0"/>
+                        <Setter Property="MaxWidth" Value="{x:Static sys:Double.PositiveInfinity}"/>
+                        <Setter Property="Height" Value="6"/>
+                        <Setter Property="MinHeight" Value="6"/>
+                        <Setter Property="MaxHeight" Value="6"/>
+                    </Trigger>
+                </Style.Triggers>
             </Style>
             
             <Style x:Key="ResultItemStyle"

@@ -8,6 +8,7 @@
              xmlns:components="clr-namespace:MyTools.Desktop.Components"
              xmlns:converters="clr-namespace:MyTools.Desktop.Converters"
              xmlns:loc="clr-namespace:MyTools.Desktop.Localization"
+             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
              mc:Ignorable="d"
              d:DesignHeight="400" d:DesignWidth="800"
              d:DataContext="{d:DesignInstance components:DetailedListViewModel, IsDesignTimeCreatable=false}">
@@ -17,6 +18,8 @@
         <converters:ResultPreviewMetaConverter x:Key="ResultPreviewMetaConverter"/>
         <converters:ResultPreviewTimestampConverter x:Key="ResultPreviewTimestampConverter"/>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <sys:Double x:Key="{x:Static SystemParameters.VerticalScrollBarWidthKey}">6</sys:Double>
+        <sys:Double x:Key="{x:Static SystemParameters.HorizontalScrollBarHeightKey}">6</sys:Double>
 
         <Style x:Key="ClipboardIconChromeStyle" TargetType="Border">
             <Setter Property="Width" Value="28"/>
@@ -116,6 +119,7 @@
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Width" Value="6"/>
             <Setter Property="MinWidth" Value="6"/>
+            <Setter Property="MaxWidth" Value="6"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ScrollBar">
@@ -156,8 +160,10 @@
                 <Trigger Property="Orientation" Value="Horizontal">
                     <Setter Property="Width" Value="Auto"/>
                     <Setter Property="MinWidth" Value="0"/>
+                    <Setter Property="MaxWidth" Value="{x:Static sys:Double.PositiveInfinity}"/>
                     <Setter Property="Height" Value="6"/>
                     <Setter Property="MinHeight" Value="6"/>
+                    <Setter Property="MaxHeight" Value="6"/>
                 </Trigger>
             </Style.Triggers>
         </Style>

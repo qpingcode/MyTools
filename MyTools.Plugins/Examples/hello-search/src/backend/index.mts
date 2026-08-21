@@ -18,8 +18,8 @@ function buildItem(query: unknown) {
     }),
     priority: 100,
     icon: {
-      kind: "emoji",
-      value: "👋"
+      kind: "mdi",
+      value: "mdi-hand-wave-outline"
     },
     actions: [
       {
