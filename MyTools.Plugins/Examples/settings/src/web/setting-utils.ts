@@ -18,6 +18,10 @@ export function isHeadingType(type?: string | null): boolean {
     return normalized === "h1" || normalized === "h2";
 }
 
+export function isTopLevelHeading(type?: string | null): boolean {
+    return (type || "").trim().toLowerCase() === "h1";
+}
+
 export function isPathType(type?: string | null, fullPath?: string | null): boolean {
     if ((type || "").trim().toLowerCase() === "path") return true;
     return (fullPath || "").toLowerCase() === IlSpyPathFullPath;

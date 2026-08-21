@@ -5,20 +5,18 @@ import HotKeyRecorder from "../components/HotKeyRecorder.vue";
 import ArraySettingTable from "../components/ArraySettingTable.vue";
 import SettingField from "../components/SettingField.vue";
 import { t } from "../i18n";
-import { isHeadingType, isPathType, resolvePathKind } from "../setting-utils";
-import { SYSTEM_CATEGORY_KEYS, categorySelfMatches, currentCategory, currentDescription, currentTitle, isSettingVisible, markSettingDirty, store } from "../store";
+import { isHeadingType, isPathType, isTopLevelHeading, resolvePathKind } from "../setting-utils";
+import { categorySelfMatches, currentCategory, isSettingVisible, markSettingDirty, store } from "../store";
 import type { Option, Setting } from "../types";
 
 const category = computed(() => currentCategory.value);
 const visibleSettings = computed(() => {
     const list = category.value?.settings ?? [];
-    return list.filter((setting) => isSettingVisible(setting, list));
+    return list.filter((setting) =>
+        !isTopLevelHeading(setting.valueType) && isSettingVisible(setting, list));
 });
 const noMatch = computed(() =>
     !!store.searchQuery && category.value != null && !categorySelfMatches(category.value));
-
-const showCategoryHeader = computed(() =>
-    SYSTEM_CATEGORY_KEYS.has(category.value?.key ?? ""));
 
 function isArraySetting(setting: Setting): boolean {
     return setting.valueType === "Array";
@@ -26,10 +24,6 @@ function isArraySetting(setting: Setting): boolean {
 
 function isHeading(setting: Setting): boolean {
     return isHeadingType(setting.valueType);
-}
-
-function headingLevel(setting: Setting): "h1" | "h2" {
-    return setting.valueType.toLowerCase() === "h2" ? "h2" : "h1";
 }
 
 function hasSettingCopy(setting: Setting): boolean {
@@ -121,22 +115,13 @@ function onHotKey(setting: Setting, value: string | null): void {
         {{ t("Plugin.Settings.NoSettings", "No settings in this category") }}
     </div>
     <div v-else class="scalar-list">
-        <div v-if="showCategoryHeader && currentTitle" class="category-header">
-            <div class="category-title">
-                <HighlightText :text="currentTitle" :query="store.searchQuery" />
-            </div>
-            <div v-if="currentDescription" class="category-description">
-                <HighlightText :text="currentDescription" :query="store.searchQuery" />
-            </div>
-        </div>
         <div v-if="visibleSettings.length === 0" class="empty">
             {{ t("Plugin.Settings.NoSettings", "No settings in this category") }}
         </div>
         <template v-for="setting in visibleSettings" :key="setting.fullPath">
             <div
                 v-if="isHeading(setting)"
-                class="setting-heading"
-                :class="'setting-heading-' + headingLevel(setting)"
+                class="setting-heading setting-heading-h2"
             >
                 <div v-if="setting.title" class="heading-title">
                     <HighlightText :text="setting.title" :query="store.searchQuery" />
@@ -222,42 +207,12 @@ function onHotKey(setting: Setting, value: string | null): void {
     font-size: 13px;
 }
 
-.category-header {
-    padding: 4px 0 14px;
-}
-
-.category-title {
-    font-size: 20px;
-    font-weight: 650;
-    line-height: 1.3;
-    color: var(--mt-text, #fff);
-}
-
-.category-description {
-    margin-top: 6px;
-    font-size: 13px;
-    line-height: 1.45;
-    color: var(--mt-text-tertiary, #aaaaaa);
-    white-space: pre-line;
-}
-
 .setting-heading {
     min-width: 0;
 }
 
-.setting-heading-h1 {
-    padding: 4px 0 14px;
-}
-
 .setting-heading-h2 {
     padding: 18px 0 8px;
-}
-
-.setting-heading-h1 .heading-title {
-    font-size: 20px;
-    font-weight: 650;
-    line-height: 1.3;
-    color: var(--mt-text, #fff);
 }
 
 .setting-heading-h2 .heading-title {

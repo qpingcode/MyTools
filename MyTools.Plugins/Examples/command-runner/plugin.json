@@ -11,17 +11,6 @@
   },
   "configuration": [
     {
-      "label": {
-        "key": "Plugin.CommandRunner.Name",
-        "defaultValue": "Custom Commands"
-      },
-      "description": {
-        "key": "Plugin.CommandRunner.Setting.Commands.Description",
-        "defaultValue": "Custom commands available in global search. Press Enter to run."
-      },
-      "type": "h1"
-    },
-    {
       "key": "Commands",
       "type": "array",
       "defaultValue": [],

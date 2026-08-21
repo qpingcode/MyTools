@@ -81,9 +81,8 @@
   <data name="Configuration.General.LogLevel.Title" xml:space="preserve"><value>日志级别</value></data>
   <data name="Configuration.General.LogLevel.Description" xml:space="preserve"><value>写入日志文件的最低消息级别</value></data>
   <data name="Configuration.Gestures.Enable.Title" xml:space="preserve"><value>启用</value></data>
-  <data name="Configuration.Gestures.Enable.Description" xml:space="preserve"><value>启用右键鼠标手势检测。需要重启生效。</value></data>
   <data name="Configuration.Gestures.Name" xml:space="preserve"><value>手势</value></data>
-  <data name="Configuration.Gestures.Description" xml:space="preserve"><value>配置鼠标手势动作</value></data>
+  <data name="Configuration.Gestures.Description" xml:space="preserve"><value>按住鼠标右键并移动来绘制手势，松开后执行对应操作。每个手势可限定生效进程，并绑定键盘快捷键或鼠标按键。</value></data>
   <data name="Configuration.Plugins.Name" xml:space="preserve"><value>插件</value></data>
   <data name="Configuration.Plugins.Description" xml:space="preserve"><value>启用或关闭插件，并为每个插件设置快捷键和搜索别名。</value></data>
   <data name="Plugin.Calculator.Name" xml:space="preserve"><value>计算器</value></data>

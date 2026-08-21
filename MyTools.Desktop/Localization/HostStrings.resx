@@ -81,9 +81,8 @@
   <data name="Configuration.General.LogLevel.Title" xml:space="preserve"><value>Log level</value></data>
   <data name="Configuration.General.LogLevel.Description" xml:space="preserve"><value>Minimum level of messages written to the log file</value></data>
   <data name="Configuration.Gestures.Enable.Title" xml:space="preserve"><value>Enable</value></data>
-  <data name="Configuration.Gestures.Enable.Description" xml:space="preserve"><value>Enable right-button mouse gesture detection. Requires restart to take effect.</value></data>
   <data name="Configuration.Gestures.Name" xml:space="preserve"><value>Gestures</value></data>
-  <data name="Configuration.Gestures.Description" xml:space="preserve"><value>Configure mouse gesture actions</value></data>
+  <data name="Configuration.Gestures.Description" xml:space="preserve"><value>Hold the right mouse button and draw a gesture, then release it to run the assigned action. Each gesture can be limited to specific processes and mapped to a keyboard shortcut or mouse button.</value></data>
   <data name="Configuration.Plugins.Name" xml:space="preserve"><value>Plugins</value></data>
   <data name="Configuration.Plugins.Description" xml:space="preserve"><value>Enable plugins, assign hotkeys, and set aliases used in global search.</value></data>
   <data name="Plugin.Calculator.Name" xml:space="preserve"><value>Calculator</value></data>

@@ -27,9 +27,8 @@
   <data name="Configuration.General.Name" xml:space="preserve"><value>Général</value></data>
   <data name="Configuration.General.Description" xml:space="preserve"><value>Paramètres généraux</value></data>
   <data name="Configuration.Gestures.Enable.Title" xml:space="preserve"><value>Activer</value></data>
-  <data name="Configuration.Gestures.Enable.Description" xml:space="preserve"><value>Activer la détection des gestes avec le bouton droit de la souris. Nécessite un redémarrage.</value></data>
   <data name="Configuration.Gestures.Name" xml:space="preserve"><value>Gestes</value></data>
-  <data name="Configuration.Gestures.Description" xml:space="preserve"><value>Configurer les actions des gestes de souris</value></data>
+  <data name="Configuration.Gestures.Description" xml:space="preserve"><value>Maintenez le bouton droit de la souris et dessinez un geste, puis relâchez-le pour exécuter l’action associée. Chaque geste peut être limité à certains processus et associé à un raccourci clavier ou à un bouton de souris.</value></data>
   <data name="Configuration.Plugins.Name" xml:space="preserve"><value>Extensions</value></data>
   <data name="Configuration.Plugins.Description" xml:space="preserve"><value>Activez les extensions, attribuez des raccourcis et définissez des alias pour la recherche globale.</value></data>
   <data name="Plugin.Calculator.Name" xml:space="preserve"><value>Calculatrice</value></data>
