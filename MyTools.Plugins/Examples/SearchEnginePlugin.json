@@ -24,7 +24,6 @@
   },
   {
     "name": "Google",
-    "url": "https://www.google.com/search?q={query}",
-    "shortcut": "gg"
+    "url": "https://www.google.com/search?q={query}"
   }
 ]

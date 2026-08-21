@@ -1,4 +1,4 @@
-﻿using MyTools.Common;
+using MyTools.Common;
 
 namespace MyTools.Plugins;
 

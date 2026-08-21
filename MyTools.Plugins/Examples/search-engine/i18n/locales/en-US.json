@@ -5,7 +5,6 @@
   "Plugin.SearchEngine.Setting.Engines.Description": "Search engines shown in global search. Put {query} in the URL; multiple URLs go on separate lines.",
   "Plugin.SearchEngine.Column.Name": "Name",
   "Plugin.SearchEngine.Column.Url": "URL",
-  "Plugin.SearchEngine.Column.Shortcut": "Shortcut",
   "Plugin.SearchEngine.Result.Title": "Search {{engine}}: {{query}}",
   "Plugin.SearchEngine.Result.Subtitle": "Search using {{engine}}",
   "Plugin.SearchEngine.Action.Open": "Open in Browser",
