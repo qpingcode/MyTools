@@ -25,6 +25,22 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
+function Get-Sha256Hex([string] $Path) {
+    $algorithm = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $stream = [System.IO.File]::OpenRead($Path)
+        try {
+            return ([System.BitConverter]::ToString($algorithm.ComputeHash($stream)) -replace '-', '').ToLowerInvariant()
+        }
+        finally {
+            $stream.Dispose()
+        }
+    }
+    finally {
+        $algorithm.Dispose()
+    }
+}
+
 $Version = $Version.TrimStart("v")
 $zipName = "node-v$Version-win-x64.zip"
 $downloadUri = "https://nodejs.org/dist/v$Version/$zipName"
@@ -35,7 +51,7 @@ New-Item -ItemType Directory -Path $CacheDirectory -Force | Out-Null
 New-Item -ItemType Directory -Path $Destination -Force | Out-Null
 
 if (Test-Path $cacheZip -PathType Leaf) {
-    $actual = (Get-FileHash -Algorithm SHA256 -Path $cacheZip).Hash.ToLowerInvariant()
+    $actual = Get-Sha256Hex $cacheZip
     if ($actual -ne $expected) {
         Write-Host "Cached Node zip hash mismatch; downloading again."
         Remove-Item -Force $cacheZip
@@ -47,7 +63,7 @@ if (-not (Test-Path $cacheZip -PathType Leaf)) {
     Invoke-WebRequest -Uri $downloadUri -OutFile $cacheZip -UseBasicParsing
 }
 
-$actual = (Get-FileHash -Algorithm SHA256 -Path $cacheZip).Hash.ToLowerInvariant()
+$actual = Get-Sha256Hex $cacheZip
 if ($actual -ne $expected) {
     throw "Node zip SHA256 mismatch for $zipName. Expected $expected, got $actual."
 }
@@ -55,7 +71,8 @@ if ($actual -ne $expected) {
 $extractRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("mytools-node-" + [guid]::NewGuid().ToString("N"))
 New-Item -ItemType Directory -Path $extractRoot | Out-Null
 try {
-    Expand-Archive -LiteralPath $cacheZip -DestinationPath $extractRoot -Force
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    [System.IO.Compression.ZipFile]::ExtractToDirectory($cacheZip, $extractRoot)
     $extractedNode = Get-ChildItem -Path $extractRoot -Recurse -Filter "node.exe" |
         Where-Object { $_.Directory.Name -like "node-v$Version-win-x64" } |
         Select-Object -First 1
