@@ -344,10 +344,6 @@ jobs:
           Copy-Item (Join-Path .\Releases $installerName) (Join-Path .\Releases $installerAssetName)
           Copy-Item (Join-Path .\Releases $portableName) (Join-Path .\Releases $portableAssetName)
 
-          if ($channel -eq 'stable') {
-              Copy-Item (Join-Path .\Releases $releasesManifestName) (Join-Path .\Releases 'releases.win.json')
-          }
-
           $assetsManifestPath = Join-Path .\Releases $assetsManifestName
           $assetsManifest = Get-Content $assetsManifestPath -Raw | ConvertFrom-Json
           foreach ($asset in $assetsManifest) {
@@ -401,11 +397,6 @@ jobs:
           $legacyChannelReleasesPath = Join-Path .\Releases "RELEASES-$channel"
           if (Test-Path $legacyChannelReleasesPath -PathType Leaf) {
               $assets += "$(Resolve-Path $legacyChannelReleasesPath)#Automatic updater metadata"
-          }
-
-          $winFeedPath = Join-Path .\Releases 'releases.win.json'
-          if ($channel -eq 'stable' -and (Test-Path $winFeedPath -PathType Leaf)) {
-              $assets += "$(Resolve-Path $winFeedPath)#Automatic updater release metadata (win channel alias)"
           }
 
           $repositoryUrl = "https://github.com/$env:GITHUB_REPOSITORY"

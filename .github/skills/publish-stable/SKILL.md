@@ -75,6 +75,6 @@ git push origin release-2026-08-21
 1. 打开 [Actions](https://github.com/qpingcode/MyTools/actions/workflows/release.yml)，确认这次 tag 的 run 成功。
 2. 打开 Releases：该 tag 不是 prerelease，且被标为 Latest。
 3. README 下载矩阵里 Stable 行已指向新的 setup / portable 链接。
-4. 安装版设置里 **更新通道** 为 `stable`（旧值 `win` 会当成 `stable`）才能收到这版应用内更新。
+4. 安装版设置里 **更新通道** 为 `stable` 可收到正式版更新；`beta` 为测试版。
 
 失败时先看 workflow 日志。Tag 格式不对时，步骤 `Determine release channel` 会直接报错。需要重发时：删掉 GitHub Release 和远程 tag 后，用新的合法 tag 再推（同一天已用过的日期要加 `-2`）。
