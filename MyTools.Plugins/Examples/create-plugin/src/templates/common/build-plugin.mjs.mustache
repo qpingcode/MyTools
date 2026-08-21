@@ -1,23 +1,14 @@
 import { build, context } from "esbuild";
 import fs from "node:fs";
 import path from "node:path";
-import net from "node:net";
+import { requestDevelopmentPluginRefresh } from "@qping/plugin-bus/dev";
 
 const watching = process.argv.includes("--watch");
-const refreshPipe = "\\\\.\\pipe\\MyTools.DevelopmentPlugins.Refresh";
 const pluginId = {{{pluginIdJson}}};
 
-function requestMyToolsRefresh(attempt = 0) {
-  const socket = net.createConnection(refreshPipe);
-  socket.once("connect", () => socket.end(pluginId + "\n"));
-  socket.once("error", (error) => {
-    socket.destroy();
-    if (attempt === 0) {
-      setTimeout(() => requestMyToolsRefresh(1), 250);
-      return;
-    }
-    console.warn("[MyTools] Failed to request refresh for " + pluginId
-      + " after one retry: " + error.message);
+function requestMyToolsRefresh() {
+  void requestDevelopmentPluginRefresh(pluginId).catch((error) => {
+    console.warn("[MyTools] " + error.message);
   });
 }
 

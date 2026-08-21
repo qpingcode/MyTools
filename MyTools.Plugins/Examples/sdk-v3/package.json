@@ -1,6 +1,6 @@
 {
   "name": "@qping/plugin-bus",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "v3 message-bus runtime for MyTools plugins (named-pipe transport).",
   "type": "module",
   "files": [
@@ -32,6 +32,11 @@
       "types": "./dist/i18n.d.ts",
       "import": "./dist/i18n.mjs",
       "default": "./dist/i18n.mjs"
+    },
+    "./dev": {
+      "types": "./dist/dev.d.ts",
+      "import": "./dist/dev.mjs",
+      "default": "./dist/dev.mjs"
     },
     "./package.json": "./package.json"
   },

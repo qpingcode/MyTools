@@ -10,7 +10,7 @@ const root = import.meta.dirname;
 fs.rmSync(path.join(root, "dist"), { recursive: true, force: true });
 fs.mkdirSync(path.join(root, "dist"), { recursive: true });
 
-const entryPoints = ["node", "protocol", "bootstrap", "i18n"];
+const entryPoints = ["node", "protocol", "bootstrap", "i18n", "dev"];
 const browserEntries = ["webClient"];
 
 // 1. esbuild: bundle JS runtime (.mjs) for each entry point.

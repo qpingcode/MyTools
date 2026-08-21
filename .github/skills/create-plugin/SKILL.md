@@ -91,6 +91,7 @@ my-plugin/
 | `@qping/plugin-bus/node` | `createPlugin()`、`PluginInitializeParams` / `PluginSearchParams` / `PluginActionParams` |
 | `@qping/plugin-bus/web`  | `createWebBusClient()`、`HostEvents`、payload 类型                               |
 | `@qping/plugin-bus/i18n` | 后端 `mytoolsI18n`（页面用 `bus.i18n`）                                             |
+| `@qping/plugin-bus/dev`  | 构建脚本用 `requestDevelopmentPluginRefresh()` 通知 MyTools 刷新开发插件             |
 
 
 SDK 把旧式方法名映射到 v3 路由：`initialize` → `plugin.call.initialize`，`search` → `plugin.call.search`，`action` → `plugin.call.invokeAction`，`handle("foo")` → `plugin.call.foo`，`publish` → `plugin.event.*`，`hostCall` → `host.call.*`。
@@ -397,6 +398,6 @@ button {
 
 ## 8. 构建
 
-`build-plugin.mjs`：backend（`platform: "node"`, `format: "esm"`, 输出 `.mjs`），web（`format: "iife"`），`esbuild-plugin-copy` 把 `plugin.json`、html、css、`i18n/**/*` 拷到 `dist/`。多 entry 时 `entryPoints` 传数组，`outbase: "src/backend"`（或 `src/web`）。完整脚本照 `hello-search/build-plugin.mjs` 或 `deepseek-translator/build-plugin.mjs`。
+`build-plugin.mjs`：backend（`platform: "node"`, `format: "esm"`, 输出 `.mjs`），web（`format: "iife"`），`esbuild-plugin-copy` 把 `plugin.json`、html、css、`i18n/**/*` 拷到 `dist/`。watch 构建成功后通过 `@qping/plugin-bus/dev` 的 `requestDevelopmentPluginRefresh()` 请求 MyTools 刷新，不要在构建脚本中写死刷新管道或消息格式。多 entry 时 `entryPoints` 传数组，`outbase: "src/backend"`（或 `src/web`）。完整脚本照 `hello-search/build-plugin.mjs` 或 `deepseek-translator/build-plugin.mjs`。
 
 构建：`npm run build`（先 `tsc --noEmit`，再打包到 `dist/`）。安装指向 `dist/`。在 Examples workspace 里先 `npm run build -w @qping/plugin-bus`。
