@@ -281,6 +281,12 @@ jobs:
               $global:LASTEXITCODE = 0
           }
 
+      - name: Cache bundled Node runtime
+        uses: actions/cache@v4
+        with:
+          path: artifacts/node-runtime
+          key: node-runtime-win-x64-v22.23.2
+
       - name: Create Velopack packages
         shell: pwsh
         env:
@@ -311,6 +317,10 @@ jobs:
           $fullPackage = Get-ChildItem .\Releases -File |
               Where-Object { $_.Name -like "MyTools-$env:RELEASE_VERSION-*-full.nupkg" -or $_.Name -eq "MyTools-$env:RELEASE_VERSION-full.nupkg" } |
               Select-Object -First 1
+          $bundledNode = Join-Path $PWD 'MyTools.Desktop\bin\Release\net8.0-windows\win-x64\publish-velopack\runtime\node\node.exe'
+          if (-not (Test-Path $bundledNode -PathType Leaf)) {
+              throw "Bundled Node runtime is missing: $bundledNode"
+          }
 
           $requiredFiles = @(
               $installerName,

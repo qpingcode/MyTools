@@ -67,6 +67,7 @@ public sealed class NodeProcessController : INodeProcessController
         psi.Environment["MYTOOLS_V3"] = "1";
         psi.Environment["MYTOOLS_PLUGINS_DATA_DIR"] = _pluginsDataRoot;
         psi.Environment["MYTOOLS_PLUGIN_DATA_DIR"] = pluginDataDir;
+        PrependNodeDirectoryToPath(psi, _nodeExePath);
 
         _process = System.Diagnostics.Process.Start(psi)
             ?? throw new System.Exception($"failed to start node: {_nodeExePath}");
@@ -140,5 +141,27 @@ public sealed class NodeProcessController : INodeProcessController
         }
 
         return sanitized;
+    }
+
+    internal static void PrependNodeDirectoryToPath(ProcessStartInfo psi, string nodeExePath)
+    {
+        if (!Path.IsPathRooted(nodeExePath))
+        {
+            return;
+        }
+
+        var directory = Path.GetDirectoryName(nodeExePath);
+        if (string.IsNullOrEmpty(directory))
+        {
+            return;
+        }
+
+        psi.Environment.TryGetValue("PATH", out var current);
+        if (string.IsNullOrEmpty(current))
+        {
+            current = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+        }
+
+        psi.Environment["PATH"] = directory + Path.PathSeparator + current;
     }
 }

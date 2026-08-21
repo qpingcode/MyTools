@@ -24,6 +24,10 @@
         <RuntimeIdentifier Condition="'$(CreateVelopackRelease)' == 'true' and '$(RuntimeIdentifier)' == ''">$(VelopackRuntime)</RuntimeIdentifier>
         <SelfContained Condition="'$(CreateVelopackRelease)' == 'true' and '$(SelfContained)' == ''">true</SelfContained>
         <PublishSingleFile Condition="'$(CreateVelopackRelease)' == 'true' and '$(PublishSingleFile)' == ''">false</PublishSingleFile>
+        <BundleNodeRuntime Condition="'$(BundleNodeRuntime)' == '' and '$(CreateVelopackRelease)' == 'true'">true</BundleNodeRuntime>
+        <BundleNodeRuntime Condition="'$(BundleNodeRuntime)' == ''">false</BundleNodeRuntime>
+        <NodeRuntimeVersion Condition="'$(NodeRuntimeVersion)' == ''">22.23.2</NodeRuntimeVersion>
+        <NodeRuntimeSha256 Condition="'$(NodeRuntimeSha256)' == ''">1177b4137ba5adaa56354ae40f1080c7450e8ae09cecb47da459d1c52ac99f97</NodeRuntimeSha256>
         <VelopackChannel Condition="'$(VelopackChannel)' == ''">stable</VelopackChannel>
         <VelopackDeltaMode Condition="'$(VelopackDeltaMode)' == ''">BestSpeed</VelopackDeltaMode>
         <VelopackRepositoryRoot>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..'))</VelopackRepositoryRoot>
@@ -31,6 +35,9 @@
         <VelopackReleaseDirectory Condition="'$(VelopackReleaseDirectory)' == ''">$(VelopackRepositoryRoot)\Releases</VelopackReleaseDirectory>
         <VelopackPublishDirectory Condition="'$(VelopackPublishDirectory)' == ''">$(MSBuildProjectDirectory)\bin\$(Configuration)\$(TargetFramework)\$(VelopackRuntime)\publish-velopack</VelopackPublishDirectory>
         <PublishDir Condition="'$(CreateVelopackRelease)' == 'true'">$(VelopackPublishDirectory)\</PublishDir>
+        <NodeRuntimeCacheDirectory Condition="'$(NodeRuntimeCacheDirectory)' == ''">$(VelopackRepositoryRoot)\artifacts\node-runtime</NodeRuntimeCacheDirectory>
+        <NodeRuntimePublishDirectory>$(VelopackPublishDirectory)\runtime\node</NodeRuntimePublishDirectory>
+        <NodeRuntimeBundleScript>$(VelopackRepositoryRoot)\build\bundle-node-runtime.ps1</NodeRuntimeBundleScript>
     </PropertyGroup>
 
     <ItemGroup>
@@ -110,8 +117,21 @@
         <MakeDir Directories="$(VelopackPublishDirectory);$(VelopackReleaseDirectory)" />
     </Target>
 
+    <Target Name="BundleNodeRuntime"
+            AfterTargets="Publish"
+            Condition="'$(BundleNodeRuntime)' == 'true' and '$(DesignTimeBuild)' != 'true'">
+        <Error Condition="!Exists('$(NodeRuntimeBundleScript)')"
+               Text="The Node runtime bundle script was not found at '$(NodeRuntimeBundleScript)'." />
+        <Message Importance="high"
+                 Text="Bundling Node.js $(NodeRuntimeVersion) into '$(NodeRuntimePublishDirectory)'." />
+        <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(NodeRuntimeBundleScript)&quot; -Version &quot;$(NodeRuntimeVersion)&quot; -Destination &quot;$(NodeRuntimePublishDirectory)&quot; -Sha256 &quot;$(NodeRuntimeSha256)&quot; -CacheDirectory &quot;$(NodeRuntimeCacheDirectory)&quot;" />
+        <Error Condition="!Exists('$(NodeRuntimePublishDirectory)\node.exe')"
+               Text="Bundled Node runtime is missing: '$(NodeRuntimePublishDirectory)\node.exe'." />
+    </Target>
+
     <Target Name="CreateVelopackPackage"
             AfterTargets="Publish"
+            DependsOnTargets="BundleNodeRuntime"
             Condition="'$(CreateVelopackRelease)' == 'true' and '$(DesignTimeBuild)' != 'true'">
         <Message Importance="high"
                  Text="Restoring the repository-local Velopack tool." />

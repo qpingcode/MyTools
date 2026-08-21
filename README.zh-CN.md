@@ -20,7 +20,7 @@ MyTools 是一款使用 .NET 8 和 WPF 开发的 Windows 桌面效率工具。�
 ## 系统要求
 
 - Windows 10 或 Windows 11，x64。
-- 官方发布包为 self-contained，无需单独安装 .NET Desktop Runtime。
+- 官方发布包为 self-contained，无需单独安装 .NET Desktop Runtime 或 Node.js。
 - 从源码构建需要安装 [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)。
 
 ## 安装

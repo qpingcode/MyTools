@@ -33,7 +33,8 @@
 
       --property:CreateVelopackRelease=true
           显式启用项目中的 Velopack MSBuild Target。没有该参数时只执行普通 dotnet publish，
-          不会生成 Setup.exe、完整包、增量包和更新清单。
+          不会生成 Setup.exe、完整包、增量包和更新清单。正式包会下载并打入官方 Node.js
+          win-x64 运行时（runtime\node\node.exe），用户不必再单独安装 Node。
 
       --property:Version=<SemVer>
           指定本次发布版本，例如 1.0.2 或 1.0.2-beta.1。未指定时读取 version.txt，

@@ -116,3 +116,6 @@ project.lock.json
 
 # Local Git worktrees
 .worktrees/
+
+# Downloaded Node.js runtime used by Velopack publish
+artifacts/
