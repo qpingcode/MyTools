@@ -98,7 +98,17 @@ public sealed class DevelopmentPluginService : IDisposable
         return job;
     }
 
-    public IReadOnlyList<DevelopmentPluginRegistration> GetRegistrations() => DevelopmentPluginRegistrationStore.Load();
+    public IReadOnlyList<DevelopmentPluginRegistration> GetRegistrations()
+    {
+        var registrations = DevelopmentPluginRegistrationStore.Load();
+        var existing = registrations.Where(item => Directory.Exists(item.SourcePath)).ToList();
+        if (existing.Count != registrations.Count)
+        {
+            DevelopmentPluginRegistrationStore.Save(existing);
+            ReloadRequested?.Invoke(this, new DevelopmentPluginReloadRequestedEventArgs(null));
+        }
+        return existing;
+    }
 
     public void RefreshAll() => ReloadRequested?.Invoke(this, new DevelopmentPluginReloadRequestedEventArgs(null));
 

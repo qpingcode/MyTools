@@ -24,6 +24,21 @@ public class NodePluginWellKnownActionsTest
     }
 
     [Test]
+    public void HostActionDto_AddClipboardHistory_ReadsTexts()
+    {
+        var action = JsonSerializer.Deserialize<NodePluginHostActionDto>(
+            """{"kind":"addClipboardHistory","texts":["first","second"]}""",
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        Assert.That(action, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(action!.Kind, Is.EqualTo("addClipboardHistory"));
+            Assert.That(action.Texts, Is.EqualTo(new[] { "first", "second" }));
+        });
+    }
+
+    [Test]
     public async Task ExecuteAsync_UnknownKind_ReturnsFailure()
     {
         var result = await NodePluginWellKnownActions.ExecuteAsync(new NodePluginHostActionDto
@@ -42,6 +57,18 @@ public class NodePluginWellKnownActionsTest
         {
             Kind = "execute",
             Text = "must not be used as a fallback"
+        });
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.LocalizedMessage?.Key, Is.EqualTo("NodePlugin.InvalidHostAction"));
+    }
+
+    [Test]
+    public async Task ExecuteAsync_AddClipboardHistoryWithoutTexts_ReturnsTypedPayloadFailure()
+    {
+        var result = await NodePluginWellKnownActions.ExecuteAsync(new NodePluginHostActionDto
+        {
+            Kind = "addClipboardHistory"
         });
 
         Assert.That(result.Success, Is.False);

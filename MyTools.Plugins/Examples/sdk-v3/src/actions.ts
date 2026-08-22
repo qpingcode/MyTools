@@ -52,6 +52,7 @@ export type Hotkey = {
 export const HostAction = {
   Copy: "copy",
   CopyAndPaste: "copyAndPaste",
+  AddClipboardHistory: "addClipboardHistory",
   Execute: "execute",
   OpenInExplorer: "openInExplorer",
   OpenInBrowser: "openInBrowser",
@@ -80,6 +81,7 @@ export type RunSpec = {
 export type HostActionRequest =
   | { kind: typeof HostAction.Copy; text: string }
   | { kind: typeof HostAction.CopyAndPaste; text: string }
+  | { kind: typeof HostAction.AddClipboardHistory; texts: string[] }
   | { kind: typeof HostAction.Execute; path: string; args?: string; runAsAdmin?: boolean }
   | { kind: typeof HostAction.OpenInExplorer; path: string }
   | { kind: typeof HostAction.OpenInBrowser; url: string | string[] }

@@ -23,20 +23,6 @@
         "type": "web",
         "entry": "web/Translator/index.html"
       }
-    },
-    {
-      "id": "ankicard",
-      "name": {
-        "key": "Plugin.DeepSeekTranslator.Anki.Name",
-        "defaultValue": "Anki Cards"
-      },
-      "entry": "backend/AnkiCard/index.mjs",
-      "capabilities": [],
-      "alias": ["fc"],
-      "detail": {
-        "type": "web",
-        "entry": "web/AnkiCard/index.html"
-      }
     }
   ]
 }

@@ -115,6 +115,9 @@ internal sealed class NodePluginHostActionDto
     /// <summary>copy / copyAndPaste</summary>
     public string? Text { get; init; }
 
+    /// <summary>addClipboardHistory</summary>
+    public List<string> Texts { get; init; } = [];
+
     /// <summary>execute / openInExplorer</summary>
     public string? Path { get; init; }
 

@@ -1,8 +1,17 @@
 {
   "Plugin.UuidGenerator.Name": "UUID/GUID 生成器",
-  "Plugin.UuidGenerator.Action.Copy": "复制",
-  "Plugin.UuidGenerator.Action.CopyDescription": "将内容复制到剪贴板",
+  "Plugin.UuidGenerator.Action.Standard": "标准格式",
+  "Plugin.UuidGenerator.Action.StandardDescription": "按带连字符格式复制",
+  "Plugin.UuidGenerator.Action.NoDash": "无连字符格式",
+  "Plugin.UuidGenerator.Action.NoDashDescription": "移除连字符后复制",
+  "Plugin.UuidGenerator.Action.Uppercase": "大写格式",
+  "Plugin.UuidGenerator.Action.UppercaseDescription": "转换为大写后复制",
+  "Plugin.UuidGenerator.Action.Braces": "花括号包裹格式",
+  "Plugin.UuidGenerator.Action.BracesDescription": "使用花括号包裹后复制",
+  "Plugin.UuidGenerator.Action.CopyAllHistory": "全部加入剪贴板历史",
+  "Plugin.UuidGenerator.Action.CopyAllHistoryDescription": "将所有生成的 UUID 加入历史以便连续粘贴",
+  "Plugin.UuidGenerator.Action.CopyAllHistorySuccess": "已将所有 UUID 加入剪贴板历史",
   "Plugin.UuidGenerator.HelpTitle": "GUID 生成器帮助",
-  "Plugin.UuidGenerator.Help": "输入任意字符开始生成。\n格式选项：\n• uppercase\n• nodash\n• braces\n• parentheses\n• base64",
-  "Plugin.UuidGenerator.ResultSubtitle": "GUID（{{format}}）"
+  "Plugin.UuidGenerator.Help": "输入数字即可生成对应数量的 UUID（最多 1000 个），通过 action 选择输出格式。",
+  "Plugin.UuidGenerator.ResultSubtitle": "GUID {{index}} / {{count}}"
 }

@@ -35,5 +35,8 @@
   "Plugin.CreatePlugin.Validation.InvalidId": "The plugin ID format is invalid",
   "Plugin.CreatePlugin.Validation.AuthorRequired": "Enter the plugin author",
   "Plugin.CreatePlugin.Toast.RefreshRequested": "Requested a refresh of all development plugins",
-  "Plugin.CreatePlugin.Toast.ConnectionReset": "The connection was reset during refresh"
+  "Plugin.CreatePlugin.Toast.ConnectionReset": "The connection was reset during refresh",
+  "Plugin.CreatePlugin.List.Title": "Created plugins",
+  "Plugin.CreatePlugin.List.Empty": "No plugins have been created yet.",
+  "Plugin.CreatePlugin.Action.Back": "Back to create"
 }

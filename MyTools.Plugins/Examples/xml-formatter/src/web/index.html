@@ -9,26 +9,19 @@
 <body>
     <div class="page">
         <div class="toolbar">
-            <select id="indent" class="toolbar-select" title="Indent">
-                <option value="2" data-i18n="[text]Plugin.XmlFormatter.Detail.Indent2" data-i18n-default-value="2 spaces">2 spaces</option>
-                <option value="4" data-i18n="[text]Plugin.XmlFormatter.Detail.Indent4" data-i18n-default-value="4 spaces">4 spaces</option>
-                <option value="tab" data-i18n="[text]Plugin.XmlFormatter.Detail.IndentTab" data-i18n-default-value="Tab">Tab</option>
-            </select>
-            <button id="formatButton" class="toolbar-button primary" type="button"
-                    data-i18n="[text]Plugin.XmlFormatter.Detail.Format"
-                    data-i18n-default-value="Format"></button>
-            <button id="copyButton" class="toolbar-button" type="button"
-                    data-i18n="[text]Plugin.XmlFormatter.Detail.Copy"
-                    data-i18n-default-value="Copy"></button>
-            <button id="clearButton" class="toolbar-button" type="button"
-                    data-i18n="[text]Plugin.XmlFormatter.Detail.Clear"
-                    data-i18n-default-value="Clear"></button>
-            <button id="collapseAllButton" class="toolbar-button" type="button"
-                    data-i18n="[text]Plugin.XmlFormatter.Detail.CollapseAll"
-                    data-i18n-default-value="Collapse All"></button>
-            <button id="expandAllButton" class="toolbar-button" type="button"
-                    data-i18n="[text]Plugin.XmlFormatter.Detail.ExpandAll"
-                    data-i18n-default-value="Expand All"></button>
+            <label class="toolbar-field">
+                <span data-i18n="[text]Plugin.XmlFormatter.Detail.Indent" data-i18n-default-value="Indent"></span>
+                <select id="indent">
+                    <option value="2" data-i18n="[text]Plugin.XmlFormatter.Detail.Indent2" data-i18n-default-value="2 spaces">2 spaces</option>
+                    <option value="4" data-i18n="[text]Plugin.XmlFormatter.Detail.Indent4" data-i18n-default-value="4 spaces">4 spaces</option>
+                    <option value="tab" data-i18n="[text]Plugin.XmlFormatter.Detail.IndentTab" data-i18n-default-value="Tab">Tab</option>
+                </select>
+            </label>
+            <button id="formatButton" class="toolbar-button" type="button"><span data-action-name="format"></span><kbd data-action-hotkey="format"></kbd></button>
+            <button id="clearButton" class="toolbar-button" type="button"><span data-action-name="clear"></span><kbd data-action-hotkey="clear"></kbd></button>
+            <span class="toolbar-spacer"></span>
+            <button id="collapseAllButton" class="toolbar-button" type="button"><span data-action-name="collapse-all"></span><kbd data-action-hotkey="collapse-all"></kbd></button>
+            <button id="expandAllButton" class="toolbar-button" type="button"><span data-action-name="expand-all"></span><kbd data-action-hotkey="expand-all"></kbd></button>
         </div>
 
         <div class="panes">

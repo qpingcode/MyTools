@@ -35,5 +35,8 @@
   "Plugin.CreatePlugin.Validation.InvalidId": "插件 ID 格式不正确",
   "Plugin.CreatePlugin.Validation.AuthorRequired": "请输入插件作者",
   "Plugin.CreatePlugin.Toast.RefreshRequested": "已请求刷新所有开发中的插件",
-  "Plugin.CreatePlugin.Toast.ConnectionReset": "刷新期间连接已重置"
+  "Plugin.CreatePlugin.Toast.ConnectionReset": "刷新期间连接已重置",
+  "Plugin.CreatePlugin.List.Title": "已创建的插件",
+  "Plugin.CreatePlugin.List.Empty": "还没有创建插件。",
+  "Plugin.CreatePlugin.Action.Back": "返回创建"
 }

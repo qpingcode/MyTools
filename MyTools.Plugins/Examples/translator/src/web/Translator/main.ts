@@ -1,4 +1,4 @@
-import { createWebBusClient, HostEvents } from "@qping/plugin-bus/web";
+import { createWebBusClient, HostEvents, renderHotkeyKeycaps } from "@qping/plugin-bus/web";
 import type {
     MyToolsHostDetailActionPayload,
     MyToolsHostInitializePayload,
@@ -92,8 +92,7 @@ import type {
         document.querySelectorAll<HTMLElement>("[data-action-hotkey]").forEach(function (element) {
             var actionId = element.dataset.actionHotkey || "";
             var hotkey = actionHotkeys.get(actionId) || "";
-            element.textContent = hotkey;
-            element.hidden = !hotkey;
+            renderHotkeyKeycaps(element, hotkey);
         });
         if (currentState) {
             updateFavoriteButton(currentState);

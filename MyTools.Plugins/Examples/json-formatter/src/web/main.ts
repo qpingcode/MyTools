@@ -1,4 +1,4 @@
-import { createWebBusClient, HostEvents } from "@qping/plugin-bus/web";
+import { createWebBusClient, HostEvents, renderHotkeyKeycaps } from "@qping/plugin-bus/web";
 import type {
     MyToolsHostDetailActionPayload,
     MyToolsHostInitializePayload,
@@ -12,11 +12,24 @@ import type {
     var indentSelect = document.getElementById("indent") as HTMLSelectElement;
     var formatButton = document.getElementById("formatButton") as HTMLButtonElement;
     var minifyButton = document.getElementById("minifyButton") as HTMLButtonElement;
-    var copyButton = document.getElementById("copyButton") as HTMLButtonElement;
     var clearButton = document.getElementById("clearButton") as HTMLButtonElement;
     var collapseAllButton = document.getElementById("collapseAllButton") as HTMLButtonElement;
     var expandAllButton = document.getElementById("expandAllButton") as HTMLButtonElement;
     var messageElement = document.getElementById("message") as HTMLElement;
+
+    function applyActionDefinitions(actions: MyToolsHostInitializePayload["actions"]): void {
+        var actionNames = new Map((actions || []).map(action => [action.id, action.name || action.id]));
+        var actionHotkeys = new Map((actions || []).map(action => [action.id, action.hotkey || ""]));
+        document.querySelectorAll<HTMLElement>("[data-action-name]").forEach(function (element) {
+            var actionId = element.dataset.actionName || "";
+            element.textContent = actionNames.get(actionId) || actionId;
+        });
+        document.querySelectorAll<HTMLElement>("[data-action-hotkey]").forEach(function (element) {
+            var actionId = element.dataset.actionHotkey || "";
+            var hotkey = actionHotkeys.get(actionId) || "";
+            renderHotkeyKeycaps(element, hotkey);
+        });
+    }
 
     type JsonValue =
         | { kind: "object"; entries: { key: string; value: JsonValue }[] }
@@ -461,23 +474,6 @@ import type {
         }));
     }
 
-    function copyResult(): void {
-        // Enter can arrive before the input has ever been formatted, so produce the output first.
-        if (!lastOutput && inputElement.value.trim()) {
-            format();
-        }
-        if (!lastOutput) return;
-        void navigator.clipboard.writeText(lastOutput).then(function () {
-            var original = bus.i18n.t("Plugin.JsonFormatter.Detail.Copy", { defaultValue: "Copy" });
-            copyButton.textContent = bus.i18n.t("Plugin.JsonFormatter.Detail.Copied", { defaultValue: "Copied" });
-            copyButton.classList.add("copied");
-            window.setTimeout(function () {
-                copyButton.textContent = original;
-                copyButton.classList.remove("copied");
-            }, 1200);
-        });
-    }
-
     function clearAll(): void {
         inputElement.value = "";
         resetOutput();
@@ -513,7 +509,6 @@ import type {
 
     formatButton.addEventListener("click", format);
     minifyButton.addEventListener("click", minify);
-    copyButton.addEventListener("click", copyResult);
     clearButton.addEventListener("click", clearAll);
     collapseAllButton.addEventListener("click", function () { setAllCollapsed(true); });
     expandAllButton.addEventListener("click", function () { setAllCollapsed(false); });
@@ -532,6 +527,7 @@ import type {
     });
 
     bus.on<MyToolsHostInitializePayload>(HostEvents.Initialize, function (payload) {
+        applyActionDefinitions(payload.actions);
         var initialState = payload && payload.initialState as { input?: string } | undefined;
         var initial = initialState && typeof initialState.input === "string" ? initialState.input : "";
         if (initial) {
@@ -543,8 +539,12 @@ import type {
     });
 
     bus.on<MyToolsHostDetailActionPayload>(HostEvents.DetailAction, function (payload) {
-        if (payload.action === "minify") {
-            minify();
+        switch (payload.action) {
+            case "format": format(); break;
+            case "minify": minify(); break;
+            case "clear": clearAll(); break;
+            case "collapse-all": setAllCollapsed(true); break;
+            case "expand-all": setAllCollapsed(false); break;
         }
     });
 

@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text;
 using System.Windows;
 using Microsoft.Extensions.Logging;
 using MyTools.Common;
@@ -110,6 +111,38 @@ public class ClipBoardPlugin(ILogger<ClipBoardPlugin> logger) : PluginBase, IWin
 
     private static int GetPositiveSetting(ConfigurationSetting? setting, int defaultValue) =>
         setting?.CurrentValue is int value && value > 0 ? value : defaultValue;
+
+    public Task<ActionResult> AddTextHistoryAsync(IEnumerable<string> values)
+    {
+        if (_dbHelper == null)
+        {
+            return Task.FromResult(ActionResult.CreateFailure("Clipboard DB not initialized"));
+        }
+
+        var texts = values.Where(value => !string.IsNullOrWhiteSpace(value)).ToList();
+        if (texts.Count == 0)
+        {
+            return Task.FromResult(ActionResult.CreateFailure("No text was provided for clipboard history."));
+        }
+
+        // Sequential paste consumes newest-first. Insert in reverse so values are pasted in the
+        // same order in which the generating plugin displayed them.
+        foreach (var text in texts.AsEnumerable().Reverse())
+        {
+            var dataObject = new DataObject();
+            dataObject.SetText(text, TextDataFormat.UnicodeText);
+            var content = DataObjectSerializer.SerializeIDataObject(dataObject);
+            _dbHelper.AddHistory(
+                content,
+                CollapseToSingleLine(text),
+                HashHelper.ComputeSha256Hash(content),
+                ClipboardContentKind.Text,
+                byteSize: Encoding.UTF8.GetByteCount(text));
+        }
+
+        WeakReferenceMessenger.Default.Send(new ClipboardHistoryChangedMessage());
+        return Task.FromResult(ActionResult.CreateSuccess($"Added {texts.Count} items to clipboard history."));
+    }
 
 
     public override async Task<Result> SearchAsync(string query, CancellationToken cancellationToken, SearchOptions? searchOptions = null)

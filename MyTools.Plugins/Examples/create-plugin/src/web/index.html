@@ -18,35 +18,47 @@
               data-i18n-default-value="Force refresh all development plugins"><span
               data-i18n="[text]Plugin.CreatePlugin.Action.RefreshAll" data-i18n-default-value="↻ Refresh All"></span></button>
     </header>
-    <nav>
-      <span class="active">1 <b data-i18n="[text]Plugin.CreatePlugin.Step.Basic" data-i18n-default-value="Basics"></b></span><i></i>
-      <span>2 <b data-i18n="[text]Plugin.CreatePlugin.Step.Generate" data-i18n-default-value="Generate"></b></span><i></i>
-      <span>3 <b data-i18n="[text]Plugin.CreatePlugin.Step.Done" data-i18n-default-value="Done"></b></span>
+    <nav class="stepper" aria-label="Progress">
+      <span class="active" aria-current="step"><strong>1</strong><b data-i18n="[text]Plugin.CreatePlugin.Step.Basic" data-i18n-default-value="Basics"></b></span><i></i>
+      <span><strong>2</strong><b data-i18n="[text]Plugin.CreatePlugin.Step.Generate" data-i18n-default-value="Generate"></b></span><i></i>
+      <span><strong>3</strong><b data-i18n="[text]Plugin.CreatePlugin.Step.Done" data-i18n-default-value="Done"></b></span>
     </nav>
     <section id="step1">
-      <label><span data-i18n="[text]Plugin.CreatePlugin.Form.Name" data-i18n-default-value="Plugin name"></span>
-        <input id="name" data-i18n="[placeholder]Plugin.CreatePlugin.Form.Name.Placeholder" data-i18n-default-value="For example: My Productivity Tool" autocomplete="off">
-      </label>
-      <label><span data-i18n="[text]Plugin.CreatePlugin.Form.Id" data-i18n-default-value="Plugin ID"></span>
-        <input id="pluginId" data-i18n="[placeholder]Plugin.CreatePlugin.Form.Id.Placeholder" data-i18n-default-value="For example: my-productivity-tool" autocomplete="off">
-        <small data-i18n="[text]Plugin.CreatePlugin.Form.Id.Help" data-i18n-default-value="Lowercase letters, numbers, dots, or hyphens; up to 64 characters"></small>
-      </label>
-      <label><span data-i18n="[text]Plugin.CreatePlugin.Form.Author" data-i18n-default-value="Author"></span>
-        <input id="author" data-i18n="[placeholder]Plugin.CreatePlugin.Form.Author.Placeholder" data-i18n-default-value="Your name" autocomplete="off">
-      </label>
+      <div class="form-grid">
+        <label class="form-field"><span data-i18n="[text]Plugin.CreatePlugin.Form.Name" data-i18n-default-value="Plugin name"></span>
+          <input id="name" data-i18n="[placeholder]Plugin.CreatePlugin.Form.Name.Placeholder" data-i18n-default-value="For example: My Productivity Tool" autocomplete="off">
+        </label>
+        <label class="form-field"><span data-i18n="[text]Plugin.CreatePlugin.Form.Id" data-i18n-default-value="Plugin ID"></span>
+          <input id="pluginId" data-i18n="[placeholder]Plugin.CreatePlugin.Form.Id.Placeholder" data-i18n-default-value="For example: my-productivity-tool" autocomplete="off">
+          <small data-i18n="[text]Plugin.CreatePlugin.Form.Id.Help" data-i18n-default-value="Lowercase letters, numbers, dots, or hyphens; up to 64 characters"></small>
+        </label>
+        <label class="form-field"><span data-i18n="[text]Plugin.CreatePlugin.Form.Author" data-i18n-default-value="Author"></span>
+          <input id="author" data-i18n="[placeholder]Plugin.CreatePlugin.Form.Author.Placeholder" data-i18n-default-value="Your name" autocomplete="off">
+        </label>
+      </div>
       <fieldset>
         <legend data-i18n="[text]Plugin.CreatePlugin.Form.Type" data-i18n-default-value="Plugin type"></legend>
-        <label class="choice selected"><input type="radio" name="type" value="standard" checked><span>
-          <b data-i18n="[text]Plugin.CreatePlugin.Form.Type.Standard" data-i18n-default-value="Standard results plugin"></b>
-          <small data-i18n="[text]Plugin.CreatePlugin.Form.Type.Standard.Help" data-i18n-default-value="Use the native MyTools result list without an HTML UI"></small>
-        </span></label>
-        <label class="choice"><input type="radio" name="type" value="custom-ui"><span>
-          <b data-i18n="[text]Plugin.CreatePlugin.Form.Type.Custom" data-i18n-default-value="Custom UI plugin"></b>
-          <small data-i18n="[text]Plugin.CreatePlugin.Form.Type.Custom.Help" data-i18n-default-value="Include a customizable HTML and TypeScript detail page"></small>
-        </span></label>
+        <div class="choice-grid">
+          <label class="choice selected"><input type="radio" name="type" value="standard" checked><span>
+            <b data-i18n="[text]Plugin.CreatePlugin.Form.Type.Standard" data-i18n-default-value="Standard results plugin"></b>
+            <small data-i18n="[text]Plugin.CreatePlugin.Form.Type.Standard.Help" data-i18n-default-value="Use the native MyTools result list without an HTML UI"></small>
+          </span></label>
+          <label class="choice"><input type="radio" name="type" value="custom-ui"><span>
+            <b data-i18n="[text]Plugin.CreatePlugin.Form.Type.Custom" data-i18n-default-value="Custom UI plugin"></b>
+            <small data-i18n="[text]Plugin.CreatePlugin.Form.Type.Custom.Help" data-i18n-default-value="Include a customizable HTML and TypeScript detail page"></small>
+          </span></label>
+        </div>
       </fieldset>
       <p id="formError" class="error"></p>
       <footer><button id="create" data-i18n="[text]Plugin.CreatePlugin.Action.Create" data-i18n-default-value="Create Plugin"></button></footer>
+      <div class="plugin-list-panel">
+        <div class="panel-heading">
+          <h2 data-i18n="[text]Plugin.CreatePlugin.List.Title" data-i18n-default-value="Created plugins"></h2>
+          <span id="pluginCount"></span>
+        </div>
+        <div id="pluginList" class="plugin-list"></div>
+        <p id="pluginListEmpty" class="empty-state" data-i18n="[text]Plugin.CreatePlugin.List.Empty" data-i18n-default-value="No plugins have been created yet."></p>
+      </div>
     </section>
     <section id="step2" hidden><div class="spinner"></div>
       <h2 data-i18n="[text]Plugin.CreatePlugin.Progress.Title" data-i18n-default-value="Generating plugin"></h2>
@@ -55,8 +67,15 @@
     <section id="step3" hidden><div class="success">✓</div>
       <h2 data-i18n="[text]Plugin.CreatePlugin.Success.Title" data-i18n-default-value="Plugin created"></h2>
       <p data-i18n="[text]Plugin.CreatePlugin.Success.Description" data-i18n-default-value="The source template is ready. The plugin loads after watch starts."></p>
+      <dl class="plugin-details">
+        <div><dt data-i18n="[text]Plugin.CreatePlugin.Form.Name" data-i18n-default-value="Plugin name"></dt><dd id="detailName"></dd></div>
+        <div><dt data-i18n="[text]Plugin.CreatePlugin.Form.Id" data-i18n-default-value="Plugin ID"></dt><dd id="detailId"></dd></div>
+        <div><dt data-i18n="[text]Plugin.CreatePlugin.Form.Author" data-i18n-default-value="Author"></dt><dd id="detailAuthor"></dd></div>
+        <div><dt data-i18n="[text]Plugin.CreatePlugin.Form.Type" data-i18n-default-value="Plugin type"></dt><dd id="detailType"></dd></div>
+      </dl>
       <code id="sourcePath"></code>
       <div class="actions">
+        <button id="backToCreate" class="ghost" data-i18n="[text]Plugin.CreatePlugin.Action.Back" data-i18n-default-value="Back to create"></button>
         <button id="openFolder" class="ghost" data-i18n="[text]Plugin.CreatePlugin.Action.OpenFolder" data-i18n-default-value="Open Folder"></button>
         <button id="openCode" data-i18n="[text]Plugin.CreatePlugin.Action.OpenCode" data-i18n-default-value="Open in VS Code"></button>
       </div>

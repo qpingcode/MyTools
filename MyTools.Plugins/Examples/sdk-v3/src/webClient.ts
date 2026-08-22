@@ -18,6 +18,7 @@ import {
 import type { MyToolsThemePayload } from "./webTypes.ts";
 
 export { mytoolsI18n } from "./i18n.ts";
+export { renderHotkeyKeycaps } from "./hotkeyKeycaps.ts";
 export { HostEvents } from "./webTypes.ts";
 export type {
   MyToolsHostActionDefinition,

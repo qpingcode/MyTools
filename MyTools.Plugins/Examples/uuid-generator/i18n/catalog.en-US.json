@@ -4,67 +4,20 @@
   "pluginId": "uuid-generator",
   "sourceLocale": "en-US",
   "entries": [
-    {
-      "key": "Plugin.UuidGenerator.Name",
-      "defaultValue": "UUID/GUID Generator",
-      "placeholders": [],
-      "references": [],
-      "existingTranslations": {
-        "zh-CN": "UUID/GUID 生成器"
-      },
-      "sourceHash": "sha256:4430fd4bb20aec17dc19f56868404d1367d21b2fa1191940e53290ac1cda4a71"
-    },
-    {
-      "key": "Plugin.UuidGenerator.Action.Copy",
-      "defaultValue": "Copy",
-      "placeholders": [],
-      "references": [],
-      "existingTranslations": {
-        "zh-CN": "复制"
-      },
-      "sourceHash": "sha256:e21f935f11d7e966dbbae78da9daa378fe8142a14e7c0cd7434183005faa6c5c"
-    },
-    {
-      "key": "Plugin.UuidGenerator.Action.CopyDescription",
-      "defaultValue": "Copy the value to the clipboard",
-      "placeholders": [],
-      "references": [],
-      "existingTranslations": {
-        "zh-CN": "将内容复制到剪贴板"
-      },
-      "sourceHash": "sha256:65e436e11af1670098b4408939ce39acbfef0a9047c3e104f58d8cda30f48dd6"
-    },
-    {
-      "key": "Plugin.UuidGenerator.HelpTitle",
-      "defaultValue": "GUID Generator Help",
-      "placeholders": [],
-      "references": [],
-      "existingTranslations": {
-        "zh-CN": "GUID 生成器帮助"
-      },
-      "sourceHash": "sha256:465f81bd2f1cd9cc3de84457e90b0e6e111d3adb9219fbbb2110170d45579ad5"
-    },
-    {
-      "key": "Plugin.UuidGenerator.Help",
-      "defaultValue": "Press any character to start Generator.\nFormat Options:\n• uppercase\n• nodash\n• braces\n• parentheses\n• base64",
-      "placeholders": [],
-      "references": [],
-      "existingTranslations": {
-        "zh-CN": "输入任意字符开始生成。\n格式选项：\n• uppercase\n• nodash\n• braces\n• parentheses\n• base64"
-      },
-      "sourceHash": "sha256:713ae7dfa7b0d708151849cf727cece0c36cab5f216fe80bed8be5c71cd58ab9"
-    },
-    {
-      "key": "Plugin.UuidGenerator.ResultSubtitle",
-      "defaultValue": "GUID ({{format}})",
-      "placeholders": [
-        "format"
-      ],
-      "references": [],
-      "existingTranslations": {
-        "zh-CN": "GUID（{{format}}）"
-      },
-      "sourceHash": "sha256:1cfb18897bc747f34fa9690dc59a2d816d05c4ed10ae3132ecb10fb13db4e412"
-    }
+    { "key": "Plugin.UuidGenerator.Name", "defaultValue": "UUID/GUID Generator", "placeholders": [], "references": [{ "filePath": "plugin.json", "symbol": "entries.name" }], "existingTranslations": { "zh-CN": "UUID/GUID 生成器" }, "sourceHash": "sha256:4430fd4bb20aec17dc19f56868404d1367d21b2fa1191940e53290ac1cda4a71" },
+    { "key": "Plugin.UuidGenerator.Action.Standard", "defaultValue": "Standard format", "placeholders": [], "references": [{ "filePath": "src/backend/index.mts", "symbol": "actions" }], "existingTranslations": { "zh-CN": "标准格式" }, "sourceHash": "sha256:42083f61a8e442f61f2e201003ff89f96c53d451a324b58fc456658d2091afe5" },
+    { "key": "Plugin.UuidGenerator.Action.StandardDescription", "defaultValue": "Copy with hyphens", "placeholders": [], "references": [{ "filePath": "src/backend/index.mts", "symbol": "actions" }], "existingTranslations": { "zh-CN": "按带连字符格式复制" }, "sourceHash": "sha256:46788298c70b56d991aa88de0f38e84bd2d75a61ae10101343a7cb148267a5e5" },
+    { "key": "Plugin.UuidGenerator.Action.NoDash", "defaultValue": "Without hyphens", "placeholders": [], "references": [{ "filePath": "src/backend/index.mts", "symbol": "actions" }], "existingTranslations": { "zh-CN": "无连字符格式" }, "sourceHash": "sha256:70453f41b91a90da8eb1dcea79c90e6f96fcc757a86fc905b085bfd00564afc5" },
+    { "key": "Plugin.UuidGenerator.Action.NoDashDescription", "defaultValue": "Copy without hyphens", "placeholders": [], "references": [{ "filePath": "src/backend/index.mts", "symbol": "actions" }], "existingTranslations": { "zh-CN": "移除连字符后复制" }, "sourceHash": "sha256:9c6019fbbe0d81f85b79741b9ccc9132014cd486a2189a6b5382cbf45cb59e91" },
+    { "key": "Plugin.UuidGenerator.Action.Uppercase", "defaultValue": "Uppercase format", "placeholders": [], "references": [{ "filePath": "src/backend/index.mts", "symbol": "actions" }], "existingTranslations": { "zh-CN": "大写格式" }, "sourceHash": "sha256:26909019091fc4986688cd939af4f4ef573e00bfaf388c3f066102de1120ecc6" },
+    { "key": "Plugin.UuidGenerator.Action.UppercaseDescription", "defaultValue": "Copy in uppercase", "placeholders": [], "references": [{ "filePath": "src/backend/index.mts", "symbol": "actions" }], "existingTranslations": { "zh-CN": "转换为大写后复制" }, "sourceHash": "sha256:c204bdf4934b7f0fe808fe65366def5900787584d5b38abb4385d7cc7e7c04d1" },
+    { "key": "Plugin.UuidGenerator.Action.Braces", "defaultValue": "Braced format", "placeholders": [], "references": [{ "filePath": "src/backend/index.mts", "symbol": "actions" }], "existingTranslations": { "zh-CN": "花括号包裹格式" }, "sourceHash": "sha256:e227d79b348e3caab4e00b50e6b1ea8ffad8cf9b47e2e9f0fd83a9ddd9b101ab" },
+    { "key": "Plugin.UuidGenerator.Action.BracesDescription", "defaultValue": "Copy wrapped in braces", "placeholders": [], "references": [{ "filePath": "src/backend/index.mts", "symbol": "actions" }], "existingTranslations": { "zh-CN": "使用花括号包裹后复制" }, "sourceHash": "sha256:60b6f0c338cbca21dbf78b0478da5d619aae55f827781e0f7182f25b751b9966" },
+    { "key": "Plugin.UuidGenerator.Action.CopyAllHistory", "defaultValue": "Add all to clipboard history", "placeholders": [], "references": [{ "filePath": "src/backend/index.mts", "symbol": "actions" }], "existingTranslations": { "zh-CN": "全部加入剪贴板历史" }, "sourceHash": "sha256:482e8958ae3835d7d5270637872f0fc8e34e6847f0509a315ede93e84e5bc811" },
+    { "key": "Plugin.UuidGenerator.Action.CopyAllHistoryDescription", "defaultValue": "Add every generated UUID for sequential paste", "placeholders": [], "references": [{ "filePath": "src/backend/index.mts", "symbol": "actions" }], "existingTranslations": { "zh-CN": "将所有生成的 UUID 加入历史以便连续粘贴" }, "sourceHash": "sha256:e9e13bd75c51c5fcbf648881c3fd539c9488762c17a899f65c61dc74bd5a0a55" },
+    { "key": "Plugin.UuidGenerator.Action.CopyAllHistorySuccess", "defaultValue": "Added all UUIDs to clipboard history", "placeholders": [], "references": [{ "filePath": "src/backend/index.mts", "symbol": "actions" }], "existingTranslations": { "zh-CN": "已将所有 UUID 加入剪贴板历史" }, "sourceHash": "sha256:e4939c8639f57098710d435c78a42f32798ffee8f799bf91993f5144d2e73d05" },
+    { "key": "Plugin.UuidGenerator.HelpTitle", "defaultValue": "GUID Generator Help", "placeholders": [], "references": [{ "filePath": "src/backend/index.mts", "symbol": "search" }], "existingTranslations": { "zh-CN": "GUID 生成器帮助" }, "sourceHash": "sha256:465f81bd2f1cd9cc3de84457e90b0e6e111d3adb9219fbbb2110170d45579ad5" },
+    { "key": "Plugin.UuidGenerator.Help", "defaultValue": "Enter a number to generate that many UUIDs (maximum 1000). Use an action to choose the output format.", "placeholders": [], "references": [{ "filePath": "src/backend/index.mts", "symbol": "helpText" }], "existingTranslations": { "zh-CN": "输入数字即可生成对应数量的 UUID（最多 1000 个），通过 action 选择输出格式。" }, "sourceHash": "sha256:8967a4fe4422b4c835cb98d131b77b70fd34fb3878c201b75a6306baa68358dd" },
+    { "key": "Plugin.UuidGenerator.ResultSubtitle", "defaultValue": "GUID {{index}} of {{count}}", "placeholders": ["index", "count"], "references": [{ "filePath": "src/backend/index.mts", "symbol": "search" }], "existingTranslations": { "zh-CN": "GUID {{index}} / {{count}}" }, "sourceHash": "sha256:dee12e9f16f900d29206a81d268d5eb1b0d50c4da2a60ab434aa80c21099d9ba" }
   ]
 }

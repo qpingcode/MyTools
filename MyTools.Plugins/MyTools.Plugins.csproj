@@ -5,6 +5,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <!-- This library uses WPF types but owns no XAML pages. Avoid passing the
+         unmatched default **/*.xaml glob to the WPF markup compiler. -->
+    <EnableDefaultPageItems>false</EnableDefaultPageItems>
     <RootNamespace>MyTools.Plugins</RootNamespace>
     <NoWarn>NU1701</NoWarn>
   </PropertyGroup>

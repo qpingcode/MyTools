@@ -1,4 +1,4 @@
-import { createWebBusClient, HostEvents } from "@qping/plugin-bus/web";
+import { createWebBusClient, HostEvents, renderHotkeyKeycaps } from "@qping/plugin-bus/web";
 import type {
     MyToolsHostDetailActionPayload,
     MyToolsHostInitializePayload,
@@ -11,11 +11,24 @@ import type {
     var outputElement = document.getElementById("output") as HTMLElement;
     var indentSelect = document.getElementById("indent") as HTMLSelectElement;
     var formatButton = document.getElementById("formatButton") as HTMLButtonElement;
-    var copyButton = document.getElementById("copyButton") as HTMLButtonElement;
     var clearButton = document.getElementById("clearButton") as HTMLButtonElement;
     var collapseAllButton = document.getElementById("collapseAllButton") as HTMLButtonElement;
     var expandAllButton = document.getElementById("expandAllButton") as HTMLButtonElement;
     var messageElement = document.getElementById("message") as HTMLElement;
+
+    function applyActionDefinitions(actions: MyToolsHostInitializePayload["actions"]): void {
+        var actionNames = new Map((actions || []).map(action => [action.id, action.name || action.id]));
+        var actionHotkeys = new Map((actions || []).map(action => [action.id, action.hotkey || ""]));
+        document.querySelectorAll<HTMLElement>("[data-action-name]").forEach(function (element) {
+            var actionId = element.dataset.actionName || "";
+            element.textContent = actionNames.get(actionId) || actionId;
+        });
+        document.querySelectorAll<HTMLElement>("[data-action-hotkey]").forEach(function (element) {
+            var actionId = element.dataset.actionHotkey || "";
+            var hotkey = actionHotkeys.get(actionId) || "";
+            renderHotkeyKeycaps(element, hotkey);
+        });
+    }
 
     var lastSerialized: string | null = null;
 
@@ -312,23 +325,6 @@ import type {
         }
     }
 
-    function copyResult(): void {
-        // Enter can arrive before the input has ever been formatted, so produce the output first.
-        if (!lastSerialized && inputElement.value.trim()) {
-            format();
-        }
-        if (!lastSerialized) return;
-        void navigator.clipboard.writeText(lastSerialized).then(function () {
-            var original = bus.i18n.t("Plugin.XmlFormatter.Detail.Copy", { defaultValue: "Copy" });
-            copyButton.textContent = bus.i18n.t("Plugin.XmlFormatter.Detail.Copied", { defaultValue: "Copied" });
-            copyButton.classList.add("copied");
-            window.setTimeout(function () {
-                copyButton.textContent = original;
-                copyButton.classList.remove("copied");
-            }, 1200);
-        });
-    }
-
     function clearAll(): void {
         inputElement.value = "";
         lastSerialized = null;
@@ -363,7 +359,6 @@ import type {
     }
 
     formatButton.addEventListener("click", format);
-    copyButton.addEventListener("click", copyResult);
     clearButton.addEventListener("click", clearAll);
     collapseAllButton.addEventListener("click", function () { setAllCollapsed(true); });
     expandAllButton.addEventListener("click", function () { setAllCollapsed(false); });
@@ -382,6 +377,7 @@ import type {
     });
 
     bus.on<MyToolsHostInitializePayload>(HostEvents.Initialize, function (payload) {
+        applyActionDefinitions(payload.actions);
         var initialState = payload && payload.initialState as { input?: string } | undefined;
         var initial = initialState && typeof initialState.input === "string" ? initialState.input : "";
         if (initial) {
@@ -389,6 +385,15 @@ import type {
             format();
         } else {
             showEmptyOutput();
+        }
+    });
+
+    bus.on<MyToolsHostDetailActionPayload>(HostEvents.DetailAction, function (payload) {
+        switch (payload.action) {
+            case "format": format(); break;
+            case "clear": clearAll(); break;
+            case "collapse-all": setAllCollapsed(true); break;
+            case "expand-all": setAllCollapsed(false); break;
         }
     });
 

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using MyTools.Common;
 using MyTools.Common.Localization;
+using MyTools.Common.DependencyInjection;
 using MyTools.Plugins.Param;
 
 namespace MyTools.Plugins.NodePlugins;
@@ -20,6 +21,9 @@ public static class NodePluginWellKnownActions
             "copy" => WellKnownActions.Copy.ExecuteAsync(ActionStringParam.From(host.Text ?? string.Empty)),
             "copyandpaste" => WellKnownActions.CopyAndPaste.ExecuteAsync(
                 ActionStringParam.From(host.Text ?? string.Empty)),
+            "addclipboardhistory" when host.Texts.Count == 0 => InvalidPayload(host.Kind, "texts"),
+            "addclipboardhistory" => ServiceLocator.GetRequiredService<ClipBoardPlugin>()
+                .AddTextHistoryAsync(host.Texts),
             "execute" when string.IsNullOrWhiteSpace(host.Path) => InvalidPayload(host.Kind, "path"),
             "execute" => (host.RunAsAdmin ? WellKnownActions.AdminExecute : WellKnownActions.Execute)
                 .ExecuteAsync(new ExecuteActionParams(host.Path!, host.Args ?? string.Empty)),
