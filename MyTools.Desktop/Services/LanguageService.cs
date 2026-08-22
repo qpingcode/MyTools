@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Resources;
+using MyTools.Common.Config.Interfaces;
 using MyTools.Common.DependencyInjection;
 using MyTools.Common.Localization;
 
@@ -7,16 +8,16 @@ namespace MyTools.Desktop.Services;
 
 public class LanguageService : ILocalizationService
 {
-    private const string DefaultLocale = "en-US";
+    private const string DefaultLocale = GeneralSettings.DefaultLanguage;
     private static readonly ResourceManager ResourceManager = new(
         "MyTools.Desktop.Localization.HostStrings",
         typeof(LanguageService).Assembly);
-    private readonly AppConfigService appConfigService;
+    private readonly IConfigurationStorage storage;
 
-    public LanguageService(AppConfigService appConfigService)
+    public LanguageService(IConfigurationStorage storage)
     {
-        this.appConfigService = appConfigService;
-        var savedLanguage = appConfigService.AppConfig.Language;
+        this.storage = storage;
+        var savedLanguage = storage.Retrieve(GeneralSettings.LanguagePath);
         CurrentCulture = TryGetSupportedCulture(savedLanguage) ?? GetDefaultCulture();
         ApplyCulture(CurrentCulture);
     }
@@ -70,7 +71,7 @@ public class LanguageService : ILocalizationService
 
         var previousLocale = CurrentCulture.Name;
         CurrentCulture = culture;
-        appConfigService.SetLanguage(culture.Name);
+        storage.Store(GeneralSettings.LanguagePath, culture.Name);
         ApplyCulture(culture);
         LocaleChanged?.Invoke(this, new LocaleChangedEventArgs(previousLocale, culture.Name));
         ResourceDictionaryChanged?.Invoke(this, EventArgs.Empty);
@@ -80,12 +81,12 @@ public class LanguageService : ILocalizationService
     {
         var culture = TryGetSupportedCulture(languageCode)
             ?? throw new ArgumentException($"Unsupported locale: {languageCode}", nameof(languageCode));
-        if (string.Equals(culture.Name, appConfigService.AppConfig.Language, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(culture.Name, CurrentCulture.Name, StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }
 
-        appConfigService.SetLanguage(culture.Name);
+        storage.Store(GeneralSettings.LanguagePath, culture.Name);
         return true;
     }
 

@@ -1,5 +1,8 @@
 # MyTools 主题（Theme）架构设计
 
+> 配置持久化说明：本文中关于 `AppConfig` / `AppConfigService` 的内容是早期设计记录，
+> 已不再对应当前实现。当前以 `Settings.json` 的 `General.Theme` 为唯一持久化来源。
+
 ## 1. 目的与结论
 
 MyTools 当前只有一套硬编码的深色界面：WPF 窗口里散落着 `#1e1e1e`、`#292929`、`#333333`、`White` 等颜色字面量，Web 插件详情页的 CSS 也写死了深色色值。本设计的目标是引入**白天主题（Light）**与**黑夜主题（Dark）**两套主题，并满足：

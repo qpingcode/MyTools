@@ -210,7 +210,7 @@ public partial class App
     
     private void OpenConfigFolder_Click(object? sender, EventArgs e)
     {
-        var param = ActionStringParam.From(Path.Combine(ConfigPath.Base, "MyToolsConfig.json"));
+        var param = ActionStringParam.From(Path.Combine(ConfigPath.Base, "Settings.json"));
         new OpenInExplorer().ExecuteAsync(param);
     }
 

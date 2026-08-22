@@ -57,7 +57,6 @@ public static class DesktopServiceCollectionExtensions
         serviceCollection.AddSingleton<WindowPlacementService>();
         
         // services
-        serviceCollection.AddSingleton<AppConfigService>();
         serviceCollection.AddSingleton<AutoStartService>();
         serviceCollection.AddSingleton<IUpdateService, UpdateService>();
         serviceCollection.AddSingleton<LanguageService>();

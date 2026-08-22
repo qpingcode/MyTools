@@ -22,7 +22,6 @@ namespace MyTools.Desktop;
 
 public class AppBootstrapper : IDisposable
 {
-    private readonly AppConfigService appConfigService;
     private readonly NativeMessageWindowHost nativeMessageWindowHost;
     private readonly GestureRegistry gestureRegistry;
     private readonly GestureConfigProvider gestureConfigProvider;
@@ -45,7 +44,6 @@ public class AppBootstrapper : IDisposable
     private readonly SemaphoreSlim nodePluginReloadLock = new(1, 1);
 
     public AppBootstrapper(
-        AppConfigService appConfigService,
         NativeMessageWindowHost nativeMessageWindowHost,
         GestureRegistry gestureRegistry,
         GestureConfigProvider gestureConfigProvider,
@@ -66,7 +64,6 @@ public class AppBootstrapper : IDisposable
         PluginWindowManager pluginWindowManager,
         IKeyboardHelper keyboardHelper)
     {
-        this.appConfigService = appConfigService;
         this.nativeMessageWindowHost = nativeMessageWindowHost;
         this.gestureRegistry = gestureRegistry;
         this.gestureConfigProvider = gestureConfigProvider;
@@ -90,8 +87,6 @@ public class AppBootstrapper : IDisposable
 
     public void Init()
     {
-        var appConfig = appConfigService.AppConfig;
-        
         // Ensure that NativeMessageWindowHost has been loaded and Windows messages have been properly monitored
         // which is a prerequisite for the clipboard / hotkey
         EnsureNativeMessageWindowHost();
@@ -108,7 +103,9 @@ public class AppBootstrapper : IDisposable
         // Apply the user-configured log level now that settings have been loaded.
         logLevelService.ApplyFromSettings(registry);
 
-        RegisterGlobalHotKey(appConfig.SearchHotKey);
+        var searchHotKeyText = registry.FindSetting(GeneralSettings.SearchHotKeyPath)?.GetValue<string>()
+                               ?? GeneralSettings.DefaultSearchHotKey;
+        RegisterGlobalHotKey(new HotKeyConfig(searchHotKeyText));
         
         InitializeGestureDetection();
 
@@ -351,7 +348,7 @@ public class AppBootstrapper : IDisposable
                 localization.GetCaption("Configuration.General.Name", "General"),
                 localization.GetCaption("Configuration.General.Description", "General Settings"));
             
-            var languageSetting = registry.AddSetting(generalCategory, "Language",
+            registry.AddSetting(generalCategory, "Language",
                 localization.GetCaption("Configuration.General.Language.Title", "Language"),
                 localization.GetCaption("Configuration.General.Language.Description", "Select the application display language"),
                 localization.CurrentLocale,
@@ -364,10 +361,10 @@ public class AppBootstrapper : IDisposable
                 themeService.CurrentTheme.ToWireString(),
                 valueType: SettingValueTypes.Theme);
 
-            var searchHotKeySetting = registry.AddSetting(generalCategory, "SearchHotKey",
+            registry.AddSetting(generalCategory, "SearchHotKey",
                 localization.GetCaption("Configuration.General.SearchHotKey.Title", "Search hotkey"),
                 localization.GetCaption("Configuration.General.SearchHotKey.Description", "Keyboard shortcut that opens MyTools search"),
-                AppConfigService.DefaultSearchHotKey,
+                GeneralSettings.DefaultSearchHotKey,
                 valueType: SettingValueTypes.HotKey);
             
             registry.AddSetting(generalCategory, "AutoStart",
@@ -432,12 +429,6 @@ public class AppBootstrapper : IDisposable
             // Load configuration from file if exists
             registry.Reload();
        
-            // AppConfigService is authoritative for the locale. Ignore a stale legacy copy in Settings.json.
-            languageSetting.InitValueWithoutNotify(localization.CurrentLocale);
-            // AppConfigService is authoritative for the theme as well.
-            registry.FindSetting(ThemeService.ThemeSettingPath)?
-                .InitValueWithoutNotify(themeService.CurrentTheme.ToWireString());
-            searchHotKeySetting.InitValueWithoutNotify(appConfigService.AppConfig.SearchHotKeyText ?? string.Empty);
         }
         catch (Exception ex)
         {

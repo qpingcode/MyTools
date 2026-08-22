@@ -11,13 +11,14 @@ namespace MyTools.Desktop.Services;
 /// </summary>
 public class ThemeService : IThemeService
 {
-    public const string ThemeSettingPath = "General.Theme";
-    private readonly AppConfigService appConfigService;
+    public const string ThemeSettingPath = GeneralSettings.ThemePath;
+    private readonly IConfigurationStorage storage;
 
-    public ThemeService(AppConfigService appConfigService)
+    public ThemeService(IConfigurationStorage storage)
     {
-        this.appConfigService = appConfigService;
-        CurrentTheme = ThemeKindExtensions.Parse(appConfigService.AppConfig.Theme);
+        this.storage = storage;
+        CurrentTheme = ThemeKindExtensions.Parse(
+            storage.Retrieve(ThemeSettingPath) ?? GeneralSettings.DefaultTheme);
     }
 
     public ThemeKind CurrentTheme { get; private set; }
@@ -33,7 +34,7 @@ public class ThemeService : IThemeService
 
         var previous = CurrentTheme;
         CurrentTheme = theme;
-        appConfigService.SetTheme(theme.ToWireString());
+        storage.Store(ThemeSettingPath, theme.ToWireString());
         ThemeChanged?.Invoke(this, new ThemeChangedEventArgs(previous, theme));
     }
 

@@ -39,7 +39,6 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     private readonly IPluginLauncher pluginLauncher;
     private readonly HotKeyManager hotKeyManager;
     private readonly Searcher searcher;
-    private readonly AppConfigService appConfigService;
     private readonly InputActionCaptureService inputActionCaptureService;
     private readonly NodePluginCatalog nodePluginCatalog;
     private readonly IKeyboardHelper keyboardHelper;
@@ -78,7 +77,6 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         IPluginLauncher pluginLauncher,
         HotKeyManager hotKeyManager,
         Searcher searcher,
-        AppConfigService appConfigService,
         InputActionCaptureService inputActionCaptureService,
         ILogger<SettingsPluginHostCallHandler> logger,
         NodePluginCatalog nodePluginCatalog,
@@ -100,7 +98,6 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         this.pluginLauncher = pluginLauncher;
         this.hotKeyManager = hotKeyManager;
         this.searcher = searcher;
-        this.appConfigService = appConfigService;
         this.inputActionCaptureService = inputActionCaptureService;
         this.logger = logger;
         this.nodePluginCatalog = nodePluginCatalog;
@@ -607,8 +604,8 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         var currentHotKeys = nodePlugins.ToDictionary(
             p => p.PluginId,
             p => (string?)(pluginOverrideProvider.GetHotKey(p.PluginId) ?? p.HotKey));
-        currentHotKeys["__search__"] = registry.FindSetting(AppConfigService.SearchHotKeySettingPath)?.CurrentValue as string
-            ?? appConfigService.AppConfig.SearchHotKeyText;
+        currentHotKeys["__search__"] = registry.FindSetting(GeneralSettings.SearchHotKeyPath)?.CurrentValue as string
+            ?? GeneralSettings.DefaultSearchHotKey;
         pluginNames["__search__"] = languageService.GetCaption(
             "Configuration.General.SearchHotKey.Title", "Search hotkey");
 
@@ -716,8 +713,8 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
             ClipBoardPlugin.DefaultSequentialPasteHotKey);
 
         var searchHotKey = request.CurrentSearchHotKey
-            ?? registry.FindSetting(AppConfigService.SearchHotKeySettingPath)?.CurrentValue as string
-            ?? appConfigService.AppConfig.SearchHotKeyText;
+            ?? registry.FindSetting(GeneralSettings.SearchHotKeyPath)?.CurrentValue as string
+            ?? GeneralSettings.DefaultSearchHotKey;
 
         return HotKeyInspector.Inspect(hotKey, new HotKeyInspectionRequest
         {
@@ -746,16 +743,10 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
 
     private void ApplySearchHotKeyFromSettings()
     {
-        var text = registry.FindSetting(AppConfigService.SearchHotKeySettingPath)?.GetValue<string>()?.Trim() ?? string.Empty;
-        var current = appConfigService.AppConfig.SearchHotKeyText?.Trim() ?? string.Empty;
-        if (string.Equals(text, current, StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
+        var text = registry.FindSetting(GeneralSettings.SearchHotKeyPath)?.GetValue<string>()?.Trim() ?? string.Empty;
 
         if (string.IsNullOrWhiteSpace(text))
         {
-            appConfigService.SetSearchHotKey(string.Empty);
             hotKeyManager.RegisterySearchHotKey(null);
             return;
         }
@@ -767,7 +758,6 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
             return;
         }
 
-        appConfigService.SetSearchHotKey(text);
         hotKeyManager.RegisterySearchHotKey(parsed);
     }
 
