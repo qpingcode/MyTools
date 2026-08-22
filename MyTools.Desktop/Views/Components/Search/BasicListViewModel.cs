@@ -32,6 +32,15 @@ public partial class BasicListViewModel : ObservableObject, ISwitchableViewModel
         
     [ObservableProperty]
     private ObservableCollection<ResultItem> searchResults = new();
+
+    [ObservableProperty]
+    private bool isEmptyStateVisible;
+
+    [ObservableProperty]
+    private string emptyStateTitle = string.Empty;
+
+    [ObservableProperty]
+    private string emptyStateDescription = string.Empty;
         
     private CancellationTokenSource? searchCancellation;
     private readonly Dictionary<int, ResultItem> numberToResultMap = new();
@@ -73,6 +82,9 @@ public partial class BasicListViewModel : ObservableObject, ISwitchableViewModel
             searchCancellation?.Cancel();
             searchCancellation = new CancellationTokenSource();
             SelectedResult = null;
+            IsEmptyStateVisible = false;
+            EmptyStateTitle = string.Empty;
+            EmptyStateDescription = string.Empty;
             
             UpdateStatusText(UpdateStatus.Pending, GetResourceString("Searching"));
             
@@ -94,6 +106,11 @@ public partial class BasicListViewModel : ObservableObject, ISwitchableViewModel
             SearchResults.Clear();
             SearchResults.AddRange(result.Items);
             SelectedResult = SearchResults.FirstOrDefault();
+            EmptyStateTitle = result.EmptyStateTitle ?? string.Empty;
+            EmptyStateDescription = result.EmptyStateDescription ?? string.Empty;
+            IsEmptyStateVisible = result.Success
+                                  && SearchResults.Count == 0
+                                  && !string.IsNullOrWhiteSpace(EmptyStateTitle);
             var statusText = result.ErrorMessage ?? string.Empty;
             UpdateStatusText(result.Success ? UpdateStatus.Success : UpdateStatus.Failed, statusText);
         }

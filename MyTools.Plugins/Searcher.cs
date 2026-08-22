@@ -27,7 +27,8 @@ public class Searcher(IGlobalSearchRegistry globalSearchRegistry, IMemoryCache c
                 searchText, plugin.Name, pluginStopwatch.ElapsedMilliseconds);
             var prepared = PrepareResultItems(result.Items, plugin, searchText).ToList();
             ApplyHistoryBoosts(prepared, searchText);
-            return Result.CreateSuccessResult(prepared);
+            return Result.CreateSuccessResult(
+                prepared, result.EmptyStateTitle, result.EmptyStateDescription);
         }
 
         if (string.IsNullOrWhiteSpace(searchText)

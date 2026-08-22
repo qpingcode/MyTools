@@ -31,6 +31,16 @@
   <data name="Configuration.Gestures.Description" xml:space="preserve"><value>Maintenez le bouton droit de la souris et dessinez un geste, puis relâchez-le pour exécuter l’action associée. Chaque geste peut être limité à certains processus et associé à un raccourci clavier ou à un bouton de souris.</value></data>
   <data name="Configuration.Plugins.Name" xml:space="preserve"><value>Extensions</value></data>
   <data name="Configuration.Plugins.Description" xml:space="preserve"><value>Activez les extensions, attribuez des raccourcis et définissez des alias pour la recherche globale.</value></data>
+  <data name="Plugin.ClipBoard.Settings.HotKey.Title" xml:space="preserve"><value>Raccourci</value></data>
+  <data name="Plugin.ClipBoard.Settings.Category.Name" xml:space="preserve"><value>Amélioration du presse-papiers</value></data>
+  <data name="Plugin.ClipBoard.Settings.Category.Description" xml:space="preserve"><value>Configure l’historique et le collage séquentiel</value></data>
+  <data name="Plugin.ClipBoard.Settings.HotKey.Description" xml:space="preserve"><value>Raccourci clavier ouvrant l’historique du presse-papiers</value></data>
+  <data name="Plugin.ClipBoard.Settings.SequentialPasteHotKey.Title" xml:space="preserve"><value>Raccourci de collage séquentiel</value></data>
+  <data name="Plugin.ClipBoard.Settings.SequentialPasteHotKey.Description" xml:space="preserve"><value>Colle et supprime l’entrée la plus récente sans ouvrir MyTools</value></data>
+  <data name="Plugin.ClipBoard.Settings.MaxHistoryDays.Title" xml:space="preserve"><value>Durée maximale de conservation</value></data>
+  <data name="Plugin.ClipBoard.Settings.MaxHistoryDays.Description" xml:space="preserve"><value>Supprime les entrées plus anciennes que ce nombre de jours</value></data>
+  <data name="Plugin.ClipBoard.Settings.MaxHistoryCount.Title" xml:space="preserve"><value>Nombre maximal d’entrées</value></data>
+  <data name="Plugin.ClipBoard.Settings.MaxHistoryCount.Description" xml:space="preserve"><value>Conserve au maximum ce nombre d’entrées</value></data>
   <data name="Plugin.Calculator.Name" xml:space="preserve"><value>Calculatrice</value></data>
   <data name="Plugin.Calculator.Description" xml:space="preserve"><value>Effectuer des calculs arithmétiques de base.</value></data>
   <data name="Language.RestartTitle" xml:space="preserve"><value>Redémarrage requis</value></data>
@@ -54,6 +64,9 @@
   <data name="Action.CopyAndPaste.Description" xml:space="preserve"><value>Copier et coller le texte dans la fenêtre précédemment active</value></data>
   <data name="Action.CopyAndPaste.Success" xml:space="preserve"><value>Texte copié et collé dans la fenêtre précédemment active.</value></data>
   <data name="Action.CopyAndPaste.InvalidParameters" xml:space="preserve"><value>Paramètres non valides pour l’action Copier et coller</value></data>
+  <data name="Action.Clipboard.CopyPlainTextAndPaste.Name" xml:space="preserve"><value>Copier en texte brut et coller</value></data>
+  <data name="Action.Clipboard.CopyPlainTextAndPaste.Description" xml:space="preserve"><value>Copier la représentation textuelle et la coller dans la fenêtre précédemment active</value></data>
+  <data name="Action.Clipboard.CopyPlainTextAndPaste.NoText" xml:space="preserve"><value>Cet élément ne contient pas de texte brut.</value></data>
   <data name="Action.OpenInExplorer.Name" xml:space="preserve"><value>Ouvrir dans l’Explorateur</value></data>
   <data name="Action.OpenInExplorer.Description" xml:space="preserve"><value>Ouvrir le dossier ou localiser le fichier dans l’Explorateur Windows</value></data>
   <data name="Action.OpenInExplorer.InvalidParameters" xml:space="preserve"><value>Paramètres non valides pour l’ouverture dans l’Explorateur</value></data>
@@ -116,4 +129,6 @@
   <data name="Search.Detail.ImageMeta" xml:space="preserve"><value>{{dimensions}} · {{size}}</value></data>
   <data name="Search.Detail.ImageDiskSize" xml:space="preserve"><value>{{size}}</value></data>
   <data name="Search.Actions.Overflow" xml:space="preserve"><value>Actions</value></data>
+  <data name="Plugin.ClipBoard.Empty.Title" xml:space="preserve"><value>L’historique du presse-papiers est vide</value></data>
+  <data name="Plugin.ClipBoard.Empty.Description" xml:space="preserve"><value>Copiez du texte, une image ou un fichier pour le voir apparaître ici.</value></data>
 </root>

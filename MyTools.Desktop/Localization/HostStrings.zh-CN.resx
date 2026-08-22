@@ -67,8 +67,6 @@
   <data name="Configuration.General.SearchHotKey.Description" xml:space="preserve"><value>打开 MyTools 搜索窗口的快捷键</value></data>
   <data name="Configuration.General.AutoStart.Title" xml:space="preserve"><value>开机自启</value></data>
   <data name="Configuration.General.AutoStart.Description" xml:space="preserve"><value>系统启动时自动运行 MyTools</value></data>
-  <data name="Configuration.General.MaxHistory.Title" xml:space="preserve"><value>最大历史记录</value></data>
-  <data name="Configuration.General.MaxHistory.Description" xml:space="preserve"><value>保留的最大历史记录数量</value></data>
   <data name="Configuration.General.SearchDelay.Title" xml:space="preserve"><value>搜索延迟</value></data>
   <data name="Configuration.General.SearchDelay.Description" xml:space="preserve"><value>搜索防抖延迟时间（毫秒）</value></data>
   <data name="Configuration.General.UpdateUrl.Title" xml:space="preserve"><value>更新地址</value></data>
@@ -96,6 +94,16 @@
   <data name="Plugin.PluginSearcher.Description" xml:space="preserve"><value>搜索所有可用插件</value></data>
   <data name="Plugin.ClipBoard.Name" xml:space="preserve"><value>剪贴板历史</value></data>
   <data name="Plugin.ClipBoard.Description" xml:space="preserve"><value>管理剪贴板历史记录</value></data>
+  <data name="Plugin.ClipBoard.Settings.HotKey.Title" xml:space="preserve"><value>快捷方式</value></data>
+  <data name="Plugin.ClipBoard.Settings.Category.Name" xml:space="preserve"><value>剪贴板增强工具</value></data>
+  <data name="Plugin.ClipBoard.Settings.Category.Description" xml:space="preserve"><value>配置剪贴板历史和连续粘贴</value></data>
+  <data name="Plugin.ClipBoard.Settings.HotKey.Description" xml:space="preserve"><value>打开剪贴板历史的全局快捷键</value></data>
+  <data name="Plugin.ClipBoard.Settings.SequentialPasteHotKey.Title" xml:space="preserve"><value>连续粘贴快捷键</value></data>
+  <data name="Plugin.ClipBoard.Settings.SequentialPasteHotKey.Description" xml:space="preserve"><value>不打开 MyTools，粘贴并删除最新的剪贴板历史记录</value></data>
+  <data name="Plugin.ClipBoard.Settings.MaxHistoryDays.Title" xml:space="preserve"><value>最大保留天数</value></data>
+  <data name="Plugin.ClipBoard.Settings.MaxHistoryDays.Description" xml:space="preserve"><value>删除超过此天数的剪贴板记录</value></data>
+  <data name="Plugin.ClipBoard.Settings.MaxHistoryCount.Title" xml:space="preserve"><value>最大记录数</value></data>
+  <data name="Plugin.ClipBoard.Settings.MaxHistoryCount.Description" xml:space="preserve"><value>最多保留此数量的剪贴板记录</value></data>
   <data name="Plugin.SearchEngine.Name" xml:space="preserve"><value>网页搜索</value></data>
   <data name="Plugin.SearchEngine.Description" xml:space="preserve"><value>使用不同的搜索引擎进行搜索</value></data>
   <data name="Plugin.JsonFormatter.Name" xml:space="preserve"><value>JSON 格式化</value></data>
@@ -133,6 +141,9 @@
   <data name="Action.CopyAndPaste.Description" xml:space="preserve"><value>复制文本并粘贴到上一个获得焦点的窗口</value></data>
   <data name="Action.CopyAndPaste.Success" xml:space="preserve"><value>已复制到剪贴板并粘贴到上一个获得焦点的窗口。</value></data>
   <data name="Action.CopyAndPaste.InvalidParameters" xml:space="preserve"><value>复制并粘贴操作的参数无效</value></data>
+  <data name="Action.Clipboard.CopyPlainTextAndPaste.Name" xml:space="preserve"><value>复制为纯文本并粘贴</value></data>
+  <data name="Action.Clipboard.CopyPlainTextAndPaste.Description" xml:space="preserve"><value>复制文本内容并粘贴到上一个获得焦点的窗口</value></data>
+  <data name="Action.Clipboard.CopyPlainTextAndPaste.NoText" xml:space="preserve"><value>该剪贴板历史记录不包含纯文本。</value></data>
   <data name="Action.OpenInExplorer.Name" xml:space="preserve"><value>在资源管理器中打开</value></data>
   <data name="Action.OpenInExplorer.Description" xml:space="preserve"><value>在 Windows 资源管理器中打开目录或定位文件</value></data>
   <data name="Action.OpenInExplorer.InvalidParameters" xml:space="preserve"><value>在资源管理器中打开操作的参数无效</value></data>
@@ -196,4 +207,6 @@
   <data name="Search.Detail.ImageMeta" xml:space="preserve"><value>{{dimensions}} · {{size}}</value></data>
   <data name="Search.Detail.ImageDiskSize" xml:space="preserve"><value>{{size}}</value></data>
   <data name="Search.Actions.Overflow" xml:space="preserve"><value>操作</value></data>
+  <data name="Plugin.ClipBoard.Empty.Title" xml:space="preserve"><value>剪贴板历史为空</value></data>
+  <data name="Plugin.ClipBoard.Empty.Description" xml:space="preserve"><value>复制一些文本、图片或文件后，它们会出现在这里。</value></data>
 </root>

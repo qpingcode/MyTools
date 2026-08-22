@@ -73,6 +73,27 @@ public class SearchHistoryDbHelperTest
         Assert.That(result.Items.Select(item => item.ResultKey), Is.EqualTo(new[] { "new", "old" }));
     }
 
+    [Test]
+    public async Task Searcher_PreservesPluginEmptyState()
+    {
+        var helper = new SearchHistoryDbHelper(_dbPath);
+        var plugin = new EmptyStatePlugin();
+        var searcher = new Searcher(
+            new FakeGlobalSearchRegistry(plugin),
+            new MemoryCache(new MemoryCacheOptions()),
+            helper,
+            NullLogger<Searcher>.Instance);
+
+        var result = await ((ISearcher)searcher).SearchAsync(plugin, string.Empty, CancellationToken.None);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Items, Is.Empty);
+            Assert.That(result.EmptyStateTitle, Is.EqualTo("Nothing here"));
+            Assert.That(result.EmptyStateDescription, Is.EqualTo("Copy something"));
+        });
+    }
+
     private sealed class FakeGlobalSearchRegistry(params IPlugin[] plugins) : IGlobalSearchRegistry
     {
         public IEnumerable<IPlugin> Plugins { get; } = plugins;
@@ -146,6 +167,21 @@ public class SearchHistoryDbHelperTest
             };
 
             return Task.FromResult(Result.CreateSuccessResult(results));
+        }
+    }
+
+    private sealed class EmptyStatePlugin : PluginBase
+    {
+        public override string PluginId => GetType().FullName!;
+        public override string Name => "Empty";
+        public override string Description => "Empty";
+        public override List<IActionWithHotkey> Actions => [];
+
+        public override Task<Result> SearchAsync(
+            string query, CancellationToken cancellationToken, SearchOptions? searchOptions = null)
+        {
+            return Task.FromResult(Result.CreateSuccessResult(
+                Array.Empty<ResultItem>(), "Nothing here", "Copy something"));
         }
     }
 }

@@ -47,7 +47,7 @@ public class ConfigurationSettingValuesTest
     {
         var setting = new ConfigurationSetting
         {
-            Name = "MaxHistory",
+            Name = "IntegerValue",
             ValueType = SettingValueTypes.Integer,
             DefaultValue = 100,
             Serializer = new IntegerSerializer()

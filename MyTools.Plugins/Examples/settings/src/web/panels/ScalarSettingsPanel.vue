@@ -169,7 +169,9 @@ function onHotKey(setting: Setting, value: string | null): void {
                     class="control-hotkey"
                     :model-value="currentValue(setting)"
                     :default-hot-key="setting.defaultValue ?? ''"
-                    exclude-search-hot-key
+                    :exclude-plugin-id="setting.fullPath"
+                    :exclude-search-hot-key="setting.fullPath === 'General.SearchHotKey'"
+                    :current-search-hot-key="store.dirtySettings.get('General.SearchHotKey')"
                     @update:model-value="onHotKey(setting, $event)"
                 />
                 <SettingField

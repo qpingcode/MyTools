@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Collections.Specialized;
 using MyTools.Common;
 
 namespace MyTools.Plugins.Param;
@@ -19,21 +20,50 @@ public class LazyClipboardParam : IClipboardSource, IActionParams, IPreviewConte
         _itemId = itemId;
     }
 
+    public string? GetPlainText()
+    {
+        var dataObject = LoadDataObject();
+        if (dataObject.GetDataPresent(DataFormats.UnicodeText, true))
+        {
+            return dataObject.GetData(DataFormats.UnicodeText, true) as string;
+        }
+
+        if (dataObject.GetDataPresent(DataFormats.Text, true))
+        {
+            return dataObject.GetData(DataFormats.Text, true) as string;
+        }
+
+        var files = dataObject.GetData(DataFormats.FileDrop, true);
+        return files switch
+        {
+            string[] paths => string.Join(Environment.NewLine, paths),
+            StringCollection paths => string.Join(Environment.NewLine, paths.Cast<string>()),
+            _ => null
+        };
+    }
+
     object IClipboardSource.GetDataForClipboard()
     {
-        // 延迟加载：只有在实际需要时才从数据库加载并反序列化
-        if (_cachedDataObject == null)
+        return LoadDataObject();
+    }
+
+    private IDataObject LoadDataObject()
+    {
+        if (_cachedDataObject != null)
         {
-            var content = _dbHelper.GetContentById(_itemId);
-            if (content == null)
-            {
-                throw new InvalidOperationException($"Clipboard history item with id {_itemId} not found");
-            }
-            var (dataObject, previewContentType, previewContent) = DataObjectSerializer.DeserializeToIDataObject(content);
-            _cachedDataObject = dataObject;
-            _cachedPreview = (previewContentType, previewContent);
+            return _cachedDataObject;
         }
-        return _cachedDataObject;
+
+        var content = _dbHelper.GetContentById(_itemId);
+        if (content == null)
+        {
+            throw new InvalidOperationException($"Clipboard history item with id {_itemId} not found");
+        }
+
+        var (dataObject, previewContentType, previewContent) = DataObjectSerializer.DeserializeToIDataObject(content);
+        _cachedDataObject = dataObject;
+        _cachedPreview = (previewContentType, previewContent);
+        return dataObject;
     }
 
     /// <summary>

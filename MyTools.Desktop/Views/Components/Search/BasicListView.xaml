@@ -287,5 +287,28 @@
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
+
+        <Grid Grid.Row="0"
+              Margin="24"
+              IsHitTestVisible="False"
+              Visibility="{Binding IsEmptyStateVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        MaxWidth="420">
+                <TextBlock Text="{Binding EmptyStateTitle}"
+                           FontFamily="{StaticResource UiFontFamily}"
+                           FontSize="18"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
+                           TextAlignment="Center"/>
+                <TextBlock Text="{Binding EmptyStateDescription}"
+                           Margin="0,8,0,0"
+                           FontFamily="{StaticResource UiFontFamily}"
+                           FontSize="13"
+                           Foreground="{DynamicResource TextTertiaryBrush}"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </UserControl>

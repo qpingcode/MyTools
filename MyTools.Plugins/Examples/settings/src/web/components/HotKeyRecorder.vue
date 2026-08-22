@@ -16,6 +16,8 @@ const emit = defineEmits<{
 }>();
 
 const label = computed(() => props.modelValue || t("Plugin.Settings.Keymap.NoHotkey", "None"));
+const canReset = computed(() => props.defaultHotKey !== undefined
+    && (props.modelValue || "") !== props.defaultHotKey);
 
 async function record(): Promise<void> {
     const result = await captureInputAction({
@@ -30,12 +32,28 @@ async function record(): Promise<void> {
     if (!result) return;
     emit("update:modelValue", result.hotKey || null);
 }
+
+function reset(): void {
+    emit("update:modelValue", props.defaultHotKey ?? null);
+}
 </script>
 
 <template>
     <div class="hotkey-recorder">
         <n-button size="small" secondary class="hotkey-btn" @click="record">
             {{ label }}
+        </n-button>
+        <n-button
+            v-if="defaultHotKey !== undefined"
+            size="small"
+            quaternary
+            circle
+            class="reset-btn"
+            :disabled="!canReset"
+            :title="t('Plugin.Settings.ActionPicker.Reset', 'Reset to default')"
+            @click="reset"
+        >
+            <i class="mdi mdi-refresh" aria-hidden="true"></i>
         </n-button>
     </div>
 </template>

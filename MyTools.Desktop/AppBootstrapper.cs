@@ -7,6 +7,7 @@ using MyTools.Common.Config.Enums;
 using MyTools.Common.DependencyInjection;
 using MyTools.Common.Localization;
 using MyTools.Common.Theming;
+using MyTools.Common.Utils;
 using MyTools.Desktop.Models;
 using MyTools.Desktop.Services;
 using MyTools.Desktop.Services.WindowNativeHandler;
@@ -40,6 +41,7 @@ public class AppBootstrapper : IDisposable
     private readonly IThemeService themeService;
     private readonly DevelopmentPluginService developmentPluginService;
     private readonly PluginWindowManager pluginWindowManager;
+    private readonly IKeyboardHelper keyboardHelper;
     private readonly SemaphoreSlim nodePluginReloadLock = new(1, 1);
 
     public AppBootstrapper(
@@ -61,7 +63,8 @@ public class AppBootstrapper : IDisposable
         ILocalizationService localization,
         IThemeService themeService,
         DevelopmentPluginService developmentPluginService,
-        PluginWindowManager pluginWindowManager)
+        PluginWindowManager pluginWindowManager,
+        IKeyboardHelper keyboardHelper)
     {
         this.appConfigService = appConfigService;
         this.nativeMessageWindowHost = nativeMessageWindowHost;
@@ -82,6 +85,7 @@ public class AppBootstrapper : IDisposable
         this.themeService = themeService;
         this.developmentPluginService = developmentPluginService;
         this.pluginWindowManager = pluginWindowManager;
+        this.keyboardHelper = keyboardHelper;
     }
 
     public void Init()
@@ -196,11 +200,18 @@ public class AppBootstrapper : IDisposable
     {
         hotKeyManager.RegisterySearchHotKey(SearchHotKey);
 
-        hotKeyManager.RegisterHotKey(Key.V, ModifierKeys.Control | ModifierKeys.Shift, () =>
-        {
-            var clipboardPlugin = plugins.OfType<ClipBoardPlugin>().First();
-            WindowHelper.ShowSearchWindow(clipboardPlugin);
-        });
+        var clipboardHotKeyText = registry.FindSetting("ClipBoard.HotKey")?.GetValue<string>()
+                                  ?? ClipBoardPlugin.DefaultHotKey;
+        var clipboardHotKey = new HotKeyConfig(clipboardHotKeyText);
+        hotKeyManager.RegisterClipboardHotKey(clipboardHotKey,
+            () => pluginLauncher.Open("ClipBoard"));
+
+        var sequentialPasteHotKeyText = registry.FindSetting("ClipBoard.SequentialPasteHotKey")?.GetValue<string>()
+                                        ?? ClipBoardPlugin.DefaultSequentialPasteHotKey;
+        var sequentialPasteHotKey = new HotKeyConfig(sequentialPasteHotKeyText);
+        var clipboardPlugin = plugins.OfType<ClipBoardPlugin>().First();
+        hotKeyManager.RegisterClipboardSequentialPasteHotKey(sequentialPasteHotKey,
+            () => _ = clipboardPlugin.PasteLatestAndRemoveAsync(keyboardHelper));
     }
     
     private List<NodePlugin> LoadNodePlugins()
@@ -362,10 +373,6 @@ public class AppBootstrapper : IDisposable
             registry.AddSetting(generalCategory, "AutoStart",
                 localization.GetCaption("Configuration.General.AutoStart.Title", "Auto start"),
                 localization.GetCaption("Configuration.General.AutoStart.Description", "Run MyTools when the system starts"), false);
-            
-            registry.AddSetting(generalCategory, "MaxHistory",
-                localization.GetCaption("Configuration.General.MaxHistory.Title", "Maximum history"),
-                localization.GetCaption("Configuration.General.MaxHistory.Description", "Maximum number of history items to keep"), 100);
             
             registry.AddSetting(generalCategory, "SearchDelay",
                 localization.GetCaption("Configuration.General.SearchDelay.Title", "Search delay"),

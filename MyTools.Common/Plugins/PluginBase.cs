@@ -64,27 +64,28 @@ public abstract class PluginBase : IPlugin
         return Task.CompletedTask;
     }
 
+    protected virtual string SettingsCategoryName => Name;
+    protected virtual string SettingsCategoryDescription => Description;
+
     public void RegisterSettings(IConfigurationRegistry configurationRegistry)
     {
-        // 插件设置分类作为顶层分类（不再嵌套在 Plugins 下），呈扁平列表展示。
-        var thisPluginCategory = configurationRegistry.AddCategory(PluginId, Name, Description);
+        var thisPluginCategory = configurationRegistry.AddCategory(
+            PluginId, SettingsCategoryName, SettingsCategoryDescription);
         AddPluginSettings(thisPluginCategory, configurationRegistry);
 
         // 如果插件没有注册任何额外设置项，则移除这个空分类，不在侧栏中显示。
         if (thisPluginCategory.Settings.Count == 0)
         {
-            var rootCategories = configurationRegistry.GetRootCategories().ToList();
-            var parent = thisPluginCategory.Parent;
-            if (parent != null)
+            if (thisPluginCategory.Parent != null)
             {
-                parent.Children.Remove(thisPluginCategory);
+                thisPluginCategory.Parent.Children.Remove(thisPluginCategory);
             }
         }
     }
 
     protected string GetSettingFullPath(string settingName)
     {
-        return $"Plugins.{PluginId}.{settingName}";
+        return $"{PluginId}.{settingName}";
     }
 
     /// <summary>

@@ -67,8 +67,6 @@
   <data name="Configuration.General.SearchHotKey.Description" xml:space="preserve"><value>Keyboard shortcut that opens MyTools search</value></data>
   <data name="Configuration.General.AutoStart.Title" xml:space="preserve"><value>Auto start</value></data>
   <data name="Configuration.General.AutoStart.Description" xml:space="preserve"><value>Run MyTools when the system starts</value></data>
-  <data name="Configuration.General.MaxHistory.Title" xml:space="preserve"><value>Maximum history</value></data>
-  <data name="Configuration.General.MaxHistory.Description" xml:space="preserve"><value>Maximum number of history items to keep</value></data>
   <data name="Configuration.General.SearchDelay.Title" xml:space="preserve"><value>Search delay</value></data>
   <data name="Configuration.General.SearchDelay.Description" xml:space="preserve"><value>Search debounce delay in milliseconds</value></data>
   <data name="Configuration.General.UpdateUrl.Title" xml:space="preserve"><value>Update URL</value></data>
@@ -96,6 +94,16 @@
   <data name="Plugin.PluginSearcher.Description" xml:space="preserve"><value>All available plugins</value></data>
   <data name="Plugin.ClipBoard.Name" xml:space="preserve"><value>Clipboard History</value></data>
   <data name="Plugin.ClipBoard.Description" xml:space="preserve"><value>Clipboard history management plugin</value></data>
+  <data name="Plugin.ClipBoard.Settings.HotKey.Title" xml:space="preserve"><value>Shortcut</value></data>
+  <data name="Plugin.ClipBoard.Settings.Category.Name" xml:space="preserve"><value>Clipboard enhancement</value></data>
+  <data name="Plugin.ClipBoard.Settings.Category.Description" xml:space="preserve"><value>Configure clipboard history and sequential paste</value></data>
+  <data name="Plugin.ClipBoard.Settings.HotKey.Description" xml:space="preserve"><value>Keyboard shortcut that opens clipboard history</value></data>
+  <data name="Plugin.ClipBoard.Settings.SequentialPasteHotKey.Title" xml:space="preserve"><value>Sequential paste shortcut</value></data>
+  <data name="Plugin.ClipBoard.Settings.SequentialPasteHotKey.Description" xml:space="preserve"><value>Paste and remove the newest clipboard history entry without opening MyTools</value></data>
+  <data name="Plugin.ClipBoard.Settings.MaxHistoryDays.Title" xml:space="preserve"><value>Maximum retention days</value></data>
+  <data name="Plugin.ClipBoard.Settings.MaxHistoryDays.Description" xml:space="preserve"><value>Delete clipboard entries older than this many days</value></data>
+  <data name="Plugin.ClipBoard.Settings.MaxHistoryCount.Title" xml:space="preserve"><value>Maximum history entries</value></data>
+  <data name="Plugin.ClipBoard.Settings.MaxHistoryCount.Description" xml:space="preserve"><value>Keep at most this many clipboard entries</value></data>
   <data name="Plugin.SearchEngine.Name" xml:space="preserve"><value>Web Search</value></data>
   <data name="Plugin.SearchEngine.Description" xml:space="preserve"><value>Search using different search engines</value></data>
   <data name="Plugin.JsonFormatter.Name" xml:space="preserve"><value>JSON Formatter</value></data>
@@ -133,6 +141,9 @@
   <data name="Action.CopyAndPaste.Description" xml:space="preserve"><value>Copy and paste text to the previously focused window</value></data>
   <data name="Action.CopyAndPaste.Success" xml:space="preserve"><value>Copied to clipboard and pasted to the previously focused window.</value></data>
   <data name="Action.CopyAndPaste.InvalidParameters" xml:space="preserve"><value>Invalid parameters for Copy and Paste action</value></data>
+  <data name="Action.Clipboard.CopyPlainTextAndPaste.Name" xml:space="preserve"><value>Copy as Plain Text and Paste</value></data>
+  <data name="Action.Clipboard.CopyPlainTextAndPaste.Description" xml:space="preserve"><value>Copy the text representation and paste it into the previously focused window</value></data>
+  <data name="Action.Clipboard.CopyPlainTextAndPaste.NoText" xml:space="preserve"><value>This clipboard history item does not contain plain text.</value></data>
   <data name="Action.OpenInExplorer.Name" xml:space="preserve"><value>Open in Explorer</value></data>
   <data name="Action.OpenInExplorer.Description" xml:space="preserve"><value>Open the directory or locate the file in Windows Explorer</value></data>
   <data name="Action.OpenInExplorer.InvalidParameters" xml:space="preserve"><value>Invalid parameters for Open in Explorer action</value></data>
@@ -196,4 +207,6 @@
   <data name="Search.Detail.ImageMeta" xml:space="preserve"><value>{{dimensions}} · {{size}}</value></data>
   <data name="Search.Detail.ImageDiskSize" xml:space="preserve"><value>{{size}}</value></data>
   <data name="Search.Actions.Overflow" xml:space="preserve"><value>Actions</value></data>
+  <data name="Plugin.ClipBoard.Empty.Title" xml:space="preserve"><value>Clipboard history is empty</value></data>
+  <data name="Plugin.ClipBoard.Empty.Description" xml:space="preserve"><value>Copy some text, an image, or a file and it will appear here.</value></data>
 </root>

@@ -7,6 +7,7 @@ using MyTools.Common.Config;
 using MyTools.Common.Config.Enums;
 using MyTools.Common.Config.Interfaces;
 using MyTools.Common.Config.Models;
+using MyTools.Common.Utils;
 using MyTools.Desktop.Models;
 using MyTools.Desktop.Utils;
 using MyTools.Desktop.Views;
@@ -41,6 +42,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     private readonly AppConfigService appConfigService;
     private readonly InputActionCaptureService inputActionCaptureService;
     private readonly NodePluginCatalog nodePluginCatalog;
+    private readonly IKeyboardHelper keyboardHelper;
     private readonly ILogger<SettingsPluginHostCallHandler> logger;
     private const string IlSpyPathSettingFullPath = "DllInterfaceReader.ILSpyPathSetting";
 
@@ -79,7 +81,8 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         AppConfigService appConfigService,
         InputActionCaptureService inputActionCaptureService,
         ILogger<SettingsPluginHostCallHandler> logger,
-        NodePluginCatalog nodePluginCatalog)
+        NodePluginCatalog nodePluginCatalog,
+        IKeyboardHelper keyboardHelper)
     {
         this.registry = registry;
         this.themeService = themeService;
@@ -101,6 +104,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         this.inputActionCaptureService = inputActionCaptureService;
         this.logger = logger;
         this.nodePluginCatalog = nodePluginCatalog;
+        this.keyboardHelper = keyboardHelper;
     }
 
     public async Task<JsonElement> HandleAsync(HostCallRequest request, CancellationToken cancellationToken)
@@ -304,10 +308,17 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
 
             ValidatePathSettingIfNeeded(setting, change.Value);
 
+            if (setting.FullPath is "ClipBoard.MaxHistoryDays" or "ClipBoard.MaxHistoryCount"
+                && (!int.TryParse(change.Value, out var positiveValue) || positiveValue <= 0))
+            {
+                throw new InvalidOperationException($"{setting.Title} must be greater than zero.");
+            }
+
             setting.CurrentValue = ConfigurationSettingValues.Convert(setting, change.Value);
         }
 
         registry.SaveChanges();
+        pluginLoader.LoadedPlugins.OfType<ClipBoardPlugin>().FirstOrDefault()?.ApplyRetentionSettings();
 
         // 热应用 Theme / LogLevel / AutoStart：这些操作会触发 ThemeChanged 等事件，
         // 事件订阅者（如 App.OnThemeChanged → UpdateNotifyIconMenu）访问 WPF 控件，
@@ -329,6 +340,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
             }
 
             ApplySearchHotKeyFromSettings();
+            ApplyClipboardHotKeyFromSettings();
         });
 
         // 语言需要重启：只有值真正变化（而非仅被前端回写相同的值）时才提示。
@@ -692,6 +704,17 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
             p => (string?)(pluginOverrideProvider.GetHotKey(p.PluginId) ?? p.HotKey));
         var pluginNames = nodePlugins.ToDictionary(p => p.PluginId, p => p.GetDisplayName());
 
+        AddClipboardHotKeyForInspection(pluginHotKeys, pluginNames,
+            "ClipBoard.HotKey",
+            "Plugin.ClipBoard.Settings.HotKey.Title",
+            "Shortcut",
+            ClipBoardPlugin.DefaultHotKey);
+        AddClipboardHotKeyForInspection(pluginHotKeys, pluginNames,
+            "ClipBoard.SequentialPasteHotKey",
+            "Plugin.ClipBoard.Settings.SequentialPasteHotKey.Title",
+            "Sequential paste shortcut",
+            ClipBoardPlugin.DefaultSequentialPasteHotKey);
+
         var searchHotKey = request.CurrentSearchHotKey
             ?? registry.FindSetting(AppConfigService.SearchHotKeySettingPath)?.CurrentValue as string
             ?? appConfigService.AppConfig.SearchHotKeyText;
@@ -707,6 +730,18 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
             PluginHotKeys = pluginHotKeys,
             PluginNames = pluginNames
         });
+    }
+
+    private void AddClipboardHotKeyForInspection(
+        IDictionary<string, string?> hotKeys,
+        IDictionary<string, string> names,
+        string settingPath,
+        string captionKey,
+        string defaultCaption,
+        string defaultHotKey)
+    {
+        hotKeys[settingPath] = registry.FindSetting(settingPath)?.GetValue<string>() ?? defaultHotKey;
+        names[settingPath] = languageService.GetCaption(captionKey, defaultCaption);
     }
 
     private void ApplySearchHotKeyFromSettings()
@@ -734,6 +769,49 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
 
         appConfigService.SetSearchHotKey(text);
         hotKeyManager.RegisterySearchHotKey(parsed);
+    }
+
+    private void ApplyClipboardHotKeyFromSettings()
+    {
+        var text = registry.FindSetting("ClipBoard.HotKey")?.GetValue<string>()?.Trim()
+                   ?? ClipBoardPlugin.DefaultHotKey;
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            hotKeyManager.RegisterClipboardHotKey(null, () => { });
+        }
+        else
+        {
+            var parsed = new HotKeyConfig(text);
+            if (parsed.Key == System.Windows.Input.Key.None || parsed.Modifiers == System.Windows.Input.ModifierKeys.None)
+            {
+                logger.LogWarning("Ignoring invalid clipboard hotkey {HotKey}.", text);
+                return;
+            }
+
+            hotKeyManager.RegisterClipboardHotKey(parsed, () => pluginLauncher.Open("ClipBoard"));
+        }
+
+        var sequentialText = registry.FindSetting("ClipBoard.SequentialPasteHotKey")?.GetValue<string>()?.Trim()
+                             ?? ClipBoardPlugin.DefaultSequentialPasteHotKey;
+        if (string.IsNullOrWhiteSpace(sequentialText))
+        {
+            hotKeyManager.RegisterClipboardSequentialPasteHotKey(null, () => { });
+            return;
+        }
+        var sequentialParsed = new HotKeyConfig(sequentialText);
+        if (sequentialParsed.Key == System.Windows.Input.Key.None
+            || sequentialParsed.Modifiers == System.Windows.Input.ModifierKeys.None)
+        {
+            logger.LogWarning("Ignoring invalid clipboard sequential paste hotkey {HotKey}.", sequentialText);
+            return;
+        }
+
+        var clipboardPlugin = pluginLoader.LoadedPlugins.OfType<ClipBoardPlugin>().FirstOrDefault();
+        if (clipboardPlugin != null)
+        {
+            hotKeyManager.RegisterClipboardSequentialPasteHotKey(sequentialParsed,
+                () => _ = clipboardPlugin.PasteLatestAndRemoveAsync(keyboardHelper));
+        }
     }
 
     private static PluginOverride CloneOverride(PluginOverride source)

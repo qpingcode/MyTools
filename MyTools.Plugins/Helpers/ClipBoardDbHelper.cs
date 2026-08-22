@@ -19,8 +19,6 @@ public class ClipBoardHistoryItem
 public class ClipBoardDbHelper
 {
     private readonly string _dbPath;
-    private const int CleanRecentHistoryReservedCount = 50;
-    private const int CleanRecentHistoryBeforeDays = 3;
     private ClipBoardHistoryItem? last;
     
     public ClipBoardDbHelper(string dbPath)
@@ -47,6 +45,30 @@ public class ClipBoardDbHelper
             byte_size INTEGER NOT NULL DEFAULT 0
         );";
         cmd.ExecuteNonQuery();
+        ClearLegacyPinnedState(conn);
+    }
+
+    private static void ClearLegacyPinnedState(SqliteConnection conn)
+    {
+        var schema = conn.CreateCommand();
+        schema.CommandText = "PRAGMA table_info(clipboard_history)";
+        using var reader = schema.ExecuteReader();
+        var hasPinnedColumn = false;
+        while (reader.Read())
+        {
+            if (string.Equals(reader.GetString(1), "is_pinned", StringComparison.OrdinalIgnoreCase))
+            {
+                hasPinnedColumn = true;
+                break;
+            }
+        }
+
+        reader.Close();
+        if (!hasPinnedColumn) return;
+
+        var normalize = conn.CreateCommand();
+        normalize.CommandText = "UPDATE clipboard_history SET is_pinned = 0 WHERE is_pinned != 0";
+        normalize.ExecuteNonQuery();
     }
     
     public void AddHistory(
@@ -112,7 +134,7 @@ public class ClipBoardDbHelper
     private string GetSelectFields(bool includeContent)
     {
         return includeContent 
-            ? "id, content, summary, timestamp, kind, pixel_width, pixel_height, byte_size" 
+            ? "id, content, summary, timestamp, kind, pixel_width, pixel_height, byte_size"
             : "id, summary, timestamp, kind, pixel_width, pixel_height, byte_size";
     }
 
@@ -173,34 +195,45 @@ public class ClipBoardDbHelper
         return result as byte[];
     }
 
-    public void CleanupOldHistory()
+    public ClipBoardHistoryItem? GetLatestHistory() =>
+        Search(query: null, max: 1, includeContent: true).SingleOrDefault();
+
+    public bool DeleteHistory(int id)
     {
         using var conn = new SqliteConnection($"Data Source={_dbPath}");
         conn.Open();
-        // 1. 获取最近RecentHistoryCount条的id
         var cmd = conn.CreateCommand();
-        cmd.CommandText = $"SELECT id FROM clipboard_history ORDER BY timestamp DESC LIMIT {CleanRecentHistoryReservedCount}";
-        var recentIds = new HashSet<int>();
-        using (var reader = cmd.ExecuteReader())
-        {
-            while (reader.Read())
-            {
-                recentIds.Add(reader.GetInt32(0));
-            }
-        }
-        // 2. 删除3天前且不在recentIds中的历史
-        var threeDaysAgo = DateTime.UtcNow.AddDays(-1 * CleanRecentHistoryBeforeDays).ToString("o");
-        var idList = string.Join(",", recentIds);
-        var delCmd = conn.CreateCommand();
-        if (recentIds.Count > 0)
-        {
-            delCmd.CommandText = $@"DELETE FROM clipboard_history WHERE timestamp < @ts AND id NOT IN ({idList})";
-        }
-        else
-        {
-            delCmd.CommandText = $@"DELETE FROM clipboard_history WHERE timestamp < @ts";
-        }
-        delCmd.Parameters.AddWithValue("@ts", threeDaysAgo);
-        delCmd.ExecuteNonQuery();
+        cmd.CommandText = "DELETE FROM clipboard_history WHERE id = @id";
+        cmd.Parameters.AddWithValue("@id", id);
+        return cmd.ExecuteNonQuery() == 1;
+    }
+
+    public void CleanupOldHistory(int maxHistoryDays, int maxHistoryCount)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxHistoryDays);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxHistoryCount);
+
+        using var conn = new SqliteConnection($"Data Source={_dbPath}");
+        conn.Open();
+        using var transaction = conn.BeginTransaction();
+
+        var deleteExpired = conn.CreateCommand();
+        deleteExpired.Transaction = transaction;
+        deleteExpired.CommandText = "DELETE FROM clipboard_history WHERE timestamp < @cutoff";
+        deleteExpired.Parameters.AddWithValue("@cutoff", DateTime.UtcNow.AddDays(-maxHistoryDays).ToString("o"));
+        deleteExpired.ExecuteNonQuery();
+
+        var deleteOverflow = conn.CreateCommand();
+        deleteOverflow.Transaction = transaction;
+        deleteOverflow.CommandText = @"
+DELETE FROM clipboard_history
+WHERE id NOT IN (
+      SELECT id FROM clipboard_history
+      ORDER BY timestamp DESC, id DESC
+      LIMIT @maxCount
+  );";
+        deleteOverflow.Parameters.AddWithValue("@maxCount", maxHistoryCount);
+        deleteOverflow.ExecuteNonQuery();
+        transaction.Commit();
     }
 }

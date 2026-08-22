@@ -10,7 +10,9 @@ using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 
 namespace MyTools.Desktop.Views
 {
-    public partial class SearchWindow : IRecipient<SearchWindowCloseMessage>
+    public partial class SearchWindow :
+        IRecipient<SearchWindowCloseMessage>,
+        IRecipient<ClipboardHistoryChangedMessage>
     {
         private static readonly object singletonLock = new();
         private readonly SearchViewModel viewModel;
@@ -38,12 +40,18 @@ namespace MyTools.Desktop.Views
 
             MouseLeftButtonDown += (s, e) => DragMove();
             
-            WeakReferenceMessenger.Default.Register(this);
+            WeakReferenceMessenger.Default.Register<SearchWindowCloseMessage>(this);
+            WeakReferenceMessenger.Default.Register<ClipboardHistoryChangedMessage>(this);
         }
 
         public void Refresh()
         {
             viewModel.Refresh();
+        }
+
+        public void Receive(ClipboardHistoryChangedMessage message)
+        {
+            Dispatcher.Invoke(viewModel.Refresh);
         }
 
         public IPlugin? CurrentPlugin => viewModel.ForcePlugin;
