@@ -30,5 +30,7 @@
   "Plugin.BrowserSearch.Kind.History": "History",
   "Plugin.BrowserSearch.Result.Subtitle": "{{browser}} · {{kind}} · {{location}}",
   "Plugin.BrowserSearch.Action.Open": "Open in Browser",
-  "Plugin.BrowserSearch.Action.OpenDescription": "Open this URL in the default browser"
+  "Plugin.BrowserSearch.Action.OpenDescription": "Open this URL in the default browser",
+  "Plugin.BrowserSearch.Action.CopyUrl": "Copy URL",
+  "Plugin.BrowserSearch.Action.CopyUrlDescription": "Copy this URL to the clipboard"
 }

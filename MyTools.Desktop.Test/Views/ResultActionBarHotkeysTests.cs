@@ -9,25 +9,25 @@ namespace MyTools.Desktop.Test.Views;
 public class ResultActionBarHotkeysTests
 {
     [Test]
-    public void ToCommand_CtrlO_MatchesOverflowHotkey()
+    public void ToHotkey_CtrlO_MatchesOverflowHotkey()
     {
         Assert.That(
-            ResultActionBarHotkeys.ToCommand(Key.O, ModifierKeys.Control),
-            Is.EqualTo(Commands.Ctrl_O));
+            ResultActionBarHotkeys.ToHotkey(Key.O, ModifierKeys.Control),
+            Is.EqualTo(Hotkey.Ctrl(HotkeyKey.O)));
     }
 
     [Test]
-    public void ToCommand_CtrlEnter_MatchesAdminExecuteHotkey()
+    public void ToHotkey_CtrlEnter_MatchesAdminExecuteHotkey()
     {
         Assert.That(
-            ResultActionBarHotkeys.ToCommand(Key.Enter, ModifierKeys.Control),
-            Is.EqualTo(Commands.Ctrl_Enter));
+            ResultActionBarHotkeys.ToHotkey(Key.Enter, ModifierKeys.Control),
+            Is.EqualTo(Hotkey.Ctrl(HotkeyKey.Enter)));
     }
 
     [Test]
-    public void ToCommand_WithoutCtrl_IsIgnored()
+    public void ToHotkey_WithoutModifier_IsTyped()
     {
-        Assert.That(ResultActionBarHotkeys.ToCommand(Key.O, ModifierKeys.None), Is.Null);
+        Assert.That(ResultActionBarHotkeys.ToHotkey(Key.O, ModifierKeys.None), Is.EqualTo(new Hotkey(HotkeyKey.O)));
     }
 
     [Test]

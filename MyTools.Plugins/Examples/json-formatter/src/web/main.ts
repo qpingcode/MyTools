@@ -1,5 +1,9 @@
 import { createWebBusClient, HostEvents } from "@qping/plugin-bus/web";
-import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qping/plugin-bus/web";
+import type {
+    MyToolsHostDetailActionPayload,
+    MyToolsHostInitializePayload,
+    MyToolsHostSearchPayload
+} from "@qping/plugin-bus/web";
 
 (function () {
     const bus = createWebBusClient();
@@ -23,6 +27,13 @@ import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qp
         | { kind: "null" };
 
     var lastParsed: JsonValue | null = null;
+    // Exact text currently shown in the output pane, so copying always matches what is on screen
+    // (format vs minify, and the indent that was in effect when it was rendered).
+    var lastOutput: string | null = null;
+
+    function syncOutput(): void {
+        void bus.call("setOutput", { output: lastOutput || "" });
+    }
 
     // ---------- lenient JSON parser ----------
     // Accepts: unquoted keys ({test:1}), single-quoted strings ('test':2),
@@ -401,20 +412,16 @@ import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qp
         clearMessage();
         var text = inputElement.value.trim();
         if (!text) {
-            lastParsed = null;
-            showEmptyOutput();
+            resetOutput();
             return;
         }
         try {
             lastParsed = parseLenient(text);
+            lastOutput = serialize(lastParsed, indentUnit(), 0);
+            syncOutput();
             renderTree(lastParsed);
         } catch (error) {
-            lastParsed = null;
-            showEmptyOutput();
-            showMessage("error", bus.i18n.t("Plugin.JsonFormatter.Error.InvalidJson", {
-                defaultValue: "Invalid JSON: {{message}}",
-                message: error instanceof Error ? error.message : String(error)
-            }));
+            showParseError(error);
         }
     }
 
@@ -422,31 +429,45 @@ import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qp
         clearMessage();
         var text = inputElement.value.trim();
         if (!text) {
-            lastParsed = null;
-            showEmptyOutput();
+            resetOutput();
             return;
         }
         try {
             lastParsed = parseLenient(text);
+            lastOutput = serializeCompact(lastParsed);
+            syncOutput();
             outputElement.replaceChildren();
             var pre = document.createElement("div");
             pre.className = "tree-line";
-            pre.textContent = serializeCompact(lastParsed);
+            pre.textContent = lastOutput;
             outputElement.appendChild(pre);
         } catch (error) {
-            lastParsed = null;
-            showEmptyOutput();
-            showMessage("error", bus.i18n.t("Plugin.JsonFormatter.Error.InvalidJson", {
-                defaultValue: "Invalid JSON: {{message}}",
-                message: error instanceof Error ? error.message : String(error)
-            }));
+            showParseError(error);
         }
     }
 
+    function resetOutput(): void {
+        lastParsed = null;
+        lastOutput = null;
+        syncOutput();
+        showEmptyOutput();
+    }
+
+    function showParseError(error: unknown): void {
+        resetOutput();
+        showMessage("error", bus.i18n.t("Plugin.JsonFormatter.Error.InvalidJson", {
+            defaultValue: "Invalid JSON: {{message}}",
+            message: error instanceof Error ? error.message : String(error)
+        }));
+    }
+
     function copyResult(): void {
-        if (!lastParsed) return;
-        var text = serialize(lastParsed, indentUnit(), 0);
-        void navigator.clipboard.writeText(text).then(function () {
+        // Enter can arrive before the input has ever been formatted, so produce the output first.
+        if (!lastOutput && inputElement.value.trim()) {
+            format();
+        }
+        if (!lastOutput) return;
+        void navigator.clipboard.writeText(lastOutput).then(function () {
             var original = bus.i18n.t("Plugin.JsonFormatter.Detail.Copy", { defaultValue: "Copy" });
             copyButton.textContent = bus.i18n.t("Plugin.JsonFormatter.Detail.Copied", { defaultValue: "Copied" });
             copyButton.classList.add("copied");
@@ -459,8 +480,7 @@ import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qp
 
     function clearAll(): void {
         inputElement.value = "";
-        lastParsed = null;
-        showEmptyOutput();
+        resetOutput();
         clearMessage();
         inputElement.focus();
     }
@@ -497,12 +517,18 @@ import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qp
     clearButton.addEventListener("click", clearAll);
     collapseAllButton.addEventListener("click", function () { setAllCollapsed(true); });
     expandAllButton.addEventListener("click", function () { setAllCollapsed(false); });
+    inputElement.addEventListener("input", format);
+    indentSelect.addEventListener("change", format);
 
-    inputElement.addEventListener("keydown", function (event) {
-        if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+    // Ctrl+Enter is an explicit page-local format shortcut; plain Enter remains available for editing.
+    document.addEventListener("keydown", function (event) {
+        if (event.key !== "Enter" || event.altKey) return;
+        if (event.ctrlKey || event.metaKey) {
             event.preventDefault();
             format();
+            return;
         }
+        return;
     });
 
     bus.on<MyToolsHostInitializePayload>(HostEvents.Initialize, function (payload) {
@@ -513,6 +539,12 @@ import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qp
             format();
         } else {
             showEmptyOutput();
+        }
+    });
+
+    bus.on<MyToolsHostDetailActionPayload>(HostEvents.DetailAction, function (payload) {
+        if (payload.action === "minify") {
+            minify();
         }
     });
 
@@ -527,6 +559,6 @@ import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qp
     });
 
     bus.on(HostEvents.LanguageChanged, function () {
-        if (!lastParsed) showEmptyOutput();
+        if (!lastOutput) showEmptyOutput();
     });
 })();

@@ -125,7 +125,7 @@
                                                     <components:HotkeyKeycaps Grid.Column="1"
                                                                               Margin="12,0,0,0"
                                                                               VerticalAlignment="Center"
-                                                                              Command="{Binding Command}"/>
+                                                                              Hotkey="{Binding Hotkey}"/>
                                                 </Grid>
                                             </Border>
                                             <ControlTemplate.Triggers>
@@ -152,7 +152,7 @@
                                FontFamily="{StaticResource UiFontFamily}"
                                FontSize="12"
                                VerticalAlignment="Center"/>
-                    <components:HotkeyKeycaps Command="Ctrl+K"/>
+                    <components:HotkeyKeycaps Hotkey="{x:Static components:ResultActionBar.OverflowHotkey}"/>
                 </StackPanel>
             </Button>
         </StackPanel>

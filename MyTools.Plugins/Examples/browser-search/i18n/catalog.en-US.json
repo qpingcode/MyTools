@@ -327,6 +327,26 @@
         "zh-CN": "用默认浏览器打开此网址"
       },
       "sourceHash": "sha256:fca41fd09de7708071866bcaa51cee18d660e240369c88ebe5cfdc0dd4dbcece"
+    },
+    {
+      "key": "Plugin.BrowserSearch.Action.CopyUrl",
+      "defaultValue": "Copy URL",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "复制网址"
+      },
+      "sourceHash": "sha256:b26d1037f1c2da31a0296d915982f12049f91bfedb998b105ce967b73a796699"
+    },
+    {
+      "key": "Plugin.BrowserSearch.Action.CopyUrlDescription",
+      "defaultValue": "Copy this URL to the clipboard",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "将此网址复制到剪贴板"
+      },
+      "sourceHash": "sha256:70574bf057d54fdb6b595495c2980e4855cbc7c40e8045e6fd4a0b8e1fb76df3"
     }
   ]
 }

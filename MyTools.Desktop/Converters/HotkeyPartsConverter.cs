@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Windows.Data;
+using MyTools.Common;
 
 namespace MyTools.Desktop.Converters;
 
@@ -14,7 +15,7 @@ public sealed class HotkeyPartsConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        return Parse(value as string);
+        return value is Hotkey hotkey ? Parse(hotkey) : [];
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -37,6 +38,9 @@ public sealed class HotkeyPartsConverter : IValueConverter
 
         return parts;
     }
+
+    public static IReadOnlyList<HotkeyPart> Parse(Hotkey hotkey) =>
+        hotkey.ToTokens().Select(ToPart).ToList();
 
     public static string ToGestureText(string? command)
     {

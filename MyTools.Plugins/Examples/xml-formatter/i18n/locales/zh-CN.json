@@ -5,6 +5,8 @@
   "Plugin.XmlFormatter.Action.Open.Title": "打开格式化工具",
   "Plugin.XmlFormatter.Action.Open.Description": "打开 XML 格式化工具",
   "Plugin.XmlFormatter.Action.Open.Success": "已打开 XML 格式化工具",
+  "Plugin.XmlFormatter.Action.Copy": "复制",
+  "Plugin.XmlFormatter.Action.CopyDescription": "把格式化后的 XML 复制到剪贴板",
   "Plugin.XmlFormatter.Detail.Input": "输入",
   "Plugin.XmlFormatter.Detail.Output": "输出",
   "Plugin.XmlFormatter.Detail.InputPlaceholder": "在此粘贴 XML",

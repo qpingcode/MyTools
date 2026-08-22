@@ -1,5 +1,9 @@
 import { createWebBusClient, HostEvents } from "@qping/plugin-bus/web";
-import type { MyToolsHostInitializePayload, MyToolsHostKeyPayload, MyToolsHostSearchPayload } from "@qping/plugin-bus/web";
+import type {
+    MyToolsHostDetailActionPayload,
+    MyToolsHostInitializePayload,
+    MyToolsHostSearchPayload
+} from "@qping/plugin-bus/web";
 
 (function () {
     type TokenUsage = {
@@ -15,11 +19,13 @@ import type { MyToolsHostInitializePayload, MyToolsHostKeyPayload, MyToolsHostSe
     };
 
     type TranslationEntry = {
+        id?: string;
         input?: string;
         inputType?: string;
         cachedAt?: string;
         translation?: string;
         phonetic?: string;
+        state?: TranslationState;
     };
 
     type TranslationState = {
@@ -46,19 +52,27 @@ import type { MyToolsHostInitializePayload, MyToolsHostKeyPayload, MyToolsHostSe
     var translation = document.getElementById("translation") as HTMLElement;
     var resultTitle = document.getElementById("resultTitle") as HTMLElement;
     var sourceStatus = document.getElementById("sourceStatus") as HTMLElement;
-    var sendMode = document.getElementById("sendMode") as HTMLElement;
+    var sendMode = document.getElementById("sendMode") as HTMLSelectElement;
+    var translateButton = document.getElementById("translateButton") as HTMLButtonElement;
     var historyButton = document.getElementById("historyButton") as HTMLButtonElement;
     var favoriteListButton = document.getElementById("favoriteListButton") as HTMLButtonElement;
-    var historyBackButton = document.getElementById("historyBackButton") as HTMLButtonElement;
     var favoriteButton = document.getElementById("favoriteButton") as HTMLButtonElement;
+    var drawer = document.getElementById("drawer") as HTMLElement;
+    var drawerTitle = document.getElementById("drawerTitle") as HTMLElement;
+    var drawerList = document.getElementById("drawerList") as HTMLElement;
+    var drawerCloseButton = document.getElementById("drawerCloseButton") as HTMLButtonElement;
     var debounceTimer: number | null = null;
     var loadingTimer: number | null = null;
     var loadingStartedAt = 0;
     var lastRequestedText = "";
     var currentState: TranslationState | null = null;
-    var previousTranslationState: TranslationState | null = null;
     var favoritePendingText = "";
-    var currentListMode = "";
+    var currentDrawerMode = "";
+    var drawerEntries: TranslationEntry[] = [];
+    var selectedDrawerIndex = -1;
+    var copiedTimer: number | null = null;
+    var titleBeforeCopy: string | null = null;
+    var actionHotkeys = new Map<string, string>();
 
     function normalize(value: unknown): string {
         return typeof value === "string" ? value.trim() : "";
@@ -66,6 +80,48 @@ import type { MyToolsHostInitializePayload, MyToolsHostKeyPayload, MyToolsHostSe
 
     function t(key: string, defaultValue: string, values: Record<string, unknown> = {}): string {
         return bus.i18n.t(key, { defaultValue: defaultValue, ...values });
+    }
+
+    function applyActionDefinitions(actions: MyToolsHostInitializePayload["actions"]): void {
+        actionHotkeys = new Map((actions || []).map(action => [action.id, action.hotkey || ""]));
+        var actionNames = new Map((actions || []).map(action => [action.id, action.name || action.id]));
+        document.querySelectorAll<HTMLElement>("[data-action-name]").forEach(function (element) {
+            var actionId = element.dataset.actionName || "";
+            element.textContent = actionNames.get(actionId) || actionId;
+        });
+        document.querySelectorAll<HTMLElement>("[data-action-hotkey]").forEach(function (element) {
+            var actionId = element.dataset.actionHotkey || "";
+            var hotkey = actionHotkeys.get(actionId) || "";
+            element.textContent = hotkey;
+            element.hidden = !hotkey;
+        });
+        if (currentState) {
+            updateFavoriteButton(currentState);
+        }
+    }
+
+    function withActionHotkey(label: string, actionId: string): string {
+        var hotkey = actionHotkeys.get(actionId);
+        return hotkey ? label + " (" + hotkey + ")" : label;
+    }
+
+    function keyboardEventHotkey(event: KeyboardEvent): string {
+        if (event.metaKey || event.key === "Control" || event.key === "Alt" || event.key === "Shift") {
+            return "";
+        }
+
+        var tokens: string[] = [];
+        if (event.ctrlKey) tokens.push("Ctrl");
+        if (event.altKey) tokens.push("Alt");
+        if (event.shiftKey) tokens.push("Shift");
+        var key = event.key === " " ? "Space" : event.key.length === 1 ? event.key.toUpperCase() : event.key;
+        tokens.push(key);
+        return tokens.join("+");
+    }
+
+    function matchesActionHotkey(event: KeyboardEvent, actionId: string): boolean {
+        var hotkey = actionHotkeys.get(actionId);
+        return !!hotkey && keyboardEventHotkey(event) === hotkey;
     }
 
     function setInput(text: unknown, requestTranslation: boolean): void {
@@ -80,11 +136,10 @@ import type { MyToolsHostInitializePayload, MyToolsHostKeyPayload, MyToolsHostSe
     }
 
     function setLoading(text: unknown): void {
-        setHistoryMode(false);
+        closeDrawer();
         hideFavoriteButton();
         showLoadingStatus();
         translation.replaceChildren();
-        translation.classList.remove("history");
         translation.classList.remove("pending");
         translation.textContent = normalize(text)
             ? t("Plugin.DeepSeekTranslator.Detail.PleaseWait", "Please wait")
@@ -93,14 +148,13 @@ import type { MyToolsHostInitializePayload, MyToolsHostKeyPayload, MyToolsHostSe
     }
 
     function setPendingEnter(text: unknown): void {
-        setHistoryMode(false);
+        closeDrawer();
         stopLoadingTimer();
         hideSourceStatus();
         hideFavoriteButton();
         translation.replaceChildren();
-        translation.classList.remove("history");
         translation.textContent = normalize(text)
-            ? t("Plugin.DeepSeekTranslator.Detail.PressEnter", "Press Enter to translate")
+            ? t("Plugin.DeepSeekTranslator.Detail.PressEnter", "Press Ctrl+Enter to translate")
             : t("Plugin.DeepSeekTranslator.Detail.Empty", "Translation appears here");
         translation.classList.toggle("empty", !normalize(text));
         translation.classList.toggle("pending", !!normalize(text));
@@ -114,19 +168,67 @@ import type { MyToolsHostInitializePayload, MyToolsHostKeyPayload, MyToolsHostSe
         sourceStatus.className = "source-status";
     }
 
-    function setHistoryMode(enabled: boolean, activeMode = ""): void {
-        currentListMode = enabled ? (activeMode || currentListMode) : "";
-        historyBackButton.hidden = !enabled;
-        historyButton.disabled = false;
-        favoriteListButton.disabled = false;
-        historyButton.classList.toggle("active", enabled && currentListMode === "history");
-        favoriteListButton.classList.toggle("active", enabled && currentListMode === "favorites");
-        historyButton.setAttribute("aria-pressed", enabled && currentListMode === "history" ? "true" : "false");
-        favoriteListButton.setAttribute("aria-pressed", enabled && currentListMode === "favorites" ? "true" : "false");
+    function updateDrawerButtons(): void {
+        historyButton.classList.toggle("active", currentDrawerMode === "history");
+        favoriteListButton.classList.toggle("active", currentDrawerMode === "favorites");
+        historyButton.setAttribute("aria-pressed", currentDrawerMode === "history" ? "true" : "false");
+        favoriteListButton.setAttribute("aria-pressed", currentDrawerMode === "favorites" ? "true" : "false");
     }
 
     function setResultTitle(text: unknown): void {
+        cancelCopiedFlash();
         resultTitle.textContent = normalize(text) || t("Plugin.DeepSeekTranslator.Detail.Translation", "Translation");
+    }
+
+    // The text a user means by "the translation": the sentence translation, or for a word the
+    // Chinese meaning, falling back to whatever the model returned as the translation.
+    function resolveCopyText(): string {
+        var current = currentState;
+        if (!current || current.status !== "done") {
+            return "";
+        }
+
+        if (current.inputType === "word") {
+            return current.isValidWord === true
+                ? normalize(current.chineseTranslation) || normalize(current.translation)
+                : "";
+        }
+
+        return normalize(current.translation);
+    }
+
+    function copyTranslation(): void {
+        var text = resolveCopyText();
+        if (!text) {
+            return;
+        }
+
+        void navigator.clipboard.writeText(text).then(showCopied);
+    }
+
+    function showCopied(): void {
+        if (copiedTimer !== null) {
+            window.clearTimeout(copiedTimer);
+        } else {
+            titleBeforeCopy = resultTitle.textContent;
+        }
+
+        resultTitle.textContent = t("Plugin.DeepSeekTranslator.Detail.Copied", "Copied");
+        resultTitle.classList.add("copied");
+        copiedTimer = window.setTimeout(function () {
+            var restore = titleBeforeCopy;
+            cancelCopiedFlash();
+            setResultTitle(restore);
+        }, 1200);
+    }
+
+    function cancelCopiedFlash(): void {
+        if (copiedTimer !== null) {
+            window.clearTimeout(copiedTimer);
+            copiedTimer = null;
+        }
+        titleBeforeCopy = null;
+        resultTitle.classList.remove("copied");
     }
 
     function showSourceStatus(current: TranslationState): void {
@@ -173,7 +275,6 @@ import type { MyToolsHostInitializePayload, MyToolsHostKeyPayload, MyToolsHostSe
         favoriteButton.disabled = false;
         favoriteButton.removeAttribute("aria-busy");
         favoriteButton.className = "star-button";
-        favoriteButton.textContent = "☆";
         favoriteButton.title = "";
     }
 
@@ -189,10 +290,10 @@ import type { MyToolsHostInitializePayload, MyToolsHostKeyPayload, MyToolsHostSe
         favoriteButton.disabled = false;
         favoriteButton.removeAttribute("aria-busy");
         favoriteButton.className = current.isFavorite ? "star-button favorited" : "star-button";
-        favoriteButton.title = current.isFavorite
-            ? t("Plugin.DeepSeekTranslator.Detail.Favorite.Remove", "Remove from review")
-            : t("Plugin.DeepSeekTranslator.Detail.Favorite.Save", "Save for review");
-        favoriteButton.textContent = current.isFavorite ? "★" : "☆";
+        favoriteButton.title = withActionHotkey(current.isFavorite
+            ? t("Plugin.DeepSeekTranslator.Detail.Favorite.Remove", "Remove from favorites")
+            : t("Plugin.DeepSeekTranslator.Detail.Favorite.Save", "Save to favorites"), "toggle-favorite");
+        favoriteButton.setAttribute("aria-label", favoriteButton.title);
     }
 
     function showFavoriteLoading(current: TranslationState): void {
@@ -202,15 +303,40 @@ import type { MyToolsHostInitializePayload, MyToolsHostKeyPayload, MyToolsHostSe
         favoriteButton.setAttribute("aria-busy", "true");
         favoriteButton.className = current && current.isFavorite ? "star-button favorited loading" : "star-button loading";
         favoriteButton.title = current && current.isFavorite
-            ? t("Plugin.DeepSeekTranslator.Detail.Favorite.Removing", "Removing from review")
-            : t("Plugin.DeepSeekTranslator.Detail.Favorite.Saving", "Saving for review");
-        favoriteButton.textContent = current && current.isFavorite ? "★" : "☆";
+            ? t("Plugin.DeepSeekTranslator.Detail.Favorite.Removing", "Removing from favorites")
+            : t("Plugin.DeepSeekTranslator.Detail.Favorite.Saving", "Saving to favorites");
+        favoriteButton.setAttribute("aria-label", favoriteButton.title);
     }
 
     function clearFavoriteLoading() {
         favoritePendingText = "";
         favoriteButton.disabled = false;
         favoriteButton.removeAttribute("aria-busy");
+    }
+
+    async function toggleFavorite(): Promise<void> {
+        if (!currentState || favoriteButton.disabled) {
+            return;
+        }
+        var stateBeforeToggle = currentState;
+        showFavoriteLoading(stateBeforeToggle);
+        var startedAt = Date.now();
+        try {
+            var state = await bus.call<TranslationState>("favorite", {
+                text: stateBeforeToggle.input,
+                state: stateBeforeToggle
+            });
+            var remaining = Math.max(0, 650 - (Date.now() - startedAt));
+            window.setTimeout(function () {
+                updateState(state);
+            }, remaining);
+        } catch (error) {
+            updateState({
+                ...stateBeforeToggle,
+                status: "error",
+                error: error instanceof Error ? error.message : String(error)
+            });
+        }
     }
 
     function showLoadingStatus() {
@@ -341,59 +467,85 @@ import type { MyToolsHostInitializePayload, MyToolsHostKeyPayload, MyToolsHostSe
         return Number.isNaN(date.getTime()) ? "" : date.toLocaleString();
     }
 
-    function renderHistory(current: TranslationState): void {
-        setResultTitle(t("Plugin.DeepSeekTranslator.Detail.HistoryTitle", "History"));
-        setHistoryMode(true, "history");
-        stopLoadingTimer();
-        hideSourceStatus();
-        hideFavoriteButton();
-        translation.replaceChildren();
-        translation.className = "translation history";
-
-        renderEntryList(current, t("Plugin.DeepSeekTranslator.Detail.NoHistory", "No translation history"));
+    function closeDrawer(): void {
+        drawer.hidden = true;
+        currentDrawerMode = "";
+        drawerEntries = [];
+        selectedDrawerIndex = -1;
+        updateDrawerButtons();
     }
 
-    function renderFavorites(current: TranslationState): void {
-        setResultTitle(t("Plugin.DeepSeekTranslator.Detail.FavoritesTitle", "Favorites"));
-        setHistoryMode(true, "favorites");
-        stopLoadingTimer();
-        hideSourceStatus();
-        hideFavoriteButton();
-        translation.replaceChildren();
-        translation.className = "translation history";
-        renderEntryList(current, t("Plugin.DeepSeekTranslator.Detail.NoFavorites", "No favorite items"));
-    }
-
-    function renderEntryList(current: TranslationState, emptyText: string): void {
-        var entries = Array.isArray(current.entries) ? current.entries : [];
-        if (entries.length === 0) {
-            translation.classList.add("empty");
-            translation.textContent = emptyText;
+    async function openDrawer(mode: "history" | "favorites"): Promise<void> {
+        if (currentDrawerMode === mode && !drawer.hidden) {
+            closeDrawer();
+            sourceText.focus();
             return;
         }
 
-        entries.forEach(function (entry: TranslationEntry) {
-            var item = document.createElement("button");
+        currentDrawerMode = mode;
+        drawer.hidden = false;
+        drawerTitle.textContent = mode === "history"
+            ? t("Plugin.DeepSeekTranslator.Detail.HistoryTitle", "History")
+            : t("Plugin.DeepSeekTranslator.Detail.FavoritesTitle", "Favorites");
+        drawerList.className = "drawer-list";
+        drawerList.textContent = mode === "history"
+            ? t("Plugin.DeepSeekTranslator.Detail.LoadingHistory", "Loading history")
+            : t("Plugin.DeepSeekTranslator.Detail.LoadingFavorites", "Loading favorites");
+        updateDrawerButtons();
+        drawer.focus();
+
+        try {
+            var state = await bus.call<TranslationState>(mode === "history" ? "getHistory" : "getFavorites");
+            if (currentDrawerMode === mode) {
+                renderDrawer(state);
+            }
+        } catch (error) {
+            drawerList.textContent = error instanceof Error ? error.message : String(error);
+        }
+    }
+
+    function renderDrawer(state: TranslationState): void {
+        drawerEntries = Array.isArray(state.entries) ? state.entries.slice(0, 100) : [];
+        selectedDrawerIndex = drawerEntries.length > 0 ? 0 : -1;
+        drawerList.replaceChildren();
+
+        if (drawerEntries.length === 0) {
+            var empty = document.createElement("div");
+            empty.className = "drawer-empty";
+            empty.textContent = currentDrawerMode === "history"
+                ? t("Plugin.DeepSeekTranslator.Detail.NoHistory", "No translation history")
+                : t("Plugin.DeepSeekTranslator.Detail.NoFavorites", "No favorite items");
+            drawerList.appendChild(empty);
+            return;
+        }
+
+        drawerEntries.forEach(function (entry: TranslationEntry, index: number) {
+            var item = document.createElement("div");
             item.className = "history-item";
+            item.setAttribute("role", "option");
+            item.setAttribute("aria-selected", index === selectedDrawerIndex ? "true" : "false");
+            item.classList.toggle("selected", index === selectedDrawerIndex);
             if (entry.inputType === "sentence") {
                 item.classList.add("sentence-item");
             }
-            item.type = "button";
-            item.title = t("Plugin.DeepSeekTranslator.Detail.TranslateAgain", "Translate again");
-            item.addEventListener("click", function () {
-                setInput(entry.input || "", false);
-                translateNow();
+
+            var main = document.createElement("button");
+            main.className = "drawer-item-main";
+            main.type = "button";
+            main.addEventListener("click", function () {
+                selectDrawerIndex(index);
+                activateDrawerEntry();
             });
 
             var input = document.createElement("div");
             input.className = "history-input";
             input.textContent = entry.input || "";
-            item.appendChild(input);
+            main.appendChild(input);
 
             var value = document.createElement("div");
             value.className = "history-translation";
             value.textContent = entry.translation || "";
-            item.appendChild(value);
+            main.appendChild(value);
 
             var meta = document.createElement("div");
             meta.className = "history-meta";
@@ -404,15 +556,83 @@ import type { MyToolsHostInitializePayload, MyToolsHostKeyPayload, MyToolsHostSe
                 entry.phonetic || "",
                 formatTime(entry.cachedAt)
             ].filter(Boolean).join(" · ");
-            item.appendChild(meta);
+            main.appendChild(meta);
 
-            translation.appendChild(item);
+            var remove = document.createElement("button");
+            remove.className = "drawer-delete";
+            remove.type = "button";
+            remove.textContent = "×";
+            remove.title = t("Plugin.DeepSeekTranslator.Detail.Delete", "Delete");
+            remove.setAttribute("aria-label", remove.title);
+            remove.addEventListener("click", function (event) {
+                event.stopPropagation();
+                selectDrawerIndex(index);
+                void deleteSelectedDrawerEntry();
+            });
+
+            item.append(main, remove);
+            drawerList.appendChild(item);
         });
+    }
+
+    function selectDrawerIndex(index: number): void {
+        if (drawerEntries.length === 0) {
+            selectedDrawerIndex = -1;
+            return;
+        }
+        selectedDrawerIndex = Math.max(0, Math.min(index, drawerEntries.length - 1));
+        Array.from(drawerList.querySelectorAll<HTMLElement>(".history-item")).forEach(function (item, itemIndex) {
+            var selected = itemIndex === selectedDrawerIndex;
+            item.classList.toggle("selected", selected);
+            item.setAttribute("aria-selected", selected ? "true" : "false");
+            if (selected) {
+                item.scrollIntoView({ block: "nearest" });
+            }
+        });
+    }
+
+    function activateDrawerEntry(): void {
+        var entry = drawerEntries[selectedDrawerIndex];
+        if (!entry) {
+            return;
+        }
+        var restored = entry.state || {
+            status: "done",
+            input: entry.input,
+            inputType: entry.inputType,
+            translation: entry.translation,
+            phonetic: entry.phonetic
+        };
+        closeDrawer();
+        updateState(restored);
+        sourceText.focus();
+    }
+
+    async function deleteSelectedDrawerEntry(): Promise<void> {
+        var entry = drawerEntries[selectedDrawerIndex];
+        var mode = currentDrawerMode;
+        if (!entry || !mode) {
+            return;
+        }
+        var previousIndex = selectedDrawerIndex;
+        var state = await bus.call<TranslationState>(mode === "history" ? "deleteHistory" : "deleteFavorite", {
+            id: entry.id
+        });
+        if (mode === "favorites" && currentState
+            && normalize(currentState.input).toLowerCase() === normalize(entry.input).toLowerCase()) {
+            currentState.isFavorite = false;
+            updateFavoriteButton(currentState);
+        }
+        if (currentDrawerMode === mode) {
+            renderDrawer(state);
+            selectDrawerIndex(Math.min(previousIndex, drawerEntries.length - 1));
+        }
     }
 
     function updateState(state: TranslationState): void {
         var current = state || {};
         currentState = current;
+        void bus.call("setCopyText", { text: resolveCopyText() });
         clearFavoriteLoading();
         var text = normalize(current.input);
 
@@ -426,7 +646,7 @@ import type { MyToolsHostInitializePayload, MyToolsHostKeyPayload, MyToolsHostSe
 
         if (current.status === "error") {
             setResultTitle(t("Plugin.DeepSeekTranslator.Detail.Translation", "Translation"));
-            setHistoryMode(false);
+            closeDrawer();
             stopLoadingTimer();
             hideFavoriteButton();
             sourceStatus.hidden = false;
@@ -439,19 +659,8 @@ import type { MyToolsHostInitializePayload, MyToolsHostKeyPayload, MyToolsHostSe
             return;
         }
 
-        if (current.status === "history") {
-            renderHistory(current);
-            return;
-        }
-
-        if (current.status === "favorites") {
-            renderFavorites(current);
-            return;
-        }
-
         if (current.status === "done") {
             setResultTitle(t("Plugin.DeepSeekTranslator.Detail.Translation", "Translation"));
-            setHistoryMode(false);
             showSourceStatus(current);
             translation.classList.remove("pending");
             translation.classList.remove("history");
@@ -470,7 +679,6 @@ import type { MyToolsHostInitializePayload, MyToolsHostKeyPayload, MyToolsHostSe
 
         hideSourceStatus();
         setResultTitle(t("Plugin.DeepSeekTranslator.Detail.Translation", "Translation"));
-        setHistoryMode(false);
         hideFavoriteButton();
         translation.replaceChildren();
         translation.classList.remove("history");
@@ -550,18 +758,16 @@ import type { MyToolsHostInitializePayload, MyToolsHostKeyPayload, MyToolsHostSe
     }
 
     function getSendMode() {
-        return sendMode.dataset.mode === "realtime" ? "realtime" : "enter";
+        return sendMode.value === "realtime" ? "realtime" : "enter";
     }
 
     function setSendMode(mode: unknown): void {
         var normalized = mode === "realtime" ? "realtime" : "enter";
-        sendMode.dataset.mode = normalized;
-        sendMode.textContent = normalized === "realtime"
-            ? t("Plugin.DeepSeekTranslator.Detail.Mode.Realtime", "Real-time Mode")
-            : t("Plugin.DeepSeekTranslator.Detail.Mode.Enter", "Enter Mode");
+        sendMode.value = normalized;
         sendMode.title = normalized === "realtime"
-            ? t("Plugin.DeepSeekTranslator.Detail.Mode.RealtimeTip", "Real-time mode. Click to switch to enter mode.")
-            : t("Plugin.DeepSeekTranslator.Detail.Mode.EnterTip", "Enter mode. Click to switch to real-time mode.");
+            ? t("Plugin.DeepSeekTranslator.Detail.Mode.RealtimeTip", "Real-time mode")
+            : t("Plugin.DeepSeekTranslator.Detail.Mode.EnterTip",
+                "Manual mode. Press Ctrl+Enter to translate.");
     }
 
     function handleInputChanged() {
@@ -590,24 +796,13 @@ import type { MyToolsHostInitializePayload, MyToolsHostKeyPayload, MyToolsHostSe
         };
     }
 
-    function returnFromList() {
-        setHistoryMode(false);
-        updateState(previousTranslationState || { status: "idle", input: sourceText.value });
-    }
-
     setSendMode("enter");
     favoriteButton.addEventListener("click", function () {
-        if (!currentState || favoriteButton.disabled) {
-            return;
-        }
-
-        showFavoriteLoading(currentState);
-        callState("favorite", { text: currentState.input, state: currentState });
+        void toggleFavorite();
     });
 
-    sendMode.addEventListener("click", function () {
-        var nextMode = getSendMode() === "realtime" ? "enter" : "realtime";
-        setSendMode(nextMode);
+    sendMode.addEventListener("change", function () {
+        var nextMode = getSendMode();
         callState("setSendMode", {
             sendMode: nextMode,
             state: getStateForModeChange()
@@ -615,73 +810,74 @@ import type { MyToolsHostInitializePayload, MyToolsHostKeyPayload, MyToolsHostSe
         handleInputChanged();
     });
 
-    historyButton.addEventListener("click", function () {
-        if (debounceTimer !== null) {
-            window.clearTimeout(debounceTimer);
-        }
-        if (currentListMode === "history") {
-            returnFromList();
-            return;
-        }
+    translateButton.addEventListener("click", translateNow);
 
-        if (!currentListMode) {
-            previousTranslationState = currentState;
-        }
-        setHistoryMode(true, "history");
-        hideSourceStatus();
-        hideFavoriteButton();
-        translation.className = "translation empty";
-        translation.textContent = t("Plugin.DeepSeekTranslator.Detail.LoadingHistory", "Loading history");
-        callState("getHistory");
+    historyButton.addEventListener("click", function () {
+        void openDrawer("history");
     });
 
     favoriteListButton.addEventListener("click", function () {
-        if (debounceTimer !== null) {
-            window.clearTimeout(debounceTimer);
-        }
-        if (currentListMode === "favorites") {
-            returnFromList();
-            return;
-        }
-
-        if (!currentListMode) {
-            previousTranslationState = currentState;
-        }
-        setHistoryMode(true, "favorites");
-        hideSourceStatus();
-        hideFavoriteButton();
-        translation.className = "translation empty";
-        translation.textContent = t("Plugin.DeepSeekTranslator.Detail.LoadingFavorites", "Loading favorites");
-        callState("getFavorites");
+        void openDrawer("favorites");
     });
 
-    historyBackButton.addEventListener("click", function () {
-        returnFromList();
+    drawerCloseButton.addEventListener("click", function () {
+        closeDrawer();
+        sourceText.focus();
+    });
+    drawer.addEventListener("keydown", function (event) {
+        if (event.key === "ArrowDown") {
+            event.preventDefault();
+            selectDrawerIndex(selectedDrawerIndex + 1);
+        } else if (event.key === "ArrowUp") {
+            event.preventDefault();
+            selectDrawerIndex(selectedDrawerIndex - 1);
+        } else if (event.key === "Enter") {
+            event.preventDefault();
+            activateDrawerEntry();
+        } else if (event.key === "Delete") {
+            event.preventDefault();
+            void deleteSelectedDrawerEntry();
+        } else if (event.key === "Escape") {
+            event.preventDefault();
+            closeDrawer();
+            sourceText.focus();
+        }
     });
 
     sourceText.addEventListener("input", handleInputChanged);
     sourceText.addEventListener("keydown", function (event) {
-        if (getSendMode() !== "enter" || event.key !== "Enter" || event.shiftKey) {
+        if (!matchesActionHotkey(event, "translate")) {
             return;
         }
 
         event.preventDefault();
         translateNow();
-    }, true);
-
+    });
     bus.on<MyToolsHostSearchPayload>(HostEvents.Search, function (payload) {
         setInput(payload.query || "", true);
     });
     bus.on<MyToolsHostInitializePayload>(HostEvents.Initialize, function (payload) {
+        applyActionDefinitions(payload.actions);
         setInput(payload.query || "", false);
         updateState(payload.initialState || {});
         if (normalize(payload.query || "")) {
             handleInputChanged();
         }
     });
-    bus.on<MyToolsHostKeyPayload>(HostEvents.Key, function (payload) {
-        if (payload.key === "Enter" && getSendMode() === "enter") {
+    bus.on<MyToolsHostDetailActionPayload>(HostEvents.DetailAction, function (payload) {
+        if (payload.action === "translate") {
             translateNow();
+        } else if (payload.action === "toggle-mode") {
+            var nextMode = getSendMode() === "realtime" ? "enter" : "realtime";
+            setSendMode(nextMode);
+            callState("setSendMode", { sendMode: nextMode, state: getStateForModeChange() });
+            handleInputChanged();
+        } else if (payload.action === "history") {
+            void openDrawer("history");
+        } else if (payload.action === "favorites") {
+            void openDrawer("favorites");
+        } else if (payload.action === "toggle-favorite") {
+            void toggleFavorite();
         }
     });
     bus.on(HostEvents.LanguageChanged, function () {

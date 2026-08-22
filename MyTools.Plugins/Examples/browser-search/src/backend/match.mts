@@ -1,5 +1,7 @@
 import type { BrowserItem } from "./types.mjs";
 
+const MaxSubsequenceQueryLength = 12;
+
 export function isSubsequence(pattern: string, target: string): boolean {
   if (!pattern) {
     return true;
@@ -34,7 +36,12 @@ export function itemMatches(item: BrowserItem, query: string): boolean {
   if (folder.toLowerCase().includes(query) || profile.toLowerCase().includes(query)) {
     return true;
   }
-  return isSubsequence(query, title);
+  // Subsequence matching is useful for short abbreviations such as "gthb" -> "GitHub".
+  // On long input it becomes both surprising and noisy because large page titles can contain
+  // the requested characters far apart without representing a meaningful match.
+  return query.length <= MaxSubsequenceQueryLength
+    && !/\s/.test(query)
+    && isSubsequence(query, title);
 }
 
 export function itemPriority(item: BrowserItem, query: string): number {

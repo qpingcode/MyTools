@@ -117,8 +117,8 @@ public class PluginLoader(ILogger<PluginLoader> logger, IKeywordRegistry keyword
         // register actions
         if (!actionsRegistered)
         {
-            actionRegistry.Register("Ctrl+Enter", WellKnownActions.AdminExecute);
-            actionRegistry.Register("Ctrl+O", WellKnownActions.OpenInExplorer);
+            actionRegistry.Register(Hotkey.Ctrl(HotkeyKey.Enter), WellKnownActions.AdminExecute);
+            actionRegistry.Register(Hotkey.Ctrl(HotkeyKey.O), WellKnownActions.OpenInExplorer);
             actionsRegistered = true;
         }
     }

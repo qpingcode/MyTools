@@ -27,10 +27,10 @@ public class FileSearcher(ILogger<FileSearcher> logger, IMemoryCache cache): Plu
 
     public override string Name => GetCaption("Plugin.FileSearcher.Name", "File Searcher");
     public override string Description => GetCaption("Plugin.FileSearcher.Description", "Search for files and scripts");
-    public override List<IActionWithCommand> Actions => [
-        WellKnownActions.Execute.WithDefaultCommand(), 
-        WellKnownActions.AdminExecute.WithCommand(Commands.Ctrl_Enter), 
-        WellKnownActions.OpenInExplorer.WithCommand(Commands.Ctrl_O)
+    public override List<IActionWithHotkey> Actions => [
+        WellKnownActions.Execute.WithDefaultHotkey(),
+        WellKnownActions.AdminExecute.WithHotkey(Hotkey.Ctrl(HotkeyKey.Enter)),
+        WellKnownActions.OpenInExplorer.WithHotkey(Hotkey.Ctrl(HotkeyKey.O))
     ];
 
     public override bool IsGlobalSearchPlugin => true;

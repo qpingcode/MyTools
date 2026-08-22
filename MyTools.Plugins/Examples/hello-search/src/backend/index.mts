@@ -18,26 +18,16 @@ function buildItem(query: unknown) {
     }),
     priority: 100,
     icon: {
-      kind: "mdi",
+      kind: "mdi" as const,
       value: "mdi-hand-wave-outline"
     },
-    actions: [
-      {
-        id: "open-detail",
-        title: mytoolsI18n.t("Plugin.HelloSearch.Action.OpenDetail.Title", { defaultValue: "Open Detail" }),
-        kind: "detail",
-        description: mytoolsI18n.t("Plugin.HelloSearch.Action.OpenDetail.Description", {
-          defaultValue: "Open the custom detail page"
-        })
-      }
-    ]
+    actions: ["open-detail"]
   };
 }
 
 function createDetail(query: unknown, itemId: unknown, eventName = "initialize") {
   return {
-    type: "web-detail",
-    htmlEntry: "web/index.html",
+    page: "web/index.html",
     title: mytoolsI18n.t("Plugin.HelloSearch.Name", { defaultValue: "Hello Search" }),
     initialState: {
       itemId,
@@ -55,15 +45,23 @@ plugin
     mytoolsI18n.configure(params);
     return {};
   })
+  .actions([{
+    id: "open-detail",
+    title: { key: "Plugin.HelloSearch.Action.OpenDetail.Title", defaultValue: "Open Detail" },
+    description: {
+      key: "Plugin.HelloSearch.Action.OpenDetail.Description",
+      defaultValue: "Open the custom detail page",
+    },
+    execute: (context) => ({
+      message: {
+        key: "Plugin.HelloSearch.Action.OpenDetail.Success",
+        defaultValue: "Opened hello detail",
+      },
+      detail: createDetail(context.query, context.itemId || "hello:item"),
+    }),
+  }])
   .search((params) => ({
     items: [buildItem(params.query || "")]
-  }))
-  .action((params) => ({
-    message: mytoolsI18n.t("Plugin.HelloSearch.Action.OpenDetail.Success", {
-      defaultValue: "Opened hello detail"
-    }),
-    actionType: "none",
-    detail: createDetail(params.query || "", params.itemId || "hello:item")
   }))
   .handle("refresh", (payload, context) => ({
     itemId: context.itemId || "hello:item",

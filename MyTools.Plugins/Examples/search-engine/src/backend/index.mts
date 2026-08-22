@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { createPlugin, type PluginSearchParams } from "@qping/plugin-bus/node";
+import { createPlugin, HostAction, type PluginSearchParams } from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 
 type SearchEngine = {
@@ -41,10 +41,9 @@ function createUrl(template: string, query: string): string {
   return template.replaceAll("{query}", encodeURIComponent(query));
 }
 
-function engineUrls(engine: SearchEngine, query: string): string {
+function engineUrls(engine: SearchEngine, query: string): string[] {
   return urlTemplates(engine)
-    .map((template) => createUrl(template, query))
-    .join(",");
+    .map((template) => createUrl(template, query));
 }
 
 function hasUrl(engine: SearchEngine): boolean {
@@ -57,17 +56,6 @@ function parseEngineList(value: unknown): SearchEngine[] {
   }
 
   return value.filter(hasUrl);
-}
-
-function openAction() {
-  return {
-    id: "open",
-    title: mytoolsI18n.t("Plugin.SearchEngine.Action.Open", { defaultValue: "Open in Browser" }),
-    kind: "openInBrowser",
-    description: mytoolsI18n.t("Plugin.SearchEngine.Action.OpenDescription", {
-      defaultValue: "Open the search URL in the default browser",
-    }),
-  };
 }
 
 function loadLegacyEngines(): SearchEngine[] {
@@ -102,7 +90,7 @@ async function loadEngines(): Promise<SearchEngine[]> {
 function searchItem(engine: SearchEngine, query: string, index: number) {
   const name = (engine.name || "").trim() || String(index + 1);
   const urls = engineUrls(engine, query);
-  if (!urls) {
+  if (urls.length === 0) {
     return null;
   }
 
@@ -119,9 +107,8 @@ function searchItem(engine: SearchEngine, query: string, index: number) {
     }),
     priority: 0,
     icon: { kind: "mdi", value: "mdi-web" },
-    path: urls,
-    copyText: urls,
-    actions: [openAction()],
+    urls,
+    actions: ["open"],
   };
 }
 
@@ -144,5 +131,17 @@ plugin
     mytoolsI18n.configure(params);
     return {};
   })
+  .actions<{ urls: string[] }>([{
+    id: "open",
+    title: { key: "Plugin.SearchEngine.Action.Open", defaultValue: "Open in Browser" },
+    description: {
+      key: "Plugin.SearchEngine.Action.OpenDescription",
+      defaultValue: "Open the search URL in the default browser",
+    },
+    execute: ({ item }) => ({
+      host: { kind: HostAction.OpenInBrowser, url: item?.urls ?? [] },
+      close: true,
+    }),
+  }])
   .search(search)
   .start();

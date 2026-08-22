@@ -127,6 +127,7 @@
   <data name="Action.Copy.Name" xml:space="preserve"><value>复制</value></data>
   <data name="Action.Copy.Description" xml:space="preserve"><value>将所选文本复制到剪贴板</value></data>
   <data name="Action.Copy.Success" xml:space="preserve"><value>已复制到剪贴板</value></data>
+  <data name="Action.Copy.ClipboardBusy" xml:space="preserve"><value>剪贴板正忙，请重试。</value></data>
   <data name="Action.Copy.InvalidParameters" xml:space="preserve"><value>复制操作的参数无效</value></data>
   <data name="Action.CopyAndPaste.Name" xml:space="preserve"><value>复制并粘贴</value></data>
   <data name="Action.CopyAndPaste.Description" xml:space="preserve"><value>复制文本并粘贴到上一个获得焦点的窗口</value></data>

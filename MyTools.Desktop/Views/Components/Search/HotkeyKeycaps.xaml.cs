@@ -1,14 +1,15 @@
 using System.Windows;
 using System.Windows.Controls;
+using MyTools.Common;
 
 namespace MyTools.Desktop.Components;
 
 public partial class HotkeyKeycaps : UserControl
 {
-    public static readonly DependencyProperty CommandProperty =
+    public static readonly DependencyProperty HotkeyProperty =
         DependencyProperty.Register(
-            nameof(Command),
-            typeof(string),
+            nameof(Hotkey),
+            typeof(Hotkey),
             typeof(HotkeyKeycaps));
 
     public HotkeyKeycaps()
@@ -16,9 +17,9 @@ public partial class HotkeyKeycaps : UserControl
         InitializeComponent();
     }
 
-    public string? Command
+    public Hotkey Hotkey
     {
-        get => (string?)GetValue(CommandProperty);
-        set => SetValue(CommandProperty, value);
+        get => (Hotkey)GetValue(HotkeyProperty);
+        set => SetValue(HotkeyProperty, value);
     }
 }

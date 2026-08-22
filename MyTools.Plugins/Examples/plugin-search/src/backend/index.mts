@@ -1,4 +1,4 @@
-import { createPlugin, type PluginSearchParams } from "@qping/plugin-bus/node";
+import { createPlugin, HostAction, type PluginSearchParams } from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 
 type PluginListItem = {
@@ -57,17 +57,6 @@ function displayOrDash(value: string): string {
   return value.trim() ? value.trim() : "—";
 }
 
-function openAction() {
-  return {
-    id: "open",
-    title: mytoolsI18n.t("Plugin.PluginSearch.Action.Open", { defaultValue: "Open Plugin" }),
-    kind: "openPlugin",
-    description: mytoolsI18n.t("Plugin.PluginSearch.Action.OpenDescription", {
-      defaultValue: "Open the plugin window",
-    }),
-  };
-}
-
 function toItem(pluginInfo: PluginListItem) {
   const pluginId = (pluginInfo.pluginId || "").trim();
   const name = (pluginInfo.name || "").trim() || pluginId;
@@ -86,9 +75,8 @@ function toItem(pluginInfo: PluginListItem) {
     }),
     priority: 80,
     icon: { kind: "mdi", value: "mdi-puzzle-outline" },
-    path: pluginId,
-    copyText: pluginId,
-    actions: [openAction()],
+    pluginId,
+    actions: ["open"],
   };
 }
 
@@ -127,5 +115,17 @@ plugin
     mytoolsI18n.configure(params);
     return {};
   })
+  .actions<{ pluginId: string }>([{
+    id: "open",
+    title: { key: "Plugin.PluginSearch.Action.Open", defaultValue: "Open Plugin" },
+    description: {
+      key: "Plugin.PluginSearch.Action.OpenDescription",
+      defaultValue: "Open the plugin window",
+    },
+    execute: ({ item }) => ({
+      host: { kind: HostAction.OpenPlugin, pluginId: item?.pluginId ?? "" },
+      close: true,
+    }),
+  }])
   .search(search)
   .start();

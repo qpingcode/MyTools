@@ -1,6 +1,6 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { createPlugin, type PluginSearchParams } from "@qping/plugin-bus/node";
+import { createPlugin, HostAction, Key, Modifiers, type PluginSearchParams } from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 import { loadChromiumItems, resolveChromiumProfiles } from "./chromium.mjs";
 import { loadFirefoxItems, resolveFirefoxProfiles } from "./firefox.mjs";
@@ -40,17 +40,6 @@ function browserIcon(item: BrowserItem): string {
   return "mdi-google-chrome";
 }
 
-function openAction() {
-  return {
-    id: "open",
-    title: mytoolsI18n.t("Plugin.BrowserSearch.Action.Open", { defaultValue: "Open in Browser" }),
-    kind: "openInBrowser",
-    description: mytoolsI18n.t("Plugin.BrowserSearch.Action.OpenDescription", {
-      defaultValue: "Open this URL in the default browser",
-    }),
-  };
-}
-
 function toSearchItem(item: BrowserItem, query: string, index: number) {
   const location = item.folderPath || item.profileName || item.url;
   const subtitle = mytoolsI18n.t("Plugin.BrowserSearch.Result.Subtitle", {
@@ -65,9 +54,8 @@ function toSearchItem(item: BrowserItem, query: string, index: number) {
     subtitle: location === item.url ? subtitle : `${subtitle} — ${item.url}`,
     priority: itemPriority(item, query),
     icon: { kind: "mdi", value: browserIcon(item) },
-    path: item.url,
-    copyText: item.url,
-    actions: [openAction()],
+    url: item.url,
+    actions: ["open", "copy-url"],
   };
 }
 
@@ -155,6 +143,32 @@ plugin
     mytoolsI18n.configure(params);
     return {};
   })
+  .actions<{ url: string }>([
+    {
+      id: "open",
+      title: { key: "Plugin.BrowserSearch.Action.Open", defaultValue: "Open in Browser" },
+      description: {
+        key: "Plugin.BrowserSearch.Action.OpenDescription",
+        defaultValue: "Open this URL in the default browser",
+      },
+      execute: ({ item }) => ({
+        host: { kind: HostAction.OpenInBrowser, url: item?.url ?? "" },
+        close: true,
+      }),
+    },
+    {
+      id: "copy-url",
+      title: { key: "Plugin.BrowserSearch.Action.CopyUrl", defaultValue: "Copy URL" },
+      description: {
+        key: "Plugin.BrowserSearch.Action.CopyUrlDescription",
+        defaultValue: "Copy this URL to the clipboard",
+      },
+      hotkey: { key: Key.E, modifiers: Modifiers.Control },
+      execute: ({ item }) => ({
+        host: { kind: HostAction.Copy, text: item?.url ?? "" },
+      }),
+    },
+  ])
   .search(search);
 
 function isDirectRun(): boolean {

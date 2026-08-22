@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using Lucene.Net.Util;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -13,6 +14,7 @@ using MyTools.Plugins.NodePlugins;
 using Application = System.Windows.Application;
 using Key = System.Windows.Input.Key;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
+using Keyboard = System.Windows.Input.Keyboard;
 
 namespace MyTools.Desktop.ViewModels
 {
@@ -43,7 +45,7 @@ namespace MyTools.Desktop.ViewModels
         private string detailedStatusText = string.Empty;
         
         [ObservableProperty]
-        private ObservableCollection<IActionWithCommand> selectedResultActions = new();
+        private ObservableCollection<IActionWithHotkey> selectedResultActions = new();
         
         private readonly SearchDebouncer searchDebouncer;
         private readonly IKeywordRegistry keywordRegistry;
@@ -212,7 +214,8 @@ namespace MyTools.Desktop.ViewModels
                 logger.LogWarning("SearchViewModel has been disposed, ignoring HandlePreviewKeyDown.");
                 return;
             }
-            var isHandled = ((ISwitchableViewModel)CurrentViewModel).HandleKeyDown(e.Key);
+            var key = e.Key == Key.System ? e.SystemKey : e.Key;
+            var isHandled = ((ISwitchableViewModel)CurrentViewModel).HandleKeyDown(key, Keyboard.Modifiers);
             if (isHandled)
             {
                 e.Handled = true;
@@ -279,6 +282,11 @@ namespace MyTools.Desktop.ViewModels
             DetailedStatusText = message;
         }
 
+        public void OnRequestClose()
+        {
+            WeakReferenceMessenger.Default.Send(new SearchWindowCloseMessage());
+        }
+
         private string GetStatusText(UpdateStatus messageStatus)
         {
             switch (messageStatus)
@@ -294,7 +302,7 @@ namespace MyTools.Desktop.ViewModels
             }
         }
 
-        public void OnUpdateSelectedActions(List<IActionWithCommand>? actions)
+        public void OnUpdateSelectedActions(List<IActionWithHotkey>? actions)
         {
             SelectedResultActions.Clear();
             if (actions != null)
@@ -306,7 +314,7 @@ namespace MyTools.Desktop.ViewModels
         #endregion
         
         [RelayCommand]
-        private void ExecuteAction(string command)
+        private void ExecuteAction(IActionWithHotkey? action)
         {
             if (disposed)
             {
@@ -314,13 +322,13 @@ namespace MyTools.Desktop.ViewModels
                 return;
             }
 
-            if (string.IsNullOrEmpty(command))
+            if (action == null)
             {
-                logger.LogWarning("ExecuteAction called with null or empty command.");
+                logger.LogWarning("ExecuteAction called without an action.");
                 return;
             }
             
-            ((ISwitchableViewModel)CurrentViewModel).ExecuteAction(command);
+            ((ISwitchableViewModel)CurrentViewModel).ExecuteAction(action);
         }
 
         public void Dispose()

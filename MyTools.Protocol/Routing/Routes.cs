@@ -55,6 +55,8 @@ public static class Routes
         public const string Initialize = Prefix.HostEvent + "initialize";
         public const string Search = Prefix.HostEvent + "search";
         public const string Key = Prefix.HostEvent + "key";
+        /// <summary>Delivers an action outcome's explicit web payload to the detail page.</summary>
+        public const string DetailAction = Prefix.HostEvent + "detailAction";
         public const string LanguageChanged = Prefix.HostEvent + "languageChanged";
         public const string ThemeChanged = Prefix.HostEvent + "themeChanged";
         public const string InputActionCaptured = Prefix.HostEvent + "inputActionCaptured";

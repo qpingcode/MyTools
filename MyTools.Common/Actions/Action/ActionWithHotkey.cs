@@ -1,17 +1,16 @@
 namespace MyTools.Common;
 
-public class ActionWithCommand : IActionWithCommand
+public class ActionWithHotkey : IActionWithHotkey
 {
     private readonly IAction inner;
-    private readonly string command;
 
-    public ActionWithCommand(IAction action, string command)
+    public ActionWithHotkey(IAction action, Hotkey hotkey)
     {
         inner = action;
-        this.command = command;
+        Hotkey = hotkey;
     }
 
-    public string Command => command;
+    public Hotkey Hotkey { get; }
 
     public string Name => inner.Name;
 

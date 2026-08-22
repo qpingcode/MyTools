@@ -9,6 +9,7 @@ public interface ISearchViewModelCallback
 {
     void OnSearchTextChange(string text);
     void OnUpdateStatusBar(UpdateStatus status, string message);
-    void OnUpdateSelectedActions(List<IActionWithCommand>? actions);
+    void OnUpdateSelectedActions(List<IActionWithHotkey>? actions);
+    void OnRequestClose();
 }
 

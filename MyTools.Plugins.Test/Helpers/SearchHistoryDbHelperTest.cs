@@ -56,6 +56,23 @@ public class SearchHistoryDbHelperTest
         Assert.That(result.Items.First().ResultKey, Is.EqualTo("fav"));
     }
 
+    [Test]
+    public async Task Searcher_PreservesNewestFirstForItemsThatIgnoreSelectionHistoryBoost()
+    {
+        var helper = new SearchHistoryDbHelper(_dbPath);
+        var plugin = new ChronologicalPlugin();
+        helper.RecordSelection(string.Empty, plugin.PluginId, "old");
+
+        var searcher = new Searcher(
+            new FakeGlobalSearchRegistry(plugin),
+            new MemoryCache(new MemoryCacheOptions()),
+            helper,
+            NullLogger<Searcher>.Instance);
+        var result = await ((ISearcher)searcher).SearchAsync(plugin, string.Empty, CancellationToken.None);
+
+        Assert.That(result.Items.Select(item => item.ResultKey), Is.EqualTo(new[] { "new", "old" }));
+    }
+
     private sealed class FakeGlobalSearchRegistry(params IPlugin[] plugins) : IGlobalSearchRegistry
     {
         public IEnumerable<IPlugin> Plugins { get; } = plugins;
@@ -79,7 +96,7 @@ public class SearchHistoryDbHelperTest
 
         public override string Name => "Fake";
         public override string Description => "Fake";
-        public override List<IActionWithCommand> Actions => [];
+        public override List<IActionWithHotkey> Actions => [];
         public override bool IsGlobalSearchPlugin => true;
 
         public override Task<Result> SearchAsync(string query, CancellationToken cancellationToken, SearchOptions? searchOptions = null)
@@ -93,6 +110,38 @@ public class SearchHistoryDbHelperTest
                 new ResultItem(StringIcon.Empty, "fav", "fav", ActionStringParam.From("fav"), 1)
                 {
                     ResultKey = "fav"
+                }
+            };
+
+            return Task.FromResult(Result.CreateSuccessResult(results));
+        }
+    }
+
+    private sealed class ChronologicalPlugin : PluginBase
+    {
+        public override string PluginId => GetType().FullName!;
+        public override string Name => "Chronological";
+        public override string Description => "Chronological";
+        public override List<IActionWithHotkey> Actions => [];
+        public override bool IsGlobalSearchPlugin => false;
+
+        public override Task<Result> SearchAsync(
+            string query, CancellationToken cancellationToken, SearchOptions? searchOptions = null)
+        {
+            var now = DateTime.UtcNow;
+            var results = new[]
+            {
+                new ResultItem(StringIcon.Empty, "new", "new", ActionStringParam.From("new"), 100)
+                {
+                    ResultKey = "new",
+                    CreatedAt = now,
+                    IgnoreSelectionHistoryBoost = true
+                },
+                new ResultItem(StringIcon.Empty, "old", "old", ActionStringParam.From("old"), 100)
+                {
+                    ResultKey = "old",
+                    CreatedAt = now.AddMinutes(-1),
+                    IgnoreSelectionHistoryBoost = true
                 }
             };
 

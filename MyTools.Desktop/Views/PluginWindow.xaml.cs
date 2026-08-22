@@ -42,6 +42,7 @@ public partial class PluginWindow
 
         this.viewModel = viewModel;
         DataContext = viewModel;
+        viewModel.CloseRequested += ViewModel_OnCloseRequested;
 
         PreviewKeyDown += Window_PreviewKeyDown;
         Closed += Window_OnClosed;
@@ -100,11 +101,22 @@ public partial class PluginWindow
             return;
         }
 
-        if (!ShouldForwardPluginNavigationKey(
-                e.Key,
-                Keyboard.Modifiers,
+        if (viewModel.TryExecuteHotkey(e.Key, e.SystemKey, Keyboard.Modifiers))
+        {
+            e.Handled = true;
+            return;
+        }
+
+        if (!PluginDetailKeyForwarding.CanForward(
                 Keyboard.FocusedElement,
                 PluginContentView.IsKeyboardFocusWithin))
+        {
+            return;
+        }
+
+        var focusIntoPage = PluginDetailKeyForwarding.IsFocusIntoPageKey(e.Key, Keyboard.Modifiers);
+        var hostKey = PluginDetailKeyForwarding.ResolveHostKey(e.Key, Keyboard.Modifiers);
+        if (!focusIntoPage && hostKey == null)
         {
             return;
         }
@@ -116,41 +128,18 @@ public partial class PluginWindow
         }
 
         e.Handled = true;
-        if (e.Key == Key.Tab)
+        if (focusIntoPage)
         {
             _ = detailView.FocusPrimaryInputAsync();
             return;
         }
 
-        detailView.SendHostKey("Enter");
-    }
-
-    internal static bool ShouldForwardPluginNavigationKey(
-        Key key,
-        ModifierKeys modifiers,
-        IInputElement? focusedElement,
-        bool isPluginContentFocused)
-    {
-        if (modifiers != ModifierKeys.None)
-        {
-            return false;
-        }
-
-        if (key != Key.Tab && key != Key.Enter)
-        {
-            return false;
-        }
-
-        if (isPluginContentFocused)
-        {
-            return false;
-        }
-
-        return focusedElement is not ButtonBase;
+        detailView.SendHostKey(hostKey!);
     }
 
     private void Window_OnClosed(object? sender, EventArgs e)
     {
+        viewModel.CloseRequested -= ViewModel_OnCloseRequested;
         if (hwndSource != null)
         {
             hwndSource.RemoveHook(WndProc);
@@ -163,6 +152,11 @@ public partial class PluginWindow
         Closed -= Window_OnClosed;
         Loaded -= PluginWindow_Loaded;
         viewModel.Dispose();
+    }
+
+    private void ViewModel_OnCloseRequested()
+    {
+        Close();
     }
 
     private void Window_OnSourceInitialized(object? sender, EventArgs e)

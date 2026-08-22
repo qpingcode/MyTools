@@ -18,23 +18,41 @@ internal static class ResultActionBarHotkeys
         return key == Key.K || systemKey == Key.K;
     }
 
-    public static string? ToCommand(Key key, ModifierKeys modifiers)
+    public static Hotkey? ToHotkey(Key key, ModifierKeys modifiers)
     {
-        if (modifiers != ModifierKeys.Control)
+        var hotkeyKey = ToHotkeyKey(key);
+        if (hotkeyKey == HotkeyKey.None)
         {
             return null;
         }
 
-        if (key == Key.Enter)
+        var hotkeyModifiers = HotkeyModifiers.None;
+        if (modifiers.HasFlag(ModifierKeys.Control)) hotkeyModifiers |= HotkeyModifiers.Control;
+        if (modifiers.HasFlag(ModifierKeys.Alt)) hotkeyModifiers |= HotkeyModifiers.Alt;
+        if (modifiers.HasFlag(ModifierKeys.Shift)) hotkeyModifiers |= HotkeyModifiers.Shift;
+        if ((modifiers & ~(ModifierKeys.Control | ModifierKeys.Alt | ModifierKeys.Shift)) != 0)
         {
-            return Commands.Ctrl_Enter;
+            return null;
         }
 
-        if (key is >= Key.A and <= Key.Z)
-        {
-            return $"Ctrl+{key}";
-        }
-
-        return null;
+        return new Hotkey(hotkeyKey, hotkeyModifiers);
     }
+
+    public static HotkeyKey ToHotkeyKey(Key key) => key switch
+    {
+        >= Key.A and <= Key.Z => (HotkeyKey)((int)HotkeyKey.A + (key - Key.A)),
+        >= Key.D0 and <= Key.D9 => (HotkeyKey)((int)HotkeyKey.D0 + (key - Key.D0)),
+        >= Key.F1 and <= Key.F12 => (HotkeyKey)((int)HotkeyKey.F1 + (key - Key.F1)),
+        Key.Enter or Key.Return => HotkeyKey.Enter,
+        Key.Tab => HotkeyKey.Tab,
+        Key.Space => HotkeyKey.Space,
+        Key.Delete => HotkeyKey.Delete,
+        Key.Back => HotkeyKey.Backspace,
+        Key.Escape => HotkeyKey.Escape,
+        Key.Left => HotkeyKey.Left,
+        Key.Right => HotkeyKey.Right,
+        Key.Up => HotkeyKey.Up,
+        Key.Down => HotkeyKey.Down,
+        _ => HotkeyKey.None
+    };
 }

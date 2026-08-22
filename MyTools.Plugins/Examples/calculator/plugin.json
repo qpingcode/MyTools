@@ -17,7 +17,7 @@
       },
       "entry": "backend/index.mjs",
       "capabilities": [],
-      "alias": [],
+      "alias": ["calc"],
       "search": { "global": true },
       "detail": { "type": "list" }
     }

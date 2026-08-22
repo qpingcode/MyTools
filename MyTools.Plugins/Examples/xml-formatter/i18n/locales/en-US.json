@@ -5,6 +5,8 @@
   "Plugin.XmlFormatter.Action.Open.Title": "Open Formatter",
   "Plugin.XmlFormatter.Action.Open.Description": "Open the XML formatter",
   "Plugin.XmlFormatter.Action.Open.Success": "Opened XML formatter",
+  "Plugin.XmlFormatter.Action.Copy": "Copy",
+  "Plugin.XmlFormatter.Action.CopyDescription": "Copy the formatted XML to the clipboard",
   "Plugin.XmlFormatter.Detail.Input": "Input",
   "Plugin.XmlFormatter.Detail.Output": "Output",
   "Plugin.XmlFormatter.Detail.InputPlaceholder": "Paste XML here",

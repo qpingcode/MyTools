@@ -2,7 +2,7 @@ namespace MyTools.Common;
 
 public interface IActionRegistry
 {
-    void Register(string hotkey, IAction action);
-    IAction? GetAction(string hotkey, IEnumerable<IAction> allowedActions);
-    string? GetHotKey(IAction action);
+    void Register(Hotkey hotkey, IAction action);
+    IAction? GetAction(Hotkey hotkey, IEnumerable<IAction> allowedActions);
+    Hotkey? GetHotkey(IAction action);
 }

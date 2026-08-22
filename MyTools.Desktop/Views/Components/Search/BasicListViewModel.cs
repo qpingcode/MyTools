@@ -60,8 +60,8 @@ public partial class BasicListViewModel : ObservableObject, ISwitchableViewModel
             return;
         }
 
-        var actionsWithCommand = SelectedResult.AllowedActions.ToList();
-        callback?.OnUpdateSelectedActions(actionsWithCommand);
+        var actionsWithHotkey = SelectedResult.AllowedActions.ToList();
+        callback?.OnUpdateSelectedActions(actionsWithHotkey);
     }
 
     #region ISwitchableViewModel
@@ -114,7 +114,7 @@ public partial class BasicListViewModel : ObservableObject, ISwitchableViewModel
         return resource as string ?? key;
     }
    
-    public bool HandleKeyDown(Key key)
+    public bool HandleKeyDown(Key key, ModifierKeys modifiers)
     {
         var isHandled = false;
         switch (key)
@@ -138,7 +138,7 @@ public partial class BasicListViewModel : ObservableObject, ISwitchableViewModel
                 break;
         }
 
-        if (KeyUtils.IsNumber(key) && IsCtrlPressed)
+        if (KeyUtils.IsNumber(key) && modifiers == ModifierKeys.Control)
         {
             isHandled = true;
             var number = key == Key.D0 ? 10 : key - Key.D0;
@@ -147,24 +147,15 @@ public partial class BasicListViewModel : ObservableObject, ISwitchableViewModel
             ExecuteAction(null);
         }
         
-        if (!KeyUtils.IsSystemCommlyUsedKey(key) && KeyUtils.IsLetterOrEnter(key))
+        var isReservedEditingShortcut = modifiers == ModifierKeys.Control && KeyUtils.IsSystemCommlyUsedKey(key);
+        var mayInvokeAction = key == Key.Enter || modifiers != ModifierKeys.None;
+        if (!isReservedEditingShortcut && mayInvokeAction)
         {
-            if (IsCtrlPressed)
+            var hotkey = ResultActionBarHotkeys.ToHotkey(key, modifiers);
+            if (hotkey != null && CanExecuteHotkey(hotkey.Value))
             {
-                var command = key == Key.Enter ? "Ctrl+Enter" : $"Ctrl+{key}";
-                if (CanExecuteCommand(command))
-                {
-                    isHandled = true;
-                    ExecuteAction(command);
-                }
-            }
-            else if(key == Key.Enter)
-            {
-                if (CanExecuteCommand(Commands.DefaultCommand))
-                {
-                    isHandled = true;
-                    ExecuteAction(Commands.DefaultCommand);
-                }
+                isHandled = true;
+                ExecuteAction(SelectedResult?.AllowedActions.First(action => action.Hotkey == hotkey.Value));
             }
         }
     
@@ -216,17 +207,21 @@ public partial class BasicListViewModel : ObservableObject, ISwitchableViewModel
         }
     }
     
-    public async void ExecuteAction(string? command)
+    public async void ExecuteAction(IActionWithHotkey? action)
     {
         if (SelectedResult != null)
         {
-            await SelectedResult.ExecuteAction(command);
+            var selectedAction = action ?? SelectedResult.AllowedActions.FirstOrDefault();
+            if (selectedAction != null)
+            {
+                await SelectedResult.ExecuteAction(selectedAction);
+            }
         }
     }
 
-    private bool CanExecuteCommand(string command)
+    private bool CanExecuteHotkey(Hotkey hotkey)
     {
-        return SelectedResult?.AllowedActions.Any(a => a.Command == command) == true;
+        return SelectedResult?.AllowedActions.Any(a => a.Hotkey == hotkey) == true;
     }
     
     partial void OnSelectedResultChanged(ResultItem? value)

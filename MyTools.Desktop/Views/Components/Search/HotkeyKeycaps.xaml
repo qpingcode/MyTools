@@ -20,7 +20,7 @@
         </Style>
     </UserControl.Resources>
 
-    <ItemsControl ItemsSource="{Binding Command, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource HotkeyPartsConverter}}"
+    <ItemsControl ItemsSource="{Binding Hotkey, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource HotkeyPartsConverter}}"
                   VerticalAlignment="Center"
                   Focusable="False">
         <ItemsControl.ItemsPanel>

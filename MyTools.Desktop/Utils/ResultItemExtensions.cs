@@ -11,21 +11,7 @@ namespace MyTools.Common;
 
 public static class ResultItemExtensions
 {
-    public static async Task ExecuteAction(this ResultItem item, string? command)
-    {
-        var action = command == null ? 
-            item.AllowedActions.FirstOrDefault() : 
-            item.AllowedActions.FirstOrDefault(a => a.Command == command);
-        
-        if (action == null)
-        {
-            throw new NotSupportedException("Action not found with command: " + command);
-        }
-
-        await ExecuteAction(item, action).ConfigureAwait(false);
-    }
-
-    public static async Task ExecuteAction(this ResultItem item, IActionWithCommand action)
+    public static async Task ExecuteAction(this ResultItem item, IActionWithHotkey action)
     {
         var actionResult = await action.ExecuteAsync(item.Args).ConfigureAwait(false);
         var logger = ServiceLocator.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(ResultItemExtensions));

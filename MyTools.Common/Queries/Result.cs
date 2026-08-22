@@ -16,7 +16,10 @@ public class Result(bool success, string? errorMessages, IEnumerable<ResultItem>
         => new Result(true, null, Enumerable.Empty<ResultItem>());
     
     public static Result CreateSuccessResult(IEnumerable<ResultItem> items)
-        => new Result(true, null, items.OrderByDescending(x => x.SortScore).ThenByDescending(x => x.Priority));
+        => new Result(true, null, items
+            .OrderByDescending(x => x.SortScore)
+            .ThenByDescending(x => x.Priority)
+            .ThenByDescending(x => x.CreatedAt ?? DateTime.MinValue));
     
     public static Result CreateFailure(string errorMessage, Exception? ex) 
         => new Result(false, errorMessage, Enumerable.Empty<ResultItem>(), ex);

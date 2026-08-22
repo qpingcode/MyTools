@@ -140,7 +140,7 @@ jobs:
           npm ci
           npm run build
 
-          $pluginDirectories = @('hello-search', 'deepseek-chat', 'deepseek-translator')
+          $pluginDirectories = @('hello-search', 'deepseek-chat', 'translator')
           foreach ($pluginDirectory in $pluginDirectories) {
               $manifestPath = Join-Path (Join-Path $PWD $pluginDirectory) 'dist\plugin.json'
               if (-not (Test-Path $manifestPath -PathType Leaf)) {

@@ -1,4 +1,4 @@
-import { createPlugin, type PluginSearchParams } from "@qping/plugin-bus/node";
+import { createPlugin, HostAction, type PluginSearchParams } from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 
 type Phrase = {
@@ -14,17 +14,6 @@ type OwnConfiguration = {
 };
 
 const plugin = createPlugin();
-
-function pasteAction() {
-  return {
-    id: "paste",
-    title: mytoolsI18n.t("Plugin.Snippet.Action.Paste", { defaultValue: "Copy and paste" }),
-    kind: "copyAndPaste",
-    description: mytoolsI18n.t("Plugin.Snippet.Action.PasteDescription", {
-      defaultValue: "Copy the phrase and paste it into the previously focused window",
-    }),
-  };
-}
 
 function preview(text: string): string {
   const compact = text.replace(/\s+/g, " ").trim();
@@ -77,11 +66,11 @@ async function search(params: PluginSearchParams) {
         subtitle: preview(content),
         priority: query ? priority(trigger.toLowerCase(), content.toLowerCase(), query) : 80,
         icon: { kind: "emoji", value: "💬" },
-        copyText: content,
-        actions: [pasteAction()],
+        content,
+        actions: ["paste"],
       };
     })
-    .filter((item) => (item.copyText || "").length > 0)
+    .filter((item) => item.content.length > 0)
     .sort((left, right) => right.priority - left.priority);
 
   return { items };
@@ -92,5 +81,17 @@ plugin
     mytoolsI18n.configure(params);
     return {};
   })
+  .actions<{ content: string }>([{
+    id: "paste",
+    title: { key: "Plugin.Snippet.Action.Paste", defaultValue: "Copy and paste" },
+    description: {
+      key: "Plugin.Snippet.Action.PasteDescription",
+      defaultValue: "Copy the phrase and paste it into the previously focused window",
+    },
+    execute: ({ item }) => ({
+      host: { kind: HostAction.CopyAndPaste, text: item?.content ?? "" },
+      close: true,
+    }),
+  }])
   .search(search)
   .start();

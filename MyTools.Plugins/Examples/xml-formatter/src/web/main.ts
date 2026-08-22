@@ -1,5 +1,9 @@
 import { createWebBusClient, HostEvents } from "@qping/plugin-bus/web";
-import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qping/plugin-bus/web";
+import type {
+    MyToolsHostDetailActionPayload,
+    MyToolsHostInitializePayload,
+    MyToolsHostSearchPayload
+} from "@qping/plugin-bus/web";
 
 (function () {
     const bus = createWebBusClient();
@@ -14,6 +18,10 @@ import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qp
     var messageElement = document.getElementById("message") as HTMLElement;
 
     var lastSerialized: string | null = null;
+
+    function syncOutput(): void {
+        void bus.call("setOutput", { output: lastSerialized || "" });
+    }
 
     function indentUnit(): string {
         //qq
@@ -281,6 +289,7 @@ import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qp
         var text = inputElement.value.trim();
         if (!text) {
             lastSerialized = null;
+            syncOutput();
             showEmptyOutput();
             return;
         }
@@ -290,9 +299,11 @@ import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qp
             var error = getParserError(doc);
             if (error) throw new Error(error);
             lastSerialized = serializeXml(doc, indentUnit());
+            syncOutput();
             renderTree(doc);
         } catch (error) {
             lastSerialized = null;
+            syncOutput();
             showEmptyOutput();
             showMessage("error", bus.i18n.t("Plugin.XmlFormatter.Error.InvalidXml", {
                 defaultValue: "Invalid XML: {{message}}",
@@ -302,6 +313,10 @@ import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qp
     }
 
     function copyResult(): void {
+        // Enter can arrive before the input has ever been formatted, so produce the output first.
+        if (!lastSerialized && inputElement.value.trim()) {
+            format();
+        }
         if (!lastSerialized) return;
         void navigator.clipboard.writeText(lastSerialized).then(function () {
             var original = bus.i18n.t("Plugin.XmlFormatter.Detail.Copy", { defaultValue: "Copy" });
@@ -317,6 +332,7 @@ import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qp
     function clearAll(): void {
         inputElement.value = "";
         lastSerialized = null;
+        syncOutput();
         showEmptyOutput();
         clearMessage();
         inputElement.focus();
@@ -351,12 +367,18 @@ import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qp
     clearButton.addEventListener("click", clearAll);
     collapseAllButton.addEventListener("click", function () { setAllCollapsed(true); });
     expandAllButton.addEventListener("click", function () { setAllCollapsed(false); });
+    inputElement.addEventListener("input", format);
+    indentSelect.addEventListener("change", format);
 
-    inputElement.addEventListener("keydown", function (event) {
-        if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+    // Ctrl+Enter is an explicit page-local format shortcut; plain Enter remains available for editing.
+    document.addEventListener("keydown", function (event) {
+        if (event.key !== "Enter" || event.altKey) return;
+        if (event.ctrlKey || event.metaKey) {
             event.preventDefault();
             format();
+            return;
         }
+        return;
     });
 
     bus.on<MyToolsHostInitializePayload>(HostEvents.Initialize, function (payload) {

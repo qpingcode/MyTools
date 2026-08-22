@@ -46,6 +46,17 @@ test("itemMatches title, url, folder, and subsequence", () => {
   assert.equal(itemMatches(item, "gthb"), true);
   assert.equal(itemMatches(item, "zzzz"), false);
   assert.equal(isSubsequence("gthb", "GitHub"), true);
+
+  const longQuery = "abcdefghijklmnop";
+  const longTitleItem = {
+    ...item,
+    title: "a-b-c-d-e-f-g-h-i-j-k-l-m-n-o-p",
+    url: "https://example.com/",
+    folderPath: "",
+    profileName: "",
+  };
+  assert.equal(isSubsequence(longQuery, longTitleItem.title), true);
+  assert.equal(itemMatches(longTitleItem, longQuery), false);
 });
 
 test("parseSettings reads host configuration.readOwn values", () => {

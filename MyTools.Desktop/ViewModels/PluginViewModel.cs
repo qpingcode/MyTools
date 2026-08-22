@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,10 +36,12 @@ public partial class PluginViewModel : ObservableObject, ISearchViewModelCallbac
     private string detailedStatusText = string.Empty;
 
     [ObservableProperty]
-    private ObservableCollection<IActionWithCommand> selectedResultActions = new();
+    private ObservableCollection<IActionWithHotkey> selectedResultActions = new();
 
     private readonly NodePluginDetailViewModel detailViewModel;
     private bool disposed;
+
+    public event Action? CloseRequested;
 
     public string? CurrentNodePluginDetailId { get; private set; }
 
@@ -114,7 +117,12 @@ public partial class PluginViewModel : ObservableObject, ISearchViewModelCallbac
         DetailedStatusText = message;
     }
 
-    public void OnUpdateSelectedActions(List<IActionWithCommand>? actions)
+    public void OnRequestClose()
+    {
+        CloseRequested?.Invoke();
+    }
+
+    public void OnUpdateSelectedActions(List<IActionWithHotkey>? actions)
     {
         SelectedResultActions.Clear();
         if (actions != null)
@@ -136,15 +144,29 @@ public partial class PluginViewModel : ObservableObject, ISearchViewModelCallbac
 
     #endregion
 
-    [RelayCommand]
-    private void ExecuteAction(string? command)
+    public bool TryExecuteHotkey(Key key, Key systemKey, ModifierKeys modifiers)
     {
-        if (disposed || string.IsNullOrEmpty(command))
+        var effectiveKey = key == Key.System ? systemKey : key;
+        var hotkey = ResultActionBarHotkeys.ToHotkey(effectiveKey, modifiers);
+        if (hotkey == null || SelectedResultActions.All(action => action.Hotkey != hotkey.Value))
+        {
+            return false;
+        }
+
+        ((ISwitchableViewModel)CurrentViewModel).ExecuteAction(
+            SelectedResultActions.First(action => action.Hotkey == hotkey.Value));
+        return true;
+    }
+
+    [RelayCommand]
+    private void ExecuteAction(IActionWithHotkey? action)
+    {
+        if (disposed || action == null)
         {
             return;
         }
 
-        ((ISwitchableViewModel)CurrentViewModel).ExecuteAction(command);
+        ((ISwitchableViewModel)CurrentViewModel).ExecuteAction(action);
     }
 
     public void Dispose()
@@ -155,6 +177,7 @@ public partial class PluginViewModel : ObservableObject, ISearchViewModelCallbac
         }
 
         disposed = true;
+        CloseRequested = null;
         detailViewModel.Dispose();
     }
 }

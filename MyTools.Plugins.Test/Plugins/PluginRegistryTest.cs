@@ -83,7 +83,7 @@ public class PluginRegistryTest
         public string PluginId => "test";
         public string Name => "Test";
         public string Description => "Test plugin";
-        public List<IActionWithCommand> Actions { get; } = [];
+        public List<IActionWithHotkey> Actions { get; } = [];
         public bool IsEnabled => true;
         public ViewModelType ViewModelType => ViewModelType.Basic;
         public bool IsGlobalSearchPlugin => false;

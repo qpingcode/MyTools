@@ -1,7 +1,5 @@
 using MyTools.Desktop.Views;
 using NUnit.Framework;
-using System.Windows.Controls;
-using System.Windows.Input;
 
 namespace MyTools.Desktop.Test.Views;
 
@@ -38,49 +36,5 @@ public class PluginWindowMaximizedBoundsTests
             Assert.That(bounds.Width, Is.EqualTo(1380));
             Assert.That(bounds.Height, Is.EqualTo(1020));
         });
-    }
-}
-
-[TestFixture]
-[Apartment(System.Threading.ApartmentState.STA)]
-public class PluginWindowKeyRoutingTests
-{
-    [TestCase(Key.Tab)]
-    [TestCase(Key.Enter)]
-    public void ShouldForwardPluginNavigationKey_WhenFocusedElementIsNotButton_ReturnsTrue(Key key)
-    {
-        var shouldForward = PluginWindow.ShouldForwardPluginNavigationKey(
-            key,
-            ModifierKeys.None,
-            new Border(),
-            isPluginContentFocused: false);
-
-        Assert.That(shouldForward, Is.True);
-    }
-
-    [TestCase(Key.Tab)]
-    [TestCase(Key.Enter)]
-    public void ShouldForwardPluginNavigationKey_WhenFocusedElementIsButton_ReturnsFalse(Key key)
-    {
-        var shouldForward = PluginWindow.ShouldForwardPluginNavigationKey(
-            key,
-            ModifierKeys.None,
-            new Button(),
-            isPluginContentFocused: false);
-
-        Assert.That(shouldForward, Is.False);
-    }
-
-    [TestCase(Key.Tab)]
-    [TestCase(Key.Enter)]
-    public void ShouldForwardPluginNavigationKey_WhenPluginContentAlreadyHasFocus_ReturnsFalse(Key key)
-    {
-        var shouldForward = PluginWindow.ShouldForwardPluginNavigationKey(
-            key,
-            ModifierKeys.None,
-            new Border(),
-            isPluginContentFocused: true);
-
-        Assert.That(shouldForward, Is.False);
     }
 }

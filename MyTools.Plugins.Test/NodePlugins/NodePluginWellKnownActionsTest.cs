@@ -1,7 +1,5 @@
-using MyTools.Common;
-using MyTools.Plugins;
+using System.Text.Json;
 using MyTools.Plugins.NodePlugins;
-using MyTools.Plugins.Param;
 using NUnit.Framework;
 
 namespace MyTools.Plugins.Test.NodePlugins;
@@ -10,70 +8,43 @@ namespace MyTools.Plugins.Test.NodePlugins;
 public class NodePluginWellKnownActionsTest
 {
     [Test]
-    public void Resolve_MapsHostActions()
+    public void HostActionDto_Copy_UsesItsOwnTextField()
     {
+        var action = JsonSerializer.Deserialize<NodePluginHostActionDto>(
+            """{"kind":"copy","text":"hello","path":"ignored"}""",
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        Assert.That(action, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(NodePluginWellKnownActions.Resolve("copy"), Is.SameAs(WellKnownActions.Copy));
-            Assert.That(NodePluginWellKnownActions.Resolve("copyAndPaste"), Is.SameAs(WellKnownActions.CopyAndPaste));
-            Assert.That(NodePluginWellKnownActions.Resolve("execute"), Is.SameAs(WellKnownActions.Execute));
-            Assert.That(NodePluginWellKnownActions.Resolve("openInExplorer"), Is.SameAs(WellKnownActions.OpenInExplorer));
-            Assert.That(NodePluginWellKnownActions.Resolve("openInBrowser"), Is.SameAs(WellKnownActions.OpenInBrowser));
-            Assert.That(NodePluginWellKnownActions.Resolve("openPlugin"), Is.SameAs(WellKnownActions.OpenPlugin));
-            Assert.That(NodePluginWellKnownActions.Resolve("open-plugin"), Is.SameAs(WellKnownActions.OpenPlugin));
-            Assert.That(NodePluginWellKnownActions.Resolve("detail"), Is.Null);
-            Assert.That(NodePluginWellKnownActions.IsWellKnown("run"), Is.True);
-            Assert.That(NodePluginWellKnownActions.IsWellKnown("open"), Is.False);
+            Assert.That(action!.Kind, Is.EqualTo("copy"));
+            Assert.That(action.Text, Is.EqualTo("hello"));
+            Assert.That(action.Path, Is.EqualTo("ignored"));
         });
     }
 
     [Test]
-    public void CreateParams_Execute_UsesPathAndArgs()
+    public async Task ExecuteAsync_UnknownKind_ReturnsFailure()
     {
-        var args = NodePluginWellKnownActions.CreateParams(
-            "execute",
-            @"C:\Apps\rider64.exe",
-            @"""D:\work\app.sln""",
-            copyText: null,
-            itemId: "openpath:rider",
-            title: "Open Rider",
-            query: "");
+        var result = await NodePluginWellKnownActions.ExecuteAsync(new NodePluginHostActionDto
+        {
+            Kind = "not-an-action"
+        });
 
-        Assert.That(args, Is.TypeOf<ExecuteActionParams>());
-        var execute = (ExecuteActionParams)args;
-        Assert.That(execute.GetValue(), Is.EqualTo(@"C:\Apps\rider64.exe"));
-        Assert.That(execute.Arguments, Is.EqualTo(@"""D:\work\app.sln"""));
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.LocalizedMessage?.Key, Is.EqualTo("NodePlugin.UnknownHostAction"));
     }
 
     [Test]
-    public void CreateParams_Copy_UsesCopyText()
+    public async Task ExecuteAsync_ExecuteWithoutPath_ReturnsTypedPayloadFailure()
     {
-        var args = NodePluginWellKnownActions.CreateParams(
-            "copy",
-            path: null,
-            args: null,
-            copyText: "hello",
-            itemId: "id",
-            title: "title",
-            query: "q");
+        var result = await NodePluginWellKnownActions.ExecuteAsync(new NodePluginHostActionDto
+        {
+            Kind = "execute",
+            Text = "must not be used as a fallback"
+        });
 
-        Assert.That(args, Is.InstanceOf<IActionStringParam>());
-        Assert.That(((IActionStringParam)args).GetValue(), Is.EqualTo("hello"));
-    }
-
-    [Test]
-    public void CreateParams_OpenPlugin_UsesPath()
-    {
-        var args = NodePluginWellKnownActions.CreateParams(
-            "openPlugin",
-            path: "settings:settings",
-            args: null,
-            copyText: null,
-            itemId: "plugin-search:settings",
-            title: "Settings",
-            query: "");
-
-        Assert.That(args, Is.InstanceOf<IActionStringParam>());
-        Assert.That(((IActionStringParam)args).GetValue(), Is.EqualTo("settings:settings"));
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.LocalizedMessage?.Key, Is.EqualTo("NodePlugin.InvalidHostAction"));
     }
 }

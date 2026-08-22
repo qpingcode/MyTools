@@ -137,16 +137,13 @@ namespace MyTools.Desktop.Views
 
         private async void SearchTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (Keyboard.Modifiers != ModifierKeys.None)
+            var focusIntoPage = PluginDetailKeyForwarding.IsFocusIntoPageKey(e.Key, Keyboard.Modifiers);
+            var hostKey = PluginDetailKeyForwarding.ResolveHostKey(e.Key, Keyboard.Modifiers);
+            if (!focusIntoPage && hostKey == null)
             {
                 return;
             }
 
-            if (e.Key != Key.Tab && e.Key != Key.Enter)
-            {
-                return;
-            }
-            
             var detailView = FindVisualChild<NodePluginDetailView>(CurrentSearchResultView);
             if (detailView == null)
             {
@@ -154,13 +151,13 @@ namespace MyTools.Desktop.Views
             }
 
             e.Handled = true;
-            if (e.Key == Key.Tab)
+            if (focusIntoPage)
             {
                 await detailView.FocusPrimaryInputAsync();
                 return;
             }
 
-            detailView.SendHostKey("Enter");
+            detailView.SendHostKey(hostKey!);
         }
 
         private static T? FindVisualChild<T>(DependencyObject? parent) where T : DependencyObject

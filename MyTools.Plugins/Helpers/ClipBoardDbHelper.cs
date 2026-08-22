@@ -130,7 +130,7 @@ public class ClipBoardDbHelper
         
         var fields = GetSelectFields(includeContent);
         var whereClause = BuildWhereClause(query, out var hasQuery);
-        cmd.CommandText = $"SELECT {fields} FROM clipboard_history {whereClause} ORDER BY timestamp DESC LIMIT @max";
+        cmd.CommandText = $"SELECT {fields} FROM clipboard_history {whereClause} ORDER BY timestamp DESC, id DESC LIMIT @max";
         
         if (hasQuery)
         {
@@ -203,4 +203,4 @@ public class ClipBoardDbHelper
         delCmd.Parameters.AddWithValue("@ts", threeDaysAgo);
         delCmd.ExecuteNonQuery();
     }
-} 
+}

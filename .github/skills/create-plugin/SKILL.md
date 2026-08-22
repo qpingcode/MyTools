@@ -7,7 +7,7 @@ description: Develop a MyTools Node plugin (backend + optional WebView2 detail p
 
 MyTools Node 插件 = 独立 Node 进程里的后端 + 可选的 WebView2 HTML 详情页。不写 `detail` 时宿主用 `search` 结果走原生列表。通信走 v3 消息总线（Named Pipe + WebView2 postMessage），协议版本 **3.0**。
 
-参考实现：`MyTools.Plugins/Examples/` 下的 `hello-search`（最小）、`json-formatter` / `xml-formatter`（页面自包含）、`settings`（`hostCall`）、`snippet` / `command-runner`（`plugin.json` configuration + `configuration.readOwn`）、`deepseek-chat`、`deepseek-translator`（多 entry）。SDK 源码：`MyTools.Plugins/Examples/sdk-v3`（包名 `@qping/plugin-bus`）。
+参考实现：`MyTools.Plugins/Examples/` 下的 `hello-search`（最小）、`json-formatter` / `xml-formatter`（页面自包含）、`settings`（`hostCall`）、`snippet` / `command-runner`（`plugin.json` configuration + `configuration.readOwn`）、`deepseek-chat`、`translator`（多 entry）。SDK 源码：`MyTools.Plugins/Examples/sdk-v3`（包名 `@qping/plugin-bus`）。
 
 ## 1. 目录结构
 
@@ -27,7 +27,7 @@ my-plugin/
     locales/{en-US.json, zh-CN.json}
 ```
 
-多 entry（照 `deepseek-translator`）：每个 entry 各自 `src/backend/<Id>/index.mts` 和 `src/web/<Id>/{index.html, main.ts, style.css}`。
+多 entry（照 `translator`）：每个 entry 各自 `src/backend/<Id>/index.mts` 和 `src/web/<Id>/{index.html, main.ts, style.css}`。
 
 构建输出到 `dist/`。`plugin.json` 里的路径相对 `dist` 根（如 `backend/index.mjs`、`web/index.html`）。
 
@@ -88,13 +88,13 @@ my-plugin/
 
 | import                   | 用途                                                                           |
 | ------------------------ | ---------------------------------------------------------------------------- |
-| `@qping/plugin-bus/node` | `createPlugin()`、`PluginInitializeParams` / `PluginSearchParams` / `PluginActionParams` |
+| `@qping/plugin-bus/node` | `createPlugin()`、action registry、`HostAction`、`Key`、`Modifiers` |
 | `@qping/plugin-bus/web`  | `createWebBusClient()`、`HostEvents`、payload 类型                               |
 | `@qping/plugin-bus/i18n` | 后端 `mytoolsI18n`（页面用 `bus.i18n`）                                             |
 | `@qping/plugin-bus/dev`  | 构建脚本用 `requestDevelopmentPluginRefresh()` 通知 MyTools 刷新开发插件             |
 
 
-SDK 把旧式方法名映射到 v3 路由：`initialize` → `plugin.call.initialize`，`search` → `plugin.call.search`，`action` → `plugin.call.invokeAction`，`handle("foo")` → `plugin.call.foo`，`publish` → `plugin.event.*`，`hostCall` → `host.call.*`。
+SDK 把方法映射到 v3 路由：`initialize` → `plugin.call.initialize`，`search` → `plugin.call.search`，注册 action 的 `execute` → `plugin.call.invokeAction`，`handle("foo")` → `plugin.call.foo`，`publish` → `plugin.event.*`，`hostCall` → `host.call.*`。
 
 ## 3. plugin.json
 
@@ -142,6 +142,7 @@ SDK 把旧式方法名映射到 v3 路由：`initialize` → `plugin.call.initia
 - 需要读自己的设置时声明 `configuration.readOwn`。需要写入自己的设置时再声明 `configuration.writeOwn`。不要用 `configuration.read` / `configuration.write`（那是 settings 插件读写全部设置）。Open Path、Snippet、Command Runner、Search Engine 都走 `readOwn`。
 - `detail` 可选。省略（或 `"detail": { "type": "list" }`）时宿主用 `search` 的结果走原生列表：关键词路由停留在列表，热键打开搜索主窗口并锁定该插件。
 - 需要自定义页面时再写 `"detail": { "type": "web", "entry": "web/index.html" }`。`hotKey`、`alias`、`search` 可选。
+- action 不写在 manifest。详情页默认使用本 entry 通过 `plugin.actions()` 注册的全部 action；列表 item 用 action id 子集引用。
 - `search.global`：出现在**无关键词**的全局搜索结果中。省略或 `false` 时不参与全局搜索（opt-in，避免设置类插件污染每次搜索）。用户可在设置 → 插件列表的 **全局结果** 中覆盖此项。
 - 有非空 `alias` 就会注册 `alias + 查询串` 的插件级搜索；没有 alias 则只能靠全局搜索或热键进入。只有全局、没有别名时（如 `hello-search`）必须设 `"search": { "global": true }`。
 - 没有顶层 `name` / `runtime`；
@@ -149,7 +150,7 @@ SDK 把旧式方法名映射到 v3 路由：`initialize` → `plugin.call.initia
 ## 4. 后端（Node）
 
 ```ts
-import { createPlugin, type PluginInitializeParams, type PluginSearchParams, type PluginActionParams } from "@qping/plugin-bus/node";
+import { createPlugin, HostAction, Key, Modifiers, type PluginInitializeParams, type PluginSearchParams } from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 
 const plugin = createPlugin();
@@ -159,20 +160,17 @@ plugin
     mytoolsI18n.configure(params);
     return {};
   })
-  .search((params: PluginSearchParams) => ({
-    items: [buildSearchItem(params.query)],
-  }))
-  .action((params: PluginActionParams) => ({
-    message: mytoolsI18n.t("Plugin.MyPlugin.Action.Open.Success", {
-      defaultValue: "Opened",
+  .actions<{ content: string }>([{
+    id: "copy",
+    title: { key: "Plugin.MyPlugin.Action.Copy", defaultValue: "Copy" },
+    hotkey: { key: Key.C, modifiers: Modifiers.Control | Modifiers.Shift },
+    execute: ({ item }) => ({
+      host: { kind: HostAction.Copy, text: item?.content ?? "" },
+      close: true,
     }),
-    actionType: "none",
-    detail: {
-      type: "web-detail",
-      htmlEntry: "web/index.html",
-      title: mytoolsI18n.t("Plugin.MyPlugin.Name", { defaultValue: "My Plugin" }),
-      initialState: { query: params.query },
-    },
+  }])
+  .search((params: PluginSearchParams) => ({
+    items: [{ ...buildSearchItem(params.query), content: "...", actions: ["copy"] }],
   }))
   .handle("refresh", (payload, context) => {
     return { query: context.query, payload };
@@ -189,56 +187,37 @@ plugin
   subtitle: "...",
   priority: 100,
   icon: { kind: "mdi", value: "mdi-hand-wave-outline" },
-  actions: [
-    { id: "open-detail", title: "Open", kind: "detail", description: "..." },
-  ]
+  content: "插件自己的业务字段，宿主不可见",
+  actions: ["copy"]
 }
 ```
 
 - `icon.kind`：`emoji` 显示 emoji；`mdi`（或 `value` 以 `mdi-` 开头）在 **SearchWindow / 原生列表** 里用宿主内嵌的 Material Design Icons 画图标。Settings 侧栏仍用顶层 `plugin.json` 的 `icon`。
 - `initialize` 的 params 是 `{ locale, fallbackLocale, messages, theme }`（`PluginInitializeParams`）。`theme` 为 `"light"` | `"dark"`，不含 CSS token。`mytoolsI18n.configure(params)` 装进 i18n。
 - `search` 的 params 是 `{ query, mode, locale, fallbackLocale, theme }`（`PluginSearchParams`）。`mode` 为 `"global"` | `"plugin"`：全局搜索（无关键词）为 `"global"`，用户输入 `keyword + 查询串` 进入该插件时为 `"plugin"`。返回 `{ items }`。
-- `action` 的 params 是 `{ itemId, actionId, query, locale, fallbackLocale, theme }`（`PluginActionParams`）。返回 `{ message, actionType, detail?, hostAction? }`。
-- 搜索 item 的 `actions[].kind` 分两类：
+- `plugin.actions()` 在 initialize 响应中自动发送完整注册表。`execute` 收到 `ActionContext`，其中 `item` 是 SDK 按 `sessionId + itemId` 缓存的原始业务对象。
+- outcome 的 `host` / `web` / `detail` / `message` / `close` 可组合。`HostActionRequest` 是按 `kind` 判别的联合，参数跟着动作走；不要再在 item 上放万能 `path` / `args` / `copyText`。
+- `hotkey` 是 `{ key: Key.*, modifiers?: Modifiers.* }`，不是字符串。修饰键用 `|` 组合；省略时当前 action 子集的第一项默认 Enter，其余只可点击。
 
-**宿主 well-known（不调用插件 `action`，由 MyTools 进程执行）**
-
-| kind | 宿主动作 | 参数从哪来 |
-| --- | --- | --- |
-| `copy` | 复制到剪贴板 | item.`copyText`，否则 title |
-| `copyAndPaste` | 复制并粘贴到先前窗口 | 同上 |
-| `execute` | 用宿主 Shell 打开程序/文件（脱离插件 Job，MyTools 退出后子进程仍在） | item.`path` + 可选 `args`，否则 `copyText` |
-| `openInExplorer` | 资源管理器中定位 | `path` / `copyText` |
-| `openInBrowser` | 默认浏览器打开 URL | `path` / `copyText` |
-| `kill` | 结束进程 | `copyText` 为 PID |
-| `openPlugin` | 打开目标插件（有 Web 详情则独立插件窗，否则锁定搜索窗） | item.`path` / `copyText` / `id` 为插件 `pluginId` |
-
-**插件自己处理**
-
-| kind | 行为 |
-| --- | --- |
-| `detail` | 调用插件 `action`，可返回 `detail` 打开 Web 详情页 |
-| 其它（如 Open Path 的 `open`） | 调用插件 `action` 做计算 |
-
-若目标路径要在按下 Enter 之后才算出来（剪贴板、找 `.sln` 等），**不要在 Node 里 `spawn`/`exec`**。插件 Job 开了 kill-on-close，MyTools 退出会把子进程一起杀掉。插件算完后返回 `hostAction`，由宿主 `execute`：
+若目标路径要在按下 Enter 之后才算出来（剪贴板、找 `.sln` 等），**不要在 Node 里 `spawn`/`exec`**。插件 Job 开了 kill-on-close，MyTools 退出会把子进程一起杀掉。插件算完后返回 `host`，由宿主执行：
 
 ```ts
 return {
-  message: "Opened Rider with D:\\work\\app.sln",
-  actionType: "close",
-  hostAction: {
-    kind: "execute",
+  message: { key: "Plugin.OpenPath.Opened", defaultValue: "Opened Rider" },
+  close: true,
+  host: {
+    kind: HostAction.Execute,
     path: "C:\\...\\rider64.exe",
     args: "\"D:\\work\\app.sln\"",
   },
 };
 ```
 
-`hostAction.kind` 同表中的 well-known（常用 `execute`）。参考 `hello-search`（`mdi` 图标）和 `openpath`（`hostAction`）。
+`host.kind` 使用 `HostAction` 常量。参考 `hello-search`（`mdi` 图标）和 `openpath`（动态计算后交给宿主执行）。
 - `handle(name, fn)` 给详情页 `bus.call(name)` 用。`context` 有 `action / itemId / query / locale / fallbackLocale / theme`（由宿主注入，页面不必带）。
-- 纯前端工具（如 json-formatter）可以只有 `initialize/search/action`，不注册 `handle`。
+- 详情页工具可以用 `handle` 把页面状态同步到 Node，再由注册 action 返回 `host`；纯 UI 动作可显式返回 `web`。
 - 环境变量从 `process.env` 读。`start()` 连宿主 Named Pipe，不要自己读 stdin。
-- 数据落盘优先用宿主注入目录：`MYTOOLS_PLUGIN_DATA_DIR`（单插件目录，例如 `%APPDATA%\MyTools.Desktop\pluginsData\deepseek-translator`），其次可读 `MYTOOLS_PLUGINS_DATA_DIR`（所有插件数据根目录）。避免把数据写到 `process.cwd()`。
+- 数据落盘优先用宿主注入目录：`MYTOOLS_PLUGIN_DATA_DIR`（单插件目录，例如 `%APPDATA%\MyTools.Desktop\pluginsData\translator`），其次可读 `MYTOOLS_PLUGINS_DATA_DIR`（所有插件数据根目录）。避免把数据写到 `process.cwd()`。
 
 需要宿主能力时（照 `settings`）：页面 `bus.call("getConfiguration")` → 后端 `handle` → `plugin.hostCall("configuration.read")`。页面不能直接发 `host.call.*`。manifest 必须声明完全相同的 capability；
 
@@ -336,7 +315,9 @@ import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qp
 })();
 ```
 
-`HostEvents`：`initialize` / `search` / `key` / `languageChanged` / `themeChanged`（完整路由 `host.event.*`）。设置页热键/鼠标捕获用长超时 `bus.call("captureInputAction")`，等宿主窗口确认或取消后在 Response 里返回结果。
+`HostEvents`：`initialize` / `search` / `key` / `detailAction` / `languageChanged` / `themeChanged`（完整路由 `host.event.*`）。其中 `detailAction` 只承载 action outcome 显式返回的 `web.payload`。设置页热键/鼠标捕获用长超时 `bus.call("captureInputAction")`，等宿主窗口确认或取消后在 Response 里返回结果。
+
+`HostEvents.Key` 只用于没有被注册 action 消费、需要交给页面的按键（例如 Shift+Enter 聚焦页面输入框）；注册 action 的点击和快捷键统一走 `plugin.call.invokeAction`。
 
 `bus.on(route, handler)` 按路由订阅，晚订阅会重放该路由最后一次事件。不要暴露/使用 catch-all listener。
 
@@ -350,7 +331,7 @@ import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qp
 | 方向              | 路由                                                                   |
 | --------------- | -------------------------------------------------------------------- |
 | 页面 → 后端         | `bus.call("foo")` → `plugin.call.foo`                                |
-| 宿主 → 页面         | `host.event.initialize/search/key/languageChanged/themeChanged` |
+| 宿主 → 页面         | `host.event.initialize/search/key/detailAction/languageChanged/themeChanged` |
 | 后端 → 宿主能力       | `plugin.hostCall("getConfiguration")` → `host.call.getConfiguration` |
 | 后端 → 其他 WebView | `plugin.publish("x")` → `plugin.event.x`                             |
 
@@ -398,6 +379,6 @@ button {
 
 ## 8. 构建
 
-`build-plugin.mjs`：backend（`platform: "node"`, `format: "esm"`, 输出 `.mjs`），web（`format: "iife"`），`esbuild-plugin-copy` 把 `plugin.json`、html、css、`i18n/**/*` 拷到 `dist/`。watch 构建成功后通过 `@qping/plugin-bus/dev` 的 `requestDevelopmentPluginRefresh()` 请求 MyTools 刷新，不要在构建脚本中写死刷新管道或消息格式。多 entry 时 `entryPoints` 传数组，`outbase: "src/backend"`（或 `src/web`）。完整脚本照 `hello-search/build-plugin.mjs` 或 `deepseek-translator/build-plugin.mjs`。
+`build-plugin.mjs`：backend（`platform: "node"`, `format: "esm"`, 输出 `.mjs`），web（`format: "iife"`），`esbuild-plugin-copy` 把 `plugin.json`、html、css、`i18n/**/*` 拷到 `dist/`。watch 构建成功后通过 `@qping/plugin-bus/dev` 的 `requestDevelopmentPluginRefresh()` 请求 MyTools 刷新，不要在构建脚本中写死刷新管道或消息格式。多 entry 时 `entryPoints` 传数组，`outbase: "src/backend"`（或 `src/web`）。完整脚本照 `hello-search/build-plugin.mjs` 或 `translator/build-plugin.mjs`。
 
 构建：`npm run build`（先 `tsc --noEmit`，再打包到 `dist/`）。安装指向 `dist/`。在 Examples workspace 里先 `npm run build -w @qping/plugin-bus`。

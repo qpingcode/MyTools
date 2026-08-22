@@ -93,6 +93,28 @@ public class NodePluginKeywordRouteTest
         Assert.That(context.EntryFullPath, Is.EqualTo(detailPath));
     }
 
+    [Test]
+    public void CreateActionDetailContext_ShouldNotUseManifestDetailWhenOutcomeOmitsDetail()
+    {
+        using var plugin = CreatePlugin();
+
+        var context = plugin.CreateActionDetailContext("item", "tr value", "value", detail: null);
+
+        Assert.That(context, Is.Null);
+    }
+
+    [Test]
+    public void CreateActionDetailContext_ShouldUseManifestDetailWhenOutcomeExplicitlyRequestsDetail()
+    {
+        using var plugin = CreatePlugin();
+
+        var context = plugin.CreateActionDetailContext(
+            "item", "tr value", "value", new NodePluginDetailViewDto());
+
+        Assert.That(context, Is.Not.Null);
+        Assert.That(context!.EntryFullPath, Is.EqualTo(detailPath));
+    }
+
     private NodePlugin CreatePlugin(bool withWebDetail = true)
     {
         var manifest = new NodePluginManifest

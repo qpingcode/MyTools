@@ -1,8 +1,8 @@
 {
-  "name": "mytools-plugin-deepseek-translator",
+  "name": "mytools-plugin-translator",
   "version": "0.1.0",
   "private": true,
-  "description": "DeepSeek Translator plugin for MyTools.",
+  "description": "Translator plugin for MyTools.",
   "type": "commonjs",
   "scripts": {
     "clean": "rimraf dist",

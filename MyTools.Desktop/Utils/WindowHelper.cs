@@ -17,6 +17,10 @@ public static class WindowHelper
             if (existing!.CurrentPlugin == plugin)
             {
                 existing.SetPluginWindow(plugin);
+                if (existing.WindowState == WindowState.Minimized)
+                {
+                    existing.WindowState = WindowState.Normal;
+                }
                 existing.Activate();
                 existing.Refresh();
                 if (text != null)

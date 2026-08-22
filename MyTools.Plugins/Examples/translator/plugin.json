@@ -1,5 +1,5 @@
 {
-  "id": "deepseek-translator",
+  "id": "translator",
   "version": "0.1.0",
   "protocolVersion": "3.0",
   "i18n": {
@@ -13,7 +13,7 @@
       "id": "translator",
       "name": {
         "key": "Plugin.DeepSeekTranslator.Name",
-        "defaultValue": "DeepSeek Translator"
+        "defaultValue": "Translator"
       },
       "entry": "backend/Translator/index.mjs",
       "capabilities": [],
@@ -28,7 +28,7 @@
       "id": "ankicard",
       "name": {
         "key": "Plugin.DeepSeekTranslator.Anki.Name",
-        "defaultValue": "DeepSeek Anki Cards"
+        "defaultValue": "Anki Cards"
       },
       "entry": "backend/AnkiCard/index.mjs",
       "capabilities": [],

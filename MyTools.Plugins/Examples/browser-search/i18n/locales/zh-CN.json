@@ -30,5 +30,7 @@
   "Plugin.BrowserSearch.Kind.History": "历史",
   "Plugin.BrowserSearch.Result.Subtitle": "{{browser}} · {{kind}} · {{location}}",
   "Plugin.BrowserSearch.Action.Open": "在浏览器中打开",
-  "Plugin.BrowserSearch.Action.OpenDescription": "用默认浏览器打开此网址"
+  "Plugin.BrowserSearch.Action.OpenDescription": "用默认浏览器打开此网址",
+  "Plugin.BrowserSearch.Action.CopyUrl": "复制网址",
+  "Plugin.BrowserSearch.Action.CopyUrlDescription": "将此网址复制到剪贴板"
 }

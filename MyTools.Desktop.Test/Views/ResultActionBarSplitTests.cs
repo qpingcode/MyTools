@@ -22,7 +22,7 @@ public class ResultActionBarSplitTests
     [Test]
     public void Split_SingleAction_KeepsItPrimaryWithoutOverflow()
     {
-        var paste = new StubAction("Paste", Commands.DefaultCommand);
+        var paste = new StubAction("Paste", Hotkey.Enter);
 
         var (primary, overflow) = ResultActionBarSplit.Split([paste]);
 
@@ -36,39 +36,39 @@ public class ResultActionBarSplitTests
     [Test]
     public void Split_AlwaysKeepsDefaultVisible_AndHidesTheRest()
     {
-        var copy = new StubAction("Copy", Commands.Ctrl_D);
-        var paste = new StubAction("Paste", Commands.DefaultCommand);
-        var open = new StubAction("Open", Commands.Ctrl_O);
+        var copy = new StubAction("Copy", Hotkey.Ctrl(HotkeyKey.D));
+        var paste = new StubAction("Paste", Hotkey.Enter);
+        var open = new StubAction("Open", Hotkey.Ctrl(HotkeyKey.O));
 
         var (primary, overflow) = ResultActionBarSplit.Split([copy, paste, open]);
 
         Assert.Multiple(() =>
         {
             Assert.That(primary, Is.SameAs(paste));
-            Assert.That(overflow, Is.EqualTo(new IActionWithCommand[] { copy, open }));
+            Assert.That(overflow, Is.EqualTo(new IActionWithHotkey[] { copy, open }));
         });
     }
 
     [Test]
     public void Split_WithoutEnter_UsesFirstActionAsDefault()
     {
-        var copy = new StubAction("Copy", Commands.Ctrl_D);
-        var open = new StubAction("Open", Commands.Ctrl_O);
+        var copy = new StubAction("Copy", Hotkey.Ctrl(HotkeyKey.D));
+        var open = new StubAction("Open", Hotkey.Ctrl(HotkeyKey.O));
 
         var (primary, overflow) = ResultActionBarSplit.Split([copy, open]);
 
         Assert.Multiple(() =>
         {
             Assert.That(primary, Is.SameAs(copy));
-            Assert.That(overflow, Is.EqualTo(new IActionWithCommand[] { open }));
+            Assert.That(overflow, Is.EqualTo(new IActionWithHotkey[] { open }));
         });
     }
 
-    private sealed class StubAction(string name, string command) : IActionWithCommand
+    private sealed class StubAction(string name, Hotkey hotkey) : IActionWithHotkey
     {
         public string Name { get; } = name;
         public string Description => "";
-        public string Command { get; } = command;
+        public Hotkey Hotkey { get; } = hotkey;
 
         public Task<ActionResult> ExecuteAsync(IActionParams args) =>
             Task.FromResult(ActionResult.CreateSuccess("ok"));

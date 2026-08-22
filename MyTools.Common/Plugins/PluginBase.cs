@@ -38,7 +38,7 @@ public abstract class PluginBase : IPlugin
     
     public abstract string Name { get; }
     public abstract string Description { get; }
-    public abstract List<IActionWithCommand> Actions { get; }
+    public abstract List<IActionWithHotkey> Actions { get; }
 
     protected static string GetCaption(string key, string defaultValue, object? values = null)
     {

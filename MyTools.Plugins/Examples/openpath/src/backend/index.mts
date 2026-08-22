@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { promisify } from "node:util";
-import { createPlugin } from "@qping/plugin-bus/node";
+import { createPlugin, HostAction } from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 
 const execFileAsync = promisify(execFile);
@@ -326,10 +326,10 @@ function quoteArg(value: string): string {
 
 function hostExecute(filePath: string, argument: string, message: string) {
   return {
-    message,
-    actionType: "close",
-    hostAction: {
-      kind: "execute",
+    message: { key: "Plugin.OpenPath.Action.Open.Success", defaultValue: message },
+    close: true,
+    host: {
+      kind: HostAction.Execute,
       path: filePath,
       args: quoteArg(argument),
     },
@@ -338,15 +338,6 @@ function hostExecute(filePath: string, argument: string, message: string) {
 
 function invalidClipboardMessage(reason: string, rawClipboard: string): string {
   return `${reason} Clipboard: "${displayClipboardSnippet(rawClipboard)}"`;
-}
-
-function openAction() {
-  return {
-    id: "open",
-    title: mytoolsI18n.t("Plugin.OpenPath.Action.Open", { defaultValue: "Open" }),
-    kind: "open",
-    description: "Open target IDE",
-  };
 }
 
 function itemMatches(item: { title: string; subtitle: string }, query: string): boolean {
@@ -379,13 +370,18 @@ plugin
       subtitle: item.subtitle,
       priority: 100,
       icon: { kind: "emoji", value: item.icon },
-      actions: [openAction()],
+      ide: item.id,
+      actions: ["open"],
     }));
     return { items };
   })
-  .action(async (params) => {
-    const ide = normalizeText(params.itemId).replace("openpath:", "") as IdeKey;
-    log(`invokeAction itemId=${params.itemId} ide=${ide}`);
+  .actions<{ ide: IdeKey }>([{
+    id: "open",
+    title: { key: "Plugin.OpenPath.Action.Open", defaultValue: "Open" },
+    description: { key: "Plugin.OpenPath.Action.OpenDescription", defaultValue: "Open target IDE" },
+    execute: async ({ item, itemId }) => {
+    const ide = item?.ide;
+    log(`invokeAction itemId=${itemId} ide=${ide}`);
     if (!IdeItems.some((item) => item.id === ide)) {
       fail("Unsupported IDE action.");
     }
@@ -457,5 +453,6 @@ plugin
     const projectPath = selectIntelliJProject(pathResult.path);
     log(`launch intellij exe="${intellijExe.path}" arg="${projectPath}"`);
     return hostExecute(intellijExe.path, projectPath, `Opened IntelliJ with ${projectPath}`);
-  })
+    },
+  }])
   .start();

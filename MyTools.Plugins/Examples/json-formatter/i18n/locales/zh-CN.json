@@ -5,6 +5,8 @@
   "Plugin.JsonFormatter.Action.Open.Title": "打开格式化工具",
   "Plugin.JsonFormatter.Action.Open.Description": "打开 JSON 格式化工具",
   "Plugin.JsonFormatter.Action.Open.Success": "已打开 JSON 格式化工具",
+  "Plugin.JsonFormatter.Action.Copy": "复制",
+  "Plugin.JsonFormatter.Action.CopyDescription": "把格式化后的 JSON 复制到剪贴板",
   "Plugin.JsonFormatter.Detail.Input": "输入",
   "Plugin.JsonFormatter.Detail.Output": "输出",
   "Plugin.JsonFormatter.Detail.InputPlaceholder": "在此粘贴 JSON",

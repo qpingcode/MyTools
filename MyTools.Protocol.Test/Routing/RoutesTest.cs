@@ -20,6 +20,7 @@ public class RoutesTest
         Assert.That(Routes.HostEvent.Initialize, Is.EqualTo("host.event.initialize"));
         Assert.That(Routes.HostEvent.Search, Is.EqualTo("host.event.search"));
         Assert.That(Routes.HostEvent.Key, Is.EqualTo("host.event.key"));
+        Assert.That(Routes.HostEvent.DetailAction, Is.EqualTo("host.event.detailAction"));
         Assert.That(Routes.HostEvent.LanguageChanged, Is.EqualTo("host.event.languageChanged"));
         Assert.That(Routes.HostEvent.ThemeChanged, Is.EqualTo("host.event.themeChanged"));
         Assert.That(Routes.HostEvent.InputActionCaptured, Is.EqualTo("host.event.inputActionCaptured"));

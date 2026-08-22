@@ -48,6 +48,7 @@
   <data name="Action.Copy.Name" xml:space="preserve"><value>Copier</value></data>
   <data name="Action.Copy.Description" xml:space="preserve"><value>Copier le texte sélectionné dans le presse-papiers</value></data>
   <data name="Action.Copy.Success" xml:space="preserve"><value>Copié dans le presse-papiers</value></data>
+  <data name="Action.Copy.ClipboardBusy" xml:space="preserve"><value>Le presse-papiers est occupé. Veuillez réessayer.</value></data>
   <data name="Action.Copy.InvalidParameters" xml:space="preserve"><value>Paramètres non valides pour l’action Copier</value></data>
   <data name="Action.CopyAndPaste.Name" xml:space="preserve"><value>Copier et coller</value></data>
   <data name="Action.CopyAndPaste.Description" xml:space="preserve"><value>Copier et coller le texte dans la fenêtre précédemment active</value></data>

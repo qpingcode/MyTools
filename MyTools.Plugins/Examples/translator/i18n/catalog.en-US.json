@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "scope": "plugin:deepseek-translator",
-  "pluginId": "deepseek-translator",
+  "scope": "plugin:translator",
+  "pluginId": "translator",
   "sourceLocale": "en-US",
   "entries": [
     {
       "key": "Plugin.DeepSeekTranslator.Name",
-      "defaultValue": "DeepSeek Translator",
+      "defaultValue": "Translator",
       "placeholders": [],
       "references": [
         {
@@ -18,9 +18,9 @@
         }
       ],
       "existingTranslations": {
-        "zh-CN": "DeepSeek 翻译"
+        "zh-CN": "翻译"
       },
-      "sourceHash": "sha256:36787b8fb174a9ad774e70700935596ec43632192521a7b0f064dd69a5376c43"
+      "sourceHash": "sha256:e6fe8ee281de7e498bbc76a9a7a27d18b4b21b77ea20658fa692dd1a5debe64f"
     },
     {
       "key": "Plugin.DeepSeekTranslator.Result.Title",
@@ -464,7 +464,7 @@
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.PressEnter",
-      "defaultValue": "Press Enter to translate",
+      "defaultValue": "Press Ctrl+Enter to translate",
       "placeholders": [],
       "references": [
         {
@@ -476,9 +476,63 @@
         }
       ],
       "existingTranslations": {
-        "zh-CN": "按 Enter 键翻译"
+        "zh-CN": "按 Ctrl+Enter 翻译"
       },
-      "sourceHash": "sha256:5e213899b7ce67dac2738d3e2f2d09669153902dadf8d14f8b8e0898adea4f34"
+      "sourceHash": "sha256:adba4fedca203dac840c4388c1e0b97c9a6ea87b6ed46289b717f7efe99eae30"
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.Detail.Copied",
+      "defaultValue": "Copied",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/Translator/main.ts",
+          "line": 173,
+          "column": 34,
+          "symbol": "showCopied",
+          "translatorComment": "Transient label shown after the translation is copied"
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "已复制"
+      },
+      "sourceHash": "sha256:8d525e5f158b9afe05f3122af363ac67763bdc4e1395b46597b320c289766ce3"
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.Action.Copy",
+      "defaultValue": "Copy",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "plugin.json",
+          "line": 29,
+          "column": 13,
+          "symbol": "detail.actions",
+          "translatorComment": "Action bar label: copy the translation"
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "复制"
+      },
+      "sourceHash": "sha256:e21f935f11d7e966dbbae78da9daa378fe8142a14e7c0cd7434183005faa6c5c"
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.Action.CopyDescription",
+      "defaultValue": "Copy the translation to the clipboard",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "plugin.json",
+          "line": 33,
+          "column": 13,
+          "symbol": "detail.actions",
+          "translatorComment": "Action description shown in the overflow menu"
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "把译文复制到剪贴板"
+      },
+      "sourceHash": "sha256:c5cb751988b7b6cb15e5aad72b202b76943ffc1ea84494700515d2aa6d5d11f6"
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Source.Cache",
@@ -618,7 +672,7 @@
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Favorite.Remove",
-      "defaultValue": "Remove from review",
+      "defaultValue": "Remove from favorites",
       "placeholders": [],
       "references": [
         {
@@ -630,13 +684,13 @@
         }
       ],
       "existingTranslations": {
-        "zh-CN": "从复习中移除"
+        "zh-CN": "取消收藏"
       },
-      "sourceHash": "sha256:e4cf392d1c23abb3e91911d3a535280875c1f89490d21f58933953457406da77"
+      "sourceHash": "sha256:18720329ca307c792fee6c6c1f707145c981d07c2b5a1b7127732ccd6e7203eb"
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Favorite.Save",
-      "defaultValue": "Save for review",
+      "defaultValue": "Save to favorites",
       "placeholders": [],
       "references": [
         {
@@ -648,13 +702,13 @@
         }
       ],
       "existingTranslations": {
-        "zh-CN": "保存以供复习"
+        "zh-CN": "添加到收藏"
       },
-      "sourceHash": "sha256:3acde48c3cf406976c961588ddb8dd7194c717f502238c26090f8cab5fa63349"
+      "sourceHash": "sha256:d99b44623137610de8119f9a5d627c9c8948eff90f9c7ff259909093e98b2908"
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Favorite.Removing",
-      "defaultValue": "Removing from review",
+      "defaultValue": "Removing from favorites",
       "placeholders": [],
       "references": [
         {
@@ -666,13 +720,13 @@
         }
       ],
       "existingTranslations": {
-        "zh-CN": "正在从复习中移除"
+        "zh-CN": "正在取消收藏"
       },
-      "sourceHash": "sha256:a46fb7fedb896712dc1b9fb8b4468f502d96fb80a13d305724254877b5a49300"
+      "sourceHash": "sha256:3a36204b3ef0e4a4ec1e086b5001c8908dfd18535c532bff473d285d16f4f5b0"
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Favorite.Saving",
-      "defaultValue": "Saving for review",
+      "defaultValue": "Saving to favorites",
       "placeholders": [],
       "references": [
         {
@@ -684,9 +738,9 @@
         }
       ],
       "existingTranslations": {
-        "zh-CN": "正在保存以供复习"
+        "zh-CN": "正在添加到收藏"
       },
-      "sourceHash": "sha256:503b4a1aaf4eab4d26daa55332b390ccba7025e3f737a8d1e683766273f57c6f"
+      "sourceHash": "sha256:5a3a82261646951ed22c0ebb047a6a1cc2ffc93b99ede43ddaff8f4b039f7d19"
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Loading",
@@ -978,7 +1032,7 @@
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Mode.Enter",
-      "defaultValue": "Enter Mode",
+      "defaultValue": "Manual Mode",
       "placeholders": [],
       "references": [
         {
@@ -990,13 +1044,13 @@
         }
       ],
       "existingTranslations": {
-        "zh-CN": "回车模式"
+        "zh-CN": "手动模式"
       },
-      "sourceHash": "sha256:518f37e03337a7801ec93451a3459927029818f4a9e60ece676a0bb8878afddc"
+      "sourceHash": "sha256:ac34e64e7b164c351da06d3531ffb5670f956b65a181bb55f27d2c554f45e064"
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Mode.RealtimeTip",
-      "defaultValue": "Real-time mode. Click to switch to enter mode.",
+      "defaultValue": "Real-time mode",
       "placeholders": [],
       "references": [
         {
@@ -1008,13 +1062,13 @@
         }
       ],
       "existingTranslations": {
-        "zh-CN": "实时模式。点击切换到回车模式。"
+        "zh-CN": "实时模式"
       },
-      "sourceHash": "sha256:3d6bc842d1f942459c7ad090a8f1ea0a97078bdcf558254ced746857e9f0d404"
+      "sourceHash": "sha256:d19b85887cb324030291cc812010b494928a8a319537fbe05ba460f8f8681a9c"
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Mode.EnterTip",
-      "defaultValue": "Enter mode. Click to switch to real-time mode.",
+      "defaultValue": "Manual mode. Press Ctrl+Enter to translate.",
       "placeholders": [],
       "references": [
         {
@@ -1026,9 +1080,9 @@
         }
       ],
       "existingTranslations": {
-        "zh-CN": "回车模式。点击切换到实时模式。"
+        "zh-CN": "手动模式。按 Ctrl+Enter 翻译。"
       },
-      "sourceHash": "sha256:8561807b22a76f758898ef663f8216557766b705f2db26ccebf824302a16576c"
+      "sourceHash": "sha256:054d85141f560756ac458fb28a39d75f13739a1c69c2aba30d6bcce0d29991c4"
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.LoadingHistory",
@@ -1068,7 +1122,7 @@
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Name",
-      "defaultValue": "DeepSeek Anki Cards",
+      "defaultValue": "Anki Cards",
       "placeholders": [],
       "references": [
         {
@@ -1080,9 +1134,9 @@
         }
       ],
       "existingTranslations": {
-        "zh-CN": "DeepSeek Anki 卡片"
+        "zh-CN": "Anki 卡片"
       },
-      "sourceHash": "sha256:e53fc9359109e331538280ab342aaafdb42bf6c94ef265a16c7acfcf00a03e2f"
+      "sourceHash": "sha256:676f45fe1eb88c8bf2e71c2f298c054da12de9a7b20a6bdd26d1f14a36d4f11a"
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Result.Subtitle",
@@ -2018,6 +2072,70 @@
         "zh-CN": "简单"
       },
       "sourceHash": "sha256:d6915875decb6e43dbf131d2453a2f065d78b915a3d0580777e834b9bf6afafd"
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.Action.Translate",
+      "defaultValue": "Translate",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "翻译" },
+      "sourceHash": "sha256:8fe147696fbf47f30d37aeb7ba669ce027c1a598e0d260cbbf0532c64f88a57e"
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.Action.ToggleMode",
+      "defaultValue": "Switch Translation Mode",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "切换翻译模式" },
+      "sourceHash": "sha256:2fa7b67471b058a5367dd06d98f8dc902afc215c711d8f8d80de06dafaabd78e"
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.Action.History",
+      "defaultValue": "History List",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "历史列表" },
+      "sourceHash": "sha256:22e8ff8667a4dd90f68cee9cc0907a61c284588fbd067251d96ee5afb785f564"
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.Action.Favorites",
+      "defaultValue": "Favorites List",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "收藏列表" },
+      "sourceHash": "sha256:0ee63fed0398f98934452aec5820929bea8823e7cc640ac458c0ab1328b4dd67"
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.Action.ToggleFavorite",
+      "defaultValue": "Favorite / Unfavorite",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "收藏/取消收藏" },
+      "sourceHash": "sha256:4390fd8a6ab321cdc79f497b03a11a099db087bf6bbd78c897d9e7b82383171e"
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.Toolbar.Service",
+      "defaultValue": "Translation service",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "翻译服务" },
+      "sourceHash": "sha256:d054ef74d80d08932686eb910b7b24fca8608bd3123183e7d9a48866060e5c3a"
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.Toolbar.Mode",
+      "defaultValue": "Translation mode",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "翻译模式" },
+      "sourceHash": "sha256:b34e84086e2c3bc41b58e50fec20f375f69f48d945ad6c350a39f7de1db8ee04"
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.Detail.Delete",
+      "defaultValue": "Delete",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "删除" },
+      "sourceHash": "sha256:e2d0a54968ead24efc0dffa6ac78fc606dceec34a0f586177a74a54cc2272cf8"
     }
   ]
 }

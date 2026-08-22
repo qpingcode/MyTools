@@ -11,7 +11,7 @@ public interface ISwitchableViewModel : IDisposable
 {
     ViewModelType GetViewModelType();
     void PerformSearch(IPlugin? plugin, string searchText);
-    bool HandleKeyDown(Key key);
+    bool HandleKeyDown(Key key, ModifierKeys modifiers);
     bool HandleKeyUp(Key key);
-    void ExecuteAction(string? command);
+    void ExecuteAction(IActionWithHotkey? action);
 }

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title data-i18n="[text]Plugin.DeepSeekTranslator.Name" data-i18n-default-value="Translator"></title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="page">
+        <section class="toolbar" aria-label="Translator toolbar">
+            <label class="toolbar-field">
+                <span data-i18n="[text]Plugin.DeepSeekTranslator.Toolbar.Service" data-i18n-default-value="Translation service"></span>
+                <select id="translationService">
+                    <option value="deepseek">DeepSeek</option>
+                </select>
+            </label>
+            <label class="toolbar-field">
+                <span data-i18n="[text]Plugin.DeepSeekTranslator.Toolbar.Mode" data-i18n-default-value="Translation mode"></span>
+                <select id="sendMode">
+                    <option value="enter" data-i18n="[text]Plugin.DeepSeekTranslator.Detail.Mode.Enter" data-i18n-default-value="Manual Mode"></option>
+                    <option value="realtime" data-i18n="[text]Plugin.DeepSeekTranslator.Detail.Mode.Realtime" data-i18n-default-value="Real-time Mode"></option>
+                </select>
+            </label>
+            <button id="translateButton" class="toolbar-button" type="button">
+                <span data-action-name="translate"></span>
+                <kbd data-action-hotkey="translate"></kbd>
+            </button>
+            <span class="toolbar-spacer"></span>
+            <button id="historyButton" class="toolbar-button" type="button">
+                <span data-action-name="history"></span>
+                <kbd data-action-hotkey="history"></kbd>
+            </button>
+            <button id="favoriteListButton" class="toolbar-button" type="button">
+                <span data-action-name="favorites"></span>
+                <kbd data-action-hotkey="favorites"></kbd>
+            </button>
+        </section>
+
+        <div class="workspace">
+            <section class="translator">
+                <div class="panel input-panel">
+                    <div class="label-row">
+                        <label class="label" for="sourceText" data-i18n="[text]Plugin.DeepSeekTranslator.Detail.Input" data-i18n-default-value="Input"></label>
+                    </div>
+                    <textarea id="sourceText" spellcheck="false"
+                              data-i18n="[placeholder]Plugin.DeepSeekTranslator.Detail.InputPlaceholder"
+                              data-i18n-default-value="Enter text to translate"></textarea>
+                </div>
+
+                <div class="panel result-panel">
+                    <div class="label-row">
+                        <div id="resultTitle" class="label" data-i18n="[text]Plugin.DeepSeekTranslator.Detail.Translation" data-i18n-default-value="Translation"></div>
+                        <div id="sourceStatus" class="source-status" hidden></div>
+                        <button id="favoriteButton" class="star-button" type="button" hidden>
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <polygon class="star-outline" pathLength="1" points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                <polygon class="star-progress" pathLength="1" points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="translation" class="translation empty"
+                         data-i18n="[text]Plugin.DeepSeekTranslator.Detail.Empty"
+                         data-i18n-default-value="Translation appears here"></div>
+                </div>
+            </section>
+
+            <aside id="drawer" class="drawer" hidden tabindex="-1" aria-modal="false">
+                <header class="drawer-header">
+                    <h2 id="drawerTitle"></h2>
+                    <button id="drawerCloseButton" class="drawer-close" type="button" aria-label="Close">×</button>
+                </header>
+                <div id="drawerList" class="drawer-list" role="listbox"></div>
+            </aside>
+        </div>
+    </main>
+
+    <script src="../common/speech.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

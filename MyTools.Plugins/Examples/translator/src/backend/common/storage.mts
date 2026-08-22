@@ -5,6 +5,23 @@ export const DATA_DIR =
   normalizeText(process.env.MYTOOLS_PLUGIN_DATA_DIR) ||
   normalizeText(process.env.MYTOOLS_TRANSLATOR_DATA_DIR) ||
   path.join(process.cwd(), "data");
+const PLUGINS_DATA_DIR = normalizeText(process.env.MYTOOLS_PLUGINS_DATA_DIR);
+const LEGACY_DATA_DIR = PLUGINS_DATA_DIR ? path.join(PLUGINS_DATA_DIR, "deepseek-translator") : "";
+
+// The plugin id was renamed to "translator". The host creates the new directory before Node
+// starts, so migrate when it is still empty rather than checking only for directory existence.
+if (LEGACY_DATA_DIR && path.resolve(LEGACY_DATA_DIR) !== path.resolve(DATA_DIR)) {
+  try {
+    const targetIsEmpty = !fs.existsSync(DATA_DIR) || fs.readdirSync(DATA_DIR).length === 0;
+    if (targetIsEmpty && fs.existsSync(LEGACY_DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+      fs.cpSync(LEGACY_DATA_DIR, DATA_DIR, { recursive: true, force: false });
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`[translator] legacy data migration skipped: ${message}`);
+  }
+}
 export const CACHE_PATH = path.join(DATA_DIR, "translation-cache.json");
 export const FAVORITES_PATH = path.join(DATA_DIR, "favorites.json");
 export const SETTINGS_PATH = path.join(DATA_DIR, "settings.json");

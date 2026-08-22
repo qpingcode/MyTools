@@ -20,7 +20,7 @@ public class ClipBoardPlugin(ILogger<ClipBoardPlugin> logger) : PluginBase, IWin
 
     public override string Name => GetCaption("Plugin.ClipBoard.Name", "Clipboard History");
     public override string Description => GetCaption("Plugin.ClipBoard.Description", "Clipboard history management plugin");
-    public override List<IActionWithCommand> Actions => [WellKnownActions.CopyAndPaste.WithDefaultCommand()];
+    public override List<IActionWithHotkey> Actions => [WellKnownActions.CopyAndPaste.WithDefaultHotkey()];
     public override ViewModelType ViewModelType => ViewModelType.Detail;
 
     public override async Task InitializeAsync()
@@ -70,7 +70,8 @@ public class ClipBoardPlugin(ILogger<ClipBoardPlugin> logger) : PluginBase, IWin
             resultItems.Add(new ResultItem(MdiIcon.ForClipboardKind(item.Kind), title, string.Empty, lazyParam, ResultItemPriorities.Medium)
             {
                 ResultKey = item.Id.ToString(),
-                CreatedAt = item.Timestamp
+                CreatedAt = item.Timestamp,
+                IgnoreSelectionHistoryBoost = true
             });
         }
         return await Task.FromResult(Result.CreateSuccessResult(resultItems));
@@ -87,21 +88,32 @@ public class ClipBoardPlugin(ILogger<ClipBoardPlugin> logger) : PluginBase, IWin
         }
         try
         {
-            if (Clipboard.ContainsData(DataObjectSerializer.MyToolsNotSaveHisotryFormat))
-            {
-                return;
-            }
-            var title = CollapseToSingleLine(getTitleFromClipboard());
-            var kind = ClipboardContentKindClassifier.FromClipboard();
-            var (width, height, imageBytes) = ClipboardItemMeta.ReadClipboardImageMeta();
-            var content = DataObjectSerializer.SerializeIDataObject();
-            var hash = HashHelper.ComputeSha256Hash(content);
-            _dbHelper.AddHistory(content, title, hash, kind, width, height, imageBytes);
+            ClipboardAccess.Execute(CaptureClipboardHistory);
+        }
+        catch (System.Runtime.InteropServices.COMException ex)
+            when (ex.HResult == unchecked((int)0x800401D0))
+        {
+            logger.LogWarning(ex, "Clipboard history capture skipped because the clipboard remained busy after retries.");
         }
         catch (Exception ex)
         {
             logger.LogError(ex, ex.Message);
         }
+    }
+
+    private void CaptureClipboardHistory()
+    {
+        if (_dbHelper == null || Clipboard.ContainsData(DataObjectSerializer.MyToolsNotSaveHisotryFormat))
+        {
+            return;
+        }
+
+        var title = CollapseToSingleLine(getTitleFromClipboard());
+        var kind = ClipboardContentKindClassifier.FromClipboard();
+        var (width, height, imageBytes) = ClipboardItemMeta.ReadClipboardImageMeta();
+        var content = DataObjectSerializer.SerializeIDataObject();
+        var hash = HashHelper.ComputeSha256Hash(content);
+        _dbHelper.AddHistory(content, title, hash, kind, width, height, imageBytes);
     }
 
     private string getTitleFromClipboard()

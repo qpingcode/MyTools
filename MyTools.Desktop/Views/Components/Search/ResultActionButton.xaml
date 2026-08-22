@@ -4,7 +4,7 @@
              xmlns:components="clr-namespace:MyTools.Desktop.Components"
              Focusable="False">
     <Button Command="{Binding DataContext.ExecuteActionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-            CommandParameter="{Binding Command}"
+            CommandParameter="{Binding}"
             Background="{DynamicResource SurfaceAltBrush}"
             Foreground="{DynamicResource TextSecondaryBrush}"
             BorderThickness="0"
@@ -33,7 +33,7 @@
                        FontFamily="{StaticResource UiFontFamily}"
                        FontSize="12"
                        VerticalAlignment="Center"/>
-            <components:HotkeyKeycaps Command="{Binding Command}"/>
+            <components:HotkeyKeycaps Hotkey="{Binding Hotkey}"/>
         </StackPanel>
     </Button>
 </UserControl>

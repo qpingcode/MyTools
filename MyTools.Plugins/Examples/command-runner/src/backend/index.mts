@@ -1,4 +1,4 @@
-import { createPlugin, type PluginSearchParams } from "@qping/plugin-bus/node";
+import { createPlugin, HostAction, type PluginSearchParams, type RunSpec } from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 
 type CommandConfig = {
@@ -55,8 +55,8 @@ function subtitle(config: CommandConfig): string {
   return `${config.command || ""} ${config.args || ""}`.trim();
 }
 
-function toRunPayload(config: CommandConfig): string {
-  return JSON.stringify({
+function toRunSpec(config: CommandConfig): RunSpec {
+  return {
     name: config.name || "",
     command: config.command || "",
     args: config.args || "",
@@ -64,17 +64,6 @@ function toRunPayload(config: CommandConfig): string {
     isBashScript: !!config.isBashScript,
     scripts: normalizeScripts(config.scripts),
     workingDirectory: config.workingDirectory || undefined,
-  });
-}
-
-function runAction() {
-  return {
-    id: "run",
-    title: mytoolsI18n.t("Plugin.CommandRunner.Action.Run", { defaultValue: "Run" }),
-    kind: "run",
-    description: mytoolsI18n.t("Plugin.CommandRunner.Action.RunDescription", {
-      defaultValue: "Run the selected command",
-    }),
   };
 }
 
@@ -97,8 +86,8 @@ async function search(params: PluginSearchParams) {
     subtitle: subtitle(config),
     priority: 100,
     icon: { kind: "emoji", value: "🚀" },
-    copyText: toRunPayload(config),
-    actions: [runAction()],
+    command: toRunSpec(config),
+    actions: ["run"],
   }));
   return { items };
 }
@@ -110,5 +99,17 @@ plugin
     mytoolsI18n.configure(params);
     return {};
   })
+  .actions<{ command: RunSpec }>([{
+    id: "run",
+    title: { key: "Plugin.CommandRunner.Action.Run", defaultValue: "Run" },
+    description: {
+      key: "Plugin.CommandRunner.Action.RunDescription",
+      defaultValue: "Run the selected command",
+    },
+    execute: ({ item }) => ({
+      host: { kind: HostAction.Run, command: item?.command ?? { command: "" } },
+      close: true,
+    }),
+  }])
   .search(search)
   .start();

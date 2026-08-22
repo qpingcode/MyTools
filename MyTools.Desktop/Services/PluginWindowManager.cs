@@ -29,7 +29,8 @@ public sealed class PluginWindowManager
     {
         if (windows.TryGetValue(plugin.PluginId, out var existing))
         {
-            existing.SetPlugin(plugin, context);
+            // A repeated plugin hotkey means "return to the existing window". Reapplying the
+            // empty hotkey context would send initialize again and discard the page's live state.
             _ = existing.ActivatePluginAsync();
             return;
         }

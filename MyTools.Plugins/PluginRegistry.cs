@@ -7,7 +7,7 @@ namespace MyTools.Plugins;
 public class PluginRegistry : IKeywordRegistry, IGlobalSearchRegistry, IActionRegistry
 {
     private readonly Dictionary<string, IPlugin> _keywordMap = new();
-    private readonly Dictionary<IAction, string> _actionHotKey = new();
+    private readonly Dictionary<IAction, Hotkey> _actionHotkeys = new();
     private readonly List<IPlugin> _globalSearchPlugins = new();
     
     void IGlobalSearchRegistry.Register(IPlugin plugin)
@@ -128,22 +128,21 @@ public class PluginRegistry : IKeywordRegistry, IGlobalSearchRegistry, IActionRe
         return -1;
     }
 
-    void IActionRegistry.Register(string hotkey, IAction action)
+    void IActionRegistry.Register(Hotkey hotkey, IAction action)
     {
-        ArgumentNullException.ThrowIfNull(hotkey);
         ArgumentNullException.ThrowIfNull(action);
-        _actionHotKey.Add(action, hotkey);
+        _actionHotkeys.Add(action, hotkey);
     }
 
-    IAction? IActionRegistry.GetAction(string hotkey, IEnumerable<IAction> allowedActions)
+    IAction? IActionRegistry.GetAction(Hotkey hotkey, IEnumerable<IAction> allowedActions)
     {
         var registry = this as IActionRegistry;
-        return allowedActions.FirstOrDefault(a => registry.GetHotKey(a) == hotkey);
+        return allowedActions.FirstOrDefault(a => registry.GetHotkey(a) == hotkey);
     }
 
-    string? IActionRegistry.GetHotKey(IAction action)
+    Hotkey? IActionRegistry.GetHotkey(IAction action)
     {
-        return _actionHotKey.GetValueOrDefault(action);
+        return _actionHotkeys.TryGetValue(action, out var hotkey) ? hotkey : null;
     }
 
     public string? GetKeyword(IPlugin plugin)

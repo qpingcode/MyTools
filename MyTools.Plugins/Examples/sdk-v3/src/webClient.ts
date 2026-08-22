@@ -20,6 +20,8 @@ import type { MyToolsThemePayload } from "./webTypes.ts";
 export { mytoolsI18n } from "./i18n.ts";
 export { HostEvents } from "./webTypes.ts";
 export type {
+  MyToolsHostActionDefinition,
+  MyToolsHostDetailActionPayload,
   MyToolsHostInitializePayload,
   MyToolsHostKeyPayload,
   MyToolsHostSearchPayload,

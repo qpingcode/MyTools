@@ -156,7 +156,9 @@ public class Searcher(IGlobalSearchRegistry globalSearchRegistry, IMemoryCache c
         foreach (var item in items)
         {
             var key = SearchHistoryDbHelper.CombineKey(item.SourcePluginId, item.ResultKey);
-            item.SortScore = item.Priority + boosts.GetValueOrDefault(key, 0);
+            item.SortScore = item.IgnoreSelectionHistoryBoost
+                ? item.Priority
+                : item.Priority + boosts.GetValueOrDefault(key, 0);
         }
     }
 

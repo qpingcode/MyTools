@@ -20,6 +20,11 @@ public sealed class NodePlugin : IPlugin, IDisposable
     private readonly IThemeService themeService;
     private PluginLocalizationService? pluginLocalization;
     private IReadOnlyList<string>? effectiveKeywords;
+    private IReadOnlyList<NodePluginActionDefinitionDto> actionDefinitions = [];
+    private readonly SemaphoreSlim initializeLock = new(1, 1);
+    private string? initializedSessionId;
+    private string? initializedLocale;
+    private string? initializedTheme;
 
     /// <summary>
     /// 插件级别的翻译服务，查询此插件自己的 locale 文件。
@@ -50,6 +55,8 @@ public sealed class NodePlugin : IPlugin, IDisposable
         add => processHost.EventReceived += value;
         remove => processHost.EventReceived -= value;
     }
+
+    public event EventHandler? ActionsChanged;
 
     /// <summary>
     /// 为此插件注册宿主能力回调（hostCall）。注册后，插件的 Node 后端可以通过
@@ -109,7 +116,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
     /// </summary>
     public string ParentId => manifest.ParentId;
 
-    public List<IActionWithCommand> Actions { get; } = [];
+    public List<IActionWithHotkey> Actions { get; } = [];
 
     public bool IsEnabled { get; set; } = true;
 
@@ -141,6 +148,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
     {
         try
         {
+            await InitializeAsync(cancellationToken);
             var mode = searchOptions?.SearchFrom == SearchFrom.Plugin ? "plugin" : "global";
             var response = await processHost.SearchAsync(
                 query,
@@ -167,13 +175,41 @@ public sealed class NodePlugin : IPlugin, IDisposable
         }
     }
 
-    public async Task InitializeAsync()
+    public Task InitializeAsync() => InitializeAsync(CancellationToken.None);
+
+    private async Task InitializeAsync(CancellationToken cancellationToken)
     {
-        await processHost.InitializeAsync(
-            localizationService.CurrentLocale,
-            manifest.DefaultLocale,
-            GetCurrentMessages(),
-            CurrentThemeWire);
+        await initializeLock.WaitAsync(cancellationToken);
+        try
+        {
+            if (initializedSessionId != null
+                && string.Equals(initializedSessionId, processHost.SessionId, StringComparison.Ordinal)
+                && string.Equals(initializedLocale, localizationService.CurrentLocale, StringComparison.Ordinal)
+                && string.Equals(initializedTheme, CurrentThemeWire, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            var response = await processHost.InitializeAsync(
+                localizationService.CurrentLocale,
+                manifest.DefaultLocale,
+                GetCurrentMessages(),
+                CurrentThemeWire,
+                cancellationToken);
+            actionDefinitions = response.Actions
+                .Where(action => !string.IsNullOrWhiteSpace(action.Id))
+                .DistinctBy(action => action.Id, StringComparer.Ordinal)
+                .ToArray();
+            pluginLocalization = null;
+            initializedSessionId = processHost.SessionId;
+            initializedLocale = localizationService.CurrentLocale;
+            initializedTheme = CurrentThemeWire;
+            ActionsChanged?.Invoke(this, EventArgs.Empty);
+        }
+        finally
+        {
+            initializeLock.Release();
+        }
     }
 
     public void RegisterSettings(IConfigurationRegistry configurationRegistry)
@@ -228,7 +264,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
             query: query,
             detail: new NodePluginDetailViewDto
             {
-                HtmlEntry = manifest.DetailEntry ?? string.Empty,
+                Page = manifest.DetailEntry ?? string.Empty,
                 Title = Name,
                 InitialState = CloneJson(BuildKeywordRouteState(query))
             });
@@ -247,7 +283,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
             query: string.Empty,
             detail: new NodePluginDetailViewDto
             {
-                HtmlEntry = manifest.DetailEntry ?? string.Empty,
+                Page = manifest.DetailEntry ?? string.Empty,
                 Title = Name,
                 InitialState = CloneJson(BuildKeywordRouteState(string.Empty))
             });
@@ -260,9 +296,51 @@ public sealed class NodePlugin : IPlugin, IDisposable
             CurrentThemeWire);
     }
 
+    internal void LogActionStarted(string actionId, string actionName)
+    {
+        logger.LogInformation(
+            "Invoking node plugin action: plugin={PluginId} action={ActionId} name={ActionName}",
+            PluginId,
+            actionId,
+            actionName);
+    }
+
+    internal void LogActionCompleted(string actionId, string actionName, NodePluginActionResponse response)
+    {
+        logger.LogInformation(
+            "Completed node plugin action: plugin={PluginId} action={ActionId} name={ActionName} host={HasHost} web={HasWeb} detail={HasDetail} close={Close}",
+            PluginId,
+            actionId,
+            actionName,
+            response.Host != null,
+            response.Web != null,
+            response.Detail != null,
+            response.Close);
+    }
+
+    internal void LogActionFailed(string actionId, string actionName, Exception exception)
+    {
+        logger.LogError(
+            exception,
+            "Node plugin action failed: plugin={PluginId} action={ActionId} name={ActionName}",
+            PluginId,
+            actionId,
+            actionName);
+    }
+
+    internal void LogActionFailed(string actionId, string actionName, string message)
+    {
+        logger.LogWarning(
+            "Node plugin action failed: plugin={PluginId} action={ActionId} name={ActionName} message={Message}",
+            PluginId,
+            actionId,
+            actionName,
+            message);
+    }
+
     internal NodePluginDetailContext? CreateDetailContext(string itemId, string searchText, string query, NodePluginDetailViewDto? detail)
     {
-        var detailPath = ResolveDetailEntryFullPath(detail?.HtmlEntry);
+        var detailPath = ResolveDetailEntryFullPath(detail?.Page);
         if (detailPath == null)
         {
             return null;
@@ -287,6 +365,99 @@ public sealed class NodePlugin : IPlugin, IDisposable
         };
     }
 
+    /// <summary>
+    /// Action outcome 只有显式包含 detail 时才导航。不能把缺失的 detail
+    /// 当成 manifest 默认详情页，否则会错误抑制同一 outcome 的 close。
+    /// </summary>
+    internal NodePluginDetailContext? CreateActionDetailContext(
+        string itemId, string searchText, string query, NodePluginDetailViewDto? detail)
+    {
+        return detail == null ? null : CreateDetailContext(itemId, searchText, query, detail);
+    }
+
+    public List<IActionWithHotkey> BuildActions(
+        IReadOnlyList<string>? actionIds = null,
+        Action<JsonElement>? forwardToWeb = null)
+    {
+        var definitions = actionDefinitions;
+        if (definitions.Count == 0)
+        {
+            return [];
+        }
+
+        IEnumerable<NodePluginActionDefinitionDto> selected = definitions;
+        if (actionIds != null)
+        {
+            var byId = definitions.ToDictionary(action => action.Id, StringComparer.Ordinal);
+            selected = actionIds.Select(id =>
+            {
+                if (byId.TryGetValue(id, out var definition)) return definition;
+                logger.LogWarning("Node plugin {PluginId} referenced unknown action {ActionId}.", PluginId, id);
+                return null;
+            }).OfType<NodePluginActionDefinitionDto>();
+        }
+
+        var selectedList = selected.ToList();
+        var hotkeys = ResolveHotkeys(selectedList);
+        return selectedList.Select((definition, index) =>
+        {
+            var title = ResolveText(definition.Title, definition.Id);
+            var description = ResolveText(definition.Description, string.Empty);
+            return (IActionWithHotkey)new NodePluginInvokeAction(
+                    this, definition.Id, title, description, forwardToWeb)
+                .WithHotkey(hotkeys[index]);
+        }).ToList();
+    }
+
+    public IReadOnlyList<NodePluginWebActionDefinition> GetWebActionDefinitions()
+    {
+        var hotkeys = ResolveHotkeys(actionDefinitions);
+        return actionDefinitions.Select((definition, index) => new NodePluginWebActionDefinition
+        {
+            Id = definition.Id,
+            Name = ResolveText(definition.Title, definition.Id),
+            Hotkey = hotkeys[index].IsAssigned ? hotkeys[index].ToString() : null
+        }).ToArray();
+    }
+
+    private IReadOnlyList<Hotkey> ResolveHotkeys(IReadOnlyList<NodePluginActionDefinitionDto> definitions)
+    {
+        var result = Enumerable.Repeat(Hotkey.None, definitions.Count).ToArray();
+        var used = new HashSet<Hotkey>();
+        if (definitions.Count > 0 && definitions[0].Hotkey == null)
+        {
+            result[0] = Hotkey.Enter;
+            used.Add(Hotkey.Enter);
+        }
+        for (var index = 0; index < definitions.Count; index++)
+        {
+            var dto = definitions[index].Hotkey;
+            if (dto == null) continue;
+            if (!Hotkey.TryParse(dto.Key, dto.Modifiers, out var hotkey) || IsReserved(hotkey) || !used.Add(hotkey))
+            {
+                logger.LogWarning(
+                    "Ignoring invalid, reserved, or conflicting hotkey on node plugin {PluginId} action {ActionId}.",
+                    PluginId, definitions[index].Id);
+                continue;
+            }
+            result[index] = hotkey;
+        }
+
+        return result;
+    }
+
+    private static bool IsReserved(Hotkey hotkey) =>
+        hotkey.Modifiers == HotkeyModifiers.Control
+        && (hotkey.Key == HotkeyKey.K
+            || hotkey.Key is >= HotkeyKey.D0 and <= HotkeyKey.D9
+            || hotkey.Key is HotkeyKey.A or HotkeyKey.C or HotkeyKey.V or HotkeyKey.X);
+
+    private string ResolveText(NodePluginLocalizedTextDto? text, string fallback)
+    {
+        if (text == null) return fallback;
+        return new LocalizedMessage(text.Key, text.DefaultValue).Resolve(PluginLocalization);
+    }
+
     public IReadOnlyDictionary<string, string> GetCurrentMessages() =>
         NodePluginLocalization.LoadMessages(manifest, localizationService.CurrentLocale);
 
@@ -299,57 +470,14 @@ public sealed class NodePlugin : IPlugin, IDisposable
             MapIcon(item.Icon),
             title,
             item.Subtitle ?? string.Empty,
-            CreateActionArgs(item, query, title),
+            new NodePluginActionArgs(item.Id, query),
             item.Priority)
         {
             ResultKey = string.IsNullOrWhiteSpace(item.Id) ? $"{manifest.Id}-{index}" : item.Id,
         };
 
-        resultItem.AllowedActions = BuildActions(item).ToList();
+        resultItem.AllowedActions = BuildActions(item.Actions);
         return resultItem;
-    }
-
-    private static IActionParams CreateActionArgs(NodePluginSearchItem item, string query, string title)
-    {
-        var wellKnownKind = item.Actions
-            .Select(action => action.Kind)
-            .FirstOrDefault(NodePluginWellKnownActions.IsWellKnown);
-        if (wellKnownKind != null)
-        {
-            return NodePluginWellKnownActions.CreateParams(
-                wellKnownKind,
-                item.Path,
-                item.Args,
-                item.CopyText,
-                item.Id,
-                title,
-                query);
-        }
-
-        return new NodePluginActionArgs(item.Id, query);
-    }
-
-    private IEnumerable<IActionWithCommand> BuildActions(NodePluginSearchItem item)
-    {
-        if (item.Actions.Count == 0)
-        {
-            yield break;
-        }
-
-        for (var index = 0; index < item.Actions.Count; index++)
-        {
-            var action = item.Actions[index];
-            var command = index == 0 ? Commands.DefaultCommand : $"NodeAction:{index}";
-            var wellKnown = NodePluginWellKnownActions.Resolve(action.Kind);
-            if (wellKnown != null)
-            {
-                yield return wellKnown.WithCommand(command);
-                continue;
-            }
-
-            yield return new NodePluginInvokeAction(this, action.Id, action.Title, action.Description, action.Kind)
-                .WithCommand(command);
-        }
     }
 
     private string? ResolveDetailEntryFullPath(string? relativePath)
@@ -461,15 +589,20 @@ internal sealed class NodePluginInvokeAction : IAction
     private readonly string actionId;
     private readonly string title;
     private readonly string description;
-    private readonly string kind;
+    private readonly Action<JsonElement>? forwardToWeb;
 
-    public NodePluginInvokeAction(NodePlugin plugin, string actionId, string title, string description, string kind)
+    public NodePluginInvokeAction(
+        NodePlugin plugin,
+        string actionId,
+        string title,
+        string description,
+        Action<JsonElement>? forwardToWeb = null)
     {
         this.plugin = plugin;
         this.actionId = actionId;
         this.title = string.IsNullOrWhiteSpace(title) ? actionId : title;
         this.description = description;
-        this.kind = kind;
+        this.forwardToWeb = forwardToWeb;
     }
 
     public string Name => title;
@@ -485,32 +618,46 @@ internal sealed class NodePluginInvokeAction : IAction
 
         try
         {
+            plugin.LogActionStarted(actionId, title);
             var response = await plugin.InvokeActionAsync(actionArgs.ItemId, actionId, actionArgs.Query);
-            if (response.HostAction != null && !string.IsNullOrWhiteSpace(response.HostAction.Path))
+            if (response.Host != null)
             {
-                var launched = await NodePluginWellKnownActions.ExecuteHostActionAsync(
-                    response.HostAction.Kind,
-                    response.HostAction.Path,
-                    response.HostAction.Args);
-                if (!launched.Success)
+                var hostResult = await NodePluginWellKnownActions.ExecuteAsync(response.Host);
+                if (!hostResult.Success)
                 {
-                    return launched;
+                    plugin.LogActionFailed(actionId, title, hostResult.Message);
+                    return hostResult;
                 }
             }
 
-            var detailContext = plugin.CreateDetailContext(actionArgs.ItemId, BuildSearchText(actionArgs.Query), actionArgs.Query, response.Detail);
+            if (response.Web != null)
+            {
+                if (forwardToWeb == null)
+                {
+                    return ActionResult.CreateFailure("The action returned web output without an active detail page.");
+                }
+                forwardToWeb(response.Web.Payload);
+            }
+
+            var detailContext = plugin.CreateActionDetailContext(
+                actionArgs.ItemId, BuildSearchText(actionArgs.Query), actionArgs.Query, response.Detail);
             if (detailContext != null)
             {
                 var navigator = ServiceLocator.GetRequiredService<INodePluginDetailNavigator>();
                 navigator.OpenDetail(detailContext);
             }
 
-            var actionType = ParseActionType(response.ActionType, detailContext != null || string.Equals(kind, "detail", StringComparison.OrdinalIgnoreCase));
-            var message = string.IsNullOrWhiteSpace(response.Message) ? $"Executed {title}" : response.Message;
+            var actionType = response.Close && detailContext == null ? ActionTypeEnum.Close : ActionTypeEnum.None;
+            var message = response.Message == null
+                ? $"Executed {title}"
+                : new LocalizedMessage(response.Message.Key, response.Message.DefaultValue)
+                    .Resolve(plugin.PluginLocalization);
+            plugin.LogActionCompleted(actionId, title, response);
             return ActionResult.CreateSuccess(message, actionType);
         }
         catch (Exception ex)
         {
+            plugin.LogActionFailed(actionId, title, ex);
             return ActionResult.CreateFailure(ex.Message);
         }
     }
@@ -524,15 +671,4 @@ internal sealed class NodePluginInvokeAction : IAction
                 : $"{plugin.PrimaryKeyword} {query}";
     }
 
-    private static ActionTypeEnum ParseActionType(string? actionType, bool openedDetail)
-    {
-        if (openedDetail)
-        {
-            return ActionTypeEnum.None;
-        }
-
-        return string.Equals(actionType, "close", StringComparison.OrdinalIgnoreCase)
-            ? ActionTypeEnum.Close
-            : ActionTypeEnum.None;
-    }
 }

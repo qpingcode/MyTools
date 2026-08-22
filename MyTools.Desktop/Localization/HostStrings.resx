@@ -127,6 +127,7 @@
   <data name="Action.Copy.Name" xml:space="preserve"><value>Copy</value></data>
   <data name="Action.Copy.Description" xml:space="preserve"><value>Copy the selected text to clipboard</value></data>
   <data name="Action.Copy.Success" xml:space="preserve"><value>Copied to clipboard</value></data>
+  <data name="Action.Copy.ClipboardBusy" xml:space="preserve"><value>The clipboard is busy. Please try again.</value></data>
   <data name="Action.Copy.InvalidParameters" xml:space="preserve"><value>Invalid parameters for Copy action</value></data>
   <data name="Action.CopyAndPaste.Name" xml:space="preserve"><value>Copy and Paste</value></data>
   <data name="Action.CopyAndPaste.Description" xml:space="preserve"><value>Copy and paste text to the previously focused window</value></data>

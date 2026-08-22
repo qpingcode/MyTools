@@ -22,6 +22,7 @@ public sealed partial class ResultItem(Icon icon, string title, string subTitle,
     public string ResultKey { get; set; } = string.Empty;
     public string SearchQuery { get; set; } = string.Empty;
     public DateTime? CreatedAt { get; set; }
+    public bool IgnoreSelectionHistoryBoost { get; set; }
 
     public string ContentAsString
     {
@@ -32,7 +33,7 @@ public sealed partial class ResultItem(Icon icon, string title, string subTitle,
     [ObservableProperty]
     private string numberLabel = string.Empty;
     
-    public IEnumerable<IActionWithCommand> AllowedActions { get; set; } = Enumerable.Empty<IActionWithCommand>();
+    public IEnumerable<IActionWithHotkey> AllowedActions { get; set; } = Enumerable.Empty<IActionWithHotkey>();
 
     public ResultItem(
         Icon icon,
@@ -63,6 +64,7 @@ public sealed partial class ResultItem(Icon icon, string title, string subTitle,
             LocalizedTitle = LocalizedTitle,
             LocalizedSubTitle = LocalizedSubTitle,
             CreatedAt = CreatedAt,
+            IgnoreSelectionHistoryBoost = IgnoreSelectionHistoryBoost,
         };
     }
 }

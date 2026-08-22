@@ -67,9 +67,9 @@ public partial class DetailedListViewModel : ObservableObject, ISwitchableViewMo
         basicListViewModel.PerformSearch(plugin, searchText);
     }
 
-    public bool HandleKeyDown(Key key)
+    public bool HandleKeyDown(Key key, ModifierKeys modifiers)
     {
-        return basicListViewModel.HandleKeyDown(key);
+        return basicListViewModel.HandleKeyDown(key, modifiers);
     }
 
     public bool HandleKeyUp(Key key)
@@ -77,9 +77,9 @@ public partial class DetailedListViewModel : ObservableObject, ISwitchableViewMo
         return basicListViewModel.HandleKeyUp(key);
     }
 
-    public void ExecuteAction(string? command)
+    public void ExecuteAction(IActionWithHotkey? action)
     {
-        basicListViewModel.ExecuteAction(command);
+        basicListViewModel.ExecuteAction(action);
     }
 
     public void Dispose()

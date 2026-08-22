@@ -99,12 +99,14 @@ public partial class NodePluginDetailView : UserControl
         if (viewModel != null)
         {
             viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+            viewModel.WebActionRequested -= OnWebActionRequested;
         }
 
         viewModel = DataContext as NodePluginDetailViewModel;
         if (viewModel != null)
         {
             viewModel.PropertyChanged += OnViewModelPropertyChanged;
+            viewModel.WebActionRequested += OnWebActionRequested;
         }
 
         NavigateIfNeeded();
@@ -521,6 +523,7 @@ public partial class NodePluginDetailView : UserControl
                 fallbackLocale = viewModel.CurrentContext.FallbackLocale,
                 translationRevision = BuildTranslationRevision(localizationService.CurrentLocale, messages),
                 messages,
+                actions = viewModel.CurrentContext.Plugin.GetWebActionDefinitions(),
                 theme = theme.ToWireString(),
                 themeTokens = WebThemeTokens.For(theme)
             });
@@ -658,5 +661,12 @@ public partial class NodePluginDetailView : UserControl
     public void SendHostKey(string key)
     {
         SendHostEvent(Routes.HostEvent.Key, new { key });
+    }
+
+    private void OnWebActionRequested(JsonElement payload)
+    {
+        SendHostEvent(
+            Routes.HostEvent.DetailAction,
+            payload.ValueKind == JsonValueKind.Undefined ? new { } : payload);
     }
 }

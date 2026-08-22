@@ -5,6 +5,8 @@
   "Plugin.JsonFormatter.Action.Open.Title": "Open Formatter",
   "Plugin.JsonFormatter.Action.Open.Description": "Open the JSON formatter",
   "Plugin.JsonFormatter.Action.Open.Success": "Opened JSON formatter",
+  "Plugin.JsonFormatter.Action.Copy": "Copy",
+  "Plugin.JsonFormatter.Action.CopyDescription": "Copy the formatted JSON to the clipboard",
   "Plugin.JsonFormatter.Detail.Input": "Input",
   "Plugin.JsonFormatter.Detail.Output": "Output",
   "Plugin.JsonFormatter.Detail.InputPlaceholder": "Paste JSON here",

@@ -22,9 +22,8 @@ function createBrowseState(page: unknown) {
 
 function createDetail() {
   return {
-    type: "web-detail",
-    htmlEntry: "web/AnkiCard/index.html",
-    title: mytoolsI18n.t("Plugin.DeepSeekTranslator.Anki.Name", { defaultValue: "DeepSeek Anki Cards" }),
+    page: "web/AnkiCard/index.html",
+    title: mytoolsI18n.t("Plugin.DeepSeekTranslator.Anki.Name", { defaultValue: "Anki Cards" }),
     initialState: createReviewState(),
   };
 }
@@ -49,13 +48,6 @@ plugin
     mytoolsI18n.configure(params);
     return {};
   })
-  .action(() => ({
-    message: mytoolsI18n.t("Plugin.DeepSeekTranslator.Anki.Action.Review.Success", {
-      defaultValue: "Opened Anki cards",
-    }),
-    actionType: "none",
-    detail: createDetail(),
-  }))
   .handle("load", () => createReviewState())
   .handle("review", (payload) => {
     try {

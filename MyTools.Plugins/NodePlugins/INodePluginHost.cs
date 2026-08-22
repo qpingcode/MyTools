@@ -15,7 +15,7 @@ internal interface INodePluginHost
 
     Func<HostCallRequest, CancellationToken, Task<JsonElement>>? HostCallHandler { get; set; }
 
-    Task<JsonElement> InitializeAsync(
+    Task<NodePluginInitializeResponse> InitializeAsync(
         string locale,
         string fallbackLocale,
         IReadOnlyDictionary<string, string> messages,

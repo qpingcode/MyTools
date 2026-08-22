@@ -9,7 +9,7 @@ public interface IPlugin
     string PluginId { get; }
     string Name { get; }
     string Description { get; }
-    public List<IActionWithCommand> Actions { get; }
+    public List<IActionWithHotkey> Actions { get; }
     public bool IsEnabled { get; }
     ViewModelType ViewModelType { get;}
     public bool IsGlobalSearchPlugin { get; }

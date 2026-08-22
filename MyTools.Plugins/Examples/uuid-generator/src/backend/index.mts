@@ -1,19 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { createPlugin, type PluginSearchParams } from "@qping/plugin-bus/node";
+import { createPlugin, HostAction, type PluginSearchParams } from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 
 type UuidFormat = "standard" | "uppercase" | "nodash" | "braces" | "parentheses" | "base64";
-
-function copyAction() {
-  return {
-    id: "copy",
-    title: mytoolsI18n.t("Plugin.UuidGenerator.Action.Copy", { defaultValue: "Copy" }),
-    kind: "copy",
-    description: mytoolsI18n.t("Plugin.UuidGenerator.Action.CopyDescription", {
-      defaultValue: "Copy the value to the clipboard",
-    }),
-  };
-}
 
 function helpText() {
   return mytoolsI18n.t("Plugin.UuidGenerator.Help", {
@@ -70,8 +59,8 @@ function search(params: PluginSearchParams) {
           subtitle: text,
           priority: 90,
           icon: { kind: "emoji", value: "🔑" },
-          copyText: text,
-          actions: [copyAction()],
+          value: text,
+          actions: ["copy"],
         },
       ],
     };
@@ -90,8 +79,8 @@ function search(params: PluginSearchParams) {
         }),
         priority: 100,
         icon: { kind: "emoji", value: "🔑" },
-        copyText: uuid,
-        actions: [copyAction()],
+        value: uuid,
+        actions: ["copy"],
       },
     ],
   };
@@ -104,5 +93,14 @@ plugin
     mytoolsI18n.configure(params);
     return {};
   })
+  .actions<{ value: string }>([{
+    id: "copy",
+    title: { key: "Plugin.UuidGenerator.Action.Copy", defaultValue: "Copy" },
+    description: {
+      key: "Plugin.UuidGenerator.Action.CopyDescription",
+      defaultValue: "Copy the value to the clipboard",
+    },
+    execute: ({ item }) => ({ host: { kind: HostAction.Copy, text: item?.value ?? "" } }),
+  }])
   .search(search)
   .start();

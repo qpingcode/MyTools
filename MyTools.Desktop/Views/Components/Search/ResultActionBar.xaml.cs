@@ -3,6 +3,7 @@ using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
 using MyTools.Common;
 using MyTools.Desktop.ViewModels;
 
@@ -10,6 +11,7 @@ namespace MyTools.Desktop.Components;
 
 public partial class ResultActionBar : UserControl
 {
+    public static readonly Hotkey OverflowHotkey = Hotkey.Ctrl(HotkeyKey.K);
     public static readonly DependencyProperty ActionsProperty =
         DependencyProperty.Register(
             nameof(Actions),
@@ -20,7 +22,7 @@ public partial class ResultActionBar : UserControl
     public static readonly DependencyProperty DefaultActionProperty =
         DependencyProperty.Register(
             nameof(DefaultAction),
-            typeof(IActionWithCommand),
+            typeof(IActionWithHotkey),
             typeof(ResultActionBar));
 
     public static readonly DependencyProperty OverflowActionsProperty =
@@ -40,7 +42,7 @@ public partial class ResultActionBar : UserControl
     public ResultActionBar()
     {
         InitializeComponent();
-        OverflowActions = Array.Empty<IActionWithCommand>();
+        OverflowActions = Array.Empty<IActionWithHotkey>();
         OverflowMenu.PreviewKeyDown += OverflowMenu_OnPreviewKeyDown;
         OverflowMenu.PreviewKeyUp += OverflowMenu_OnPreviewKeyUp;
         OverflowMenu.Opened += OverflowMenu_OnOpened;
@@ -53,9 +55,9 @@ public partial class ResultActionBar : UserControl
         set => SetValue(ActionsProperty, value);
     }
 
-    public IActionWithCommand? DefaultAction
+    public IActionWithHotkey? DefaultAction
     {
-        get => (IActionWithCommand?)GetValue(DefaultActionProperty);
+        get => (IActionWithHotkey?)GetValue(DefaultActionProperty);
         set => SetValue(DefaultActionProperty, value);
     }
 
@@ -73,7 +75,21 @@ public partial class ResultActionBar : UserControl
 
     public static bool TryHandleOverflowHotkey(KeyEventArgs e, ResultActionBar? bar)
     {
-        if (bar is not { HasOverflow: true })
+        if (bar == null)
+        {
+            return false;
+        }
+
+        // Window-level PreviewKeyDown runs before the ContextMenu receives Escape. Consume it
+        // here so the first Escape dismisses the topmost UI layer instead of closing the window.
+        if (e.Key == Key.Escape && bar.OverflowMenu.IsOpen)
+        {
+            bar.OverflowMenu.IsOpen = false;
+            e.Handled = true;
+            return true;
+        }
+
+        if (!bar.HasOverflow)
         {
             return false;
         }
@@ -136,7 +152,7 @@ public partial class ResultActionBar : UserControl
 
     private void RefreshSplit()
     {
-        var actions = Actions?.OfType<IActionWithCommand>();
+        var actions = Actions?.OfType<IActionWithHotkey>();
         var (primary, overflow) = ResultActionBarSplit.Split(actions);
         DefaultAction = primary;
         var overflowList = overflow.ToList();
@@ -155,7 +171,12 @@ public partial class ResultActionBar : UserControl
 
     private void OverflowMenu_OnOpened(object sender, RoutedEventArgs e)
     {
-        OverflowMenu.Focus();
+        // ContextMenu opened by setting IsOpen does not reliably choose an initial MenuItem,
+        // especially with our custom template. Wait until its item containers exist, then make
+        // keyboard selection visible and deterministic.
+        _ = OverflowMenu.Dispatcher.BeginInvoke(
+            () => FocusOverflowItem(0),
+            DispatcherPriority.Input);
     }
 
     private void OverflowMenu_OnPreviewKeyDown(object sender, KeyEventArgs e)
@@ -173,14 +194,39 @@ public partial class ResultActionBar : UserControl
             return;
         }
 
-        var command = ResultActionBarHotkeys.ToCommand(e.Key, Keyboard.Modifiers);
-        if (command == null || !HasActionCommand(command))
+        if (e.Key is Key.Down or Key.Up)
+        {
+            var count = OverflowMenu.Items.Count;
+            if (count == 0)
+            {
+                return;
+            }
+
+            var currentIndex = GetFocusedOverflowIndex();
+            var nextIndex = e.Key == Key.Down
+                ? (currentIndex + 1 + count) % count
+                : (currentIndex <= 0 ? count : currentIndex) - 1;
+            FocusOverflowItem(nextIndex);
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Enter && GetFocusedOverflowAction() is { } selectedAction)
+        {
+            OverflowMenu.IsOpen = false;
+            Execute(selectedAction);
+            e.Handled = true;
+            return;
+        }
+
+        var hotkey = ResultActionBarHotkeys.ToHotkey(e.Key, Keyboard.Modifiers);
+        if (hotkey == null || !HasActionHotkey(hotkey.Value))
         {
             return;
         }
 
         OverflowMenu.IsOpen = false;
-        Execute(command);
+        Execute(Actions!.OfType<IActionWithHotkey>().First(action => action.Hotkey == hotkey.Value));
         e.Handled = true;
     }
 
@@ -197,19 +243,52 @@ public partial class ResultActionBar : UserControl
 
     private void OverflowMenuItem_OnClick(object sender, RoutedEventArgs e)
     {
-        if (sender is not MenuItem { DataContext: IActionWithCommand action })
+        if (sender is not MenuItem { DataContext: IActionWithHotkey action })
         {
             return;
         }
 
         OverflowMenu.IsOpen = false;
-        Execute(action.Command);
+        Execute(action);
     }
 
-    private bool HasActionCommand(string command)
+    private int GetFocusedOverflowIndex()
     {
-        return Actions?.OfType<IActionWithCommand>().Any(action =>
-                   string.Equals(action.Command, command, StringComparison.Ordinal))
+        for (var index = 0; index < OverflowMenu.Items.Count; index++)
+        {
+            if (OverflowMenu.ItemContainerGenerator.ContainerFromIndex(index) is MenuItem { IsKeyboardFocusWithin: true })
+            {
+                return index;
+            }
+        }
+
+        return -1;
+    }
+
+    private IActionWithHotkey? GetFocusedOverflowAction()
+    {
+        var index = GetFocusedOverflowIndex();
+        return index >= 0 ? OverflowMenu.Items[index] as IActionWithHotkey : null;
+    }
+
+    private void FocusOverflowItem(int index)
+    {
+        if (!OverflowMenu.IsOpen || index < 0 || index >= OverflowMenu.Items.Count)
+        {
+            return;
+        }
+
+        OverflowMenu.UpdateLayout();
+        if (OverflowMenu.ItemContainerGenerator.ContainerFromIndex(index) is MenuItem item)
+        {
+            item.Focus();
+            Keyboard.Focus(item);
+        }
+    }
+
+    private bool HasActionHotkey(Hotkey hotkey)
+    {
+        return Actions?.OfType<IActionWithHotkey>().Any(action => action.Hotkey == hotkey)
                == true;
     }
 
@@ -221,16 +300,16 @@ public partial class ResultActionBar : UserControl
         }
     }
 
-    private void Execute(string command)
+    private void Execute(IActionWithHotkey action)
     {
         var window = Window.GetWindow(this);
         switch (window?.DataContext)
         {
             case SearchViewModel search:
-                search.ExecuteActionCommand.Execute(command);
+                search.ExecuteActionCommand.Execute(action);
                 break;
             case PluginViewModel plugin:
-                plugin.ExecuteActionCommand.Execute(command);
+                plugin.ExecuteActionCommand.Execute(action);
                 break;
         }
     }

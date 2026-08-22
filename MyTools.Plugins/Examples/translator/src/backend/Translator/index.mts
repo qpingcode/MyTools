@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { createPlugin } from "@qping/plugin-bus/node";
+import { createPlugin, HostAction, Key, Modifiers } from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 
 import {
@@ -11,13 +11,13 @@ import {
   writeCache,
   writeJsonFile,
 } from "../common/storage.mjs";
-import { getCardsForSource, upsertGeneratedCards, type AnkiCard } from "../common/anki.mjs";
 
 const DEEPSEEK_API_URL = process.env.DEEPSEEK_API_URL || "https://api.deepseek.com/chat/completions";
 const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat";
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || "";
 const CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const CACHE_MIN_RECENT_COUNT = 200;
+const LIST_LIMIT = 100;
 
 type JsonRecord = Record<string, unknown>;
 
@@ -69,140 +69,6 @@ type PluginSettings = {
   isExpanded: boolean;
 };
 
-function buildAnkiCardPrompt(state: TranslationState): string {
-  const source = normalizeText(state.input);
-  const chinese = normalizeText(state.chineseTranslation || state.translation);
-  const definitions = Array.isArray(state.definitions)
-    ? state.definitions.map((definition: TranslationDefinition) => normalizeText(definition?.meaning)).filter(Boolean)
-    : [];
-
-  return [
-    "You create concise Anki review cards for language learning.",
-    "Return JSON only, without markdown fences or extra text.",
-    "Create exactly 3 cards total, one for each type: basic, choice-en-to-zh, choice-zh-to-en.",
-    "The basic card schema is {\"type\":\"basic\",\"front\":\"English word\",\"back\":\"Chinese meaning plus one short English example sentence\"}.",
-    "The choice card schema is {\"type\":\"choice-en-to-zh|choice-zh-to-en\",\"front\":\"question text\",\"back\":\"brief explanation shown after answering\",\"answer\":\"correct option\",\"options\":[\"...\",\"...\",\"...\",\"...\"]}.",
-    "For choice-en-to-zh, front must be the English source word and options must be Chinese meanings.",
-    "For choice-zh-to-en, front must be the Chinese meaning and options must be English words or phrases.",
-    "Each choice options array must include exactly 4 plausible options and include the answer exactly once.",
-    "Use Simplified Chinese for Chinese text. Keep options short and unambiguous.",
-    `Source: ${source}`,
-    `Chinese meaning: ${chinese}`,
-    `English definitions: ${definitions.join("; ")}`,
-    `Phonetic: ${normalizeText(state.phonetic)}`,
-    "Return schema: {\"cards\":[...]}",
-  ].join("\n");
-}
-
-async function generateAnkiCards(state: TranslationState): Promise<JsonRecord[]> {
-  if (!DEEPSEEK_API_KEY) {
-    throw new Error(mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.MissingApiKey", {
-      defaultValue: "Missing DEEPSEEK_API_KEY environment variable.",
-    }));
-  }
-
-  const response = await fetch(DEEPSEEK_API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: DEEPSEEK_MODEL,
-      temperature: 0.4,
-      messages: [
-        {
-          role: "system",
-          content: "You generate valid JSON only.",
-        },
-        {
-          role: "user",
-          content: buildAnkiCardPrompt(state),
-        },
-      ],
-    }),
-  });
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.CardGenerationFailed", {
-      defaultValue: "DeepSeek card generation failed ({{status}}): {{body}}",
-      status: response.status,
-      body,
-    }));
-  }
-
-  const data = await response.json() as JsonRecord;
-  const choices = Array.isArray(data.choices) ? data.choices : [];
-  const firstChoice = payloadRecord(choices[0]);
-  const message = payloadRecord(firstChoice.message);
-  const content = message.content;
-  if (typeof content !== "string" || !content.trim()) {
-    throw new Error(mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.EmptyCardContent", {
-      defaultValue: "DeepSeek returned empty Anki card content.",
-    }));
-  }
-
-  const jsonText = extractJsonObject(content);
-  if (!jsonText) {
-    throw new Error(mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.NonJsonCardContent", {
-      defaultValue: "DeepSeek returned non-JSON Anki card content.",
-    }));
-  }
-
-  const parsed = JSON.parse(jsonText) as JsonRecord;
-  if (!Array.isArray(parsed.cards) || parsed.cards.length === 0) {
-    throw new Error(mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.NoCardsReturned", {
-      defaultValue: "DeepSeek did not return Anki cards.",
-    }));
-  }
-
-  return parsed.cards.map((card: unknown) => payloadRecord(card));
-}
-
-async function ensureAnkiCardsForFavorite(state: TranslationState): Promise<number> {
-  const source = normalizeText(state?.input);
-  if (!source) {
-    return 0;
-  }
-
-  const existingCards = getCardsForSource(source);
-  if (state?.inputType === "sentence") {
-    if (existingCards.some((card: AnkiCard) => card.type === "basic")) {
-      return existingCards.length;
-    }
-
-    const back = normalizeText(state.translation);
-    if (!back) {
-      throw new Error(mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.TranslationRequired", {
-        defaultValue: "Sentence translation is required before saving.",
-      }));
-    }
-
-    return upsertGeneratedCards(source, [{
-      type: "basic",
-      front: source,
-      back,
-    }]).filter((card) => card.sourceKey === source.toLowerCase()).length;
-  }
-
-  if (hasRequiredAnkiCardTypes(existingCards)) {
-    return existingCards.length;
-  }
-
-  const phonetic = normalizeText(state.phonetic);
-  const generatedCards = (await generateAnkiCards(state)).map((card: JsonRecord) => ({
-    ...card,
-    phonetic: normalizeText(card?.phonetic) || (card?.type === "basic" ? phonetic : ""),
-  }));
-  return upsertGeneratedCards(source, generatedCards).filter((card) => card.sourceKey === source.toLowerCase()).length;
-}
-
-function hasRequiredAnkiCardTypes(cards: AnkiCard[]): boolean {
-  const types = new Set(cards.map((card: AnkiCard) => card.type));
-  return types.has("basic") && types.has("choice-en-to-zh") && types.has("choice-zh-to-en");
-}
-
 function isWord(text: unknown): boolean {
   const normalized = normalizeText(text);
   return /^[A-Za-z][A-Za-z'-]*$/.test(normalized);
@@ -232,9 +98,16 @@ function createHistoryState() {
   const entries = toCacheEntries(cache.entries)
     .slice()
     .sort((left, right) => new Date(right.cachedAt).getTime() - new Date(left.cachedAt).getTime())
+    .slice(0, LIST_LIMIT)
     .map((entry: CacheEntry) => {
-      const state = asTranslationState(entry.state);
+      const state = {
+        ...asTranslationState(entry.state),
+        isFavorite: isFavoriteWord(entry.input),
+        sendMode: getConfiguredSendMode(),
+        isExpanded: getConfiguredIsExpanded(),
+      };
       return {
+        id: entry.key,
         input: normalizeText(entry.input),
         inputType: normalizeText(entry.inputType) || "text",
         cachedAt: normalizeText(entry.cachedAt),
@@ -242,6 +115,7 @@ function createHistoryState() {
           ? normalizeText(state.chineseTranslation || state.translation)
           : normalizeText(state.translation),
         phonetic: normalizeText(state.phonetic),
+        state,
       };
     })
     .filter((entry) => entry.input);
@@ -260,9 +134,13 @@ function createFavoriteListState() {
   const entries = [...favoriteEntriesByWord.values()]
     .slice()
     .sort((left, right) => new Date(right.savedAt).getTime() - new Date(left.savedAt).getTime())
+    .slice(0, LIST_LIMIT)
     .map((entry) => {
       const state = asTranslationState(entry.result, entry.word);
+      state.sendMode = getConfiguredSendMode();
+      state.isExpanded = getConfiguredIsExpanded();
       return {
+        id: normalizeText(entry.word).toLowerCase(),
         input: normalizeText(entry.word),
         inputType: normalizeText(state.inputType) || (isWord(entry.word) ? "word" : "sentence"),
         cachedAt: normalizeText(entry.savedAt),
@@ -270,6 +148,7 @@ function createFavoriteListState() {
           ? normalizeText(state.chineseTranslation || state.translation)
           : normalizeText(state.translation),
         phonetic: normalizeText(state.phonetic),
+        state,
       };
     })
     .filter((entry) => entry.input);
@@ -490,7 +369,7 @@ function isFavoriteWord(text: unknown): boolean {
   return favoriteEntriesByWord.has(normalized);
 }
 
-async function toggleFavoriteWord(text: string, state: TranslationState): Promise<TranslationState> {
+function toggleFavoriteWord(text: string, state: TranslationState): TranslationState {
   const normalized = normalizeText(text);
   const word = isWord(normalized);
   if (!normalized || (word && state?.isValidWord !== true) || (!word && !normalizeText(state?.translation))) {
@@ -529,20 +408,34 @@ async function toggleFavoriteWord(text: string, state: TranslationState): Promis
       isFavorite: true,
     },
   });
+  if (favoriteEntriesByWord.size > LIST_LIMIT) {
+    const oldestKeys = [...favoriteEntriesByWord.entries()]
+      .sort((left, right) => new Date(left[1].savedAt).getTime() - new Date(right[1].savedAt).getTime())
+      .slice(0, favoriteEntriesByWord.size - LIST_LIMIT)
+      .map(([key]) => key);
+    oldestKeys.forEach((key) => favoriteEntriesByWord.delete(key));
+  }
   persistFavoriteEntries();
-  const cardCount = await ensureAnkiCardsForFavorite({
-    ...state,
-    inputType: word ? "word" : "sentence",
-    input: normalized,
-  });
 
   return {
     ...state,
     isFavorite: true,
     sendMode: getConfiguredSendMode(),
     isExpanded: getConfiguredIsExpanded(),
-    ankiCardCount: cardCount,
   };
+}
+
+function deleteHistoryEntry(id: unknown) {
+  const key = normalizeText(id);
+  const cache = readCache();
+  writeCache({ entries: toCacheEntries(cache.entries).filter((entry) => entry.key !== key) });
+  return createHistoryState();
+}
+
+function deleteFavoriteEntry(id: unknown) {
+  favoriteEntriesByWord.delete(normalizeText(id).toLowerCase());
+  persistFavoriteEntries();
+  return createFavoriteListState();
 }
 
 function updateSendMode(mode: unknown, state: TranslationState): TranslationState {
@@ -727,10 +620,57 @@ function toCacheEntries(entries: Record<string, unknown>[]): CacheEntry[] {
 }
 
 const plugin = createPlugin();
+let copyText = "";
 
 plugin
   .initialize((params) => {
     mytoolsI18n.configure(params);
+    return {};
+  })
+  .actions([
+    {
+      id: "copy",
+      title: { key: "Plugin.DeepSeekTranslator.Action.Copy", defaultValue: "Copy" },
+      description: {
+        key: "Plugin.DeepSeekTranslator.Action.CopyDescription",
+        defaultValue: "Copy the translation to the clipboard",
+      },
+      hotkey: { key: Key.E, modifiers: Modifiers.Control },
+      execute: () => ({ host: { kind: HostAction.Copy, text: copyText }, close: true }),
+    },
+    {
+      id: "translate",
+      title: { key: "Plugin.DeepSeekTranslator.Action.Translate", defaultValue: "Translate" },
+      hotkey: { key: Key.Enter, modifiers: Modifiers.Control },
+      execute: () => ({ web: { payload: { action: "translate" } } }),
+    },
+    {
+      id: "toggle-mode",
+      title: { key: "Plugin.DeepSeekTranslator.Action.ToggleMode", defaultValue: "Switch Translation Mode" },
+      hotkey: { key: Key.Tab, modifiers: Modifiers.Control },
+      execute: () => ({ web: { payload: { action: "toggle-mode" } } }),
+    },
+    {
+      id: "history",
+      title: { key: "Plugin.DeepSeekTranslator.Action.History", defaultValue: "History List" },
+      hotkey: { key: Key.H, modifiers: Modifiers.Control },
+      execute: () => ({ web: { payload: { action: "history" } } }),
+    },
+    {
+      id: "favorites",
+      title: { key: "Plugin.DeepSeekTranslator.Action.Favorites", defaultValue: "Favorites List" },
+      hotkey: { key: Key.D, modifiers: Modifiers.Control },
+      execute: () => ({ web: { payload: { action: "favorites" } } }),
+    },
+    {
+      id: "toggle-favorite",
+      title: { key: "Plugin.DeepSeekTranslator.Action.ToggleFavorite", defaultValue: "Favorite / Unfavorite" },
+      hotkey: { key: Key.D, modifiers: Modifiers.ControlShift },
+      execute: () => ({ web: { payload: { action: "toggle-favorite" } } }),
+    },
+  ])
+  .handle("setCopyText", (payload) => {
+    copyText = typeof payload?.text === "string" ? payload.text : "";
     return {};
   })
   .handle("translate", async (payload, context) => {
@@ -748,10 +688,12 @@ plugin
   .handle("favorite", async (payload, context) => {
     const data = payloadRecord(payload);
     const text = normalizeText(data.text || context.query || "");
-    return await toggleFavoriteWord(text, data.state ? asTranslationState(data.state, text) : getCachedTranslation(text, isWord(text)) || createInitialState(text));
+    return toggleFavoriteWord(text, data.state ? asTranslationState(data.state, text) : getCachedTranslation(text, isWord(text)) || createInitialState(text));
   })
   .handle("getHistory", () => createHistoryState())
   .handle("getFavorites", () => createFavoriteListState())
+  .handle("deleteHistory", (payload) => deleteHistoryEntry(payloadRecord(payload).id))
+  .handle("deleteFavorite", (payload) => deleteFavoriteEntry(payloadRecord(payload).id))
   .handle("setSendMode", (payload) => {
     const data = payloadRecord(payload);
     return updateSendMode(data.sendMode, data.state ? asTranslationState(data.state) : createInitialState(""));

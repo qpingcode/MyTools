@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { createPlugin, type PluginSearchParams } from "@qping/plugin-bus/node";
+import { createPlugin, HostAction, type PluginSearchParams } from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 
 const execFileAsync = promisify(execFile);
@@ -172,17 +172,8 @@ async function search(params: PluginSearchParams) {
       subtitle: displaySubtitle(processInfo),
       priority: 100,
       icon: { kind: "emoji", value: "💀" },
-      copyText: String(processInfo.id),
-      actions: [
-        {
-          id: "kill",
-          title: mytoolsI18n.t("Plugin.ProcessKiller.Action.Kill", { defaultValue: "Kill Process" }),
-          kind: "kill",
-          description: mytoolsI18n.t("Plugin.ProcessKiller.Action.KillDescription", {
-            defaultValue: "Terminate the selected process",
-          }),
-        },
-      ],
+      pid: processInfo.id,
+      actions: ["kill"],
     }));
   return { items };
 }
@@ -194,5 +185,17 @@ plugin
     mytoolsI18n.configure(params);
     return {};
   })
+  .actions<{ pid: number }>([{
+    id: "kill",
+    title: { key: "Plugin.ProcessKiller.Action.Kill", defaultValue: "Kill Process" },
+    description: {
+      key: "Plugin.ProcessKiller.Action.KillDescription",
+      defaultValue: "Terminate the selected process",
+    },
+    execute: ({ item }) => ({
+      host: { kind: HostAction.Kill, pid: item?.pid ?? 0 },
+      close: true,
+    }),
+  }])
   .search(search)
   .start();

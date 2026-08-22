@@ -284,11 +284,11 @@ internal sealed class NodePluginBusHost : INodePluginHost
             _session?.SessionId ?? ""), cancellationToken);
     }
 
-    public Task<JsonElement> InitializeAsync(string locale, string fallbackLocale,
+    public Task<NodePluginInitializeResponse> InitializeAsync(string locale, string fallbackLocale,
         IReadOnlyDictionary<string, string> messages, string theme,
         CancellationToken cancellationToken = default)
     {
-        return SendAndUnwrapResultAsync(Routes.PluginCall.Initialize, new NodePluginInitializeRequest
+        return SendAsync<NodePluginInitializeResponse>(Routes.PluginCall.Initialize, new NodePluginInitializeRequest
         {
             Locale = locale,
             FallbackLocale = fallbackLocale,
@@ -447,10 +447,12 @@ internal sealed class NodePluginBusHost : INodePluginHost
         using var timeoutRegistration = timeoutCts.Token.Register(() => CompletePending(timedOut: true));
         using var cancelRegistration = cancellationToken.Register(() => CompletePending(timedOut: false));
 
+        _logger.LogInformation("Sending plugin.call '{Route}' id={Id}, waiting for response", route, id);
         await _bus.RouteRequestAsync(env, _hostEndpoint);
-        _logger.LogInformation("Sent plugin.call '{Route}' id={Id}, waiting for response", route, id);
 
-        return await tcs.Task;
+        var response = await tcs.Task;
+        _logger.LogInformation("Completed plugin.call '{Route}' id={Id}", route, id);
+        return response;
     }
 
     private void HandleResponse(Envelope env)
