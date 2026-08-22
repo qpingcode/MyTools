@@ -140,11 +140,6 @@ public partial class App
         openConfigItem.Click += OpenConfigFolder_Click;
         _notifyIcon.ContextMenu.Items.Add(openConfigItem);
 
-        var openLogItem = new MenuItem();
-        openLogItem.Header = GetCaption("OpenLogFolder", "Open Log Folder");
-        openLogItem.Click += OpenLogFolder_Click;
-        _notifyIcon.ContextMenu.Items.Add(openLogItem);
-
         var settingsItem = new MenuItem();
         settingsItem.Header = GetCaption("Settings", "Settings");
         settingsItem.Click += OpenSettings_Click;
@@ -214,14 +209,6 @@ public partial class App
         new OpenInExplorer().ExecuteAsync(param);
     }
 
-    private void OpenLogFolder_Click(object? sender, EventArgs e)
-    {
-        var logFolder = Path.Combine(ConfigPath.Base, "logs");
-        Directory.CreateDirectory(logFolder);
-        var param = ActionStringParam.From(logFolder);
-        new OpenInExplorer().ExecuteAsync(param);
-    }
-    
     private void OpenSettings_Click(object? sender, EventArgs e)
     {
         try

@@ -1,4 +1,4 @@
-// Plugin Node-SDK tests: verify the fluent API (initialize/search/action/handle/publish/
+// Plugin Node-SDK tests: verify the fluent API (initialize/search/actions/handle/publish/
 // hostCall) maps to v3 routes. Uses a stubbed runPlugin to avoid a real pipe.
 // Run with: node --test MyTools.Plugins/Examples/sdk-v3/test/node.test.mjs
 
@@ -31,13 +31,13 @@ test("Plugin exposes fluent chainable API", () => {
   const plugin = mod.createPlugin();
   assert.equal(typeof plugin.initialize, "function");
   assert.equal(typeof plugin.search, "function");
-  assert.equal(typeof plugin.action, "function");
+  assert.equal(typeof plugin.actions, "function");
   assert.equal(typeof plugin.handle, "function");
   assert.equal(typeof plugin.publish, "function");
   assert.equal(typeof plugin.hostCall, "function");
   assert.equal(typeof plugin.start, "function");
 
-  const r = plugin.initialize(() => ({})).search(() => ({})).action(() => ({}));
+  const r = plugin.initialize(() => ({})).search(() => ({ items: [] })).actions([]);
   assert.equal(r, plugin);
 });
 
@@ -72,15 +72,19 @@ test("buildRoutes maps search handler to plugin.call.search", async () => {
   const routes = plugin.buildRoutes();
   assert.ok(routes["plugin.call.search"], "search route missing");
   const result = await routes["plugin.call.search"]({ query: "hi", mode: "plugin" });
-  assert.deepEqual(result, { items: [{ id: "1", title: "hi", mode: "plugin" }] });
+  assert.deepEqual(result, { items: [{ id: "1", title: "hi" }] });
 });
 
 test("search params default query, mode, locale and theme when payload is sparse", async () => {
   const plugin = mod.createPlugin();
-  plugin.search((p) => p);
+  let received;
+  plugin.search((p) => {
+    received = p;
+    return { items: [] };
+  });
   const routes = plugin.buildRoutes();
-  const result = await routes["plugin.call.search"]({});
-  assert.deepEqual(result, {
+  await routes["plugin.call.search"]({});
+  assert.deepEqual(received, {
     locale: "en-US",
     fallbackLocale: "en-US",
     theme: "dark",
@@ -91,7 +95,11 @@ test("search params default query, mode, locale and theme when payload is sparse
 
 test("buildRoutes maps action handler to plugin.call.invokeAction", async () => {
   const plugin = mod.createPlugin();
-  plugin.action((p) => ({ itemId: p.itemId, actionId: p.actionId, query: p.query }));
+  plugin.actions([{
+    id: "open-detail",
+    title: { key: "Action.OpenDetail", defaultValue: "Open detail" },
+    execute: (p) => ({ message: { key: "Result", defaultValue: `${p.itemId}:${p.query}` } }),
+  }]);
   const routes = plugin.buildRoutes();
   assert.ok(routes["plugin.call.invokeAction"], "action route missing");
   const result = await routes["plugin.call.invokeAction"]({
@@ -101,21 +109,30 @@ test("buildRoutes maps action handler to plugin.call.invokeAction", async () => 
     locale: "zh-CN",
     theme: "light",
   });
-  assert.deepEqual(result, { itemId: "hello:1", actionId: "open-detail", query: "hi" });
+  assert.deepEqual(result, { message: { key: "Result", defaultValue: "hello:1:hi" } });
 });
 
 test("action params default ids and query when payload is sparse", async () => {
   const plugin = mod.createPlugin();
-  plugin.action((p) => p);
+  let received;
+  plugin.actions([{
+    id: "inspect",
+    title: { key: "Action.Inspect", defaultValue: "Inspect" },
+    execute: (p) => {
+      received = p;
+      return {};
+    },
+  }]);
   const routes = plugin.buildRoutes();
-  const result = await routes["plugin.call.invokeAction"]({});
-  assert.deepEqual(result, {
+  await routes["plugin.call.invokeAction"]({ actionId: "inspect" });
+  assert.deepEqual(received, {
     locale: "en-US",
     fallbackLocale: "en-US",
     theme: "dark",
     itemId: "",
-    actionId: "",
+    actionId: "inspect",
     query: "",
+    item: undefined,
   });
 });
 
@@ -152,7 +169,7 @@ test("buildRoutes includes initialize when registered", async () => {
     fallbackLocale: "en-US",
     messages: { "Plugin.Hello.Name": "你好搜索" },
   });
-  assert.deepEqual(result, { configured: "zh-CN", keys: ["Plugin.Hello.Name"] });
+  assert.deepEqual(result, { configured: "zh-CN", keys: ["Plugin.Hello.Name"], actions: [] });
 });
 
 test("initialize params default locale and empty messages when payload is sparse", async () => {
@@ -160,5 +177,11 @@ test("initialize params default locale and empty messages when payload is sparse
   plugin.initialize((p) => p);
   const routes = plugin.buildRoutes();
   const result = await routes["plugin.call.initialize"]({});
-  assert.deepEqual(result, { locale: "en-US", fallbackLocale: "en-US", messages: {}, theme: "dark" });
+  assert.deepEqual(result, {
+    locale: "en-US",
+    fallbackLocale: "en-US",
+    messages: {},
+    theme: "dark",
+    actions: [],
+  });
 });
