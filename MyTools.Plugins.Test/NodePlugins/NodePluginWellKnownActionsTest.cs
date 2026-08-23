@@ -1,4 +1,5 @@
 using System.Text.Json;
+using MyTools.Common;
 using MyTools.Plugins.NodePlugins;
 using NUnit.Framework;
 
@@ -8,13 +9,85 @@ namespace MyTools.Plugins.Test.NodePlugins;
 public class NodePluginWellKnownActionsTest
 {
     [Test]
-    public void ActionResponse_Refresh_ReadsRefreshFlag()
+    [TestCase("{\"host\":{\"kind\":\"copy\",\"text\":\"x\"}}")]
+    [TestCase("{\"web\":{}}")]
+    [TestCase("{\"detail\":{}}")]
+    [TestCase("{\"close\":true}")]
+    [TestCase("{\"refresh\":true}")]
+    public void ActionOutcome_LegacyField_IsRejected(string json)
     {
-        var response = JsonSerializer.Deserialize<NodePluginActionResponse>(
-            """{"refresh":true}""",
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<NodePluginActionOutcome>(
+            json,
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true }));
+    }
+
+    [Test]
+    public void ActionOutcome_TargetHost_NormalizesAction()
+    {
+        var outcome = JsonSerializer.Deserialize<NodePluginActionOutcome>(
+            """{"target":{"kind":"host","action":{"kind":"copy","text":"hello"}},"after":"close"}""",
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-        Assert.That(response?.Refresh, Is.True);
+        var normalized = outcome!.Normalize();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(normalized.Target, Is.TypeOf<NodePluginNormalizedHostTarget>());
+            var target = (NodePluginNormalizedHostTarget)normalized.Target!;
+            Assert.That(target.Action.Kind, Is.EqualTo("copy"));
+            Assert.That(target.Action.Text, Is.EqualTo("hello"));
+            Assert.That(normalized.After, Is.EqualTo(NodePluginActionAfter.Close));
+        });
+    }
+
+    [Test]
+    public void ActionOutcome_TargetWeb_NormalizesPayload()
+    {
+        var response = JsonSerializer.Deserialize<NodePluginActionOutcome>(
+            """{"target":{"kind":"web","payload":{"action":"format"}}}""",
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        var normalized = response!.Normalize();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(normalized.Target, Is.TypeOf<NodePluginNormalizedWebTarget>());
+            var target = (NodePluginNormalizedWebTarget)normalized.Target!;
+            Assert.That(target.Payload.GetProperty("action").GetString(), Is.EqualTo("format"));
+        });
+    }
+
+    [Test]
+    public void ActionOutcome_TargetDetail_NormalizesDetail()
+    {
+        var response = JsonSerializer.Deserialize<NodePluginActionOutcome>(
+            """{"target":{"kind":"detail","page":"detail.html","title":"Result","initialState":{"id":1}}}""",
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        var normalized = response!.Normalize();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(normalized.Target, Is.TypeOf<NodePluginNormalizedDetailTarget>());
+            var target = (NodePluginNormalizedDetailTarget)normalized.Target!;
+            Assert.That(target.Detail.Page, Is.EqualTo("detail.html"));
+            Assert.That(target.Detail.Title, Is.EqualTo("Result"));
+            Assert.That(target.Detail.InitialState.GetProperty("id").GetInt32(), Is.EqualTo(1));
+        });
+    }
+
+    [TestCase("{\"target\":{\"kind\":\"detail\"},\"after\":\"close\"}")]
+    [TestCase("{\"target\":{\"kind\":\"web\",\"page\":\"detail.html\"}}")]
+    [TestCase("{\"target\":{\"kind\":\"detail\",\"payload\":{}}}")]
+    [TestCase("{\"target\":{\"kind\":\"host\"}}")]
+    [TestCase("{\"target\":{\"kind\":\"host\",\"action\":{\"kind\":\"copy\"},\"payload\":{}}}")]
+    public void ActionOutcome_ConflictingTarget_Throws(string json)
+    {
+        var response = JsonSerializer.Deserialize<NodePluginActionOutcome>(
+            json,
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        Assert.Throws<InvalidOperationException>(() => response!.Normalize());
     }
 
     [Test]
@@ -83,5 +156,41 @@ public class NodePluginWellKnownActionsTest
 
         Assert.That(result.Success, Is.False);
         Assert.That(result.LocalizedMessage?.Key, Is.EqualTo("NodePlugin.InvalidHostAction"));
+    }
+
+    [TestCase(ActionTypeEnum.Close, ActionTypeEnum.Close)]
+    [TestCase(ActionTypeEnum.None, ActionTypeEnum.None)]
+    public void ResolveActionType_OpenPlugin_UsesActualLauncherResult(
+        ActionTypeEnum launcherResult,
+        ActionTypeEnum expected)
+    {
+        var host = new NodePluginHostActionDto { Kind = "openPlugin" };
+
+        var result = NodePluginInvokeAction.ResolveActionType(
+            host, launcherResult, NodePluginActionAfter.Close);
+
+        Assert.That(result, Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void ResolveActionType_OtherHostAction_PreservesPluginCloseRequest()
+    {
+        var result = NodePluginInvokeAction.ResolveActionType(
+            new NodePluginHostActionDto { Kind = "copy" },
+            ActionTypeEnum.Close,
+            NodePluginActionAfter.Close);
+
+        Assert.That(result, Is.EqualTo(ActionTypeEnum.Close));
+    }
+
+    [Test]
+    public void ResolveActionType_Keep_PreservesWindow()
+    {
+        var result = NodePluginInvokeAction.ResolveActionType(
+            null,
+            ActionTypeEnum.None,
+            NodePluginActionAfter.Keep);
+
+        Assert.That(result, Is.EqualTo(ActionTypeEnum.None));
     }
 }

@@ -95,8 +95,8 @@ plugin
       defaultValue: "Copy the phrase and paste it into the previously focused window",
     },
     execute: ({ item }) => ({
-      host: { kind: HostAction.CopyAndPaste, text: item?.content ?? "" },
-      close: true,
+      target: { kind: "host", action: { kind: HostAction.CopyAndPaste, text: item?.content ?? "" } },
+      after: "close",
     }),
   }])
   .search(search)

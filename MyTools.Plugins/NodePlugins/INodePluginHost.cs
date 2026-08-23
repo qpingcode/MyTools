@@ -26,7 +26,7 @@ internal interface INodePluginHost
         string query, string mode, string locale, string fallbackLocale, string theme,
         CancellationToken cancellationToken);
 
-    Task<NodePluginActionResponse> InvokeActionAsync(
+    Task<NodePluginActionOutcome> InvokeActionAsync(
         string itemId, string actionId, string query, string locale, string fallbackLocale, string theme,
         CancellationToken cancellationToken = default);
 

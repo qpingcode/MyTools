@@ -310,10 +310,10 @@ internal sealed class NodePluginBusHost : INodePluginHost
         }, cancellationToken);
     }
 
-    public Task<NodePluginActionResponse> InvokeActionAsync(string itemId, string actionId, string query,
+    public Task<NodePluginActionOutcome> InvokeActionAsync(string itemId, string actionId, string query,
         string locale, string fallbackLocale, string theme, CancellationToken cancellationToken = default)
     {
-        return SendAsync<NodePluginActionResponse>(Routes.PluginCall.InvokeAction, new NodePluginActionRequest
+        return SendAsync<NodePluginActionOutcome>(Routes.PluginCall.InvokeAction, new NodePluginActionRequest
         {
             ItemId = itemId,
             ActionId = actionId,

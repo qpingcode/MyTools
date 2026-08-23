@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace MyTools.Plugins.NodePlugins;
 
@@ -91,18 +92,138 @@ internal sealed class NodePluginIconDto
     public string Value { get; init; } = string.Empty;
 }
 
-/// <summary>
-/// plugin.call.invokeAction 的响应。各字段可组合：例如"打开 IDE 并关闭搜索窗"
-/// 就是 <c>Host</c> + <c>Close</c>。
-/// </summary>
-internal sealed class NodePluginActionResponse
+/// <summary>plugin.call.invokeAction 的响应。</summary>
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+internal sealed class NodePluginActionOutcome
 {
     public NodePluginLocalizedTextDto? Message { get; init; }
-    public bool Close { get; init; }
-    public bool Refresh { get; init; }
-    public NodePluginHostActionDto? Host { get; init; }
-    public NodePluginWebActionDto? Web { get; init; }
-    public NodePluginDetailViewDto? Detail { get; init; }
+    public NodePluginActionTargetDto? Target { get; init; }
+    public string? After { get; init; }
+
+    public NodePluginNormalizedActionOutcome Normalize()
+    {
+        NodePluginNormalizedActionTarget? target = null;
+        if (Target != null)
+        {
+            switch ((Target.Kind ?? string.Empty).Trim().ToLowerInvariant())
+            {
+                case "host":
+                    if (Target.Action == null)
+                    {
+                        throw new InvalidOperationException("A host target requires an action.");
+                    }
+
+                    EnsureNoWebOrDetailFields(Target, "host");
+                    target = new NodePluginNormalizedHostTarget(Target.Action);
+                    break;
+                case "web":
+                    if (Target.Action != null)
+                    {
+                        throw new InvalidOperationException("A web target cannot contain a host action.");
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(Target.Page) ||
+                        !string.IsNullOrWhiteSpace(Target.Title) ||
+                        Target.InitialState.ValueKind != JsonValueKind.Undefined)
+                    {
+                        throw new InvalidOperationException("A web target cannot contain detail fields.");
+                    }
+
+                    target = new NodePluginNormalizedWebTarget(Target.Payload);
+                    break;
+                case "detail":
+                    if (Target.Action != null)
+                    {
+                        throw new InvalidOperationException("A detail target cannot contain a host action.");
+                    }
+
+                    if (Target.Payload.ValueKind != JsonValueKind.Undefined)
+                    {
+                        throw new InvalidOperationException("A detail target cannot contain a web payload.");
+                    }
+
+                    target = new NodePluginNormalizedDetailTarget(new NodePluginDetailViewDto
+                    {
+                        Page = Target.Page,
+                        Title = Target.Title,
+                        InitialState = Target.InitialState
+                    });
+                    break;
+                default:
+                    throw new InvalidOperationException($"Unknown action outcome target: {Target.Kind}");
+            }
+        }
+        var after = string.IsNullOrWhiteSpace(After)
+            ? NodePluginActionAfter.Keep
+            : After.Trim().ToLowerInvariant() switch
+            {
+                "keep" => NodePluginActionAfter.Keep,
+                "close" => NodePluginActionAfter.Close,
+                "refresh" => NodePluginActionAfter.Refresh,
+                _ => throw new InvalidOperationException($"Unknown action outcome after value: {After}")
+            };
+
+        if (target is NodePluginNormalizedDetailTarget && after != NodePluginActionAfter.Keep)
+        {
+            throw new InvalidOperationException("A detail target cannot be combined with close or refresh.");
+        }
+
+        return new NodePluginNormalizedActionOutcome(target, after);
+    }
+
+    private static void EnsureNoWebOrDetailFields(NodePluginActionTargetDto target, string kind)
+    {
+        if (target.Payload.ValueKind != JsonValueKind.Undefined ||
+            !string.IsNullOrWhiteSpace(target.Page) ||
+            !string.IsNullOrWhiteSpace(target.Title) ||
+            target.InitialState.ValueKind != JsonValueKind.Undefined)
+        {
+            throw new InvalidOperationException($"A {kind} target cannot contain web or detail fields.");
+        }
+    }
+}
+
+internal enum NodePluginActionAfter
+{
+    Keep,
+    Close,
+    Refresh
+}
+
+internal sealed record NodePluginNormalizedActionOutcome(
+    NodePluginNormalizedActionTarget? Target,
+    NodePluginActionAfter After);
+
+internal abstract record NodePluginNormalizedActionTarget;
+
+internal sealed record NodePluginNormalizedHostTarget(NodePluginHostActionDto Action)
+    : NodePluginNormalizedActionTarget;
+
+internal sealed record NodePluginNormalizedWebTarget(JsonElement Payload)
+    : NodePluginNormalizedActionTarget;
+
+internal sealed record NodePluginNormalizedDetailTarget(NodePluginDetailViewDto Detail)
+    : NodePluginNormalizedActionTarget;
+
+/// <summary>Action target. Kind is host, web (existing page), or detail (new navigation).</summary>
+internal sealed class NodePluginActionTargetDto
+{
+    public string Kind { get; init; } = string.Empty;
+
+    /// <summary>host</summary>
+    public NodePluginHostActionDto? Action { get; init; }
+
+    /// <summary>web</summary>
+    public JsonElement Payload { get; init; }
+
+    /// <summary>detail</summary>
+    public string Page { get; init; } = string.Empty;
+
+    /// <summary>detail</summary>
+    public string Title { get; init; } = string.Empty;
+
+    /// <summary>detail</summary>
+    public JsonElement InitialState { get; init; }
 }
 
 /// <summary>

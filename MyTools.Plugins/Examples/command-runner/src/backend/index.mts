@@ -94,8 +94,8 @@ plugin
       defaultValue: "Run the selected command",
     },
     execute: ({ item }) => ({
-      host: { kind: HostAction.Run, command: item?.command ?? { command: "" } },
-      close: true,
+      target: { kind: "host", action: { kind: HostAction.Run, command: item?.command ?? { command: "" } } },
+      after: "close",
     }),
   }])
   .search(search)

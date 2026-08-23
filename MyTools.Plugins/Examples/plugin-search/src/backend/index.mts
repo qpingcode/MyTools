@@ -110,8 +110,7 @@ plugin
       defaultValue: "Open the plugin window",
     },
     execute: ({ item }) => ({
-      host: { kind: HostAction.OpenPlugin, pluginId: item?.pluginId ?? "" },
-      close: true,
+      target: { kind: "host", action: { kind: HostAction.OpenPlugin, pluginId: item?.pluginId ?? "" } },
     }),
   }])
   .search(search)

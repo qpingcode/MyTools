@@ -69,7 +69,10 @@ public sealed class PluginLauncher : IPluginLauncher
             }
         }
 
-        WindowHelper.ShowSearchWindow(plugin);
+        // This launch may originate from another plugin's result list (for example the plugin
+        // searcher). Its query belongs to that source plugin and must not become the target
+        // plugin's initial query.
+        WindowHelper.ShowSearchWindow(plugin, string.Empty);
         return PluginLaunchKind.SearchWindow;
     }
 

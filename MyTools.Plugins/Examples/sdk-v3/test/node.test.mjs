@@ -112,6 +112,44 @@ test("buildRoutes maps action handler to plugin.call.invokeAction", async () => 
   assert.deepEqual(result, { message: { key: "Result", defaultValue: "hello:1:hi" } });
 });
 
+test("action outcome uses one target and one lifecycle value", async () => {
+  const plugin = mod.createPlugin();
+  plugin.actions([{
+    id: "format",
+    title: { key: "Action.Format", defaultValue: "Format" },
+    execute: () => ({
+      target: { kind: "web", payload: { action: "format" } },
+      after: "keep",
+    }),
+  }]);
+
+  const result = await plugin.buildRoutes()["plugin.call.invokeAction"]({ actionId: "format" });
+
+  assert.deepEqual(result, {
+    target: { kind: "web", payload: { action: "format" } },
+    after: "keep",
+  });
+});
+
+test("host action is represented as a target", async () => {
+  const plugin = mod.createPlugin();
+  plugin.actions([{
+    id: "copy",
+    title: { key: "Action.Copy", defaultValue: "Copy" },
+    execute: () => ({
+      target: { kind: "host", action: { kind: mod.HostAction.Copy, text: "hello" } },
+      after: "close",
+    }),
+  }]);
+
+  const result = await plugin.buildRoutes()["plugin.call.invokeAction"]({ actionId: "copy" });
+
+  assert.deepEqual(result, {
+    target: { kind: "host", action: { kind: "copy", text: "hello" } },
+    after: "close",
+  });
+});
+
 test("action params default ids and query when payload is sparse", async () => {
   const plugin = mod.createPlugin();
   let received;

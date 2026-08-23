@@ -289,7 +289,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
             });
     }
 
-    internal async Task<NodePluginActionResponse> InvokeActionAsync(string itemId, string actionId, string query)
+    internal async Task<NodePluginActionOutcome> InvokeActionAsync(string itemId, string actionId, string query)
     {
         return await processHost.InvokeActionAsync(
             itemId, actionId, query, localizationService.CurrentLocale, manifest.DefaultLocale,
@@ -305,17 +305,17 @@ public sealed class NodePlugin : IPlugin, IDisposable
             actionName);
     }
 
-    internal void LogActionCompleted(string actionId, string actionName, NodePluginActionResponse response)
+    internal void LogActionCompleted(string actionId, string actionName, NodePluginActionOutcome outcome)
     {
         logger.LogInformation(
             "Completed node plugin action: plugin={PluginId} action={ActionId} name={ActionName} host={HasHost} web={HasWeb} detail={HasDetail} close={Close}",
             PluginId,
             actionId,
             actionName,
-            response.Host != null,
-            response.Web != null,
-            response.Detail != null,
-            response.Close);
+            string.Equals(outcome.Target?.Kind, "host", StringComparison.OrdinalIgnoreCase),
+            string.Equals(outcome.Target?.Kind, "web", StringComparison.OrdinalIgnoreCase),
+            string.Equals(outcome.Target?.Kind, "detail", StringComparison.OrdinalIgnoreCase),
+            string.Equals(outcome.After, "close", StringComparison.OrdinalIgnoreCase));
     }
 
     internal void LogActionFailed(string actionId, string actionName, Exception exception)
@@ -619,44 +619,58 @@ internal sealed class NodePluginInvokeAction : IAction
         try
         {
             plugin.LogActionStarted(actionId, title);
-            var response = await plugin.InvokeActionAsync(actionArgs.ItemId, actionId, actionArgs.Query);
-            if (response.Host != null)
+            var outcome = await plugin.InvokeActionAsync(actionArgs.ItemId, actionId, actionArgs.Query);
+            var normalized = outcome.Normalize();
+            var hostActionType = ActionTypeEnum.None;
+            NodePluginHostActionDto? hostAction = null;
+            switch (normalized.Target)
             {
-                var hostResult = await NodePluginWellKnownActions.ExecuteAsync(response.Host);
-                if (!hostResult.Success)
+                case NodePluginNormalizedHostTarget hostTarget:
                 {
-                    plugin.LogActionFailed(actionId, title, hostResult.Message);
-                    return hostResult;
+                    hostAction = hostTarget.Action;
+                    var hostResult = await NodePluginWellKnownActions.ExecuteAsync(hostAction);
+                    if (!hostResult.Success)
+                    {
+                        plugin.LogActionFailed(actionId, title, hostResult.Message);
+                        return hostResult;
+                    }
+
+                    hostActionType = hostResult.ActionType;
+                    break;
+                }
+                case NodePluginNormalizedWebTarget webTarget:
+                {
+                    if (forwardToWeb == null)
+                    {
+                        return ActionResult.CreateFailure("The action returned web output without an active detail page.");
+                    }
+
+                    forwardToWeb(webTarget.Payload);
+                    break;
+                }
+                case NodePluginNormalizedDetailTarget detailTarget:
+                {
+                    var detailContext = plugin.CreateActionDetailContext(
+                        actionArgs.ItemId,
+                        BuildSearchText(actionArgs.Query),
+                        actionArgs.Query,
+                        detailTarget.Detail);
+                    if (detailContext != null)
+                    {
+                        var navigator = ServiceLocator.GetRequiredService<INodePluginDetailNavigator>();
+                        navigator.OpenDetail(detailContext);
+                    }
+
+                    break;
                 }
             }
 
-            if (response.Web != null)
-            {
-                if (forwardToWeb == null)
-                {
-                    return ActionResult.CreateFailure("The action returned web output without an active detail page.");
-                }
-                forwardToWeb(response.Web.Payload);
-            }
-
-            var detailContext = plugin.CreateActionDetailContext(
-                actionArgs.ItemId, BuildSearchText(actionArgs.Query), actionArgs.Query, response.Detail);
-            if (detailContext != null)
-            {
-                var navigator = ServiceLocator.GetRequiredService<INodePluginDetailNavigator>();
-                navigator.OpenDetail(detailContext);
-            }
-
-            var actionType = response.Close && detailContext == null
-                ? ActionTypeEnum.Close
-                : response.Refresh && detailContext == null
-                    ? ActionTypeEnum.Refresh
-                    : ActionTypeEnum.None;
-            var message = response.Message == null
+            var actionType = ResolveActionType(hostAction, hostActionType, normalized.After);
+            var message = outcome.Message == null
                 ? $"Executed {title}"
-                : new LocalizedMessage(response.Message.Key, response.Message.DefaultValue)
+                : new LocalizedMessage(outcome.Message.Key, outcome.Message.DefaultValue)
                     .Resolve(plugin.PluginLocalization);
-            plugin.LogActionCompleted(actionId, title, response);
+            plugin.LogActionCompleted(actionId, title, outcome);
             return ActionResult.CreateSuccess(message, actionType);
         }
         catch (Exception ex)
@@ -664,6 +678,31 @@ internal sealed class NodePluginInvokeAction : IAction
             plugin.LogActionFailed(actionId, title, ex);
             return ActionResult.CreateFailure(ex.Message);
         }
+    }
+
+    internal static ActionTypeEnum ResolveActionType(
+        NodePluginHostActionDto? host,
+        ActionTypeEnum hostActionType,
+        NodePluginActionAfter after)
+    {
+        // openPlugin can either create a separate plugin window or replace the current search
+        // window. Only the launcher knows which happened, so its result must own the lifecycle.
+        // Otherwise a delayed `close` response can close the newly-created search window.
+        if (host != null &&
+            string.Equals(
+                (host.Kind ?? string.Empty).Trim().Replace("-", "", StringComparison.Ordinal),
+                "openplugin",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return hostActionType;
+        }
+
+        return after switch
+        {
+            NodePluginActionAfter.Close => ActionTypeEnum.Close,
+            NodePluginActionAfter.Refresh => ActionTypeEnum.Refresh,
+            _ => ActionTypeEnum.None
+        };
     }
 
     private string BuildSearchText(string query)

@@ -327,11 +327,14 @@ function quoteArg(value: string): string {
 function hostExecute(filePath: string, argument: string, message: string) {
   return {
     message: { key: "Plugin.OpenPath.Action.Open.Success", defaultValue: message },
-    close: true,
-    host: {
-      kind: HostAction.Execute,
-      path: filePath,
-      args: quoteArg(argument),
+    after: "close" as const,
+    target: {
+      kind: "host" as const,
+      action: {
+        kind: HostAction.Execute,
+        path: filePath,
+        args: quoteArg(argument),
+      },
     },
   };
 }

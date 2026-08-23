@@ -107,8 +107,11 @@ plugin
       title: { key: "Plugin.UuidGenerator.Action.Copy", defaultValue: "Copy" },
       description: { key: "Plugin.UuidGenerator.Action.CopyDescription", defaultValue: "Copy the selected UUID" },
       execute: ({ item }: ActionContext<UuidItem>) => ({
-        host: { kind: HostAction.Copy, text: formatUuid(item?.uuid ?? "", currentFormat) },
-        close: true
+        target: {
+          kind: "host",
+          action: { kind: HostAction.Copy, text: formatUuid(item?.uuid ?? "", currentFormat) },
+        },
+        after: "close"
       }),
     },
     {
@@ -119,7 +122,7 @@ plugin
       execute: () => {
         currentFormat = formats[(formats.indexOf(currentFormat) + 1) % formats.length];
         return {
-          refresh: true,
+          after: "refresh",
           message: { key: "Plugin.UuidGenerator.Action.ToggleFormatSuccess", defaultValue: "UUID format switched" },
         };
       },
@@ -133,15 +136,18 @@ plugin
       },
       hotkey: { key: Key.C, modifiers: Modifiers.ControlShift },
       execute: ({ item }) => ({
-        host: {
-          kind: HostAction.AddClipboardHistory,
-          texts: (item?.batch ?? []).map((uuid) => formatUuid(uuid, currentFormat)),
+        target: {
+          kind: "host",
+          action: {
+            kind: HostAction.AddClipboardHistory,
+            texts: (item?.batch ?? []).map((uuid) => formatUuid(uuid, currentFormat)),
+          },
         },
         message: {
           key: "Plugin.UuidGenerator.Action.CopyAllHistorySuccess",
           defaultValue: "Added all UUIDs to clipboard history",
         },
-        close: true
+        after: "close"
       }),
     },
   ])

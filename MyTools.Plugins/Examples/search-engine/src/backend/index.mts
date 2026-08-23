@@ -139,8 +139,8 @@ plugin
       defaultValue: "Open the search URL in the default browser",
     },
     execute: ({ item }) => ({
-      host: { kind: HostAction.OpenInBrowser, url: item?.urls ?? [] },
-      close: true,
+      target: { kind: "host", action: { kind: HostAction.OpenInBrowser, url: item?.urls ?? [] } },
+      after: "close",
     }),
   }])
   .search(search)

@@ -180,8 +180,8 @@ plugin
       defaultValue: "Terminate the selected process",
     },
     execute: ({ item }) => ({
-      host: { kind: HostAction.Kill, pid: item?.pid ?? 0 },
-      close: true,
+      target: { kind: "host", action: { kind: HostAction.Kill, pid: item?.pid ?? 0 } },
+      after: "close",
     }),
   }])
   .search(search)

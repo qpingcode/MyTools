@@ -96,24 +96,30 @@ export type DetailRequest = {
   initialState?: unknown;
 };
 
-/**
- * The result of running an action. Every field is optional and they combine: opening an IDE and
- * closing the search window is `{ host: {...}, close: true }`.
- */
-export type ActionOutcome = {
-  /** Run a host-side action (clipboard, process launch, browser, ...). */
-  host?: HostActionRequest;
-  /** Hand off to the detail page; arrives as `host.event.detailAction` with this payload. */
-  web?: { payload?: unknown };
-  /** Open a web detail page. */
-  detail?: DetailRequest;
+export type ActionTarget =
+  /** Run one privileged host-side action (clipboard, process launch, browser, ...). */
+  | { kind: "host"; action: HostActionRequest }
+  /** Hand off to the currently active detail page as host.event.detailAction. */
+  | { kind: "web"; payload?: unknown }
+  /** Open a new web detail page. */
+  | ({ kind: "detail" } & DetailRequest);
+
+export type ActionAfter = "keep" | "close" | "refresh";
+
+type ActionOutcomeBase = {
   /** Status bar text. */
   message?: LocalizedText;
-  /** Close the search window afterwards. Defaults to false. */
-  close?: boolean;
-  /** Refresh the current search results afterwards. Defaults to false. */
-  refresh?: boolean;
 };
+
+/**
+ * The result of running an action. An action selects at most one execution target. Host targets
+ * may choose a follow-up lifecycle action; web and detail targets keep their current surface alive.
+ */
+export type ActionOutcome = ActionOutcomeBase & (
+  | { target?: undefined; after?: ActionAfter }
+  | { target: Extract<ActionTarget, { kind: "host" }>; after?: ActionAfter }
+  | { target: Exclude<ActionTarget, { kind: "host" }>; after?: "keep" }
+);
 
 /**
  * What an action sees when it runs. `item` is the original object returned by `search()`,

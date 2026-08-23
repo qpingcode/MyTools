@@ -57,7 +57,7 @@ my-plugin/
     "check": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@qping/plugin-bus": "0.2.0"
+    "@qping/plugin-bus": "0.4.0"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
@@ -176,8 +176,11 @@ plugin
     title: { key: "Plugin.MyPlugin.Action.Copy", defaultValue: "Copy" },
     hotkey: { key: Key.C, modifiers: Modifiers.Control | Modifiers.Shift },
     execute: ({ item }) => ({
-      host: { kind: HostAction.Copy, text: item?.content ?? "" },
-      close: true,
+      target: {
+        kind: "host",
+        action: { kind: HostAction.Copy, text: item?.content ?? "" },
+      },
+      after: "close",
     }),
   }])
   .search((params: PluginSearchParams) => ({
@@ -207,26 +210,30 @@ plugin
 - `initialize` 的 params 是 `{ locale, fallbackLocale, messages, theme }`（`PluginInitializeParams`）。`theme` 为 `"light"` | `"dark"`，不含 CSS token。`mytoolsI18n.configure(params)` 装进 i18n。
 - `search` 的 params 是 `{ query, mode, locale, fallbackLocale, theme }`（`PluginSearchParams`）。`mode` 为 `"global"` | `"plugin"`：全局搜索（无关键词）为 `"global"`，用户输入 `keyword + 查询串` 进入该插件时为 `"plugin"`。返回 `{ items }`。
 - `plugin.actions()` 在 initialize 响应中自动发送完整注册表。`execute` 收到 `ActionContext`，其中 `item` 是 SDK 按 `sessionId + itemId` 缓存的原始业务对象。
-- outcome 的 `host` / `web` / `detail` / `message` / `close` 可组合。`HostActionRequest` 是按 `kind` 判别的联合，参数跟着动作走；不要再在 item 上放万能 `path` / `args` / `copyText`。
+- outcome 最多选择一个 `target`：`{ kind: "host", action }`、`{ kind: "web", payload }` 或 `{ kind: "detail", page?, title?, initialState? }`。三种 target 互斥；`host` target 可配 `after: "keep" | "close" | "refresh"`，`web` / `detail` target 只能保持当前界面。`message` 可独立附加。不要使用旧的顶层 `host` / `web` / `detail` / `close` / `refresh` 字段。
+- `HostActionRequest` 是按 `action.kind` 判别的联合，参数跟着动作走；不要再在 item 上放万能 `path` / `args` / `copyText`。
 - `hotkey` 是 `{ key: Key.*, modifiers?: Modifiers.* }`，不是字符串。修饰键用 `|` 组合；省略时当前 action 子集的第一项默认 Enter，其余只可点击。
 
-若目标路径要在按下 Enter 之后才算出来（剪贴板、找 `.sln` 等），**不要在 Node 里 `spawn`/`exec`**。插件 Job 开了 kill-on-close，MyTools 退出会把子进程一起杀掉。插件算完后返回 `host`，由宿主执行：
+若目标路径要在按下 Enter 之后才算出来（剪贴板、找 `.sln` 等），**不要在 Node 里 `spawn`/`exec`**。插件 Job 开了 kill-on-close，MyTools 退出会把子进程一起杀掉。插件算完后返回 `host` target，由宿主执行：
 
 ```ts
 return {
   message: { key: "Plugin.OpenPath.Opened", defaultValue: "Opened Rider" },
-  close: true,
-  host: {
-    kind: HostAction.Execute,
-    path: "C:\\...\\rider64.exe",
-    args: "\"D:\\work\\app.sln\"",
+  after: "close",
+  target: {
+    kind: "host",
+    action: {
+      kind: HostAction.Execute,
+      path: "C:\\...\\rider64.exe",
+      args: "\"D:\\work\\app.sln\"",
+    },
   },
 };
 ```
 
-`host.kind` 使用 `HostAction` 常量。参考 [`openpath`](references/Examples/openpath/)，动态计算后交给宿主执行。
+`target.action.kind` 使用 `HostAction` 常量。参考 [`openpath`](references/Examples/openpath/)，动态计算后交给宿主执行。
 - `handle(name, fn)` 给详情页 `bus.call(name)` 用。`context` 有 `action / itemId / query / locale / fallbackLocale / theme`（由宿主注入，页面不必带）。
-- 详情页工具可以用 `handle` 把页面状态同步到 Node，再由注册 action 返回 `host`；纯 UI 动作可显式返回 `web`。
+- 详情页工具可以用 `handle` 把页面状态同步到 Node，再由注册 action 返回 `host` target；纯 UI 动作返回 `{ target: { kind: "web", payload } }`。
 - 环境变量从 `process.env` 读。`start()` 连宿主 Named Pipe，不要自己读 stdin。
 - 数据落盘优先用宿主注入目录：`MYTOOLS_PLUGIN_DATA_DIR`（单插件目录，例如 `%APPDATA%\MyTools.Desktop\pluginsData\translator`），其次可读 `MYTOOLS_PLUGINS_DATA_DIR`（所有插件数据根目录）。避免把数据写到 `process.cwd()`。
 
@@ -320,7 +327,7 @@ import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qp
 })();
 ```
 
-`HostEvents`：`initialize` / `search` / `key` / `detailAction` / `languageChanged` / `themeChanged`（完整路由 `host.event.*`）。其中 `detailAction` 只承载 action outcome 显式返回的 `web.payload`。设置页热键/鼠标捕获用长超时 `bus.call("captureInputAction")`，等宿主窗口确认或取消后在 Response 里返回结果。
+`HostEvents`：`initialize` / `search` / `key` / `detailAction` / `languageChanged` / `themeChanged`（完整路由 `host.event.*`）。其中 `detailAction` 只承载 action outcome 中 `{ target: { kind: "web", payload } }` 的 payload。设置页热键/鼠标捕获用长超时 `bus.call("captureInputAction")`，等宿主窗口确认或取消后在 Response 里返回结果。
 
 `HostEvents.Key` 只用于没有被注册 action 消费、需要交给页面的按键（例如 Shift+Enter 聚焦页面输入框）；注册 action 的点击和快捷键统一走 `plugin.call.invokeAction`。
 

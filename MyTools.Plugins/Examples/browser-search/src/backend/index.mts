@@ -152,8 +152,8 @@ plugin
         defaultValue: "Open this URL in the default browser",
       },
       execute: ({ item }) => ({
-        host: { kind: HostAction.OpenInBrowser, url: item?.url ?? "" },
-        close: true,
+        target: { kind: "host", action: { kind: HostAction.OpenInBrowser, url: item?.url ?? "" } },
+        after: "close",
       }),
     },
     {
@@ -165,7 +165,7 @@ plugin
       },
       hotkey: { key: Key.E, modifiers: Modifiers.Control },
       execute: ({ item }) => ({
-        host: { kind: HostAction.Copy, text: item?.url ?? "" },
+        target: { kind: "host", action: { kind: HostAction.Copy, text: item?.url ?? "" } },
       }),
     },
   ])

@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
-    "@qping/plugin-bus": "0.3.0",
+    "@qping/plugin-bus": "0.4.0",
     "naive-ui": "^2.40.1",
     "vue": "^3.5.13"
   },

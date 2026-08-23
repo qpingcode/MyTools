@@ -636,37 +636,40 @@ plugin
         defaultValue: "Copy the translation to the clipboard",
       },
       hotkey: { key: Key.E, modifiers: Modifiers.Control },
-      execute: () => ({ host: { kind: HostAction.Copy, text: copyText }, close: true }),
+      execute: () => ({
+        target: { kind: "host", action: { kind: HostAction.Copy, text: copyText } },
+        after: "close",
+      }),
     },
     {
       id: "translate",
       title: { key: "Plugin.DeepSeekTranslator.Action.Translate", defaultValue: "Translate" },
       hotkey: { key: Key.Enter, modifiers: Modifiers.Control },
-      execute: () => ({ web: { payload: { action: "translate" } } }),
+      execute: () => ({ target: { kind: "web", payload: { action: "translate" } } }),
     },
     {
       id: "toggle-mode",
       title: { key: "Plugin.DeepSeekTranslator.Action.ToggleMode", defaultValue: "Switch Translation Mode" },
       hotkey: { key: Key.Tab, modifiers: Modifiers.Control },
-      execute: () => ({ web: { payload: { action: "toggle-mode" } } }),
+      execute: () => ({ target: { kind: "web", payload: { action: "toggle-mode" } } }),
     },
     {
       id: "history",
       title: { key: "Plugin.DeepSeekTranslator.Action.History", defaultValue: "History List" },
       hotkey: { key: Key.H, modifiers: Modifiers.Control },
-      execute: () => ({ web: { payload: { action: "history" } } }),
+      execute: () => ({ target: { kind: "web", payload: { action: "history" } } }),
     },
     {
       id: "favorites",
       title: { key: "Plugin.DeepSeekTranslator.Action.Favorites", defaultValue: "Favorites List" },
       hotkey: { key: Key.D, modifiers: Modifiers.Control },
-      execute: () => ({ web: { payload: { action: "favorites" } } }),
+      execute: () => ({ target: { kind: "web", payload: { action: "favorites" } } }),
     },
     {
       id: "toggle-favorite",
       title: { key: "Plugin.DeepSeekTranslator.Action.ToggleFavorite", defaultValue: "Favorite / Unfavorite" },
       hotkey: { key: Key.D, modifiers: Modifiers.ControlShift },
-      execute: () => ({ web: { payload: { action: "toggle-favorite" } } }),
+      execute: () => ({ target: { kind: "web", payload: { action: "toggle-favorite" } } }),
     },
   ])
   .handle("setCopyText", (payload) => {

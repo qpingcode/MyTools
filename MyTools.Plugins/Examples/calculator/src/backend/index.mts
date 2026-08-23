@@ -167,8 +167,8 @@ plugin
         recordCalculation(item.expression, item.result);
       }
       return {
-        host: { kind: HostAction.Copy, text: item?.result ?? "" },
-        close: true,
+        target: { kind: "host", action: { kind: HostAction.Copy, text: item?.result ?? "" } },
+        after: "close",
       };
     },
   }])
