@@ -31,8 +31,9 @@ MyTools 提供两个发布通道：
 | 通道 | 版本 | 完整安装包 | 便携版 |
 | --- | --- | --- | --- |
 | **Stable** | — | 尚未发布 | 尚未发布 |
-| **Beta** | 0.0.15 | [下载](https://github.com/qpingcode/MyTools/releases/download/v0.0.15/MyTools-0.0.15-windows-x64-setup.exe) | [下载](https://github.com/qpingcode/MyTools/releases/download/v0.0.15/MyTools-0.0.15-windows-x64-portable.zip) |
+| **Beta** | 0.0.16 | [下载](https://github.com/qpingcode/MyTools/releases/download/v0.0.16/MyTools-0.0.16-windows-x64-setup.exe) | [下载](https://github.com/qpingcode/MyTools/releases/download/v0.0.16/MyTools-0.0.16-windows-x64-portable.zip) |
 <!-- mytools-downloads:end -->
+
 
 
 
