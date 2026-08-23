@@ -9,7 +9,32 @@ public sealed record PluginCreationContext(
     string SkillPath,
     IReadOnlyCollection<ExistingPlugin> ExistingPlugins,
     IHostCityProvider? HostCityProvider = null,
-    string? ReferenceRoot = null);
+    string? ReferenceRoot = null,
+    IPluginDevelopmentDiagnostics? DevelopmentDiagnostics = null);
+
+public interface IPluginDevelopmentDiagnostics
+{
+    Task<PluginWatchStartResult> StartPluginWatchAsync(
+        string pluginId,
+        CancellationToken cancellationToken = default);
+
+    PluginWatchLogResult GetPluginWatchLogs(string pluginId, int count);
+
+    SystemLogResult GetSystemLogs(int count);
+}
+
+public sealed record PluginWatchStartResult(
+    string PluginId,
+    bool Running,
+    bool Started,
+    string SourcePath);
+
+public sealed record PluginWatchLogResult(
+    string PluginId,
+    bool Running,
+    IReadOnlyList<string> Lines);
+
+public sealed record SystemLogResult(IReadOnlyList<string> Lines);
 
 public interface IHostCityProvider
 {

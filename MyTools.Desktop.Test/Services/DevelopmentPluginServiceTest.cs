@@ -136,6 +136,102 @@ public class DevelopmentPluginServiceTest
     }
 
     [Test]
+    public void WatchMutexName_IsStableAndPluginSpecific()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                DevelopmentPluginService.WatchMutexName("Color-Converter"),
+                Is.EqualTo(DevelopmentPluginService.WatchMutexName("color-converter")));
+            Assert.That(
+                DevelopmentPluginService.WatchMutexName("color-converter"),
+                Is.Not.EqualTo(DevelopmentPluginService.WatchMutexName("another-plugin")));
+        });
+    }
+
+    [Test]
+    public void CreateWatchStartInfo_ExitsWhenPluginMutexIsAlreadyHeld()
+    {
+        var pluginId = "watch-test-" + Guid.NewGuid().ToString("N");
+        using var mutex = new Mutex(true, DevelopmentPluginService.WatchMutexName(pluginId));
+        using var process = new Process
+        {
+            StartInfo = DevelopmentPluginService.CreateWatchStartInfo(
+                Path.Combine(TestContext.CurrentContext.WorkDirectory, "unused npm.cmd"),
+                TestContext.CurrentContext.WorkDirectory,
+                pluginId,
+                visible: false)
+        };
+
+        try
+        {
+            process.Start();
+            Assert.That(process.WaitForExit(10_000), Is.True);
+            var error = process.StandardError.ReadToEnd();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(process.ExitCode, Is.EqualTo(73));
+                Assert.That(error, Does.Contain("already running").IgnoreCase);
+            });
+        }
+        finally
+        {
+            mutex.ReleaseMutex();
+        }
+    }
+
+    [Test]
+    public void CreateWatchStartInfo_TeesWatchOutputToPluginLog()
+    {
+        var directory = Path.Combine(TestContext.CurrentContext.WorkDirectory, Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        var npm = Path.Combine(directory, "fake npm.cmd");
+        var log = Path.Combine(directory, "watch.log");
+        File.WriteAllText(npm, "@echo off\r\necho watch-output\r\n");
+        try
+        {
+            using var process = new Process
+            {
+                StartInfo = DevelopmentPluginService.CreateWatchStartInfo(
+                    npm,
+                    directory,
+                    "tee-test-" + Guid.NewGuid().ToString("N"),
+                    visible: false,
+                    logPath: log)
+            };
+
+            process.Start();
+            Assert.That(process.WaitForExit(10_000), Is.True);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(process.ExitCode, Is.Zero);
+                Assert.That(File.ReadAllText(log), Does.Contain("watch-output"));
+            });
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [Test]
+    public void SanitizeLogLine_RedactsCommonCredentials()
+    {
+        var sanitized = DevelopmentPluginService.SanitizeLogLine(
+            "Authorization: Bearer abc123 api_key=secret-value password=hunter2");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(sanitized, Does.Not.Contain("abc123"));
+            Assert.That(sanitized, Does.Not.Contain("secret-value"));
+            Assert.That(sanitized, Does.Not.Contain("hunter2"));
+            Assert.That(sanitized, Does.Contain("[REDACTED]"));
+        });
+    }
+
+    [Test]
     public void ValidateDevelopmentPackage_AcceptsCompleteInstalledProject()
     {
         var directory = CreatePackageDirectory("""

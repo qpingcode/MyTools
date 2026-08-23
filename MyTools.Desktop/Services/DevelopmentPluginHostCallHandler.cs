@@ -26,7 +26,8 @@ public sealed class DevelopmentPluginHostCallHandler : IPluginHostCapabilityHand
     [
         "development.create", "development.validate", "development.list", "development.delete",
         "development.refresh", "development.openFolder", "development.openCode",
-        "development.startDebug", "development.publish",
+        "development.startDebug", "development.watch.start", "development.watch.logs",
+        "development.logs", "development.publish",
         "development.ai.status", "development.ai.chat", "development.ai.progress", "development.ai.clear"
     ];
 
@@ -42,6 +43,9 @@ public sealed class DevelopmentPluginHostCallHandler : IPluginHostCapabilityHand
             "development.openFolder" => Open(request.Params, DevelopmentPluginService.OpenFolder),
             "development.openCode" => Open(request.Params, DevelopmentPluginService.OpenVisualStudioCode),
             "development.startDebug" => await StartDebugAsync(request.Params, cancellationToken),
+            "development.watch.start" => await StartWatchAsync(request.Params, cancellationToken),
+            "development.watch.logs" => GetWatchLogs(request.Params),
+            "development.logs" => GetSystemLogs(request.Params),
             "development.publish" => await PublishAsync(request.Params, cancellationToken),
             "development.ai.status" => JsonSerializer.SerializeToElement(aiService.GetAvailability(), JsonOptions),
             "development.ai.chat" => await ChatAsync(request.Params, cancellationToken),
@@ -142,6 +146,23 @@ public sealed class DevelopmentPluginHostCallHandler : IPluginHostCapabilityHand
         return JsonSerializer.SerializeToElement(result, JsonOptions);
     }
 
+    private async Task<JsonElement> StartWatchAsync(JsonElement payload, CancellationToken cancellationToken)
+    {
+        var result = await service.StartPluginWatchAsync(GetPluginId(payload), cancellationToken);
+        return JsonSerializer.SerializeToElement(result, JsonOptions);
+    }
+
+    private JsonElement GetWatchLogs(JsonElement payload)
+    {
+        var result = service.GetPluginWatchLogs(GetPluginId(payload), GetCount(payload));
+        return JsonSerializer.SerializeToElement(result, JsonOptions);
+    }
+
+    private JsonElement GetSystemLogs(JsonElement payload)
+    {
+        return JsonSerializer.SerializeToElement(service.GetSystemLogs(GetCount(payload)), JsonOptions);
+    }
+
     private async Task<JsonElement> PublishAsync(JsonElement payload, CancellationToken cancellationToken)
     {
         var result = await service.PublishAsync(GetPluginId(payload), cancellationToken);
@@ -150,6 +171,9 @@ public sealed class DevelopmentPluginHostCallHandler : IPluginHostCapabilityHand
 
     private static string GetPluginId(JsonElement payload) =>
         payload.GetProperty("pluginId").GetString() ?? "";
+
+    private static int GetCount(JsonElement payload) =>
+        payload.TryGetProperty("count", out var count) && count.TryGetInt32(out var value) ? value : 100;
 
     private sealed record AiChatHostRequest(string? SessionId, string Message, string? SelectedPluginId);
 }

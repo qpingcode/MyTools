@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
@@ -11,10 +13,16 @@ using MyTools.Plugins.NodePlugins;
 
 namespace MyTools.Desktop.Services;
 
-public sealed class DevelopmentPluginService : IDisposable
+public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDiagnostics
 {
     private const string RefreshPipeName = "MyTools.DevelopmentPlugins.Refresh";
+    private const int WatchAlreadyRunningExitCode = 73;
     private static readonly Regex ValidPluginId = new("^[a-z0-9](?:[a-z0-9.-]{0,62}[a-z0-9])?$", RegexOptions.Compiled);
+    private static readonly Regex AuthorizationSecret = new(
+        @"(?i)\bauthorization\b\s*[:=]\s*(?:bearer\s+)?\S+", RegexOptions.Compiled);
+    private static readonly Regex NamedSecret = new(
+        @"(?i)\b(api[-_ ]?key|access[-_ ]?token|refresh[-_ ]?token|password|secret)\b\s*[:=]\s*\S+",
+        RegexOptions.Compiled);
     private readonly ILogger<DevelopmentPluginService> logger;
     private readonly IReadOnlyList<IPlugin> builtInPlugins;
     private readonly NodePluginCatalog nodePluginCatalog;
@@ -295,10 +303,8 @@ public sealed class DevelopmentPluginService : IDisposable
             }
 
             reportProgress("startingWatch", "npm run watch");
-            var watchProcess = Process.Start(CreateNpmStartInfo(
-                npmCommand, artifact.SourcePath, "run watch", keepOpen: true))
-                ?? throw new InvalidOperationException("Unable to open the watch terminal.");
-            TrackWatchProcess(artifact.PluginId, watchProcess);
+            await EnsureWatchStartedAsync(
+                artifact.PluginId, npmCommand, artifact.SourcePath, cancellationToken);
             reportProgress("setupComplete", artifact.PluginId);
             return new PluginSetupResult(true, true, null);
         }
@@ -319,6 +325,14 @@ public sealed class DevelopmentPluginService : IDisposable
         string pluginId,
         CancellationToken cancellationToken)
     {
+        var result = await StartPluginWatchAsync(pluginId, cancellationToken);
+        return new DevelopmentPluginOperationResult(result.Running, result.SourcePath);
+    }
+
+    public async Task<PluginWatchStartResult> StartPluginWatchAsync(
+        string pluginId,
+        CancellationToken cancellationToken = default)
+    {
         var registration = GetAiEditableRegistration(pluginId);
         var npmCommand = ResolveNpmOrThrow();
         ValidateDevelopmentPackage(registration.SourcePath, requireDependencies: true);
@@ -328,18 +342,45 @@ public sealed class DevelopmentPluginService : IDisposable
         if (buildError is not null)
             throw new InvalidOperationException($"Plugin build failed.{Environment.NewLine}{buildError}");
 
+        if (IsWatchRunning(registration.PluginId))
+            return new PluginWatchStartResult(
+                registration.PluginId, Running: true, Started: false, registration.SourcePath);
+
         // Probe the watch command without a persistent terminal so immediate watch-only
         // failures (for example an invalid esbuild watch option) can be shown in the UI.
-        var watchError = await ProbeWatchAsync(npmCommand, registration.SourcePath, cancellationToken);
+        var watchError = await ProbeWatchAsync(
+            registration.PluginId, npmCommand, registration.SourcePath, cancellationToken);
         if (watchError is not null)
             throw new InvalidOperationException($"npm run watch failed.{Environment.NewLine}{watchError}");
 
-        StopWatchProcess(registration.PluginId);
-        var watchProcess = Process.Start(CreateNpmStartInfo(
-            npmCommand, registration.SourcePath, "run watch", keepOpen: true))
-            ?? throw new InvalidOperationException("Unable to open the watch terminal.");
-        TrackWatchProcess(registration.PluginId, watchProcess);
-        return new DevelopmentPluginOperationResult(true, registration.SourcePath);
+        var started = await EnsureWatchStartedAsync(
+            registration.PluginId, npmCommand, registration.SourcePath, cancellationToken);
+        return new PluginWatchStartResult(
+            registration.PluginId, Running: true, Started: started, registration.SourcePath);
+    }
+
+    public PluginWatchLogResult GetPluginWatchLogs(string pluginId, int count)
+    {
+        var registration = GetAiEditableRegistration(pluginId);
+        var lines = ReadRecentLines([WatchLogPath(registration.PluginId)], ClampLogCount(count))
+            .Select(SanitizeLogLine)
+            .ToArray();
+        return new PluginWatchLogResult(
+            registration.PluginId, IsWatchRunning(registration.PluginId), lines);
+    }
+
+    public SystemLogResult GetSystemLogs(int count)
+    {
+        var logDirectory = Path.Combine(ConfigPath.Base, "logs");
+        var logFiles = Directory.Exists(logDirectory)
+            ? Directory.EnumerateFiles(logDirectory, "log*.txt")
+                .OrderByDescending(File.GetLastWriteTimeUtc)
+                .ToArray()
+            : [];
+        var lines = ReadRecentLines(logFiles, ClampLogCount(count))
+            .Select(SanitizeLogLine)
+            .ToArray();
+        return new SystemLogResult(lines);
     }
 
     public async Task<DevelopmentPluginOperationResult> PublishAsync(
@@ -433,13 +474,14 @@ public sealed class DevelopmentPluginService : IDisposable
     }
 
     private async Task<string?> ProbeWatchAsync(
+        string pluginId,
         string npmCommand,
         string sourcePath,
         CancellationToken cancellationToken)
     {
         using var process = new Process
         {
-            StartInfo = CreateNpmStartInfo(npmCommand, sourcePath, "run watch", keepOpen: false)
+            StartInfo = CreateWatchStartInfo(npmCommand, sourcePath, pluginId, visible: false)
         };
         var output = new Queue<string>();
         void Capture(string? line)
@@ -591,6 +633,62 @@ public sealed class DevelopmentPluginService : IDisposable
         return info;
     }
 
+    internal static ProcessStartInfo CreateWatchStartInfo(
+        string npmCommand,
+        string workingDirectory,
+        string pluginId,
+        bool visible,
+        string? logPath = null)
+    {
+        var mutexName = WatchMutexName(pluginId).Replace("'", "''", StringComparison.Ordinal);
+        var escapedNpm = Path.GetFullPath(npmCommand).Replace("'", "''", StringComparison.Ordinal);
+        var watchCommand = $"  & '{escapedNpm}' run watch";
+        if (!string.IsNullOrWhiteSpace(logPath))
+        {
+            var escapedLogPath = Path.GetFullPath(logPath).Replace("'", "''", StringComparison.Ordinal);
+            watchCommand += $" 2>&1 | Tee-Object -FilePath '{escapedLogPath}' -Append";
+        }
+        var script = string.Join(Environment.NewLine,
+        [
+            $"$mutex = [Threading.Mutex]::new($false, '{mutexName}')",
+            "$ownsMutex = $false",
+            "try {",
+            "  try { $ownsMutex = $mutex.WaitOne(0) } catch [Threading.AbandonedMutexException] { $ownsMutex = $true }",
+            $"  if (-not $ownsMutex) {{ [Console]::Error.WriteLine('A watch process is already running for plugin {pluginId}.'); exit {WatchAlreadyRunningExitCode} }}",
+            watchCommand,
+            "  exit $LASTEXITCODE",
+            "}",
+            "finally {",
+            "  if ($ownsMutex) { $mutex.ReleaseMutex() }",
+            "  $mutex.Dispose()",
+            "}"
+        ]);
+        var encodedScript = Convert.ToBase64String(Encoding.Unicode.GetBytes(script));
+        var windowsPowerShell = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.System),
+            @"WindowsPowerShell\v1.0\powershell.exe");
+        var info = new ProcessStartInfo
+        {
+            FileName = windowsPowerShell,
+            Arguments = $"-NoLogo -NoProfile -ExecutionPolicy Bypass -EncodedCommand {encodedScript}",
+            WorkingDirectory = workingDirectory,
+            UseShellExecute = false,
+            RedirectStandardOutput = !visible,
+            RedirectStandardError = !visible,
+            CreateNoWindow = !visible
+        };
+        ApplyCurrentWindowsEnvironment(info);
+        PrependCommandDirectoryToPath(info, npmCommand);
+        return info;
+    }
+
+    internal static string WatchMutexName(string pluginId)
+    {
+        var normalizedId = pluginId.Trim().ToLowerInvariant();
+        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(normalizedId)))[..24];
+        return $@"Local\MyTools.DevelopmentWatch.{hash}";
+    }
+
     private static void PrependCommandDirectoryToPath(ProcessStartInfo info, string command)
     {
         var directory = Path.GetDirectoryName(Path.GetFullPath(command));
@@ -668,6 +766,133 @@ public sealed class DevelopmentPluginService : IDisposable
                 .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
         }
         return string.Join(Path.PathSeparator, directories.Distinct(StringComparer.OrdinalIgnoreCase));
+    }
+
+    private async Task<bool> EnsureWatchStartedAsync(
+        string pluginId,
+        string npmCommand,
+        string sourcePath,
+        CancellationToken cancellationToken)
+    {
+        if (IsWatchRunning(pluginId)) return false;
+
+        var logPath = WatchLogPath(pluginId);
+        Directory.CreateDirectory(Path.GetDirectoryName(logPath)!);
+        File.AppendAllText(
+            logPath,
+            $"{Environment.NewLine}=== watch started {DateTimeOffset.Now:O} ==={Environment.NewLine}");
+
+        var process = Process.Start(CreateWatchStartInfo(
+            npmCommand, sourcePath, pluginId, visible: true, logPath))
+            ?? throw new InvalidOperationException("Unable to open the watch terminal.");
+        try
+        {
+            var exitTask = process.WaitForExitAsync(cancellationToken);
+            var startupDelay = Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
+            if (await Task.WhenAny(exitTask, startupDelay) == exitTask)
+            {
+                await exitTask;
+                if (process.ExitCode == WatchAlreadyRunningExitCode)
+                {
+                    process.Dispose();
+                    return false;
+                }
+                throw new InvalidOperationException(
+                    $"npm run watch exited during startup with code {process.ExitCode}.");
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            TrackWatchProcess(pluginId, process);
+            return true;
+        }
+        catch
+        {
+            TryKillProcess(process);
+            process.Dispose();
+            throw;
+        }
+    }
+
+    private static string WatchLogPath(string pluginId) =>
+        Path.Combine(ConfigPath.Base, "logs", "watch", pluginId.ToLowerInvariant() + ".log");
+
+    private static int ClampLogCount(int count) => Math.Clamp(count, 1, 500);
+
+    private static IReadOnlyList<string> ReadRecentLines(IEnumerable<string> paths, int count)
+    {
+        var result = new List<string>(count);
+        foreach (var path in paths)
+        {
+            if (!File.Exists(path)) continue;
+            var tail = new Queue<string>(count);
+            try
+            {
+                using var stream = new FileStream(
+                    path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                using var reader = new StreamReader(stream, detectEncodingFromByteOrderMarks: true);
+                while (reader.ReadLine() is { } line)
+                {
+                    tail.Enqueue(line);
+                    while (tail.Count > count) tail.Dequeue();
+                }
+            }
+            catch (IOException)
+            {
+                continue;
+            }
+
+            var remaining = count - result.Count;
+            if (remaining <= 0) break;
+            var selected = tail.TakeLast(remaining).ToArray();
+            result.InsertRange(0, selected);
+            if (result.Count >= count) break;
+        }
+        return result;
+    }
+
+    internal static string SanitizeLogLine(string line)
+    {
+        var sanitized = AuthorizationSecret.Replace(line, "authorization=[REDACTED]");
+        sanitized = NamedSecret.Replace(sanitized, "$1=[REDACTED]");
+        return sanitized.Length <= 4000 ? sanitized : sanitized[..4000];
+    }
+
+    private bool IsWatchRunning(string pluginId)
+    {
+        lock (sync)
+        {
+            if (watchProcesses.TryGetValue(pluginId, out var tracked))
+            {
+                try
+                {
+                    if (!tracked.HasExited) return true;
+                }
+                catch
+                {
+                    // Fall through to the cross-process mutex check.
+                }
+                watchProcesses.Remove(pluginId);
+            }
+        }
+
+        using var mutex = new Mutex(false, WatchMutexName(pluginId));
+        var acquired = false;
+        try
+        {
+            try
+            {
+                acquired = mutex.WaitOne(0);
+            }
+            catch (AbandonedMutexException)
+            {
+                acquired = true;
+            }
+            return !acquired;
+        }
+        finally
+        {
+            if (acquired) mutex.ReleaseMutex();
+        }
     }
 
     private void TrackWatchProcess(string pluginId, Process process)

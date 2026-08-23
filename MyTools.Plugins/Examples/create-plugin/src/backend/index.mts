@@ -57,6 +57,9 @@ plugin
   .handle("openFolder", async (payload: { sourcePath: string }) => plugin.hostCall("development.openFolder", payload))
   .handle("openCode", async (payload: { sourcePath: string }) => plugin.hostCall("development.openCode", payload))
   .handle("startDebug", async (payload: { pluginId: string }) => plugin.hostCall("development.startDebug", payload, 180_000))
+  .handle("startPluginWatch", async (payload: { pluginId: string }) => plugin.hostCall("development.watch.start", payload, 180_000))
+  .handle("getPluginWatchLogs", async (payload: { pluginId: string; count?: number }) => plugin.hostCall("development.watch.logs", payload))
+  .handle("getMyToolsLogs", async (payload: { count?: number }) => plugin.hostCall("development.logs", payload))
   .handle("publishPlugin", async (payload: { pluginId: string }) => plugin.hostCall("development.publish", payload, 180_000))
   .handle("getAiStatus", async () => plugin.hostCall("development.ai.status"))
   .handle("chatWithAi", async (payload: { sessionId?: string; message: string; selectedPluginId?: string }) =>

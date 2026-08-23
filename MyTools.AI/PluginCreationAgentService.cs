@@ -165,6 +165,9 @@ public sealed class PluginCreationAgentService : IDisposable
             AIFunctionFactory.Create(run.ListFiles, "list_files"),
             AIFunctionFactory.Create(run.ReadFile, "read_file"),
             AIFunctionFactory.Create(run.WritePluginFile, "write_plugin_file"),
+            AIFunctionFactory.Create(run.StartPluginWatchAsync, "start_plugin_watch"),
+            AIFunctionFactory.Create(run.GetPluginWatchLogs, "get_plugin_watch_logs"),
+            AIFunctionFactory.Create(run.GetMyToolsLogs, "get_mytools_logs"),
             AIFunctionFactory.Create(run.SearchWebAsync, "search_web"),
             AIFunctionFactory.Create(run.FetchUrlAsync, "fetch_url"),
             AIFunctionFactory.Create(run.CompletePlugin, "complete_plugin")
@@ -208,7 +211,8 @@ public sealed class PluginCreationAgentService : IDisposable
             Before writing, call get_mytools_context and inspect the selected plugin (when present) plus the smallest relevant
             example plugins under referenceRoot. The bundled references are authoritative and available even when the user
             has no MyTools source checkout. Generate or preserve every required source, manifest, package, build,
-            i18n and icon-related field described by the skill. Do not run shell commands. When all files are ready, call
+            i18n and icon-related field described by the skill. Do not run shell commands. When editing a selected development
+            plugin, you may start its singleton watch and inspect watch/MyTools logs to diagnose build or runtime failures. When all files are ready, call
             complete_plugin exactly once. If the request is materially ambiguous, ask a concise question instead of guessing.
             After completion, summarize what was created. The Host will run npm install and open npm run watch after
             registration, so do not ask the user to run those commands unless the Host reports a setup failure.
@@ -362,6 +366,41 @@ public sealed class PluginCreationAgentService : IDisposable
             return $"Wrote {Path.GetRelativePath(pluginRoot, target).Replace('\\', '/')}";
         }
 
+        [Description("Builds the selected development plugin and ensures its singleton npm watch is running. Use after edits when runtime validation is needed.")]
+        public async Task<string> StartPluginWatchAsync(
+            [Description("Selected development plugin ID.")] string pluginId,
+            CancellationToken cancellationToken = default)
+        {
+            var normalizedId = ValidateDiagnosticPluginId(pluginId);
+            if (context.DevelopmentDiagnostics is null)
+                return JsonSerializer.Serialize(new { available = false, error = "Development diagnostics are unavailable." });
+            Report("startingPluginWatch", normalizedId);
+            return JsonSerializer.Serialize(await context.DevelopmentDiagnostics.StartPluginWatchAsync(
+                normalizedId, cancellationToken));
+        }
+
+        [Description("Returns the most recent watch output lines for the selected development plugin.")]
+        public string GetPluginWatchLogs(
+            [Description("Selected development plugin ID.")] string pluginId,
+            [Description("Number of recent lines, from 1 to 500.")] int count = 100)
+        {
+            var normalizedId = ValidateDiagnosticPluginId(pluginId);
+            if (context.DevelopmentDiagnostics is null)
+                return JsonSerializer.Serialize(new { available = false, error = "Development diagnostics are unavailable." });
+            Report("readingPluginWatchLogs", normalizedId);
+            return JsonSerializer.Serialize(context.DevelopmentDiagnostics.GetPluginWatchLogs(normalizedId, count));
+        }
+
+        [Description("Returns the most recent sanitized MyTools Host log lines for diagnosing plugin integration failures.")]
+        public string GetMyToolsLogs(
+            [Description("Number of recent lines, from 1 to 500.")] int count = 100)
+        {
+            if (context.DevelopmentDiagnostics is null)
+                return JsonSerializer.Serialize(new { available = false, error = "Development diagnostics are unavailable." });
+            Report("readingMyToolsLogs", count.ToString());
+            return JsonSerializer.Serialize(context.DevelopmentDiagnostics.GetSystemLogs(count));
+        }
+
         [Description("Searches the public web when current documentation is needed. Returns a small text result set.")]
         public async Task<string> SearchWebAsync([Description("Search query.")] string query)
         {
@@ -494,6 +533,18 @@ public sealed class PluginCreationAgentService : IDisposable
             }
             if (context.ExistingPlugins.Any(plugin => string.Equals(plugin.Id, normalized, StringComparison.OrdinalIgnoreCase)))
                 throw new InvalidOperationException("The plugin ID already exists.");
+            return normalized;
+        }
+
+        private string ValidateDiagnosticPluginId(string pluginId)
+        {
+            var normalized = pluginId.Trim().ToLowerInvariant();
+            if (!ValidPluginId.IsMatch(normalized)) throw new InvalidOperationException("Invalid plugin ID.");
+            if (SelectedPlugin is null
+                || !string.Equals(SelectedPlugin.Id, normalized, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Diagnostics are limited to the selected development plugin.");
+            }
             return normalized;
         }
 

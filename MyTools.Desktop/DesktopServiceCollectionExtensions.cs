@@ -107,7 +107,8 @@ public static class DesktopServiceCollectionExtensions
                 skillPath,
                 existing,
                 sp.GetRequiredService<IHostCityProvider>(),
-                Path.Combine(Path.GetDirectoryName(skillPath)!, "references")));
+                Path.Combine(Path.GetDirectoryName(skillPath)!, "references"),
+                developmentPlugins));
         });
         serviceCollection.AddSingleton<DevelopmentPluginHostCallHandler>();
         serviceCollection.AddSingleton<IPluginHostCapabilityHandler>(sp =>
