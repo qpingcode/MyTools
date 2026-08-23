@@ -1,5 +1,6 @@
 import { createPlugin, HostAction, type PluginSearchParams } from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
+import { isSubsequence } from "@qping/plugin-bus/search";
 
 type PluginListItem = {
   pluginId?: string;
@@ -13,20 +14,6 @@ type PluginListResponse = {
 };
 
 const plugin = createPlugin();
-
-function isSubsequence(pattern: string, target: string): boolean {
-  if (!pattern) return true;
-  if (!target) return false;
-  var pi = 0;
-  var ti = 0;
-  var needle = pattern.toLowerCase();
-  var haystack = target.toLowerCase();
-  while (ti < haystack.length && pi < needle.length) {
-    if (haystack[ti] === needle[pi]) pi += 1;
-    ti += 1;
-  }
-  return pi === needle.length;
-}
 
 function matches(item: PluginListItem, query: string): boolean {
   if (!query) return true;

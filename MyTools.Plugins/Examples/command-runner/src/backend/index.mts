@@ -1,5 +1,6 @@
 import { createPlugin, HostAction, type PluginSearchParams, type RunSpec } from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
+import { isSubsequence } from "@qping/plugin-bus/search";
 
 type CommandConfig = {
   name?: string;
@@ -25,20 +26,6 @@ function normalizeScripts(scripts: string | string[] | undefined): string[] {
     .split(/\r?\n/)
     .map((line) => line.trimEnd())
     .filter((line) => line.length > 0);
-}
-
-function isSubsequence(pattern: string, target: string): boolean {
-  if (!pattern) return true;
-  if (!target) return false;
-  var pi = 0;
-  var ti = 0;
-  var needle = pattern.toLowerCase();
-  var haystack = target.toLowerCase();
-  while (ti < haystack.length && pi < needle.length) {
-    if (haystack[ti] === needle[pi]) pi += 1;
-    ti += 1;
-  }
-  return pi === needle.length;
 }
 
 function matches(config: CommandConfig, query: string): boolean {

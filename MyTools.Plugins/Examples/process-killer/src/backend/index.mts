@@ -2,6 +2,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { createPlugin, HostAction, type PluginSearchParams } from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
+import { isSubsequence } from "@qping/plugin-bus/search";
 
 const execFileAsync = promisify(execFile);
 const CacheTtlMs = 5000;
@@ -21,20 +22,6 @@ type CacheEntry = {
 
 var cache: CacheEntry | null = null;
 var inflight: Promise<ProcessInfo[]> | null = null;
-
-function isSubsequence(pattern: string, target: string): boolean {
-  if (!pattern) return true;
-  if (!target) return false;
-  var pi = 0;
-  var ti = 0;
-  var needle = pattern.toLowerCase();
-  var haystack = target.toLowerCase();
-  while (ti < haystack.length && pi < needle.length) {
-    if (haystack[ti] === needle[pi]) pi += 1;
-    ti += 1;
-  }
-  return pi === needle.length;
-}
 
 function parseCsvLine(line: string): string[] {
   var fields: string[] = [];

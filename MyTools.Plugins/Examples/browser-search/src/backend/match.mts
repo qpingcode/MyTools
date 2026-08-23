@@ -1,26 +1,8 @@
 import type { BrowserItem } from "./types.mjs";
+export { isSubsequence } from "@qping/plugin-bus/search";
+import { isSubsequence } from "@qping/plugin-bus/search";
 
 const MaxSubsequenceQueryLength = 12;
-
-export function isSubsequence(pattern: string, target: string): boolean {
-  if (!pattern) {
-    return true;
-  }
-  if (!target) {
-    return false;
-  }
-  let pi = 0;
-  let ti = 0;
-  const needle = pattern.toLowerCase();
-  const haystack = target.toLowerCase();
-  while (ti < haystack.length && pi < needle.length) {
-    if (haystack[ti] === needle[pi]) {
-      pi += 1;
-    }
-    ti += 1;
-  }
-  return pi === needle.length;
-}
 
 export function itemMatches(item: BrowserItem, query: string): boolean {
   if (!query) {

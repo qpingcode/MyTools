@@ -33,6 +33,11 @@
       "import": "./dist/i18n.mjs",
       "default": "./dist/i18n.mjs"
     },
+    "./search": {
+      "types": "./dist/search.d.ts",
+      "import": "./dist/search.mjs",
+      "default": "./dist/search.mjs"
+    },
     "./dev": {
       "types": "./dist/dev.d.ts",
       "import": "./dist/dev.mjs",

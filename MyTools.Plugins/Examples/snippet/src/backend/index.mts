@@ -1,5 +1,6 @@
 import { createPlugin, HostAction, type PluginSearchParams } from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
+import { isSubsequence } from "@qping/plugin-bus/search";
 
 type Phrase = {
   trigger?: string;
@@ -23,7 +24,9 @@ function preview(text: string): string {
 function priority(trigger: string, content: string, query: string): number {
   if (trigger.startsWith(query)) return 100;
   if (trigger.includes(query)) return 90;
+  if (isSubsequence(query, trigger)) return 80;
   if (content.includes(query)) return 70;
+  if (isSubsequence(query, content)) return 60;
   return 0;
 }
 
@@ -31,7 +34,10 @@ function matches(phrase: Phrase, query: string, showAll: boolean): boolean {
   const trigger = (phrase.trigger || "").toLowerCase();
   const content = (phrase.content || "").toLowerCase();
   if (!query) return showAll;
-  return trigger.includes(query) || content.includes(query);
+  return trigger.includes(query)
+    || content.includes(query)
+    || isSubsequence(query, trigger)
+    || isSubsequence(query, content);
 }
 
 async function loadPhrases(): Promise<Phrase[]> {
