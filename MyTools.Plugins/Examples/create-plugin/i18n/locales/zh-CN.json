@@ -26,6 +26,7 @@
   "Plugin.CreatePlugin.Ai.Progress.ResolvingLocation": "正在获取当前城市",
   "Plugin.CreatePlugin.Ai.Progress.ListingFiles": "正在检查插件文件",
   "Plugin.CreatePlugin.Ai.Progress.ReadingFile": "正在读取文件",
+  "Plugin.CreatePlugin.Ai.Progress.ReadingFiles": "正在读取文件",
   "Plugin.CreatePlugin.Ai.Progress.SearchingWeb": "正在查询网页",
   "Plugin.CreatePlugin.Ai.Progress.FetchingUrl": "正在打开网页",
   "Plugin.CreatePlugin.Ai.Progress.WritingFile": "正在写入文件",

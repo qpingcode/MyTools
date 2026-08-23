@@ -112,6 +112,61 @@ public class DevelopmentPluginServiceTest
     }
 
     [Test]
+    public void CreateNpmStartInfo_OverridesStaleProcessProxyFromCurrentSettings()
+    {
+        const string staleProxy = "http://127.0.0.1:7890";
+        var configuredProxy = new Uri("http://127.0.0.1:8890");
+        var previous = Environment.GetEnvironmentVariable("HTTP_PROXY");
+        try
+        {
+            Environment.SetEnvironmentVariable("HTTP_PROXY", staleProxy);
+
+            var info = DevelopmentPluginService.CreateNpmStartInfo(
+                "npm.cmd",
+                TestContext.CurrentContext.WorkDirectory,
+                "install",
+                false,
+                configuredProxy,
+                overrideEnvironmentProxy: true);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(info.Environment["HTTP_PROXY"], Is.EqualTo(configuredProxy.AbsoluteUri));
+                Assert.That(info.Environment["HTTPS_PROXY"], Is.EqualTo(configuredProxy.AbsoluteUri));
+                Assert.That(info.Environment["ALL_PROXY"], Is.EqualTo(configuredProxy.AbsoluteUri));
+            });
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("HTTP_PROXY", previous);
+        }
+    }
+
+    [Test]
+    public void CreateNpmStartInfo_RemovesStaleProcessProxyWhenSettingsUseDirectConnection()
+    {
+        var previous = Environment.GetEnvironmentVariable("HTTPS_PROXY");
+        try
+        {
+            Environment.SetEnvironmentVariable("HTTPS_PROXY", "http://127.0.0.1:7890");
+
+            var info = DevelopmentPluginService.CreateNpmStartInfo(
+                "npm.cmd",
+                TestContext.CurrentContext.WorkDirectory,
+                "install",
+                false,
+                proxyUri: null,
+                overrideEnvironmentProxy: true);
+
+            Assert.That(info.Environment.ContainsKey("HTTPS_PROXY"), Is.False);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("HTTPS_PROXY", previous);
+        }
+    }
+
+    [Test]
     public void ResolveSystemNpm_RequiresBothNodeAndNpmOnPath()
     {
         var directory = Path.Combine(TestContext.CurrentContext.WorkDirectory, Guid.NewGuid().ToString("N"));

@@ -88,7 +88,41 @@ public class UpdateServiceTests
         Assert.That(
             () => UpdateService.ParseProxyUri(proxyUrl),
             Throws.TypeOf<InvalidOperationException>()
-                .With.Message.EqualTo("The update proxy URL must not contain a username or password."));
+                .With.Message.EqualTo("The proxy URL must not contain a username or password."));
+    }
+
+    [Test]
+    public void PluginCreationProxyProvider_UsesCurrentMyToolsProxySetting()
+    {
+        var registry = new Mock<IConfigurationRegistry>();
+        registry.Setup(x => x.FindSetting(PluginCreationProxyProvider.ProxySettingPath))
+            .Returns(CreateStringSetting("http://127.0.0.1:8890"));
+        var provider = new PluginCreationProxyProvider(registry.Object);
+
+        var settings = provider.GetProxySettings();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(settings.ProxyUri?.AbsoluteUri, Is.EqualTo("http://127.0.0.1:8890/"));
+            Assert.That(settings.Source, Does.Contain(PluginCreationProxyProvider.ProxySettingPath));
+        });
+    }
+
+    [Test]
+    public void PluginCreationProxyProvider_EmptySettingMeansExplicitDirectConnection()
+    {
+        var registry = new Mock<IConfigurationRegistry>();
+        registry.Setup(x => x.FindSetting(PluginCreationProxyProvider.ProxySettingPath))
+            .Returns(CreateStringSetting(""));
+        var provider = new PluginCreationProxyProvider(registry.Object);
+
+        var settings = provider.GetProxySettings();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(settings.ProxyUri, Is.Null);
+            Assert.That(settings.Source, Does.Contain("direct"));
+        });
     }
 
     [TestCase(HttpStatusCode.Forbidden, "rate limit exceeded", true)]

@@ -3,6 +3,8 @@ import { createPlugin } from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 import { renderTemplateTrees, type TemplateView } from "./templates.mjs";
 
+const AI_CHAT_HOST_TIMEOUT_MS = 20 * 60_000;
+
 type CreateInput = {
   name: string;
   pluginId: string;
@@ -63,7 +65,7 @@ plugin
   .handle("publishPlugin", async (payload: { pluginId: string }) => plugin.hostCall("development.publish", payload, 180_000))
   .handle("getAiStatus", async () => plugin.hostCall("development.ai.status"))
   .handle("chatWithAi", async (payload: { sessionId?: string; message: string; selectedPluginId?: string }) =>
-    plugin.hostCall("development.ai.chat", payload, 600_000))
+    plugin.hostCall("development.ai.chat", payload, AI_CHAT_HOST_TIMEOUT_MS))
   .handle("getAiProgress", async (payload: { sessionId: string; afterSequence: number }) =>
     plugin.hostCall("development.ai.progress", payload, 20_000))
   .handle("clearAiConversation", async (payload: { sessionId?: string }) =>

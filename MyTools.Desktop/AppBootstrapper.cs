@@ -461,8 +461,8 @@ public class AppBootstrapper : IDisposable
                 valueType: SettingValueTypes.UpdateChannel);
             
             registry.AddSetting(generalCategory, "UpdateProxyUrl",
-                localization.GetCaption("Configuration.General.UpdateProxyUrl.Title", "Update proxy"),
-                localization.GetCaption("Configuration.General.UpdateProxyUrl.Description", "Optional proxy URL; leave empty for a direct connection"), string.Empty);
+                localization.GetCaption("Configuration.General.UpdateProxyUrl.Title", "Network proxy"),
+                localization.GetCaption("Configuration.General.UpdateProxyUrl.Description", "Proxy used by updates and plugin-creation AI; leave empty for a direct connection"), string.Empty);
             registry.AddSetting(generalCategory, "LogLevel",
                 localization.GetCaption("Configuration.General.LogLevel.Title", "Log level"),
                 localization.GetCaption("Configuration.General.LogLevel.Description", "Minimum level of messages written to the log file"),

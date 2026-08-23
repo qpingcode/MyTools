@@ -26,6 +26,7 @@
   "Plugin.CreatePlugin.Ai.Progress.ResolvingLocation": "Resolving approximate city",
   "Plugin.CreatePlugin.Ai.Progress.ListingFiles": "Inspecting plugin files",
   "Plugin.CreatePlugin.Ai.Progress.ReadingFile": "Reading file",
+  "Plugin.CreatePlugin.Ai.Progress.ReadingFiles": "Reading files",
   "Plugin.CreatePlugin.Ai.Progress.SearchingWeb": "Searching the web",
   "Plugin.CreatePlugin.Ai.Progress.FetchingUrl": "Opening web page",
   "Plugin.CreatePlugin.Ai.Progress.WritingFile": "Writing file",

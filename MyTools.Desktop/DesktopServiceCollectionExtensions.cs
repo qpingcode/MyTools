@@ -79,6 +79,7 @@ public static class DesktopServiceCollectionExtensions
         serviceCollection.AddSingleton<IPluginHostCapabilityHandler>(sp =>
             sp.GetRequiredService<RestartPluginHostCallHandler>());
         serviceCollection.AddSingleton<DevelopmentPluginService>();
+        serviceCollection.AddSingleton<IPluginCreationProxyProvider, PluginCreationProxyProvider>();
         serviceCollection.AddSingleton<HostCityService>();
         serviceCollection.AddSingleton<IHostCityProvider>(sp => sp.GetRequiredService<HostCityService>());
         serviceCollection.AddSingleton<LocationPluginHostCallHandler>();
@@ -108,7 +109,9 @@ public static class DesktopServiceCollectionExtensions
                 existing,
                 sp.GetRequiredService<IHostCityProvider>(),
                 Path.Combine(Path.GetDirectoryName(skillPath)!, "references"),
-                developmentPlugins));
+                developmentPlugins,
+                sp.GetRequiredService<IPluginCreationProxyProvider>()),
+                sp.GetRequiredService<ILogger<PluginCreationAgentService>>());
         });
         serviceCollection.AddSingleton<DevelopmentPluginHostCallHandler>();
         serviceCollection.AddSingleton<IPluginHostCapabilityHandler>(sp =>

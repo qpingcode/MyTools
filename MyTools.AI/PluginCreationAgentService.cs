@@ -6,8 +6,10 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Logging;
 using OpenAI;
 using System.ClientModel;
+using System.ClientModel.Primitives;
 using OpenAIChatClient = OpenAI.Chat.ChatClient;
 
 namespace MyTools.AI;
@@ -24,13 +26,16 @@ public sealed class PluginCreationAgentService : IDisposable
         "^[a-z0-9](?:[a-z0-9.-]{0,62}[a-z0-9])?$", RegexOptions.Compiled);
     private static readonly Regex ValidSessionId = new("^[a-zA-Z0-9_-]{1,64}$", RegexOptions.Compiled);
     private readonly PluginCreationContext context;
+    private readonly ILogger<PluginCreationAgentService>? logger;
     private readonly ConcurrentDictionary<string, ExistingPlugin> existingPlugins;
     private readonly ConcurrentDictionary<string, Conversation> conversations = new();
-    private readonly HttpClient httpClient = new() { Timeout = TimeSpan.FromSeconds(20) };
 
-    public PluginCreationAgentService(PluginCreationContext context)
+    public PluginCreationAgentService(
+        PluginCreationContext context,
+        ILogger<PluginCreationAgentService>? logger = null)
     {
         this.context = context;
+        this.logger = logger;
         existingPlugins = new ConcurrentDictionary<string, ExistingPlugin>(
             context.ExistingPlugins
                 .DistinctBy(plugin => plugin.Id, StringComparer.OrdinalIgnoreCase)
@@ -69,6 +74,7 @@ public sealed class PluginCreationAgentService : IDisposable
         if (!ValidSessionId.IsMatch(sessionId)) throw new InvalidOperationException("Invalid AI session ID.");
         var conversation = conversations.GetOrAdd(sessionId, _ => new Conversation());
         await conversation.Gate.WaitAsync(cancellationToken);
+        NetworkRoute? networkRoute = null;
         try
         {
             conversation.Messages.Add(new ChatMessage(ChatRole.User, message));
@@ -78,8 +84,11 @@ public sealed class PluginCreationAgentService : IDisposable
             }
 
             var currentContext = context with { ExistingPlugins = existingPlugins.Values.ToArray() };
-            var run = new ToolRunState(currentContext, request.SelectedPlugin, httpClient, conversation.Report);
-            var agent = CreateAgent(run, availability.Model);
+            networkRoute = ResolveNetworkRoute();
+            using var aiHttpClient = CreateHttpClient(networkRoute, TimeSpan.FromMinutes(10));
+            using var toolHttpClient = CreateHttpClient(networkRoute, TimeSpan.FromSeconds(20));
+            var run = new ToolRunState(currentContext, request.SelectedPlugin, toolHttpClient, conversation.Report);
+            var agent = CreateAgent(run, availability.Model, aiHttpClient);
             conversation.Report("thinking", null);
             var replyBuilder = new StringBuilder();
             await foreach (var update in agent.RunStreamingAsync(
@@ -98,8 +107,21 @@ public sealed class PluginCreationAgentService : IDisposable
         }
         catch (Exception ex)
         {
-            conversation.Report("failed", ex.Message);
-            throw;
+            networkRoute ??= new NetworkRoute(null, "proxy configuration resolution failed", UseSystemProxy: false);
+            var endpoint = SafeEndpoint();
+            var proxy = networkRoute.ProxyUri?.ToString() ?? "direct";
+            logger?.LogError(
+                ex,
+                "Plugin creation AI failed operation={Operation} endpoint={Endpoint} proxySource={ProxySource} proxy={Proxy}",
+                "agent.runStreaming",
+                endpoint,
+                networkRoute.Source,
+                proxy);
+            var diagnosticMessage =
+                $"Plugin creation AI failed during agent.runStreaming. Endpoint: {endpoint}. " +
+                $"Proxy source: {networkRoute.Source}. Proxy: {proxy}. Cause: {ex.Message}";
+            conversation.Report("failed", diagnosticMessage);
+            throw new InvalidOperationException(diagnosticMessage, ex);
         }
         finally
         {
@@ -140,7 +162,7 @@ public sealed class PluginCreationAgentService : IDisposable
         return new AiProgressBatch(await conversation.WaitForProgressAsync(afterSequence, cancellationToken));
     }
 
-    private ChatClientAgent CreateAgent(ToolRunState run, string model)
+    private ChatClientAgent CreateAgent(ToolRunState run, string model, HttpClient httpClient)
     {
         var apiKey = Environment.GetEnvironmentVariable(ApiKeyEnvironmentVariable)!;
         var configuredEndpoint = Environment.GetEnvironmentVariable("DEEPSEEK_API_URL")
@@ -153,9 +175,13 @@ public sealed class PluginCreationAgentService : IDisposable
         }
 
         var chatClient = new OpenAIChatClient(
-                model,
-                new ApiKeyCredential(apiKey),
-                new OpenAIClientOptions { Endpoint = new Uri(endpoint) })
+            model,
+            new ApiKeyCredential(apiKey),
+            new OpenAIClientOptions
+            {
+                Endpoint = new Uri(endpoint),
+                Transport = new HttpClientPipelineTransport(httpClient)
+            })
             .AsIChatClient();
 
         AITool[] tools =
@@ -223,12 +249,46 @@ public sealed class PluginCreationAgentService : IDisposable
             """;
     }
 
+    private NetworkRoute ResolveNetworkRoute()
+    {
+        if (context.ProxyProvider is not null)
+        {
+            var configured = context.ProxyProvider.GetProxySettings();
+            return new NetworkRoute(configured.ProxyUri, configured.Source, UseSystemProxy: false);
+        }
+
+        return new NetworkRoute(null, "system/environment proxy", UseSystemProxy: true);
+    }
+
+    private static HttpClient CreateHttpClient(NetworkRoute route, TimeSpan timeout)
+    {
+        var handler = new HttpClientHandler();
+        if (!route.UseSystemProxy)
+        {
+            handler.UseProxy = route.ProxyUri is not null;
+            handler.Proxy = route.ProxyUri is null ? null : new WebProxy(route.ProxyUri);
+        }
+        return new HttpClient(handler, disposeHandler: true) { Timeout = timeout };
+    }
+
+    private string SafeEndpoint()
+    {
+        var configuredEndpoint = Environment.GetEnvironmentVariable("DEEPSEEK_API_URL")
+            ?? Environment.GetEnvironmentVariable("DEEPSEEK_BASE_URL")
+            ?? "https://api.deepseek.com";
+        if (!Uri.TryCreate(configuredEndpoint, UriKind.Absolute, out var uri))
+            return "invalid DEEPSEEK endpoint";
+        var safe = new UriBuilder(uri) { UserName = "", Password = "", Query = "", Fragment = "" }.Uri;
+        return safe.GetLeftPart(UriPartial.Path).TrimEnd('/');
+    }
+
     public void Dispose()
     {
         foreach (var conversation in conversations.Values) conversation.Dispose();
         conversations.Clear();
-        httpClient.Dispose();
     }
+
+    private sealed record NetworkRoute(Uri? ProxyUri, string Source, bool UseSystemProxy);
 
     private sealed class Conversation : IDisposable
     {

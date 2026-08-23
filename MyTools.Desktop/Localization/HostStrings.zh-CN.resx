@@ -73,8 +73,8 @@
   <data name="Configuration.General.UpdateUrl.Description" xml:space="preserve"><value>包含 Velopack 发布内容的 HTTPS 地址或本地路径</value></data>
   <data name="Configuration.General.UpdateChannel.Title" xml:space="preserve"><value>更新通道</value></data>
   <data name="Configuration.General.UpdateChannel.Description" xml:space="preserve"><value>选择稳定版或测试版更新</value></data>
-  <data name="Configuration.General.UpdateProxyUrl.Title" xml:space="preserve"><value>更新代理</value></data>
-  <data name="Configuration.General.UpdateProxyUrl.Description" xml:space="preserve"><value>可选代理地址；留空时使用直连</value></data>
+  <data name="Configuration.General.UpdateProxyUrl.Title" xml:space="preserve"><value>网络代理</value></data>
+  <data name="Configuration.General.UpdateProxyUrl.Description" xml:space="preserve"><value>用于更新和创建插件 AI；留空时使用直连</value></data>
   <data name="Configuration.General.LogLevel.Title" xml:space="preserve"><value>日志级别</value></data>
   <data name="Configuration.General.LogLevel.Description" xml:space="preserve"><value>写入日志文件的最低消息级别</value></data>
   <data name="Configuration.Gestures.Enable.Title" xml:space="preserve"><value>启用</value></data>

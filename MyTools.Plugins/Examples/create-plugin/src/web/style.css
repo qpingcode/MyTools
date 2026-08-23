@@ -41,13 +41,16 @@ button:disabled { cursor: not-allowed; opacity: .48; }
 .chat-message { max-width: 86%; margin: 0 0 10px; padding: 9px 11px; border-radius: 8px; background: var(--mt-surface-alt, #202020); }
 .chat-message.user { margin-left: auto; background: var(--mt-selection, rgba(102,140,255,.18)); }
 .chat-message b { display: block; margin-bottom: 4px; color: var(--mt-text-tertiary, #9298a5); font-size: 11px; }
-.message-content { overflow-wrap: anywhere; color: var(--mt-text, #f4f4f4); font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
+.message-content { overflow-wrap: anywhere; color: var(--mt-text, #f4f4f4); font-size: 13px; line-height: 1.45; white-space: normal; }
 .message-content > :first-child { margin-top: 0; }
 .message-content > :last-child { margin-bottom: 0; }
-.message-content p { margin: 0 0 8px; color: inherit; }
+.message-content p { margin: 0 0 6px; color: inherit; }
 .message-content h1, .message-content h2, .message-content h3 { margin: 12px 0 6px; font-size: 14px; }
-.message-content ul, .message-content ol { margin: 6px 0; padding-left: 22px; }
-.message-content li { margin: 3px 0; }
+.message-content ul, .message-content ol { margin: 3px 0 5px; padding-left: 20px; }
+.message-content li { margin: 0; }
+.message-content li + li { margin-top: 1px; }
+.message-content li > p { margin: 0; }
+.message-content li > ul, .message-content li > ol { margin: 1px 0; }
 .message-content code { display: inline; margin: 0; padding: 1px 4px; font-size: 12px; }
 .message-content pre { overflow: auto; margin: 8px 0; padding: 8px 10px; border-radius: 6px; background: var(--mt-surface-bg, #111); }
 .message-content pre code { display: block; padding: 0; background: transparent; white-space: pre; }
@@ -61,6 +64,7 @@ button:disabled { cursor: not-allowed; opacity: .48; }
 .progress-event > span:last-child { min-width: 0; }
 .progress-event strong { display: block; font-weight: 600; }
 .progress-event small { overflow: hidden; margin: 2px 0 0; color: var(--mt-text-tertiary, #9298a5); font-family: Consolas, monospace; text-overflow: ellipsis; white-space: nowrap; }
+.progress-event.read-group small { display: block; }
 .progress-indicator { display: grid; width: 16px; height: 16px; place-items: center; margin-top: 1px; border: 1px solid var(--mt-accent, #668cff); border-radius: 50%; color: var(--mt-accent, #8aa3ff); font-weight: 700; line-height: 1; }
 .progress-event.done .progress-indicator { border-color: var(--mt-success, #2e9d63); color: var(--mt-success, #2e9d63); }
 .progress-event.error { color: var(--mt-error, #e25f5f); }

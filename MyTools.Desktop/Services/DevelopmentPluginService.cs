@@ -26,6 +26,7 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
     private readonly ILogger<DevelopmentPluginService> logger;
     private readonly IReadOnlyList<IPlugin> builtInPlugins;
     private readonly NodePluginCatalog nodePluginCatalog;
+    private readonly IPluginCreationProxyProvider proxyProvider;
     private readonly Dictionary<string, CancellationTokenSource> reloadDebounces = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Process> watchProcesses = new(StringComparer.OrdinalIgnoreCase);
     private readonly CancellationTokenSource refreshListenerCancellation = new();
@@ -36,11 +37,13 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
     public DevelopmentPluginService(
         ILogger<DevelopmentPluginService> logger,
         IEnumerable<IPlugin> builtInPlugins,
-        NodePluginCatalog nodePluginCatalog)
+        NodePluginCatalog nodePluginCatalog,
+        IPluginCreationProxyProvider proxyProvider)
     {
         this.logger = logger;
         this.builtInPlugins = builtInPlugins.ToList();
         this.nodePluginCatalog = nodePluginCatalog;
+        this.proxyProvider = proxyProvider;
     }
 
     public event EventHandler<DevelopmentPluginReloadRequestedEventArgs>? ReloadRequested;
@@ -251,10 +254,21 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
         reportProgress("installingDependencies", systemNpm is not null
             ? "npm install · system Node/npm"
             : "npm install · MyTools bundled Node/npm");
+        var proxySettings = proxyProvider.GetProxySettings();
+        logger.LogInformation(
+            "Starting npm install plugin={PluginId} network={NetworkSource}",
+            artifact.PluginId,
+            proxySettings.Source);
         var recentOutput = new Queue<string>();
         using var process = new Process
         {
-            StartInfo = CreateNpmStartInfo(npmCommand, artifact.SourcePath, "install", keepOpen: false),
+            StartInfo = CreateNpmStartInfo(
+                npmCommand,
+                artifact.SourcePath,
+                "install",
+                keepOpen: false,
+                proxySettings.ProxyUri,
+                overrideEnvironmentProxy: true),
             EnableRaisingEvents = true
         };
 
@@ -479,9 +493,16 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
         string sourcePath,
         CancellationToken cancellationToken)
     {
+        var proxySettings = proxyProvider.GetProxySettings();
         using var process = new Process
         {
-            StartInfo = CreateWatchStartInfo(npmCommand, sourcePath, pluginId, visible: false)
+            StartInfo = CreateWatchStartInfo(
+                npmCommand,
+                sourcePath,
+                pluginId,
+                visible: false,
+                proxyUri: proxySettings.ProxyUri,
+                overrideEnvironmentProxy: true)
         };
         var output = new Queue<string>();
         void Capture(string? line)
@@ -517,14 +538,24 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
         return null;
     }
 
-    private static async Task<string?> RunNpmCommandAsync(
+    private async Task<string?> RunNpmCommandAsync(
         string npmCommand,
         string sourcePath,
         string arguments,
         TimeSpan timeout,
         CancellationToken cancellationToken)
     {
-        using var process = new Process { StartInfo = CreateNpmStartInfo(npmCommand, sourcePath, arguments, false) };
+        var proxySettings = proxyProvider.GetProxySettings();
+        using var process = new Process
+        {
+            StartInfo = CreateNpmStartInfo(
+                npmCommand,
+                sourcePath,
+                arguments,
+                false,
+                proxySettings.ProxyUri,
+                overrideEnvironmentProxy: true)
+        };
         var output = new Queue<string>();
         void Capture(string? line)
         {
@@ -613,7 +644,9 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
         string npmCommand,
         string workingDirectory,
         string arguments,
-        bool keepOpen)
+        bool keepOpen,
+        Uri? proxyUri = null,
+        bool overrideEnvironmentProxy = false)
     {
         var commandInterpreter = Environment.GetEnvironmentVariable("ComSpec");
         if (string.IsNullOrWhiteSpace(commandInterpreter))
@@ -629,6 +662,7 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
             CreateNoWindow = !keepOpen
         };
         ApplyCurrentWindowsEnvironment(info);
+        if (overrideEnvironmentProxy) ApplyProxyEnvironment(info, proxyUri);
         PrependCommandDirectoryToPath(info, npmCommand);
         return info;
     }
@@ -638,7 +672,9 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
         string workingDirectory,
         string pluginId,
         bool visible,
-        string? logPath = null)
+        string? logPath = null,
+        Uri? proxyUri = null,
+        bool overrideEnvironmentProxy = false)
     {
         var mutexName = WatchMutexName(pluginId).Replace("'", "''", StringComparison.Ordinal);
         var escapedNpm = Path.GetFullPath(npmCommand).Replace("'", "''", StringComparison.Ordinal);
@@ -678,8 +714,20 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
             CreateNoWindow = !visible
         };
         ApplyCurrentWindowsEnvironment(info);
+        if (overrideEnvironmentProxy) ApplyProxyEnvironment(info, proxyUri);
         PrependCommandDirectoryToPath(info, npmCommand);
         return info;
+    }
+
+    private static void ApplyProxyEnvironment(ProcessStartInfo info, Uri? proxyUri)
+    {
+        foreach (var name in new[] { "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY" })
+        {
+            if (proxyUri is null)
+                info.Environment.Remove(name);
+            else
+                info.Environment[name] = proxyUri.AbsoluteUri;
+        }
     }
 
     internal static string WatchMutexName(string pluginId)
@@ -782,8 +830,15 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
             logPath,
             $"{Environment.NewLine}=== watch started {DateTimeOffset.Now:O} ==={Environment.NewLine}");
 
+        var proxySettings = proxyProvider.GetProxySettings();
         var process = Process.Start(CreateWatchStartInfo(
-            npmCommand, sourcePath, pluginId, visible: true, logPath))
+            npmCommand,
+            sourcePath,
+            pluginId,
+            visible: true,
+            logPath,
+            proxySettings.ProxyUri,
+            overrideEnvironmentProxy: true))
             ?? throw new InvalidOperationException("Unable to open the watch terminal.");
         try
         {

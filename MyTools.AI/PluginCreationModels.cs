@@ -10,7 +10,15 @@ public sealed record PluginCreationContext(
     IReadOnlyCollection<ExistingPlugin> ExistingPlugins,
     IHostCityProvider? HostCityProvider = null,
     string? ReferenceRoot = null,
-    IPluginDevelopmentDiagnostics? DevelopmentDiagnostics = null);
+    IPluginDevelopmentDiagnostics? DevelopmentDiagnostics = null,
+    IPluginCreationProxyProvider? ProxyProvider = null);
+
+public interface IPluginCreationProxyProvider
+{
+    PluginCreationProxySettings GetProxySettings();
+}
+
+public sealed record PluginCreationProxySettings(Uri? ProxyUri, string Source);
 
 public interface IPluginDevelopmentDiagnostics
 {

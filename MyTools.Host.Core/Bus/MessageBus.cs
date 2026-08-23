@@ -266,6 +266,13 @@ public sealed class MessageBus
                 }
                 catch (Exception ex)
                 {
+                    _logger.LogError(
+                        ex,
+                        "Host call failed plugin={PluginId} entry={EntryId} route={Route} requestId={RequestId}",
+                        source.PluginId,
+                        source.EntryId,
+                        env.Route,
+                        env.Id);
                     reply = BuildHostCallReply(env, source, payload: null,
                         BusError.For(ErrorCode.InternalError, ex.Message));
                 }

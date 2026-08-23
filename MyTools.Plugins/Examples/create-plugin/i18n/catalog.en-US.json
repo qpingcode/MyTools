@@ -208,6 +208,13 @@
       "sourceHash": "sha256:33e97951020dc75b1cd9cd3edb4d6f53b56fe454546289cf8c915287555f9d24"
     },
     {
+      "key": "Plugin.CreatePlugin.Ai.Progress.ReadingFiles",
+      "defaultValue": "Reading files",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:5f1be312be1b7353f826276d820da080d33dec41910f26e76a22648ae48dbf4f"
+    },
+    {
       "key": "Plugin.CreatePlugin.Ai.Progress.SearchingWeb",
       "defaultValue": "Searching the web",
       "placeholders": [],

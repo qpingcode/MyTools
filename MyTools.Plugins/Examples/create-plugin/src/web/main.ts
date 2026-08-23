@@ -20,6 +20,7 @@ type AiProgressEvent = { sequence: number; kind: string; detail?: string };
 type AiProgressBatch = { events: AiProgressEvent[] };
 type PluginSetupResult = { installed: boolean; watchStarted: boolean; error?: string };
 type AiChatResponse = { sessionId: string; reply: string; createdPlugin?: PluginRegistration & { isUpdate?: boolean }; setup?: PluginSetupResult };
+const AI_CHAT_TIMEOUT_MS = 21 * 60_000;
 
 const bus = createWebBusClient();
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -30,6 +31,14 @@ let progressSequence = 0;
 let progressTurn = 0;
 let liveReply: HTMLDivElement | null = null;
 let liveReplyMarkdown = "";
+let streamedReplyReceived = false;
+let activeReadGroup: {
+  item: HTMLDivElement;
+  label: HTMLElement;
+  body: HTMLSpanElement;
+  details: string[];
+  count: number;
+} | null = null;
 let accumulatedCreationMs = 0;
 let formErrorKey = "";
 let formErrorDefault = "";
@@ -106,6 +115,8 @@ function resetAiSessionForTargetChange() {
   progressSequence = 0;
   liveReply = null;
   liveReplyMarkdown = "";
+  streamedReplyReceived = false;
+  activeReadGroup = null;
   accumulatedCreationMs = 0;
   if (previousSessionId) void bus.call("clearAiConversation", { sessionId: previousSessionId });
 }
@@ -291,19 +302,73 @@ function ensureLiveReply() {
   return liveReply;
 }
 
-function hasStreamedReply() { return Boolean(liveReplyMarkdown); }
+function finishLiveReplySegment() {
+  liveReply?.parentElement?.classList.remove("live");
+  liveReply = null;
+  liveReplyMarkdown = "";
+}
+
+function hasStreamedReply() { return streamedReplyReceived; }
+
+const groupedReadKinds = new Set(["readingSkill", "readingContext", "listingFiles", "readingFile"]);
+const visibleReadDetailCount = 10;
+
+function updateReadGroup(event: AiProgressEvent) {
+  if (!activeReadGroup) {
+    const item = document.createElement("div");
+    item.className = "progress-event read-group";
+    const indicator = document.createElement("span");
+    indicator.className = "progress-indicator";
+    indicator.textContent = "·";
+    const body = document.createElement("span");
+    const label = document.createElement("strong");
+    body.append(label);
+    item.append(indicator, body);
+    $("chatHistory").append(item);
+    activeReadGroup = { item, label, body, details: [], count: 0 };
+  }
+
+  activeReadGroup.count++;
+  if (event.detail) activeReadGroup.details.push(event.detail);
+  activeReadGroup.label.textContent = `${t("Plugin.CreatePlugin.Ai.Progress.ReadingFiles", "Reading files")} (${activeReadGroup.count})`;
+  activeReadGroup.body.querySelectorAll("small").forEach(element => element.remove());
+  const hiddenCount = Math.max(0, activeReadGroup.details.length - visibleReadDetailCount);
+  if (hiddenCount) {
+    const hidden = document.createElement("small");
+    hidden.textContent = `… +${hiddenCount}`;
+    activeReadGroup.body.append(hidden);
+  }
+  for (const detailText of activeReadGroup.details.slice(-visibleReadDetailCount)) {
+    const detail = document.createElement("small");
+    detail.textContent = detailText;
+    detail.title = detailText;
+    activeReadGroup.body.append(detail);
+  }
+  activeReadGroup.item.scrollIntoView({ block: "end" });
+}
 
 function addProgress(event: AiProgressEvent) {
   if (event.kind === "responseDelta") {
+    activeReadGroup = null;
     const reply = ensureLiveReply();
     liveReplyMarkdown += event.detail ?? "";
+    streamedReplyReceived ||= Boolean(event.detail);
     renderMarkdown(reply, liveReplyMarkdown);
     reply.parentElement?.scrollIntoView({ block: "end" });
     return;
   }
-  if (event.kind === "responseComplete" || event.kind === "turnComplete") return;
+  finishLiveReplySegment();
+  if (event.kind === "responseComplete" || event.kind === "turnComplete") {
+    activeReadGroup = null;
+    return;
+  }
   const definition = progressLabels[event.kind];
   if (!definition) return;
+  if (groupedReadKinds.has(event.kind)) {
+    updateReadGroup(event);
+    return;
+  }
+  activeReadGroup = null;
   $("chatEmpty").hidden = true;
   const item = document.createElement("div");
   const isError = event.kind === "failed" || event.kind === "setupFailed";
@@ -356,6 +421,8 @@ async function sendPrompt() {
   const turn = ++progressTurn;
   liveReply = null;
   liveReplyMarkdown = "";
+  streamedReplyReceived = false;
+  activeReadGroup = null;
   const startedAt = performance.now();
   const progressTask = streamProgress(aiSessionId, turn);
   let pluginCompleted = false;
@@ -365,7 +432,7 @@ async function sendPrompt() {
   button.textContent = t("Plugin.CreatePlugin.Ai.Working", "AI is creating...");
   try {
     const response = await bus.call<AiChatResponse>(
-      "chatWithAi", { sessionId: aiSessionId, message, selectedPluginId: currentPlugin?.pluginId }, 600_000);
+      "chatWithAi", { sessionId: aiSessionId, message, selectedPluginId: currentPlugin?.pluginId }, AI_CHAT_TIMEOUT_MS);
     aiSessionId = response.sessionId;
     if (!hasStreamedReply()) addChatMessage("assistant", response.reply);
     await loadPlugins();
@@ -416,6 +483,8 @@ $("clearChat").addEventListener("click", async () => {
   progressSequence = 0;
   liveReply = null;
   liveReplyMarkdown = "";
+  streamedReplyReceived = false;
+  activeReadGroup = null;
   accumulatedCreationMs = 0;
   $("chatHistory").querySelectorAll(".chat-message, .progress-event, .elapsed-event").forEach(item => item.remove());
   $("chatEmpty").hidden = false;

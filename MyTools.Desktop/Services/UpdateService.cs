@@ -234,12 +234,12 @@ public sealed class UpdateService(
             || string.IsNullOrWhiteSpace(proxyUri.Host))
         {
             throw new InvalidOperationException(
-                "The update proxy URL must be an absolute HTTP, HTTPS, SOCKS4, SOCKS4A, or SOCKS5 URL.");
+                "The proxy URL must be an absolute HTTP, HTTPS, SOCKS4, SOCKS4A, or SOCKS5 URL.");
         }
 
         if (!string.IsNullOrEmpty(proxyUri.UserInfo))
         {
-            throw new InvalidOperationException("The update proxy URL must not contain a username or password.");
+            throw new InvalidOperationException("The proxy URL must not contain a username or password.");
         }
 
         return proxyUri;
