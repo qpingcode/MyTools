@@ -389,7 +389,11 @@ public sealed class DevelopmentPluginService : IDisposable
                     Directory.Move(backupPath, targetPath);
                 throw;
             }
-            if (Directory.Exists(backupPath)) Directory.Delete(backupPath, true);
+            if (Directory.Exists(backupPath))
+            {
+                try { Directory.Delete(backupPath, true); }
+                catch (Exception ex) { logger.LogWarning(ex, "Unable to remove plugin installation backup {BackupPath}.", backupPath); }
+            }
         }
         finally
         {
@@ -416,8 +420,10 @@ public sealed class DevelopmentPluginService : IDisposable
         if (!document.RootElement.TryGetProperty("scripts", out var scripts)
             || scripts.ValueKind != JsonValueKind.Object
             || !scripts.TryGetProperty("build", out var build)
+            || build.ValueKind != JsonValueKind.String
             || string.IsNullOrWhiteSpace(build.GetString())
             || !scripts.TryGetProperty("watch", out var watch)
+            || watch.ValueKind != JsonValueKind.String
             || string.IsNullOrWhiteSpace(watch.GetString()))
         {
             throw new InvalidOperationException("package.json must define both build and watch scripts.");
@@ -460,7 +466,11 @@ public sealed class DevelopmentPluginService : IDisposable
                 ? "The watch command exited instead of continuing to watch."
                 : FormatOutput(output, process.ExitCode);
         }
-        cancellationToken.ThrowIfCancellationRequested();
+        if (cancellationToken.IsCancellationRequested)
+        {
+            TryKillProcess(process);
+            cancellationToken.ThrowIfCancellationRequested();
+        }
         TryKillProcess(process);
         return null;
     }
@@ -498,6 +508,11 @@ public sealed class DevelopmentPluginService : IDisposable
         {
             TryKillProcess(process);
             return $"The command timed out after {timeout.TotalMinutes:0} minutes.";
+        }
+        catch (OperationCanceledException)
+        {
+            TryKillProcess(process);
+            throw;
         }
         return process.ExitCode == 0 ? null : FormatOutput(output, process.ExitCode);
     }
