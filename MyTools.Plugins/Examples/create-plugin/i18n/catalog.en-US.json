@@ -4,45 +4,871 @@
   "pluginId": "create-plugin",
   "sourceLocale": "en-US",
   "entries": [
-    { "key": "Plugin.CreatePlugin.Name", "defaultValue": "Create Plugin", "placeholders": [], "references": [{ "filePath": "plugin.json", "line": 18, "column": 15 }], "sourceHash": "sha256:42ac880984a3e359a5ec118cebe5b8396eb4169f95be974732c3932769439318" },
-    { "key": "Plugin.CreatePlugin.Detail.Title", "defaultValue": "Create Plugin", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 13, "column": 13 }], "sourceHash": "sha256:42ac880984a3e359a5ec118cebe5b8396eb4169f95be974732c3932769439318" },
-    { "key": "Plugin.CreatePlugin.Detail.Subtitle", "defaultValue": "Start from a template with MyTools development mode ready", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 14, "column": 12 }], "sourceHash": "sha256:982b2e40f2e33273665850ca3ceed9d96de77fa4decea4a2fd42cd53926b4fa0" },
-    { "key": "Plugin.CreatePlugin.Action.RefreshAll", "defaultValue": "↻ Refresh All", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 19, "column": 15 }], "sourceHash": "sha256:940ebd4e09b2d83b39a4a19dda641a0a3303f434b1bfc9f2000657b9a3c6e065" },
-    { "key": "Plugin.CreatePlugin.Action.RefreshAll.Description", "defaultValue": "Force refresh all development plugins", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 17, "column": 15 }], "sourceHash": "sha256:319159c2868dd689089af26473359e26910ed59443c670e81429248f45675185" },
-    { "key": "Plugin.CreatePlugin.Step.Basic", "defaultValue": "Basics", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 22, "column": 33 }], "sourceHash": "sha256:8fdd2ee8475e29bcb7acc41b731a943957e4dc3d07012c23f8b7b028de620267" },
-    { "key": "Plugin.CreatePlugin.Step.Generate", "defaultValue": "Generate", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 23, "column": 17 }], "sourceHash": "sha256:49e49bb4401e67bd54ffe1e9ab6c2af87ddad0cdc8ca1c84ba1b4e94234438ba" },
-    { "key": "Plugin.CreatePlugin.Step.Done", "defaultValue": "Done", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 24, "column": 17 }], "sourceHash": "sha256:11a6767d5674c7e45f7e00dc525762275b3a48491ad6045427d2609cc496c516" },
-    { "key": "Plugin.CreatePlugin.Form.Name", "defaultValue": "Plugin name", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 27, "column": 20 }], "sourceHash": "sha256:3e9461347e90b854b6ece9faf00ee19d611ba4a159e76feba12b9f6d8792f1f0" },
-    { "key": "Plugin.CreatePlugin.Form.Name.Placeholder", "defaultValue": "For example: My Productivity Tool", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 28, "column": 15 }], "sourceHash": "sha256:267de4f8e9658c634b4b67794871af159153f7285deb76b866266d861738770e" },
-    { "key": "Plugin.CreatePlugin.Form.Id", "defaultValue": "Plugin ID", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 30, "column": 20 }], "sourceHash": "sha256:32a723fa23c16a93157b972c5fad5668e2a9e91a94719b2a00a1b41ead75bf94" },
-    { "key": "Plugin.CreatePlugin.Form.Id.Placeholder", "defaultValue": "For example: my-productivity-tool", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 31, "column": 15 }], "sourceHash": "sha256:e6d17eac724eac2e64b0c8366fba4ebd95e015826dbb03529d2e6854a9bcaa97" },
-    { "key": "Plugin.CreatePlugin.Form.Id.Help", "defaultValue": "Lowercase letters, numbers, dots, or hyphens; up to 64 characters", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 32, "column": 16 }], "sourceHash": "sha256:5d4715305656d8534c51ebe5bb9ea7183831d7f4a8d505e70cd9c4c9ec3dce97" },
-    { "key": "Plugin.CreatePlugin.Form.Author", "defaultValue": "Author", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 34, "column": 20 }], "sourceHash": "sha256:d95082a2ee57f3e40e3050662a346e26a872fd4d0baf57d293ac5a883f0f4ff5" },
-    { "key": "Plugin.CreatePlugin.Form.Author.Placeholder", "defaultValue": "Your name", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 35, "column": 15 }], "sourceHash": "sha256:2c6b2e253c01fb2ed7209c15766745ccee92a35ac8209f544789bdf9500e0944" },
-    { "key": "Plugin.CreatePlugin.Form.Type", "defaultValue": "Plugin type", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 38, "column": 17 }], "sourceHash": "sha256:f3ce138ea87966392498f34c967a59d41d1d94c7f28174116312f391eeaabe1c" },
-    { "key": "Plugin.CreatePlugin.Form.Type.Standard", "defaultValue": "Standard results plugin", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 40, "column": 14 }], "sourceHash": "sha256:d35004496c610d259ac2de292818d7a87228761eefe9f4bbbba6ceb8616abfa2" },
-    { "key": "Plugin.CreatePlugin.Form.Type.Standard.Help", "defaultValue": "Use the native MyTools result list without an HTML UI", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 41, "column": 18 }], "sourceHash": "sha256:2b9a9242544e13481d2b195113925514b8d9ba9a06a56ccd600aeea5f78451f1" },
-    { "key": "Plugin.CreatePlugin.Form.Type.Custom", "defaultValue": "Custom UI plugin", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 44, "column": 14 }], "sourceHash": "sha256:152a443f40ba8c65ac146929885b48d9cbda0033ba7c01f1efc920dd0b61fb2d" },
-    { "key": "Plugin.CreatePlugin.Form.Type.Custom.Help", "defaultValue": "Include a customizable HTML and TypeScript detail page", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 45, "column": 18 }], "sourceHash": "sha256:9003a4e32afbf07c286439c032b3c7f62db1e3afc7d49b7a6be3be981d3eac99" },
-    { "key": "Plugin.CreatePlugin.Action.Create", "defaultValue": "Create Plugin", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 49, "column": 23 }], "sourceHash": "sha256:42ac880984a3e359a5ec118cebe5b8396eb4169f95be974732c3932769439318" },
-    { "key": "Plugin.CreatePlugin.Progress.Title", "defaultValue": "Generating plugin", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 52, "column": 11 }], "sourceHash": "sha256:7bc61401a7c482728f8f07c1096bc32ecd1c82bf8cca7881ea23069ce9699fab" },
-    { "key": "Plugin.CreatePlugin.Progress.Description", "defaultValue": "Writing the source template...", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 53, "column": 10 }], "sourceHash": "sha256:74e909e333cc0a5ea3275ff03c2a456b61feea7425f65dfa86dbd9057da7f7d7" },
-    { "key": "Plugin.CreatePlugin.Success.Title", "defaultValue": "Plugin created", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 56, "column": 11 }], "sourceHash": "sha256:5843420cf7e6d5548873fd696aeaa2b868aab1a91e0148a341a1da72ca12429e" },
-    { "key": "Plugin.CreatePlugin.Success.Description", "defaultValue": "The source template is ready. The plugin loads after watch starts.", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 57, "column": 10 }], "sourceHash": "sha256:b4d5280ba0111d84d62fbbed52e09b9e9505c9509db1e984d10d8a7dfb1e054f" },
-    { "key": "Plugin.CreatePlugin.Action.OpenFolder", "defaultValue": "Open Folder", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 60, "column": 17 }], "sourceHash": "sha256:68b3f4bff6de90aed6e47e72d8b680901da64dff39ed843e9eeed0464020e971" },
-    { "key": "Plugin.CreatePlugin.Action.OpenCode", "defaultValue": "Open in VS Code", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 61, "column": 17 }], "sourceHash": "sha256:0d86ddf7c02763effed339bbc88db0265e7396af87939356d177eb4b1fb31a0c" },
-    { "key": "Plugin.CreatePlugin.Next.Title", "defaultValue": "Next steps", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 64, "column": 13 }], "sourceHash": "sha256:dd00d3d3e9f73d277737cfacfb788bc46a717458297644788de995b658ceb915" },
-    { "key": "Plugin.CreatePlugin.Next.OpenTerminal", "defaultValue": "Open a terminal in the plugin directory", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 66, "column": 15 }], "sourceHash": "sha256:2ea3fd3d143eb7fdc540d06bb70e46412a017ffeb2254ed5936c67db5323ddce" },
-    { "key": "Plugin.CreatePlugin.Next.Install", "defaultValue": "Install dependencies:", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 67, "column": 21 }], "sourceHash": "sha256:823f6bc2250ff8d69a56c2e029934abbd0abebdd2cbf67905499cd75ebf91dc7" },
-    { "key": "Plugin.CreatePlugin.Next.Watch", "defaultValue": "Start development watch:", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 68, "column": 21 }], "sourceHash": "sha256:0ecde9f9e92330f7686458cd382cbc3f5b582953399f3337325940b05d7f9e27" },
-    { "key": "Plugin.CreatePlugin.Next.Help", "defaultValue": "The first successful watch build registers the plugin; later builds refresh it automatically.", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 70, "column": 16 }], "sourceHash": "sha256:9f05448eb0c65a9bdb3c83a36d14c6a3ab443327c0e932449b14e7477839c4cc" },
-    { "key": "Plugin.CreatePlugin.Validation.NameRequired", "defaultValue": "Enter a plugin name", "placeholders": [], "references": [{ "filePath": "src/web/main.ts", "line": 43, "column": 8 }], "sourceHash": "sha256:1fbb9174aa474a517f7e901ab8c19243abf85da1931760abd2af353699bb73d0" },
-    { "key": "Plugin.CreatePlugin.Validation.InvalidId", "defaultValue": "The plugin ID format is invalid", "placeholders": [], "references": [{ "filePath": "src/web/main.ts", "line": 45, "column": 10 }], "sourceHash": "sha256:06149bfa8b8132ecb4d8b343a6eeef449bd3f7525fe8615e3ce6773746be59b7" },
-    { "key": "Plugin.CreatePlugin.Validation.AuthorRequired", "defaultValue": "Enter the plugin author", "placeholders": [], "references": [{ "filePath": "src/web/main.ts", "line": 47, "column": 10 }], "sourceHash": "sha256:2e4a6bbfd7f362c981377663ea06d7a9334cfdd05e0972a8331277e793c6566e" },
-    { "key": "Plugin.CreatePlugin.Toast.RefreshRequested", "defaultValue": "Requested a refresh of all development plugins", "placeholders": [], "references": [{ "filePath": "src/web/main.ts", "line": 72, "column": 13 }], "sourceHash": "sha256:f89334831783568e19d23ff8d1bfa2eafa0a42e08ae9f65df3ebe8433d5e0fae" },
-    { "key": "Plugin.CreatePlugin.Toast.ConnectionReset", "defaultValue": "The connection was reset during refresh", "placeholders": [], "references": [{ "filePath": "src/web/main.ts", "line": 74, "column": 13 }], "sourceHash": "sha256:adb625580d0dd5f1a1b17e1fd3045a7700d48b5590551e6dc3129cecb26d89c4" },
-    { "key": "Plugin.CreatePlugin.List.Title", "defaultValue": "Created plugins", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 54, "column": 13 }], "sourceHash": "sha256:487d7f721c52c67cb778ad55fe84dfb4d7bf1f106bd58b9eddb7d05cef6fef0d" },
-    { "key": "Plugin.CreatePlugin.List.Empty", "defaultValue": "No plugins have been created yet.", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 58, "column": 12 }], "sourceHash": "sha256:2f7cfe84211acb6ac0fd8625094b1baa0a885cb77beeeb667c4214057686b1f0" },
-    { "key": "Plugin.CreatePlugin.Action.Back", "defaultValue": "Back to create", "placeholders": [], "references": [{ "filePath": "src/web/index.html", "line": 77, "column": 17 }], "sourceHash": "sha256:cc7bc5d4fe68bc8e59f7aced60dc45a51d71048bef672a9d61ab7633dbe2086e" }
+    {
+      "key": "Plugin.CreatePlugin.Name",
+      "defaultValue": "Create Plugin",
+      "placeholders": [],
+      "references": {
+        "filePath": "plugin.json",
+        "line": 18,
+        "column": 15
+      },
+      "sourceHash": "sha256:42ac880984a3e359a5ec118cebe5b8396eb4169f95be974732c3932769439318"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Detail.Title",
+      "defaultValue": "Create Plugin",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 13,
+        "column": 13
+      },
+      "sourceHash": "sha256:42ac880984a3e359a5ec118cebe5b8396eb4169f95be974732c3932769439318"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Detail.Subtitle",
+      "defaultValue": "Create or edit plugins with AI, or start from a template",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 14,
+        "column": 12
+      },
+      "sourceHash": "sha256:50c489b733d2c08f0c2864294490e45720d4832359ae447e130202f819842af6"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Mode.Automatic",
+      "defaultValue": "Automatic",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:d461a493a3753877c9486cffa3444265a33370af8a7fff242fb119b71750839c"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Mode.Automatic.Help",
+      "defaultValue": "Create or edit a plugin with AI",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:201241b5f7c7503fc0483d30c066617319c3c17ae8cdc4ef0db01e290d9fd7fe"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Mode.Manual",
+      "defaultValue": "Manual",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:b0b9fe24ffa9629125bdc59b122f80d605ab604eb1b74485c2f2ecfde26576ae"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Mode.Manual.Help",
+      "defaultValue": "Use the starter template form",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:c26528192692344b77e37b117dde675f15e128977d8126f178a35fd07ad06239"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Title",
+      "defaultValue": "AI plugin builder and editor",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:7ffa2a99e0d380d2ebdd050c646cb74f39dc916f1bc8d08700290057f2a90b1d"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Description",
+      "defaultValue": "Describe a new plugin, or select one on the right and tell AI what to change.",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:60e2f23cff44ec5e22ebb8aef892e20aee08bb3293e90de92a05c8022567e44e"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.NewChat",
+      "defaultValue": "New chat",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:db18382a249e0206bc28514931d423b77d55dce180c1eb8e4bf35f861c9a50ec"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Empty.Title",
+      "defaultValue": "What should the plugin do?",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:dfd1db3e287b6ba2b8e050115532115c94358306e33bb3f0bc94ac1109db4aa8"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Empty.Description",
+      "defaultValue": "For example: Create a color converter with alias color and a custom detail page.",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:e957a19d51fe3318ef361a34dfa9fbbeb2d9ddf151074e783a1c67d59086baaf"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Placeholder",
+      "defaultValue": "Describe the plugin you want to create...",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:936b5ae409988078c34a798787128810487613bca349edacfea9b1f0f72ac7cb"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Placeholder.Edit",
+      "defaultValue": "Describe what you want to change in the selected plugin...",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:8c4d9fad4097a13fc734ebccd1b9dcaeabd355657400c7367aa4fa35c8d57dec"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Send.Help",
+      "defaultValue": "Ctrl+Enter to send",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:9f972318dabdd5a4d4f4579faba185ea789f22284941e83bc7e57cae30202ce7"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Send",
+      "defaultValue": "Create with AI",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:1c193418577e62031604d823c1512e0ffb353c4bf1dbf39d18b5aabcaab7fe17"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Send.Edit",
+      "defaultValue": "Edit with AI",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:2debbd79a7d0029f9df70466188e871ea643cef3425b5afee6b2e67580ba0400"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Working",
+      "defaultValue": "AI is creating...",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:01a47cfa28ed202ee3a227d61d4c6d5bfba73672a992068de8ba39d0fe2c9d1a"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.You",
+      "defaultValue": "You",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:08b041935798fbf6fd6ff51099ffedb140a475889986d14f5559ff8e7fc571dd"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Assistant",
+      "defaultValue": "MyTools AI",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:a6c38c40d9fedeaac7f83d82a331b390aaaa30a4128fb61723cb06ea6913cd2e"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.MissingKey",
+      "defaultValue": "Automatic mode is unavailable. Set the {{variable}} environment variable and restart MyTools.",
+      "placeholders": [
+        "variable"
+      ],
+      "references": null,
+      "sourceHash": "sha256:4be59060d29c35e3b6de4a98e4a0c0152df26ad2b3a77ef3727beb05b2d85059"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Progress.ReadingSkill",
+      "defaultValue": "Reading plugin creation skill",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:ce8d26010206e30b6dc06ffda1e65734ca59b7e5350b97d5da6a9417d8b7fef9"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Progress.Thinking",
+      "defaultValue": "AI is thinking",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:647a7cc29a67cfd1cbab4e05c824dd37143a96fbfa37dec1c66ce4a5e4979b28"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Progress.ReadingContext",
+      "defaultValue": "Reading MyTools context",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:94757ec010849c1aee8eb4cfe2cae2443de803e1cdd800d31b54e3d1cb414c37"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Progress.ResolvingLocation",
+      "defaultValue": "Resolving approximate city",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:0005f49361bc4a2923e4695252fab0300156f45160b7ca9654a440a88ef63ef4"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Progress.ListingFiles",
+      "defaultValue": "Inspecting plugin files",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:b1b66d0eedd7206a5304b51465aa287a9a134a9dabc08ed0c30cc2992bd98fa9"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Progress.ReadingFile",
+      "defaultValue": "Reading file",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:33e97951020dc75b1cd9cd3edb4d6f53b56fe454546289cf8c915287555f9d24"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Progress.SearchingWeb",
+      "defaultValue": "Searching the web",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:87d2f3386f90d631ee150e6fea67a32e97a7b3220c638e7df2f37f5dbfe2af3f"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Progress.FetchingUrl",
+      "defaultValue": "Opening web page",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:6383f025d07cd3be9f2865751c95afda8c97ce418edb72c2f17fabd0e78cf7fc"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Progress.WritingFile",
+      "defaultValue": "Writing file",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:91713a5d3c5bf8ae4e680c52bed0ded723ae624902f3f3c89f81d31b7de587a9"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Progress.EditingFile",
+      "defaultValue": "Editing file",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:cba0c8fabef9370f267d9501b92d017af452633b19810c859240a18f820fad26"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Progress.Validating",
+      "defaultValue": "Validating plugin",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:402ee247f65e31da8f176991a53eb0d5d35103e603c8e8ac830402dd74aec046"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Progress.PluginReady",
+      "defaultValue": "Plugin files are ready",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:5187f4bd08560544e7861d26c1a4dc159d2a02489da25bfa047fd15c0b32e15b"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Progress.Registered",
+      "defaultValue": "Registering development plugin",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:7a635040ef1f8c35e0ccd80e7ab1420c70678110cb6997f00636a30963780450"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Progress.Installing",
+      "defaultValue": "Installing npm dependencies",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:5cf27bd0a338acc0d657bbbbe501cc79ad8f5ceac6221df3d120f53d14c10569"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Progress.InstallOutput",
+      "defaultValue": "npm install",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:3a2dc0ae21eb56d78a0eb6bbd0f4512da04f9f94f6ee6c6a338c3e4cb1a8ff91"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Progress.StartingWatch",
+      "defaultValue": "Opening watch terminal",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:561b7c416f23b752a77620881e68d33c54429fcd804ae493191072d6e3a7afa9"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Progress.SetupComplete",
+      "defaultValue": "Dependencies installed and watch started",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:1c78a624ea87c1f0844ba0e33fbb1374c9e4c97c8ff538ecbb34e603dc123080"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Progress.SetupFailed",
+      "defaultValue": "Plugin setup failed",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:a69ded2c7e39902a8a225077bc5f69bc4bc8eea99a124d85763386f11f853e0c"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Progress.Failed",
+      "defaultValue": "AI creation failed",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:4eca165f8c989e8e415a822fce499454de8aa214f9b5766b9ffa9067a4a57410"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Setup.Success",
+      "defaultValue": "Dependencies are installed. A terminal was opened and npm run watch is running.",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:e6529e9f85162e296fcaa54346ff84120846adaacda2cc3dad2579d7fe34d9b9"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Setup.Failed",
+      "defaultValue": "npm install failed. Resolve the npm or network problem, then run npm install and npm run watch in the plugin directory.",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:0ff90e87e786f8f41ceef5733c59ea22d8365f88cfa1dce18d4a26288905b472"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Elapsed.Seconds",
+      "defaultValue": "Plugin creation took {{seconds}} seconds.",
+      "placeholders": [
+        "seconds"
+      ],
+      "references": null,
+      "sourceHash": "sha256:c7b4eaa1373548df3cb26121c1db5fa2f6eef3c7af28a0df7394dcd4aa312839"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Elapsed.Minutes",
+      "defaultValue": "Plugin creation took {{minutes}} min {{seconds}} sec.",
+      "placeholders": [
+        "minutes",
+        "seconds"
+      ],
+      "references": null,
+      "sourceHash": "sha256:b55661595cef360d6eada52318e7142065d1e35a1f35ffd29490a195a84c8a63"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Elapsed.Edit.Seconds",
+      "defaultValue": "Plugin update took {{seconds}} seconds.",
+      "placeholders": [
+        "seconds"
+      ],
+      "references": null,
+      "sourceHash": "sha256:88c4bbf6f118480352b02e88f4c718c5045b87979e10e00b86d606f8f4f554ef"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Elapsed.Edit.Minutes",
+      "defaultValue": "Plugin update took {{minutes}} min {{seconds}} sec.",
+      "placeholders": [
+        "minutes",
+        "seconds"
+      ],
+      "references": null,
+      "sourceHash": "sha256:c64d2e278b11e28b1caf530df78a04a207a6eb5a0f1d9a83f5fd8f2aa8b909be"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Target.Selected",
+      "defaultValue": "Selected plugin: {{name}}. Describe what you want to change.",
+      "placeholders": [
+        "name"
+      ],
+      "references": null,
+      "sourceHash": "sha256:8dc6fb8687c8293fa170456f6af4b612aac9c74472b3be892365e0fa9e29879f"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Target.None",
+      "defaultValue": "No plugin selected. AI will create a new plugin.",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:e5103593feb148da21628fc87175ee9522a85bbc152427472c212229403fb43d"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Action.RefreshAll",
+      "defaultValue": "↻ Refresh All",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 19,
+        "column": 15
+      },
+      "sourceHash": "sha256:940ebd4e09b2d83b39a4a19dda641a0a3303f434b1bfc9f2000657b9a3c6e065"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Action.RefreshAll.Description",
+      "defaultValue": "Force refresh all development plugins",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 17,
+        "column": 15
+      },
+      "sourceHash": "sha256:319159c2868dd689089af26473359e26910ed59443c670e81429248f45675185"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Step.Basic",
+      "defaultValue": "Basics",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 22,
+        "column": 33
+      },
+      "sourceHash": "sha256:8fdd2ee8475e29bcb7acc41b731a943957e4dc3d07012c23f8b7b028de620267"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Step.Generate",
+      "defaultValue": "Generate",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 23,
+        "column": 17
+      },
+      "sourceHash": "sha256:49e49bb4401e67bd54ffe1e9ab6c2af87ddad0cdc8ca1c84ba1b4e94234438ba"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Step.Done",
+      "defaultValue": "Done",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 24,
+        "column": 17
+      },
+      "sourceHash": "sha256:11a6767d5674c7e45f7e00dc525762275b3a48491ad6045427d2609cc496c516"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Form.Name",
+      "defaultValue": "Plugin name",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 27,
+        "column": 20
+      },
+      "sourceHash": "sha256:3e9461347e90b854b6ece9faf00ee19d611ba4a159e76feba12b9f6d8792f1f0"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Form.Name.Placeholder",
+      "defaultValue": "For example: My Productivity Tool",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 28,
+        "column": 15
+      },
+      "sourceHash": "sha256:267de4f8e9658c634b4b67794871af159153f7285deb76b866266d861738770e"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Form.Id",
+      "defaultValue": "Plugin ID",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 30,
+        "column": 20
+      },
+      "sourceHash": "sha256:32a723fa23c16a93157b972c5fad5668e2a9e91a94719b2a00a1b41ead75bf94"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Form.Id.Placeholder",
+      "defaultValue": "For example: my-productivity-tool",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 31,
+        "column": 15
+      },
+      "sourceHash": "sha256:e6d17eac724eac2e64b0c8366fba4ebd95e015826dbb03529d2e6854a9bcaa97"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Form.Id.Help",
+      "defaultValue": "Lowercase letters, numbers, dots, or hyphens; up to 64 characters",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 32,
+        "column": 16
+      },
+      "sourceHash": "sha256:5d4715305656d8534c51ebe5bb9ea7183831d7f4a8d505e70cd9c4c9ec3dce97"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Form.Type",
+      "defaultValue": "Plugin type",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 38,
+        "column": 17
+      },
+      "sourceHash": "sha256:f3ce138ea87966392498f34c967a59d41d1d94c7f28174116312f391eeaabe1c"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Form.Type.Standard",
+      "defaultValue": "Standard results plugin",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 40,
+        "column": 14
+      },
+      "sourceHash": "sha256:d35004496c610d259ac2de292818d7a87228761eefe9f4bbbba6ceb8616abfa2"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Form.Type.Standard.Help",
+      "defaultValue": "Use the native MyTools result list without an HTML UI",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 41,
+        "column": 18
+      },
+      "sourceHash": "sha256:2b9a9242544e13481d2b195113925514b8d9ba9a06a56ccd600aeea5f78451f1"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Form.Type.Custom",
+      "defaultValue": "Custom UI plugin",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 44,
+        "column": 14
+      },
+      "sourceHash": "sha256:152a443f40ba8c65ac146929885b48d9cbda0033ba7c01f1efc920dd0b61fb2d"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Form.Type.Custom.Help",
+      "defaultValue": "Include a customizable HTML and TypeScript detail page",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 45,
+        "column": 18
+      },
+      "sourceHash": "sha256:9003a4e32afbf07c286439c032b3c7f62db1e3afc7d49b7a6be3be981d3eac99"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Action.Create",
+      "defaultValue": "Create Plugin",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 49,
+        "column": 23
+      },
+      "sourceHash": "sha256:42ac880984a3e359a5ec118cebe5b8396eb4169f95be974732c3932769439318"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Progress.Title",
+      "defaultValue": "Generating plugin",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 52,
+        "column": 11
+      },
+      "sourceHash": "sha256:7bc61401a7c482728f8f07c1096bc32ecd1c82bf8cca7881ea23069ce9699fab"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Progress.Description",
+      "defaultValue": "Writing the source template...",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 53,
+        "column": 10
+      },
+      "sourceHash": "sha256:74e909e333cc0a5ea3275ff03c2a456b61feea7425f65dfa86dbd9057da7f7d7"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Success.Title",
+      "defaultValue": "Plugin created",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 56,
+        "column": 11
+      },
+      "sourceHash": "sha256:5843420cf7e6d5548873fd696aeaa2b868aab1a91e0148a341a1da72ca12429e"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Success.Description",
+      "defaultValue": "The source template is ready. The plugin loads after watch starts.",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 57,
+        "column": 10
+      },
+      "sourceHash": "sha256:b4d5280ba0111d84d62fbbed52e09b9e9505c9509db1e984d10d8a7dfb1e054f"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Action.OpenFolder",
+      "defaultValue": "Open Folder",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 60,
+        "column": 17
+      },
+      "sourceHash": "sha256:68b3f4bff6de90aed6e47e72d8b680901da64dff39ed843e9eeed0464020e971"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Action.OpenCode",
+      "defaultValue": "Open in VS Code",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 61,
+        "column": 17
+      },
+      "sourceHash": "sha256:0d86ddf7c02763effed339bbc88db0265e7396af87939356d177eb4b1fb31a0c"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Action.StartDebug",
+      "defaultValue": "Start debugging",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 133,
+        "column": 19
+      },
+      "sourceHash": "sha256:656d5c1fc7fb74271d1094557ecfbaa913bda539e3371455788250f22160453b"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Action.Publish",
+      "defaultValue": "Install in MyTools",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 134,
+        "column": 19
+      },
+      "sourceHash": "sha256:9b0b6bfc6a854d16980527848b3936e6d098454175d48ec0f1324cb87bd23bf1"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Debug.Success",
+      "defaultValue": "Development watch started.",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:72a924cd6db741e3e263a6816e61d701b23d0f8ca697b36f281e854b170d252b"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Publish.Confirm",
+      "defaultValue": "Stop debugging and install {{name}} as a regular MyTools plugin?",
+      "placeholders": [
+        "name"
+      ],
+      "references": null,
+      "sourceHash": "sha256:ccc922390efd09a8abaff4326fcbbc054f2630869daa20f6c45f62bff687819e"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Publish.Success",
+      "defaultValue": "Plugin installed in MyTools and reloaded.",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:aa3ceb97a50455b540be14e06baba9a22cc77d3ac21d7b63c36c7bb79d3d869b"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Action.Delete",
+      "defaultValue": "Delete plugin",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:b090562f538c288d1bf7f12c1a89c492e0df77cfc770e432bdce24e5bd5e0d2e"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Delete.Confirm",
+      "defaultValue": "Delete {{name}} and its entire plugin folder? This cannot be undone.",
+      "placeholders": [
+        "name"
+      ],
+      "references": null,
+      "sourceHash": "sha256:3ab24f9f6c1fbb6f4f6eab80b365c0183b29ac1f7e019d6f1ec96c12e5f98e53"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Delete.Success",
+      "defaultValue": "Plugin deleted.",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:5bd9a11b38810f279155cc7786966aba7c95372d62839a88a341b25589437318"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Next.Title",
+      "defaultValue": "Next steps",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 64,
+        "column": 13
+      },
+      "sourceHash": "sha256:dd00d3d3e9f73d277737cfacfb788bc46a717458297644788de995b658ceb915"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Next.OpenTerminal",
+      "defaultValue": "Open a terminal in the plugin directory",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 66,
+        "column": 15
+      },
+      "sourceHash": "sha256:2ea3fd3d143eb7fdc540d06bb70e46412a017ffeb2254ed5936c67db5323ddce"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Next.Install",
+      "defaultValue": "Install dependencies:",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 67,
+        "column": 21
+      },
+      "sourceHash": "sha256:823f6bc2250ff8d69a56c2e029934abbd0abebdd2cbf67905499cd75ebf91dc7"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Next.Watch",
+      "defaultValue": "Start development watch:",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 68,
+        "column": 21
+      },
+      "sourceHash": "sha256:0ecde9f9e92330f7686458cd382cbc3f5b582953399f3337325940b05d7f9e27"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Next.Help",
+      "defaultValue": "The first successful watch build registers the plugin; later builds refresh it automatically.",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 70,
+        "column": 16
+      },
+      "sourceHash": "sha256:9f05448eb0c65a9bdb3c83a36d14c6a3ab443327c0e932449b14e7477839c4cc"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Next.Install.Command",
+      "defaultValue": "Run npm install",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:810f3f10c7af49793c93d10cef02072ba2725f141607da182e9d9b8fdc2a2a3b"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Next.Watch.Command",
+      "defaultValue": "Run npm run watch",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:e0f3426f3fb092b5c109d16421aab0248b9863568bf335e05576c9ffc3de0b21"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Next.Test",
+      "defaultValue": "Test the alias or hotkey in MyTools",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:2f6a255f645dd020e1fd1a41d09381092b875a648ddc34b9e30d9f9d788539b4"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Validation.NameRequired",
+      "defaultValue": "Enter a plugin name",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/main.ts",
+        "line": 43,
+        "column": 8
+      },
+      "sourceHash": "sha256:1fbb9174aa474a517f7e901ab8c19243abf85da1931760abd2af353699bb73d0"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Validation.InvalidId",
+      "defaultValue": "The plugin ID format is invalid",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/main.ts",
+        "line": 45,
+        "column": 10
+      },
+      "sourceHash": "sha256:06149bfa8b8132ecb4d8b343a6eeef449bd3f7525fe8615e3ce6773746be59b7"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Validation.IdExists",
+      "defaultValue": "A plugin with this ID already exists",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/main.ts",
+        "symbol": "create"
+      },
+      "sourceHash": "sha256:18076a0c13516fe723322f04379df835dd8ad4a56cba7df7e342faee8e267c50"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Validation.NameExists",
+      "defaultValue": "A plugin with this name already exists",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/main.ts",
+        "symbol": "create"
+      },
+      "sourceHash": "sha256:f467d7316d38827194e8f2ede8796bf85725b168ec592bb37e3208d0ffbacf6d"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Toast.RefreshRequested",
+      "defaultValue": "Requested a refresh of all development plugins",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/main.ts",
+        "line": 72,
+        "column": 13
+      },
+      "sourceHash": "sha256:f89334831783568e19d23ff8d1bfa2eafa0a42e08ae9f65df3ebe8433d5e0fae"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Toast.ConnectionReset",
+      "defaultValue": "The connection was reset during refresh",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/main.ts",
+        "line": 74,
+        "column": 13
+      },
+      "sourceHash": "sha256:adb625580d0dd5f1a1b17e1fd3045a7700d48b5590551e6dc3129cecb26d89c4"
+    },
+    {
+      "key": "Plugin.CreatePlugin.List.Title",
+      "defaultValue": "Created plugins",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 54,
+        "column": 13
+      },
+      "sourceHash": "sha256:487d7f721c52c67cb778ad55fe84dfb4d7bf1f106bd58b9eddb7d05cef6fef0d"
+    },
+    {
+      "key": "Plugin.CreatePlugin.List.Empty",
+      "defaultValue": "No plugins have been created yet.",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 58,
+        "column": 12
+      },
+      "sourceHash": "sha256:2f7cfe84211acb6ac0fd8625094b1baa0a885cb77beeeb667c4214057686b1f0"
+    },
+    {
+      "key": "Plugin.CreatePlugin.Action.Back",
+      "defaultValue": "Back to create",
+      "placeholders": [],
+      "references": {
+        "filePath": "src/web/index.html",
+        "line": 77,
+        "column": 17
+      },
+      "sourceHash": "sha256:cc7bc5d4fe68bc8e59f7aced60dc45a51d71048bef672a9d61ab7633dbe2086e"
+    },
+    {
+      "key": "Plugin.CreatePlugin.List.Alias",
+      "defaultValue": "Alias",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:b19e02e9502bbe5ac59dff4b2d4160768a4a7b8feff5693e5769613562290a45"
+    },
+    {
+      "key": "Plugin.CreatePlugin.List.HotKey",
+      "defaultValue": "Hotkey",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:6a6485af02cab90b55fb2ffb5b7d796d431d6e65cb8804ebf6c10c77b6ad4515"
+    },
+    {
+      "key": "Plugin.CreatePlugin.List.None",
+      "defaultValue": "None",
+      "placeholders": [],
+      "references": null,
+      "sourceHash": "sha256:dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91"
+    }
   ]
 }

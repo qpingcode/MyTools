@@ -7,10 +7,14 @@ namespace MyTools.Plugins.NodePlugins;
 public sealed record DevelopmentPluginRegistration(
     string PluginId,
     string Name,
-    string Author,
     string PluginType,
     string SourcePath,
-    string DistPath);
+    string DistPath)
+{
+    public IReadOnlyList<string> Aliases { get; init; } = [];
+    public IReadOnlyList<string> HotKeys { get; init; } = [];
+    public IReadOnlyList<string> TestSteps { get; init; } = [];
+}
 
 public static class DevelopmentPluginRegistrationStore
 {
@@ -63,6 +67,11 @@ public static class DevelopmentPluginSession
     public static bool IsActive(string pluginId)
     {
         lock (Sync) return ActivePluginIds.Contains(pluginId);
+    }
+
+    public static void Deactivate(string pluginId)
+    {
+        lock (Sync) ActivePluginIds.Remove(pluginId);
     }
 
     public static void Clear()

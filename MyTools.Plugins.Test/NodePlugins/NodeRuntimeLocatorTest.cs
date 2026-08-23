@@ -42,4 +42,27 @@ public class NodeRuntimeLocatorTest
             Directory.Delete(root, recursive: true);
         }
     }
+
+    [Test]
+    public void FindBundledNpm_RequiresCommandAndCliPackage()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "mytools-node-runtime-" + Guid.NewGuid().ToString("N"));
+        var bundled = Path.Combine(root, "runtime", "node");
+        Directory.CreateDirectory(bundled);
+        var npm = Path.Combine(bundled, "npm.cmd");
+        File.WriteAllText(npm, "stub");
+        try
+        {
+            Assert.That(NodeRuntimeLocator.FindBundledNpm(root), Is.Null);
+            var cli = Path.Combine(bundled, "node_modules", "npm", "bin", "npm-cli.js");
+            Directory.CreateDirectory(Path.GetDirectoryName(cli)!);
+            File.WriteAllText(cli, "stub");
+
+            Assert.That(NodeRuntimeLocator.FindBundledNpm(root), Is.EqualTo(Path.GetFullPath(npm)));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
 }

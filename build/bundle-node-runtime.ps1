@@ -71,11 +71,32 @@ function Get-NodeFileVersion([string] $Exe) {
 }
 
 function Copy-NodeRuntime([string] $SourceExe) {
+    $sourceRoot = Split-Path -Parent $SourceExe
+    $sourceNpmCmd = Join-Path $sourceRoot "npm.cmd"
+    $sourceNpxCmd = Join-Path $sourceRoot "npx.cmd"
+    $sourceNpmPackage = Join-Path $sourceRoot "node_modules\npm"
+    if (-not (Test-Path -LiteralPath $sourceNpmCmd -PathType Leaf) -or
+        -not (Test-Path -LiteralPath (Join-Path $sourceNpmPackage "bin\npm-cli.js") -PathType Leaf)) {
+        throw "The Node runtime at $sourceRoot does not include npm."
+    }
     Get-ChildItem -LiteralPath $Destination -Force -ErrorAction SilentlyContinue |
         Remove-Item -Recurse -Force
     New-Item -ItemType Directory -Path $Destination -Force | Out-Null
     Copy-Item -LiteralPath $SourceExe -Destination (Join-Path $Destination "node.exe")
+    Copy-Item -LiteralPath $sourceNpmCmd -Destination (Join-Path $Destination "npm.cmd")
+    if (Test-Path -LiteralPath $sourceNpxCmd -PathType Leaf) {
+        Copy-Item -LiteralPath $sourceNpxCmd -Destination (Join-Path $Destination "npx.cmd")
+    }
+    New-Item -ItemType Directory -Path (Join-Path $Destination "node_modules") -Force | Out-Null
+    Copy-Item -LiteralPath $sourceNpmPackage -Destination (Join-Path $Destination "node_modules\npm") -Recurse
     Set-Content -LiteralPath (Join-Path $Destination "VERSION") -Value $Version -NoNewline
+}
+
+function Test-NpmRuntimeSource([string] $NodeExe) {
+    if ([string]::IsNullOrWhiteSpace($NodeExe)) { return $false }
+    $root = Split-Path -Parent $NodeExe
+    return (Test-Path -LiteralPath (Join-Path $root "npm.cmd") -PathType Leaf) -and
+           (Test-Path -LiteralPath (Join-Path $root "node_modules\npm\bin\npm-cli.js") -PathType Leaf)
 }
 
 function Get-PreferredNodeCandidates {
@@ -132,13 +153,14 @@ $matchedExe = $null
 foreach ($candidate in $candidates) {
     $foundVersion = Get-NodeFileVersion $candidate
     $label = if ($null -eq $foundVersion) { 'unreadable' } else { "v$foundVersion" }
-    if ($foundVersion -eq $Version) {
+    if ($foundVersion -eq $Version -and (Test-NpmRuntimeSource $candidate)) {
         $matchedExe = (Resolve-Path -LiteralPath $candidate).Path
         Write-Host "  MATCH $label  $candidate"
         break
     }
 
-    Write-Host "  skip  $label  $candidate"
+    $reason = if ($foundVersion -eq $Version) { "npm missing" } else { $label }
+    Write-Host "  skip  $reason  $candidate"
 }
 
 if ($null -ne $matchedExe) {
@@ -207,6 +229,12 @@ else {
 $bundled = Join-Path $Destination "node.exe"
 if (-not (Test-Path $bundled -PathType Leaf)) {
     throw "Failed to bundle Node runtime to $bundled"
+}
+
+$bundledNpm = Join-Path $Destination "npm.cmd"
+$bundledNpmCli = Join-Path $Destination "node_modules\npm\bin\npm-cli.js"
+if (-not (Test-Path $bundledNpm -PathType Leaf) -or -not (Test-Path $bundledNpmCli -PathType Leaf)) {
+    throw "Bundled Node runtime is missing npm."
 }
 
 $bundledVersion = Get-NodeFileVersion $bundled

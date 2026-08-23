@@ -8,6 +8,7 @@ using MyTools.Common.Localization;
 using MyTools.Common.Theming;
 using MyTools.Common.Utils;
 using MyTools.Common.WindowsMessageHandler;
+using MyTools.AI;
 using MyTools.Desktop.Components;
 using MyTools.Desktop.Models;
 using MyTools.Desktop.Services;
@@ -78,6 +79,36 @@ public static class DesktopServiceCollectionExtensions
         serviceCollection.AddSingleton<IPluginHostCapabilityHandler>(sp =>
             sp.GetRequiredService<RestartPluginHostCallHandler>());
         serviceCollection.AddSingleton<DevelopmentPluginService>();
+        serviceCollection.AddSingleton<HostCityService>();
+        serviceCollection.AddSingleton<IHostCityProvider>(sp => sp.GetRequiredService<HostCityService>());
+        serviceCollection.AddSingleton<LocationPluginHostCallHandler>();
+        serviceCollection.AddSingleton<IPluginHostCapabilityHandler>(sp =>
+            sp.GetRequiredService<LocationPluginHostCallHandler>());
+        serviceCollection.AddSingleton(sp =>
+        {
+            var developmentPlugins = sp.GetRequiredService<DevelopmentPluginService>();
+            var repositoryRoot = FindRepositoryRoot();
+            var examplesRoot = Directory.Exists(Path.Combine(AppContext.BaseDirectory, "Examples"))
+                ? Path.Combine(AppContext.BaseDirectory, "Examples")
+                : Path.Combine(repositoryRoot, "MyTools.Plugins", "Examples");
+            var deployedSkill = Path.Combine(AppContext.BaseDirectory, "skills", "create-plugin", "SKILL.md");
+            var skillPath = File.Exists(deployedSkill)
+                ? deployedSkill
+                : Path.Combine(repositoryRoot, ".github", "skills", "create-plugin", "SKILL.md");
+            var existing = developmentPlugins.GetKnownPlugins()
+                .Select(plugin => new ExistingPlugin(plugin.Id, plugin.Name))
+                .ToArray();
+            return new PluginCreationAgentService(new PluginCreationContext(
+                repositoryRoot,
+                examplesRoot,
+                Path.Combine(ConfigPath.Base, "plugins"),
+                developmentPlugins.CodingRoot,
+                ConfigPath.Base,
+                skillPath,
+                existing,
+                sp.GetRequiredService<IHostCityProvider>(),
+                Path.Combine(Path.GetDirectoryName(skillPath)!, "references")));
+        });
         serviceCollection.AddSingleton<DevelopmentPluginHostCallHandler>();
         serviceCollection.AddSingleton<IPluginHostCapabilityHandler>(sp =>
             sp.GetRequiredService<DevelopmentPluginHostCallHandler>());
@@ -98,6 +129,21 @@ public static class DesktopServiceCollectionExtensions
         serviceCollection.AddSingleton<IWindowHandleAware>(sp => sp.GetRequiredService<HotKeyMessageHandler>());
         
         return serviceCollection;
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        foreach (var start in new[] { Environment.CurrentDirectory, AppContext.BaseDirectory })
+        {
+            var directory = new DirectoryInfo(start);
+            while (directory is not null)
+            {
+                if (File.Exists(Path.Combine(directory.FullName, ".github", "skills", "create-plugin", "SKILL.md")))
+                    return directory.FullName;
+                directory = directory.Parent;
+            }
+        }
+        return AppContext.BaseDirectory;
     }
     
     public static IServiceCollection AddLog(this IServiceCollection serviceCollection)

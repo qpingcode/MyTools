@@ -6,7 +6,6 @@ import { renderTemplateTrees, type TemplateView } from "./templates.mjs";
 type CreateInput = {
   name: string;
   pluginId: string;
-  author: string;
   pluginType: "standard" | "custom-ui";
 };
 
@@ -27,7 +26,6 @@ function templateView(input: CreateInput): TemplateView {
     customUi: input.pluginType === "custom-ui",
     name: input.name,
     nameJson: JSON.stringify(input.name),
-    authorJson: JSON.stringify(input.author),
     pluginId: input.pluginId,
     pluginIdJson: JSON.stringify(input.pluginId),
     packageNameJson: JSON.stringify(`mytools-plugin-${input.pluginId}`),
@@ -50,9 +48,21 @@ function filesFor(input: CreateInput): Record<string, string> {
 const plugin = createPlugin();
 plugin
   .initialize((params) => { mytoolsI18n.configure(params); return {}; })
+  .handle("validatePlugin", async (payload: Pick<CreateInput, "name" | "pluginId">) =>
+    plugin.hostCall("development.validate", payload))
   .handle("createPlugin", async (payload: CreateInput) => plugin.hostCall("development.create", { ...payload, files: filesFor(payload) }))
   .handle("listDevelopmentPlugins", async () => plugin.hostCall("development.list"))
+  .handle("deleteDevelopmentPlugin", async (payload: { pluginId: string }) => plugin.hostCall("development.delete", payload))
   .handle("refreshDevelopmentPlugins", async () => plugin.hostCall("development.refresh"))
   .handle("openFolder", async (payload: { sourcePath: string }) => plugin.hostCall("development.openFolder", payload))
   .handle("openCode", async (payload: { sourcePath: string }) => plugin.hostCall("development.openCode", payload))
+  .handle("startDebug", async (payload: { pluginId: string }) => plugin.hostCall("development.startDebug", payload, 180_000))
+  .handle("publishPlugin", async (payload: { pluginId: string }) => plugin.hostCall("development.publish", payload, 180_000))
+  .handle("getAiStatus", async () => plugin.hostCall("development.ai.status"))
+  .handle("chatWithAi", async (payload: { sessionId?: string; message: string; selectedPluginId?: string }) =>
+    plugin.hostCall("development.ai.chat", payload, 600_000))
+  .handle("getAiProgress", async (payload: { sessionId: string; afterSequence: number }) =>
+    plugin.hostCall("development.ai.progress", payload, 20_000))
+  .handle("clearAiConversation", async (payload: { sessionId?: string }) =>
+    plugin.hostCall("development.ai.clear", payload))
   .start();

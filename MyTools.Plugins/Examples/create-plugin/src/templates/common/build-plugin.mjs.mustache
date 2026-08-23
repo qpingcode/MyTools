@@ -5,11 +5,24 @@ import { requestDevelopmentPluginRefresh } from "@qping/plugin-bus/dev";
 
 const watching = process.argv.includes("--watch");
 const pluginId = {{{pluginIdJson}}};
+let refreshTimer;
+let readyReported = false;
 
 function requestMyToolsRefresh() {
-  void requestDevelopmentPluginRefresh(pluginId).catch((error) => {
-    console.warn("[MyTools] " + error.message);
-  });
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(async () => {
+    try {
+      await requestDevelopmentPluginRefresh(pluginId);
+      if (!readyReported) {
+        readyReported = true;
+        console.log(`[MyTools] Plugin "${pluginId}" is registered and ready to test.`);
+      } else {
+        console.log(`[MyTools] Plugin "${pluginId}" refreshed.`);
+      }
+    } catch (error) {
+      console.warn("[MyTools] " + error.message);
+    }
+  }, 75);
 }
 
 const refreshPlugin = {

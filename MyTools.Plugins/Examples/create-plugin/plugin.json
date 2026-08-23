@@ -16,10 +16,18 @@
       "entry": "backend/index.mjs",
       "capabilities": [
         "development.create",
+        "development.validate",
         "development.list",
+        "development.delete",
         "development.refresh",
         "development.openFolder",
-        "development.openCode"
+        "development.openCode",
+        "development.startDebug",
+        "development.publish",
+        "development.ai.status",
+        "development.ai.chat",
+        "development.ai.progress",
+        "development.ai.clear"
       ],
       "alias": ["create"],
       "detail": { "type": "web", "entry": "web/index.html" }

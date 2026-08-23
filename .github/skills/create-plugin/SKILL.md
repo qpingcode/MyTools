@@ -7,11 +7,20 @@ description: Develop a MyTools Node plugin (backend + optional WebView2 detail p
 
 MyTools Node 插件 = 独立 Node 进程里的后端 + 可选的 WebView2 HTML 详情页。不写 `detail` 时宿主用 `search` 结果走原生列表。通信走 v3 消息总线（Named Pipe + WebView2 postMessage），协议版本 **3.0**。
 
-参考实现：`MyTools.Plugins/Examples/` 下的 `hello-search`（最小）、`json-formatter` / `xml-formatter`（页面自包含）、`settings`（`hostCall`）、`snippet` / `command-runner`（`plugin.json` configuration + `configuration.readOwn`）、`deepseek-chat`、`translator`（多 entry）。SDK 源码：`MyTools.Plugins/Examples/sdk-v3`（包名 `@qping/plugin-bus`）。
+随 MyTools 安装的参考包位于 [`references/Examples/`](references/Examples/)；它是当前版本的权威源码参考，不依赖用户安装目录之外的仓库。常用入口：[`calculator`](references/Examples/calculator/)（简单标准插件）、[`json-formatter`](references/Examples/json-formatter/) / [`xml-formatter`](references/Examples/xml-formatter/)（页面自包含）、[`settings`](references/Examples/settings/)（`hostCall`）、[`snippet`](references/Examples/snippet/) / [`command-runner`](references/Examples/command-runner/)（`plugin.json` configuration + `configuration.readOwn`）、[`deepseek-chat`](references/Examples/deepseek-chat/)、[`translator`](references/Examples/translator/)（多 entry）。SDK 源码在 [`sdk-v3`](references/Examples/sdk-v3/)（包名 `@qping/plugin-bus`）。创建或编辑前只读取与需求最相关的最小参考集合。
+
+创建模式下选择唯一的插件 ID 和名称，从完整目录结构开始生成。编辑模式下，先读取 Host 提供的
+`selectedPlugin`（ID、名称、类型和源码目录）并检查现有文件，只能修改该插件目录；保持插件 ID，
+保留与用户需求无关的行为和配置。无论创建还是编辑，完成前都要重新检查 manifest、i18n、图标、
+构建脚本以及 `build` / `watch` / `check`，最后调用 `complete_plugin`。
+
+Create Plugin 的“打开目录”和“用 VS Code 打开”必须通过 Host capability（分别为
+`development.openFolder` / `development.openCode`）完成；AI 和插件页面不能直接启动
+`explorer.exe`、`code`、`Code.exe` 或其他本地进程。
 
 ## 1. 目录结构
 
-单 entry（照 `hello-search`）：
+单 entry（照 [`calculator`](references/Examples/calculator/)）：
 
 ```text
 my-plugin/
@@ -27,13 +36,13 @@ my-plugin/
     locales/{en-US.json, zh-CN.json}
 ```
 
-多 entry（照 `translator`）：每个 entry 各自 `src/backend/<Id>/index.mts` 和 `src/web/<Id>/{index.html, main.ts, style.css}`。
+多 entry（照 [`translator`](references/Examples/translator/)）：每个 entry 各自 `src/backend/<Id>/index.mts` 和 `src/web/<Id>/{index.html, main.ts, style.css}`。
 
 构建输出到 `dist/`。`plugin.json` 里的路径相对 `dist` 根（如 `backend/index.mjs`、`web/index.html`）。
 
 ## 2. SDK：`@qping/plugin-bus`
 
-仓库内示例通过 `MyTools.Plugins/Examples` workspace 引用本地 `sdk-v3`。`package.json`：
+参考包中的示例在源码仓库里通过 workspace 引用 `sdk-v3`；AI 创建到用户 coding 目录的插件必须使用已发布的 `@qping/plugin-bus` 版本。`package.json`：
 
 ```json
 {
@@ -44,6 +53,7 @@ my-plugin/
   "scripts": {
     "clean": "rimraf dist",
     "build": "npm run check && node build-plugin.mjs",
+    "watch": "node build-plugin.mjs --watch",
     "check": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
@@ -144,8 +154,9 @@ SDK 把方法映射到 v3 路由：`initialize` → `plugin.call.initialize`，`
 - 需要自定义页面时再写 `"detail": { "type": "web", "entry": "web/index.html" }`。`hotKey`、`alias`、`search` 可选。
 - action 不写在 manifest。详情页默认使用本 entry 通过 `plugin.actions()` 注册的全部 action；列表 item 用 action id 子集引用。
 - `search.global`：出现在**无关键词**的全局搜索结果中。省略或 `false` 时不参与全局搜索（opt-in，避免设置类插件污染每次搜索）。用户可在设置 → 插件列表的 **全局结果** 中覆盖此项。
-- 有非空 `alias` 就会注册 `alias + 查询串` 的插件级搜索；没有 alias 则只能靠全局搜索或热键进入。只有全局、没有别名时（如 `hello-search`）必须设 `"search": { "global": true }`。
+- 有非空 `alias` 就会注册 `alias + 查询串` 的插件级搜索；没有 alias 则只能靠全局搜索或热键进入。只有全局、没有别名时必须设 `"search": { "global": true }`。
 - 没有顶层 `name` / `runtime`；
+- AI自动创建时 alias最多只设置一个
 
 ## 4. 后端（Node）
 
@@ -213,13 +224,13 @@ return {
 };
 ```
 
-`host.kind` 使用 `HostAction` 常量。参考 `hello-search`（`mdi` 图标）和 `openpath`（动态计算后交给宿主执行）。
+`host.kind` 使用 `HostAction` 常量。参考 [`openpath`](references/Examples/openpath/)，动态计算后交给宿主执行。
 - `handle(name, fn)` 给详情页 `bus.call(name)` 用。`context` 有 `action / itemId / query / locale / fallbackLocale / theme`（由宿主注入，页面不必带）。
 - 详情页工具可以用 `handle` 把页面状态同步到 Node，再由注册 action 返回 `host`；纯 UI 动作可显式返回 `web`。
 - 环境变量从 `process.env` 读。`start()` 连宿主 Named Pipe，不要自己读 stdin。
 - 数据落盘优先用宿主注入目录：`MYTOOLS_PLUGIN_DATA_DIR`（单插件目录，例如 `%APPDATA%\MyTools.Desktop\pluginsData\translator`），其次可读 `MYTOOLS_PLUGINS_DATA_DIR`（所有插件数据根目录）。避免把数据写到 `process.cwd()`。
 
-需要宿主能力时（照 `settings`）：页面 `bus.call("getConfiguration")` → 后端 `handle` → `plugin.hostCall("configuration.read")`。页面不能直接发 `host.call.*`。manifest 必须声明完全相同的 capability；
+需要宿主能力时（照 [`settings`](references/Examples/settings/)）：页面 `bus.call("getConfiguration")` → 后端 `handle` → `plugin.hostCall("configuration.read")`。页面不能直接发 `host.call.*`。manifest 必须声明完全相同的 capability；
 
 ### 可用 capabilities
 
@@ -228,38 +239,32 @@ return {
 `capabilities` 中逐项声明完全相同的字符串。声明不匹配时宿主返回
 `CapabilityNotDeclared`。
 
-| Capability | 说明 | 参数/结果摘要 | 代码定义 |
-| --- | --- | --- | --- |
-| `configuration.read` | 读取宿主全部设置分类、设置项及支持的语言、主题、日志级别。 | 无参数；返回 settings 配置 DTO。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
-| `configuration.readOwn` | 读取**当前插件自己的**设置值。按 `pluginId` 过滤，不能读其他插件。 | 无参数；返回 `{ values: { [settingName]: value } }`，数组保持 JSON 数组。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
-| `configuration.writeOwn` | 写入**当前插件自己的**设置值。按 `pluginId` 过滤，不能改其他插件。 | `{ values: { [settingName]: value } }`；返回 `{ success }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
-| `configuration.write` | 保存设置值，并应用主题、语言、日志级别、开机启动和搜索热键等变更。 | `{ changes }`；返回 `{ requiresRestart }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
-| `keymap.read` | 读取插件 Alias、全局搜索和启用状态。 | 无参数；返回插件 keymap 列表，不包含热键。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
-| `keymap.write` | 保存插件 Alias、全局搜索和启用状态，并刷新关键词及搜索缓存。 | `{ overrides }`；返回 `{ success }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
-| `keymap.validate` | 检查插件 Alias 冲突。 | `{ keywords }`；返回 `{ conflicts }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
-| `gestures.read` | 读取鼠标手势配置。 | 无参数；返回 gestures 列表。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
-| `gestures.write` | 保存鼠标手势配置并刷新手势注册。 | `{ gestures }`；返回 `{ success }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
-| `gestures.suspend` | 临时暂停鼠标手势检测，通常在录制手势时使用。 | 无参数；返回空对象。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
-| `gestures.resume` | 恢复鼠标手势检测。 | 无参数；返回空对象。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
-| `hotkeys.read` | 读取插件默认热键和当前覆盖热键。 | 无参数；返回插件热键列表。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
-| `hotkeys.write` | 保存插件热键覆盖并重新注册插件热键。 | `{ hotKeys }`；返回 `{ success }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
-| `hotkeys.suspend` | 临时注销/暂停宿主全局热键。 | 无参数；返回空对象。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
-| `hotkeys.resume` | 恢复宿主全局热键注册。 | 无参数；返回空对象。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
-| `hotkeys.validate` | 检查待保存的插件热键是否与搜索热键或其他插件热键冲突。 | `{ hotKeys }`；返回 `{ conflicts }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
-| `action.capture` | 打开宿主原生输入录制窗口，捕获键盘热键或鼠标按钮。 | 录制选项；返回 `{ cancelled, kind, hotKey, mouseButton }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
-| `path.pick` | 打开 Windows 原生文件或目录选择窗口。`kind: directory` 选文件夹，否则选文件。 | `{ title?, filter?, initialPath?, kind? }`，`kind` 为 `file` / `directory` / `fileOrDirectory`；返回 `{ cancelled, path }`。 | [`PathPluginHostCallHandler`](../../../MyTools.Desktop/Services/PathPluginHostCallHandler.cs) |
-| `path.validate` | 校验路径是否为绝对路径、是否存在，以及是否满足文件/目录类型要求。空路径视为有效。 | `{ path, kind }`，`kind` 为 `file` / `directory` / `fileOrDirectory`；返回 `{ valid, message }`。 | [`PathPluginHostCallHandler`](../../../MyTools.Desktop/Services/PathPluginHostCallHandler.cs) |
-| `restart` | 重启 MyTools Desktop。 | 无参数；返回空对象后执行重启。 | [`RestartPluginHostCallHandler`](../../../MyTools.Desktop/Services/RestartPluginHostCallHandler.cs) |
-| `plugins.list` | 列出当前已启用的插件（名称、Alias、热键）。调用方自己的插件会被排除。 | 无参数；返回 `{ plugins: [{ pluginId, name, aliases, hotKey }] }`。 | [`SettingsPluginHostCallHandler`](../../../MyTools.Desktop/Services/SettingsPluginHostCallHandler.cs) |
+| Capability | 说明 | 参数/结果摘要 |
+| --- | --- | --- |
+| `configuration.read` | 读取宿主全部设置分类、设置项及支持的语言、主题、日志级别。 | 无参数；返回 settings 配置 DTO。 |
+| `configuration.readOwn` | 读取**当前插件自己的**设置值。按 `pluginId` 过滤，不能读其他插件。 | 无参数；返回 `{ values: { [settingName]: value } }`，数组保持 JSON 数组。 |
+| `configuration.writeOwn` | 写入**当前插件自己的**设置值。按 `pluginId` 过滤，不能改其他插件。 | `{ values: { [settingName]: value } }`；返回 `{ success }`。 |
+| `configuration.write` | 保存设置值，并应用主题、语言、日志级别、开机启动和搜索热键等变更。 | `{ changes }`；返回 `{ requiresRestart }`。 |
+| `keymap.read` | 读取插件 Alias、全局搜索和启用状态。 | 无参数；返回插件 keymap 列表，不包含热键。 |
+| `keymap.write` | 保存插件 Alias、全局搜索和启用状态，并刷新关键词及搜索缓存。 | `{ overrides }`；返回 `{ success }`。 |
+| `keymap.validate` | 检查插件 Alias 冲突。 | `{ keywords }`；返回 `{ conflicts }`。 |
+| `gestures.read` | 读取鼠标手势配置。 | 无参数；返回 gestures 列表。 |
+| `gestures.write` | 保存鼠标手势配置并刷新手势注册。 | `{ gestures }`；返回 `{ success }`。 |
+| `gestures.suspend` | 临时暂停鼠标手势检测，通常在录制手势时使用。 | 无参数；返回空对象。 |
+| `gestures.resume` | 恢复鼠标手势检测。 | 无参数；返回空对象。 |
+| `hotkeys.read` | 读取插件默认热键和当前覆盖热键。 | 无参数；返回插件热键列表。 |
+| `hotkeys.write` | 保存插件热键覆盖并重新注册插件热键。 | `{ hotKeys }`；返回 `{ success }`。 |
+| `hotkeys.suspend` | 临时注销/暂停宿主全局热键。 | 无参数；返回空对象。 |
+| `hotkeys.resume` | 恢复宿主全局热键注册。 | 无参数；返回空对象。 |
+| `hotkeys.validate` | 检查待保存的插件热键是否与搜索热键或其他插件热键冲突。 | `{ hotKeys }`；返回 `{ conflicts }`。 |
+| `action.capture` | 打开宿主原生输入录制窗口，捕获键盘热键或鼠标按钮。 | 录制选项；返回 `{ cancelled, kind, hotKey, mouseButton }`。 |
+| `path.pick` | 打开 Windows 原生文件或目录选择窗口。`kind: directory` 选文件夹，否则选文件。 | `{ title?, filter?, initialPath?, kind? }`，`kind` 为 `file` / `directory` / `fileOrDirectory`；返回 `{ cancelled, path }`。 |
+| `path.validate` | 校验路径是否为绝对路径、是否存在，以及是否满足文件/目录类型要求。空路径视为有效。 | `{ path, kind }`，`kind` 为 `file` / `directory` / `fileOrDirectory`；返回 `{ valid, message }`。 |
+| `location.city` | 获取宿主按公网 IP 推断的城市级近似位置；不会返回 IP、经纬度或邮编，VPN/代理可能导致城市偏差。 | 无参数；返回 `{ available, city, region, country, countryCode, approximate, source, error? }`。 |
+| `restart` | 重启 MyTools Desktop。 | 无参数；返回空对象后执行重启。 |
+| `plugins.list` | 列出当前已启用的插件（名称、Alias、热键）。调用方自己的插件会被排除。 | 无参数；返回 `{ plugins: [{ pluginId, name, aliases, hotKey }] }`。 |
 
-能力基础设施：
-
-- Handler 接口：[`IPluginHostCapabilityHandler`](../../../MyTools.Desktop/Services/IPluginHostCapabilityHandler.cs)
-- Handler 注册：[`DesktopServiceCollectionExtensions`](../../../MyTools.Desktop/DesktopServiceCollectionExtensions.cs)
-- capability 到 handler 的直接路由：[`NodePluginHostCallRouter`](../../../MyTools.Desktop/Services/NodePluginHostCallRouter.cs)
-- manifest 声明校验与审计：[`CapabilityGateway`](../../../MyTools.Host.Core/Capabilities/CapabilityGateway.cs)
-- 每次 `host.call.*` 的授权入口：[`MessageBus`](../../../MyTools.Host.Core/Bus/MessageBus.cs)
-- 插件热键与 keymap 的共享持久化：[`PluginOverrideProvider`](../../../MyTools.Desktop/Services/PluginOverrideProvider.cs)，写入 `PluginOverrides.json`；
+上述表格是当前安装版本的 capability 契约。Host 会按 entry manifest 做声明校验和调用审计；不要依赖未列出的内部类名或源码路径。
 
 不要根据测试或设计文档推断 capability 可用性。例如 `clipboard.read` 当前没有注册
 `IPluginHostCapabilityHandler`，因此尚不是可调用的宿主能力。
@@ -379,6 +384,10 @@ button {
 
 ## 8. 构建
 
-`build-plugin.mjs`：backend（`platform: "node"`, `format: "esm"`, 输出 `.mjs`），web（`format: "iife"`），`esbuild-plugin-copy` 把 `plugin.json`、html、css、`i18n/**/*` 拷到 `dist/`。watch 构建成功后通过 `@qping/plugin-bus/dev` 的 `requestDevelopmentPluginRefresh()` 请求 MyTools 刷新，不要在构建脚本中写死刷新管道或消息格式。多 entry 时 `entryPoints` 传数组，`outbase: "src/backend"`（或 `src/web`）。完整脚本照 `hello-search/build-plugin.mjs` 或 `translator/build-plugin.mjs`。
+`build-plugin.mjs`：backend（`platform: "node"`, `format: "esm"`, 输出 `.mjs`），web（`format: "iife"`），并把 `plugin.json`、html、css、`i18n/**/*` 拷到 `dist/`。watch 构建成功后通过 `@qping/plugin-bus/dev` 的 `requestDevelopmentPluginRefresh()` 请求 MyTools 刷新，不要在构建脚本中写死刷新管道或消息格式。多 entry 时 `entryPoints` 传数组，`outbase: "src/backend"`（或 `src/web`）。完整 watch 实现必须以随安装发布的 [`build-plugin.mjs.mustache`](references/Examples/create-plugin/src/templates/common/build-plugin.mjs.mustache) 为准。
 
-构建：`npm run build`（先 `tsc --noEmit`，再打包到 `dist/`）。安装指向 `dist/`。在 Examples workspace 里先 `npm run build -w @qping/plugin-bus`。
+esbuild 新版 watch 必须使用 `const ctx = await context(options); await ctx.watch();`，`watch()` **不接收任何参数**。需要监听构建结束时，在 options 中加入自定义插件并使用 `build.onEnd(result => ...)`。禁止生成 `ctx.watch({ onRebuild })`、`onRebuild` 或旧版 `build({ watch: ... })` 写法；这些 API 与当前 esbuild 不兼容。
+
+`package.json` 必须同时提供 `build`、`watch`、`check` 脚本；`watch` 应调用支持持续构建的 `node build-plugin.mjs --watch`。Create Plugin Host 会在 AI 创建完成后执行 `npm install`，随后在可见终端中执行 `npm run watch`，因此缺少 `scripts.watch` 的插件视为未完成。
+
+构建：`npm run build`（先 `tsc --noEmit`，再打包到 `dist/`）。安装指向 `dist/`。参考包仅用于读取，不在安装目录内执行 workspace 构建。

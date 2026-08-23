@@ -423,6 +423,26 @@ jobs:
           if (-not (Test-Path $bundledNode -PathType Leaf)) {
               throw "Bundled Node runtime is missing: $bundledNode"
           }
+          $bundledNpm = Join-Path (Split-Path -Parent $bundledNode) 'npm.cmd'
+          $bundledNpmCli = Join-Path (Split-Path -Parent $bundledNode) 'node_modules\npm\bin\npm-cli.js'
+          if (-not (Test-Path $bundledNpm -PathType Leaf) -or -not (Test-Path $bundledNpmCli -PathType Leaf)) {
+              throw "Bundled npm runtime is missing beside: $bundledNode"
+          }
+
+          $publishRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $bundledNode))
+          $skillRoot = Join-Path $publishRoot 'skills\create-plugin'
+          $requiredSkillFiles = @(
+              (Join-Path $skillRoot 'SKILL.md'),
+              (Join-Path $skillRoot 'references\Examples\calculator\plugin.json'),
+              (Join-Path $skillRoot 'references\Examples\calculator\src\index.ts'),
+              (Join-Path $skillRoot 'references\Examples\sdk-v3\src\index.ts'),
+              (Join-Path $skillRoot 'references\Examples\create-plugin\src\templates\common\build-plugin.mjs.mustache')
+          )
+          foreach ($skillFile in $requiredSkillFiles) {
+              if (-not (Test-Path $skillFile -PathType Leaf)) {
+                  throw "Bundled create-plugin skill reference is missing: $skillFile"
+              }
+          }
 
           $requiredFiles = @(
               $installerName,
