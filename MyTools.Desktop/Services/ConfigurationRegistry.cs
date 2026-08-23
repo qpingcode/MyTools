@@ -137,6 +137,38 @@ public class ConfigurationRegistry(IConfigurationStorage storage) : IConfigurati
     {
         return _settingsByName.TryGetValue(path, out var setting) ? setting : null;
     }
+
+    public bool RemoveCategory(string path)
+    {
+        if (!_categoriesByPath.TryGetValue(path, out var category))
+        {
+            return false;
+        }
+
+        RemoveCategoryIndexes(category);
+        if (category.Parent is null)
+        {
+            _rootCategories.Remove(category);
+        }
+        else
+        {
+            category.Parent.Children.Remove(category);
+        }
+        return true;
+    }
+
+    private void RemoveCategoryIndexes(ConfigurationCategory category)
+    {
+        foreach (var child in category.Children.ToArray())
+        {
+            RemoveCategoryIndexes(child);
+        }
+        foreach (var setting in category.Settings)
+        {
+            _settingsByName.Remove(setting.FullPath);
+        }
+        _categoriesByPath.Remove(category.FullPath);
+    }
     
     public IEnumerable<object> Search(string query)
     {

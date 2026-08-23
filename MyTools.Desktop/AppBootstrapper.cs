@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text.Json;
 using System.Windows.Input;
 using Microsoft.Extensions.Logging;
 using MyTools.Common.Config;
@@ -129,10 +130,15 @@ public class AppBootstrapper : IDisposable
         await nodePluginReloadLock.WaitAsync();
         try
         {
+            var previousConfigurations = CaptureNodePluginConfigurations(nodePluginCatalog.Plugins);
             nodePluginCatalog.Reload();
+            var currentConfigurations = CaptureNodePluginConfigurations(nodePluginCatalog.Plugins);
             if (string.IsNullOrWhiteSpace(parentPluginId))
             {
                 var nodePlugins = (await pluginLoader.InitPluginsAsync()).OfType<NodePlugin>().ToList();
+                RefreshNodePluginSettings(
+                    FindChangedPluginConfigurations(previousConfigurations, currentConfigurations),
+                    nodePlugins);
                 RegisterNodePluginHostCallHandlers(nodePlugins);
                 pluginKeymapService.ApplyOverrides(nodePlugins);
                 pluginHotKeyService.ReRegisterAll(nodePlugins, OpenNodePluginDetail);
@@ -143,11 +149,21 @@ public class AppBootstrapper : IDisposable
             }
 
             var replacements = (await pluginLoader.ReloadPluginAsync(parentPluginId)).ToList();
+            var configurationChanged = ConfigurationChanged(
+                parentPluginId, previousConfigurations, currentConfigurations);
+            if (configurationChanged)
+            {
+                RefreshNodePluginSettings([parentPluginId], replacements);
+            }
             RegisterNodePluginHostCallHandlers(replacements);
             pluginKeymapService.ApplyOverrides(replacements);
             pluginKeymapService.ReRegisterKeywords(replacements);
             pluginHotKeyService.ReRegisterPlugin(parentPluginId, replacements, OpenNodePluginDetail);
             pluginWindowManager.RefreshOpenPlugin(parentPluginId, replacements);
+            if (configurationChanged)
+            {
+                RefreshOpenSettingsPlugin();
+            }
             logger.LogInformation(
                 "Reloaded development plugin {PluginId} with {Count} entries.",
                 parentPluginId, replacements.Count);
@@ -286,6 +302,65 @@ public class AppBootstrapper : IDisposable
             }
         }
     }
+
+    private void RefreshNodePluginSettings(
+        IEnumerable<string> pluginIds,
+        IEnumerable<NodePlugin> currentPlugins)
+    {
+        var ids = pluginIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (ids.Count == 0) return;
+
+        foreach (var pluginId in ids)
+        {
+            registry.RemoveCategory(pluginId);
+        }
+        foreach (var plugin in currentPlugins.Where(plugin => ids.Contains(plugin.ParentId)))
+        {
+            plugin.RegisterSettings(registry);
+        }
+        foreach (var pluginId in ids)
+        {
+            var category = registry.FindCategory(pluginId);
+            if (category is null) continue;
+            foreach (var setting in category.Settings)
+            {
+                registry.Reload(setting);
+            }
+        }
+    }
+
+    private void RefreshOpenSettingsPlugin()
+    {
+        var settingsPlugins = pluginLoader.LoadedPlugins
+            .OfType<NodePlugin>()
+            .Where(plugin => string.Equals(plugin.ParentId, "settings", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        pluginWindowManager.RefreshOpenPlugin("settings", settingsPlugins);
+    }
+
+    internal static IReadOnlyDictionary<string, string> CaptureNodePluginConfigurations(
+        IEnumerable<NodePluginManifest> manifests) =>
+        manifests
+            .GroupBy(manifest => manifest.ParentId, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                group => group.Key,
+                group => JsonSerializer.Serialize(group.First().Configuration),
+                StringComparer.OrdinalIgnoreCase);
+
+    internal static IReadOnlySet<string> FindChangedPluginConfigurations(
+        IReadOnlyDictionary<string, string> previous,
+        IReadOnlyDictionary<string, string> current) =>
+        previous.Keys.Concat(current.Keys)
+            .Where(pluginId => ConfigurationChanged(pluginId, previous, current))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    private static bool ConfigurationChanged(
+        string pluginId,
+        IReadOnlyDictionary<string, string> previous,
+        IReadOnlyDictionary<string, string> current) =>
+        !previous.TryGetValue(pluginId, out var oldConfiguration)
+        || !current.TryGetValue(pluginId, out var newConfiguration)
+        || !string.Equals(oldConfiguration, newConfiguration, StringComparison.Ordinal);
 
     /// <summary>
     /// For every index.html under the plugin directory, generate a theme-specific

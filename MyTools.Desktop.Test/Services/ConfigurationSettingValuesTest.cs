@@ -175,6 +175,7 @@ public class ConfigurationSettingValuesTest
         public ConfigurationCategory? FindCategory(string path) => null;
         public ConfigurationSetting? FindSetting(string path) =>
             Settings.FirstOrDefault(s => string.Equals(s.FullPath, path, StringComparison.OrdinalIgnoreCase));
+        public bool RemoveCategory(string path) => false;
         public IEnumerable<object> Search(string query) => [];
         public IEnumerable<ConfigurationSetting> GetModifiedSettings() => [];
         public void SaveChanges() { }

@@ -14,6 +14,7 @@ public interface IConfigurationRegistry
         SettingValueTypes? valueType = null);
     ConfigurationCategory? FindCategory(string path);
     ConfigurationSetting? FindSetting(string path);
+    bool RemoveCategory(string path);
     IEnumerable<object> Search(string query);
     IEnumerable<ConfigurationSetting> GetModifiedSettings();
     void SaveChanges();

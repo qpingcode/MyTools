@@ -253,6 +253,15 @@ public class PluginConfigurationRegistrarTest
         public ConfigurationSetting? FindSetting(string path) =>
             Settings.FirstOrDefault(s => string.Equals(s.FullPath, path, StringComparison.OrdinalIgnoreCase));
 
+        public bool RemoveCategory(string path)
+        {
+            var category = FindCategory(path);
+            if (category is null) return false;
+            Categories.Remove(category);
+            Settings.RemoveAll(setting => ReferenceEquals(setting.Category, category));
+            return true;
+        }
+
         public IEnumerable<object> Search(string query) => [];
         public IEnumerable<ConfigurationSetting> GetModifiedSettings() => [];
         public void SaveChanges() { }
