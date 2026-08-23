@@ -1,7 +1,7 @@
-// End-to-end integration test of the v3 server SDK: spawns the hello-search v3 backend as a child
+// End-to-end integration test of the v3 server SDK: spawns the calculator v3 backend as a child
 // process, writes the bootstrap line to its stdin, completes bus.handshake, then sends a
 // plugin.call.search request and verifies the response.
-// Run with: node --test MyTools.Plugins/Examples/sdk-v3/test/hello-search-v3.integration.test.mjs
+// Run with: node --test MyTools.Plugins/Examples/sdk-v3/test/calculator-v3.integration.test.mjs
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -14,7 +14,7 @@ import { encodeFrameString, FrameDecoder } from "../src/framing.ts";
 import { canonicalStringify } from "../src/protocol.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const entryPath = join(here, "..", "..", "hello-search", "src", "backend", "index.mts");
+const entryPath = join(here, "..", "..", "calculator", "src", "backend", "index.mts");
 
 function waitFor(predicate, timeoutMs = 5000) {
   return new Promise((resolve, reject) => {
@@ -28,7 +28,7 @@ function waitFor(predicate, timeoutMs = 5000) {
   });
 }
 
-test("hello-search v3 backend answers plugin.call.search over the pipe", async () => {
+test("calculator v3 backend answers plugin.call.search over the pipe", async () => {
   const pipeName = `mytools-v3-it-${randomBytes(8).toString("hex")}`;
   const pipePath = `\\\\.\\pipe\\${pipeName}`;
   const token = "test-token";
@@ -67,15 +67,15 @@ test("hello-search v3 backend answers plugin.call.search over the pipe", async (
     correlationId: handshakeReq.id,
     traceId: handshakeReq.traceId,
     sessionId: "s",
-    pluginId: "hello-search",
-    entryId: "hello",
+    pluginId: "calculator",
+    entryId: "calculator",
     endpointId: "host",
     kind: "response",
     route: "bus.handshake",
     payload: {
       negotiatedVersion: "3.0",
-      pluginId: "hello-search",
-      entryId: "hello",
+      pluginId: "calculator",
+      entryId: "calculator",
       sessionId: "s",
       endpointId: "node-main",
     },
@@ -87,9 +87,9 @@ test("hello-search v3 backend answers plugin.call.search over the pipe", async (
 
   const req = canonicalStringify({
     version: "3.0", id: "search-1", traceId: "search-1", sessionId: "s",
-    pluginId: "hello-search", entryId: "hello", endpointId: "node-main",
+    pluginId: "calculator", entryId: "calculator", endpointId: "node-main",
     kind: "request", route: "plugin.call.search", timeoutMs: 5000,
-    payload: { query: "world", mode: "global", locale: "en-US", fallbackLocale: "en-US" },
+    payload: { query: "1 + 2", mode: "global", locale: "en-US", fallbackLocale: "en-US" },
   });
   socket.write(encodeFrameString(req));
 
@@ -101,7 +101,8 @@ test("hello-search v3 backend answers plugin.call.search over the pipe", async (
   assert.ok(searchResponse, "no search response received");
   assert.equal(searchResponse.correlationId, "search-1");
   assert.ok(Array.isArray(searchResponse.payload.items), "response items not an array");
-  assert.equal(searchResponse.payload.items[0].id, "hello:world");
-  assert.equal(searchResponse.payload.items[0].icon.kind, "mdi");
-  assert.equal(searchResponse.payload.items[0].icon.value, "mdi-hand-wave-outline");
+  assert.equal(searchResponse.payload.items[0].id, "calculator:current:1%20%2B%202");
+  assert.equal(searchResponse.payload.items[0].title, "3");
+  assert.equal(searchResponse.payload.items[0].icon.kind, "emoji");
+  assert.equal(searchResponse.payload.items[0].icon.value, "🧮");
 });
