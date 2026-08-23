@@ -69,7 +69,7 @@
       "id": "search-engine",
       "name": {
         "key": "Plugin.SearchEngine.Name",
-        "defaultValue": "Web Search"
+        "defaultValue": "Search Engines"
       },
       "entry": "backend/index.mjs",
       "capabilities": ["configuration.readOwn"],

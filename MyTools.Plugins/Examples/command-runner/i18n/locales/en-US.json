@@ -1,5 +1,5 @@
 {
-  "Plugin.CommandRunner.Name": "Custom Commands",
+  "Plugin.CommandRunner.Name": "Scripts",
   "Plugin.CommandRunner.Setting.Commands": "Commands",
   "Plugin.CommandRunner.Setting.Commands.Description": "Custom commands available in global search. Press Enter to run.",
   "Plugin.CommandRunner.Column.Name": "Name",

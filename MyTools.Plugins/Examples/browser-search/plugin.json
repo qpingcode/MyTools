@@ -168,7 +168,7 @@
       "id": "browser-search",
       "name": {
         "key": "Plugin.BrowserSearch.Name",
-        "defaultValue": "Browser Search"
+        "defaultValue": "Bookmark and History"
       },
       "entry": "backend/index.mjs",
       "capabilities": ["configuration.readOwn"],

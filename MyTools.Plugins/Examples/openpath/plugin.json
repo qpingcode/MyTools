@@ -72,7 +72,7 @@
       "id": "main",
       "name": {
         "key": "Plugin.OpenPath.Name",
-        "defaultValue": "Open Path"
+        "defaultValue": "Smart Open"
       },
       "entry": "backend/index.mjs",
       "capabilities": [

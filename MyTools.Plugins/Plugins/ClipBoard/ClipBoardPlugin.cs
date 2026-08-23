@@ -26,7 +26,7 @@ public class ClipBoardPlugin(ILogger<ClipBoardPlugin> logger) : PluginBase, IWin
 
     public override string PluginId => "ClipBoard";
     protected override string SettingsCategoryName => GetCaption(
-        "Plugin.ClipBoard.Settings.Category.Name", "Clipboard enhancement");
+        "Plugin.ClipBoard.Settings.Category.Name", "Clipboard History");
     protected override string SettingsCategoryDescription => GetCaption(
         "Plugin.ClipBoard.Settings.Category.Description", "Configure clipboard history and sequential paste");
     private ClipBoardDbHelper? _dbHelper;

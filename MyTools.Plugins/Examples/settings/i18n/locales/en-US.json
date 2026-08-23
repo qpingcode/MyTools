@@ -76,7 +76,7 @@
   "Plugin.Settings.Capture.Waiting": "Waiting for input...",
   "Plugin.Settings.SearchHotKey.PickerTitle": "Set search hotkey",
   "Plugin.Settings.Keymap.PickerTitle": "Set plugin hotkey",
-  "Plugin.Settings.Category.CommandRunner": "Custom Commands",
+  "Plugin.Settings.Category.CommandRunner": "Scripts",
   "Plugin.Settings.CommandRunner.Empty": "No commands configured",
   "Plugin.Settings.CommandRunner.HeaderName": "Name",
   "Plugin.Settings.CommandRunner.HeaderCommand": "Command",

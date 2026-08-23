@@ -1,5 +1,5 @@
 {
-  "Plugin.Snippet.Name": "快捷短语",
+  "Plugin.Snippet.Name": "快捷文本",
   "Plugin.Snippet.Setting.Phrases": "短语",
   "Plugin.Snippet.Setting.Phrases.Description": "可在全局搜索中使用的快捷短语。按回车复制并粘贴。",
   "Plugin.Snippet.Column.Trigger": "触发词",

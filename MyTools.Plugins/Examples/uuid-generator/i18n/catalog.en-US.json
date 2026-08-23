@@ -4,7 +4,7 @@
   "pluginId": "uuid-generator",
   "sourceLocale": "en-US",
   "entries": [
-    { "key": "Plugin.UuidGenerator.Name", "defaultValue": "UUID/GUID Generator", "placeholders": [], "references": [{ "filePath": "plugin.json", "symbol": "entries.name" }], "existingTranslations": { "zh-CN": "UUID/GUID 生成器" }, "sourceHash": "sha256:4430fd4bb20aec17dc19f56868404d1367d21b2fa1191940e53290ac1cda4a71" },
+    { "key": "Plugin.UuidGenerator.Name", "defaultValue": "UUID Generator", "placeholders": [], "references": [{ "filePath": "plugin.json", "symbol": "entries.name" }], "existingTranslations": { "zh-CN": "UUID 生成器" }, "sourceHash": "sha256:1b8736f8be8bfa1448c0b8321982c907fd3bfd3450d23cb9f31fbf5b702c8f38" },
     { "key": "Plugin.UuidGenerator.Action.Copy", "defaultValue": "Copy", "placeholders": [], "references": [{ "filePath": "src/backend/index.mts", "symbol": "actions" }], "existingTranslations": { "zh-CN": "复制" }, "sourceHash": "sha256:e21f935f11d7e966dbbae78da9daa378fe8142a14e7c0cd7434183005faa6c5c" },
     { "key": "Plugin.UuidGenerator.Action.CopyDescription", "defaultValue": "Copy the selected UUID", "placeholders": [], "references": [{ "filePath": "src/backend/index.mts", "symbol": "actions" }], "existingTranslations": { "zh-CN": "复制选中的 UUID" }, "sourceHash": "sha256:bf1600eb3306ae52738169152b221032f31db66e60927aea04436e97a137b49a" },
     { "key": "Plugin.UuidGenerator.Action.ToggleFormat", "defaultValue": "Switch format", "placeholders": [], "references": [{ "filePath": "src/backend/index.mts", "symbol": "actions" }], "existingTranslations": { "zh-CN": "切换格式" }, "sourceHash": "sha256:46e1a3ce55c8bd9be7b64c654f2c3efabd0d2390a1698fac3e0d3780ce4ba73a" },

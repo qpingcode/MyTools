@@ -95,7 +95,7 @@
       "id": "command-runner",
       "name": {
         "key": "Plugin.CommandRunner.Name",
-        "defaultValue": "Custom Commands"
+        "defaultValue": "Scripts"
       },
       "entry": "backend/index.mjs",
       "capabilities": ["configuration.readOwn"],

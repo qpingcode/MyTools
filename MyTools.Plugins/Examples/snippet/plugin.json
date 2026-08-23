@@ -53,7 +53,7 @@
       "id": "snippet",
       "name": {
         "key": "Plugin.Snippet.Name",
-        "defaultValue": "Snippet"
+        "defaultValue": "Quick Text"
       },
       "entry": "backend/index.mjs",
       "capabilities": ["configuration.readOwn"],

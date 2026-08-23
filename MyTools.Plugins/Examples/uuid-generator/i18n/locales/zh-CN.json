@@ -1,5 +1,5 @@
 {
-  "Plugin.UuidGenerator.Name": "UUID/GUID 生成器",
+  "Plugin.UuidGenerator.Name": "UUID 生成器",
   "Plugin.UuidGenerator.Action.Copy": "复制",
   "Plugin.UuidGenerator.Action.CopyDescription": "复制选中的 UUID",
   "Plugin.UuidGenerator.Action.ToggleFormat": "切换格式",

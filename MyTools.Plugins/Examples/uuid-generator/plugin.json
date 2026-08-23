@@ -2,6 +2,7 @@
   "id": "uuid-generator",
   "version": "0.1.0",
   "protocolVersion": "3.0",
+  "icon": "mdi-identifier",
   "i18n": {
     "defaultLocale": "en-US",
     "catalog": "i18n/catalog.en-US.json",
@@ -13,7 +14,7 @@
       "id": "uuid-generator",
       "name": {
         "key": "Plugin.UuidGenerator.Name",
-        "defaultValue": "UUID/GUID Generator"
+        "defaultValue": "UUID Generator"
       },
       "entry": "backend/index.mjs",
       "capabilities": [],

@@ -2,6 +2,7 @@
   "id": "json-formatter",
   "version": "0.0.1",
   "protocolVersion": "3.0",
+  "icon": "mdi-code-json",
   "i18n": {
     "defaultLocale": "en-US",
     "catalog": "i18n/catalog.en-US.json",

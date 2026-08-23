@@ -1,5 +1,5 @@
 {
-  "Plugin.OpenPath.Name": "打开路径",
+  "Plugin.OpenPath.Name": "智能打开",
   "Plugin.OpenPath.Description": "配置用搜索打开路径时所使用的 IDE 安装位置。",
   "Plugin.OpenPath.Action.Open": "打开",
   "Plugin.OpenPath.Setting.Rider.Title": "Rider 安装路径",

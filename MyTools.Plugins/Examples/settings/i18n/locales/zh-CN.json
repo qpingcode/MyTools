@@ -76,7 +76,7 @@
   "Plugin.Settings.Capture.Waiting": "正在等待输入...",
   "Plugin.Settings.SearchHotKey.PickerTitle": "设置搜索热键",
   "Plugin.Settings.Keymap.PickerTitle": "设置插件热键",
-  "Plugin.Settings.Category.CommandRunner": "自定义命令",
+  "Plugin.Settings.Category.CommandRunner": "脚本",
   "Plugin.Settings.CommandRunner.Empty": "暂无命令配置",
   "Plugin.Settings.CommandRunner.HeaderName": "名称",
   "Plugin.Settings.CommandRunner.HeaderCommand": "命令",

@@ -6,11 +6,11 @@
   "entries": [
     {
       "key": "Plugin.Snippet.Name",
-      "defaultValue": "Snippet",
+      "defaultValue": "Quick Text",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "快捷短语" },
-      "sourceHash": "sha256:48f55cb895c3bf6fec03c7be5de54685dc20fce388addc31dd3c849ea4b09452"
+      "existingTranslations": { "zh-CN": "快捷文本" },
+      "sourceHash": "sha256:5177578400e441aaa75703ff1e5fc29227a679acda55fd766f1f2a70a02cb3f9"
     },
     {
       "key": "Plugin.Snippet.Setting.Phrases",

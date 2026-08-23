@@ -614,10 +614,10 @@
     },
     {
       "key": "Plugin.Settings.Category.CommandRunner",
-      "defaultValue": "Custom Commands",
+      "defaultValue": "Scripts",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "自定义命令" },
+      "existingTranslations": { "zh-CN": "脚本" },
       "sourceHash": "sha256:placeholder"
     },
     {

@@ -1,5 +1,5 @@
 {
-  "Plugin.SearchEngine.Name": "Web Search",
+  "Plugin.SearchEngine.Name": "Search Engines",
   "Plugin.SearchEngine.Description": "Search using different search engines",
   "Plugin.SearchEngine.Setting.Engines": "Search engines",
   "Plugin.SearchEngine.Setting.Engines.Description": "Search engines shown in global search. Put {query} in the URL; multiple URLs go on separate lines.",

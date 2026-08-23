@@ -32,7 +32,7 @@
   <data name="Configuration.Plugins.Name" xml:space="preserve"><value>Extensions</value></data>
   <data name="Configuration.Plugins.Description" xml:space="preserve"><value>Activez les extensions, attribuez des raccourcis et définissez des alias pour la recherche globale.</value></data>
   <data name="Plugin.ClipBoard.Settings.HotKey.Title" xml:space="preserve"><value>Raccourci</value></data>
-  <data name="Plugin.ClipBoard.Settings.Category.Name" xml:space="preserve"><value>Amélioration du presse-papiers</value></data>
+  <data name="Plugin.ClipBoard.Settings.Category.Name" xml:space="preserve"><value>Historique du presse-papiers</value></data>
   <data name="Plugin.ClipBoard.Settings.Category.Description" xml:space="preserve"><value>Configure l’historique et le collage séquentiel</value></data>
   <data name="Plugin.ClipBoard.Settings.HotKey.Description" xml:space="preserve"><value>Raccourci clavier ouvrant l’historique du presse-papiers</value></data>
   <data name="Plugin.ClipBoard.Settings.SequentialPasteHotKey.Title" xml:space="preserve"><value>Raccourci de collage séquentiel</value></data>

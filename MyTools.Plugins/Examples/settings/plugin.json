@@ -2,6 +2,7 @@
   "id": "settings",
   "version": "0.0.8",
   "protocolVersion": "3.0",
+  "icon": "mdi-cog-outline",
   "i18n": {
     "defaultLocale": "en-US",
     "catalog": "i18n/catalog.en-US.json",

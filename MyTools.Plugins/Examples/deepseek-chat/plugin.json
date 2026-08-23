@@ -2,6 +2,7 @@
   "id": "deepseek-chat",
   "version": "0.1.0",
   "protocolVersion": "3.0",
+  "icon": "mdi-chat-processing-outline",
   "i18n": {
     "defaultLocale": "en-US",
     "catalog": "i18n/catalog.en-US.json",

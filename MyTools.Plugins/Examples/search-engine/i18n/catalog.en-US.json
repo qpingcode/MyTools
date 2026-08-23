@@ -6,11 +6,11 @@
   "entries": [
     {
       "key": "Plugin.SearchEngine.Name",
-      "defaultValue": "Web Search",
+      "defaultValue": "Search Engines",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "网页搜索" },
-      "sourceHash": "sha256:d04fc7d7e19702f8b611fcda0d0dc2596d59f54731d2d6099d10ad22eb74304b"
+      "existingTranslations": { "zh-CN": "搜索引擎" },
+      "sourceHash": "sha256:b93c375122f5a75ab9f4f739ef54892f3e2763fc1c901a561d59825b500008a9"
     },
     {
       "key": "Plugin.SearchEngine.Description",

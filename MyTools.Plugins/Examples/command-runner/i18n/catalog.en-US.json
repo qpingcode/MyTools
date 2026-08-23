@@ -6,11 +6,11 @@
   "entries": [
     {
       "key": "Plugin.CommandRunner.Name",
-      "defaultValue": "Custom Commands",
+      "defaultValue": "Scripts",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "自定义命令" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "脚本" },
+      "sourceHash": "sha256:8d0e6b4ab60543cfb39c28fc2f8bc370ec1291fd6fc9ee2ab089c460b50710b5"
     },
     {
       "key": "Plugin.CommandRunner.Setting.Commands",

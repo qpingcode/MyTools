@@ -1,5 +1,5 @@
 {
-  "Plugin.BrowserSearch.Name": "Browser Search",
+  "Plugin.BrowserSearch.Name": "Bookmark and History",
   "Plugin.BrowserSearch.Description": "Search Chrome, Edge, and Firefox bookmarks and history",
   "Plugin.BrowserSearch.Setting.ChromeEnabled": "Search Chrome",
   "Plugin.BrowserSearch.Setting.ChromeEnabled.Description": "Include Google Chrome bookmarks and history.",

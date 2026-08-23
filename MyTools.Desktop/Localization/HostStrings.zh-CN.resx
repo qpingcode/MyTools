@@ -88,14 +88,14 @@
   <data name="Plugin.Calculator.InvalidQuery" xml:space="preserve"><value>查询不是有效的算术表达式。</value></data>
   <data name="Plugin.XmlFormatter.Name" xml:space="preserve"><value>XML 格式化</value></data>
   <data name="Plugin.XmlFormatter.Description" xml:space="preserve"><value>格式化并验证 XML</value></data>
-  <data name="Plugin.UuidGenerator.Name" xml:space="preserve"><value>UUID/GUID 生成器</value></data>
+  <data name="Plugin.UuidGenerator.Name" xml:space="preserve"><value>UUID 生成器</value></data>
   <data name="Plugin.UuidGenerator.Description" xml:space="preserve"><value>生成 UUID 或 GUID，支持多种格式和批量生成。</value></data>
   <data name="Plugin.PluginSearcher.Name" xml:space="preserve"><value>插件搜索</value></data>
   <data name="Plugin.PluginSearcher.Description" xml:space="preserve"><value>搜索所有可用插件</value></data>
   <data name="Plugin.ClipBoard.Name" xml:space="preserve"><value>剪贴板历史</value></data>
   <data name="Plugin.ClipBoard.Description" xml:space="preserve"><value>管理剪贴板历史记录</value></data>
   <data name="Plugin.ClipBoard.Settings.HotKey.Title" xml:space="preserve"><value>快捷方式</value></data>
-  <data name="Plugin.ClipBoard.Settings.Category.Name" xml:space="preserve"><value>剪贴板增强工具</value></data>
+  <data name="Plugin.ClipBoard.Settings.Category.Name" xml:space="preserve"><value>剪贴板历史</value></data>
   <data name="Plugin.ClipBoard.Settings.Category.Description" xml:space="preserve"><value>配置剪贴板历史和连续粘贴</value></data>
   <data name="Plugin.ClipBoard.Settings.HotKey.Description" xml:space="preserve"><value>打开剪贴板历史的全局快捷键</value></data>
   <data name="Plugin.ClipBoard.Settings.SequentialPasteHotKey.Title" xml:space="preserve"><value>连续粘贴快捷键</value></data>
@@ -104,7 +104,7 @@
   <data name="Plugin.ClipBoard.Settings.MaxHistoryDays.Description" xml:space="preserve"><value>删除超过此天数的剪贴板记录</value></data>
   <data name="Plugin.ClipBoard.Settings.MaxHistoryCount.Title" xml:space="preserve"><value>最大记录数</value></data>
   <data name="Plugin.ClipBoard.Settings.MaxHistoryCount.Description" xml:space="preserve"><value>最多保留此数量的剪贴板记录</value></data>
-  <data name="Plugin.SearchEngine.Name" xml:space="preserve"><value>网页搜索</value></data>
+  <data name="Plugin.SearchEngine.Name" xml:space="preserve"><value>搜索引擎</value></data>
   <data name="Plugin.SearchEngine.Description" xml:space="preserve"><value>使用不同的搜索引擎进行搜索</value></data>
   <data name="Plugin.JsonFormatter.Name" xml:space="preserve"><value>JSON 格式化</value></data>
   <data name="Plugin.JsonFormatter.Description" xml:space="preserve"><value>格式化并验证 JSON</value></data>
@@ -112,7 +112,7 @@
   <data name="Plugin.ProcessKiller.Description" xml:space="preserve"><value>搜索并管理正在运行的进程</value></data>
   <data name="Plugin.FileSearcher.Name" xml:space="preserve"><value>文件搜索</value></data>
   <data name="Plugin.FileSearcher.Description" xml:space="preserve"><value>搜索文件和脚本</value></data>
-  <data name="Plugin.CommandRunner.Name" xml:space="preserve"><value>自定义命令</value></data>
+  <data name="Plugin.CommandRunner.Name" xml:space="preserve"><value>脚本</value></data>
   <data name="Plugin.CommandRunner.Description" xml:space="preserve"><value>配置可从搜索启动的命令</value></data>
   <data name="Plugin.DllInterfaceReader.Name" xml:space="preserve"><value>DLL 接口读取器</value></data>
   <data name="Plugin.DllInterfaceReader.Description" xml:space="preserve"><value>读取 DLL 接口，并搜索类、表代码、表名称和字段。</value></data>

@@ -1,5 +1,5 @@
 {
-  "Plugin.UuidGenerator.Name": "UUID/GUID Generator",
+  "Plugin.UuidGenerator.Name": "UUID Generator",
   "Plugin.UuidGenerator.Action.Copy": "Copy",
   "Plugin.UuidGenerator.Action.CopyDescription": "Copy the selected UUID",
   "Plugin.UuidGenerator.Action.ToggleFormat": "Switch format",

@@ -1,5 +1,5 @@
 {
-  "Plugin.Snippet.Name": "Snippet",
+  "Plugin.Snippet.Name": "Quick Text",
   "Plugin.Snippet.Setting.Phrases": "Phrases",
   "Plugin.Snippet.Setting.Phrases.Description": "Shortcut phrases available in global search. Press Enter to copy and paste.",
   "Plugin.Snippet.Column.Trigger": "Trigger",

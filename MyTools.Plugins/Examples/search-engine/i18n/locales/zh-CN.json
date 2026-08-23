@@ -1,5 +1,5 @@
 {
-  "Plugin.SearchEngine.Name": "网页搜索",
+  "Plugin.SearchEngine.Name": "搜索引擎",
   "Plugin.SearchEngine.Description": "使用不同的搜索引擎进行搜索",
   "Plugin.SearchEngine.Setting.Engines": "搜索引擎",
   "Plugin.SearchEngine.Setting.Engines.Description": "显示在全局搜索中的搜索引擎。在网址中使用 {query}；多个网址请分行填写。",

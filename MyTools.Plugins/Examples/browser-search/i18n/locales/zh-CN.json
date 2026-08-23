@@ -1,5 +1,5 @@
 {
-  "Plugin.BrowserSearch.Name": "浏览器书签与历史",
+  "Plugin.BrowserSearch.Name": "书签与历史记录",
   "Plugin.BrowserSearch.Description": "搜索 Chrome、Edge 和 Firefox 的书签与浏览历史",
   "Plugin.BrowserSearch.Setting.ChromeEnabled": "搜索 Chrome",
   "Plugin.BrowserSearch.Setting.ChromeEnabled.Description": "包含 Google Chrome 的书签和历史记录。",

@@ -1,5 +1,5 @@
 {
-  "Plugin.CommandRunner.Name": "自定义命令",
+  "Plugin.CommandRunner.Name": "脚本",
   "Plugin.CommandRunner.Setting.Commands": "命令",
   "Plugin.CommandRunner.Setting.Commands.Description": "可在全局搜索中使用的自定义命令。按回车运行。",
   "Plugin.CommandRunner.Column.Name": "名称",

@@ -88,14 +88,14 @@
   <data name="Plugin.Calculator.InvalidQuery" xml:space="preserve"><value>Query is not a valid arithmetic expression.</value></data>
   <data name="Plugin.XmlFormatter.Name" xml:space="preserve"><value>XML Formatter</value></data>
   <data name="Plugin.XmlFormatter.Description" xml:space="preserve"><value>Format and validate XML</value></data>
-  <data name="Plugin.UuidGenerator.Name" xml:space="preserve"><value>UUID/GUID Generator</value></data>
+  <data name="Plugin.UuidGenerator.Name" xml:space="preserve"><value>UUID Generator</value></data>
   <data name="Plugin.UuidGenerator.Description" xml:space="preserve"><value>Generate UUIDs by default, or GUIDs when specified. Supports various formats and batch generation.</value></data>
   <data name="Plugin.PluginSearcher.Name" xml:space="preserve"><value>Plugin Searcher</value></data>
   <data name="Plugin.PluginSearcher.Description" xml:space="preserve"><value>All available plugins</value></data>
   <data name="Plugin.ClipBoard.Name" xml:space="preserve"><value>Clipboard History</value></data>
   <data name="Plugin.ClipBoard.Description" xml:space="preserve"><value>Clipboard history management plugin</value></data>
   <data name="Plugin.ClipBoard.Settings.HotKey.Title" xml:space="preserve"><value>Shortcut</value></data>
-  <data name="Plugin.ClipBoard.Settings.Category.Name" xml:space="preserve"><value>Clipboard enhancement</value></data>
+  <data name="Plugin.ClipBoard.Settings.Category.Name" xml:space="preserve"><value>Clipboard History</value></data>
   <data name="Plugin.ClipBoard.Settings.Category.Description" xml:space="preserve"><value>Configure clipboard history and sequential paste</value></data>
   <data name="Plugin.ClipBoard.Settings.HotKey.Description" xml:space="preserve"><value>Keyboard shortcut that opens clipboard history</value></data>
   <data name="Plugin.ClipBoard.Settings.SequentialPasteHotKey.Title" xml:space="preserve"><value>Sequential paste shortcut</value></data>
@@ -104,7 +104,7 @@
   <data name="Plugin.ClipBoard.Settings.MaxHistoryDays.Description" xml:space="preserve"><value>Delete clipboard entries older than this many days</value></data>
   <data name="Plugin.ClipBoard.Settings.MaxHistoryCount.Title" xml:space="preserve"><value>Maximum history entries</value></data>
   <data name="Plugin.ClipBoard.Settings.MaxHistoryCount.Description" xml:space="preserve"><value>Keep at most this many clipboard entries</value></data>
-  <data name="Plugin.SearchEngine.Name" xml:space="preserve"><value>Web Search</value></data>
+  <data name="Plugin.SearchEngine.Name" xml:space="preserve"><value>Search Engines</value></data>
   <data name="Plugin.SearchEngine.Description" xml:space="preserve"><value>Search using different search engines</value></data>
   <data name="Plugin.JsonFormatter.Name" xml:space="preserve"><value>JSON Formatter</value></data>
   <data name="Plugin.JsonFormatter.Description" xml:space="preserve"><value>Format and validate JSON</value></data>
@@ -112,7 +112,7 @@
   <data name="Plugin.ProcessKiller.Description" xml:space="preserve"><value>Search and manage running processes</value></data>
   <data name="Plugin.FileSearcher.Name" xml:space="preserve"><value>File Searcher</value></data>
   <data name="Plugin.FileSearcher.Description" xml:space="preserve"><value>Search for files and scripts</value></data>
-  <data name="Plugin.CommandRunner.Name" xml:space="preserve"><value>Custom Commands</value></data>
+  <data name="Plugin.CommandRunner.Name" xml:space="preserve"><value>Scripts</value></data>
   <data name="Plugin.CommandRunner.Description" xml:space="preserve"><value>Run custom commands from search</value></data>
   <data name="Plugin.DllInterfaceReader.Name" xml:space="preserve"><value>DLL Interface Reader</value></data>
   <data name="Plugin.DllInterfaceReader.Description" xml:space="preserve"><value>Read interfaces from a DLL and search classes, table codes, table names and fields.</value></data>

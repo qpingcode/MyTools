@@ -6,13 +6,13 @@
   "entries": [
     {
       "key": "Plugin.BrowserSearch.Name",
-      "defaultValue": "Browser Search",
+      "defaultValue": "Bookmark and History",
       "placeholders": [],
       "references": [],
       "existingTranslations": {
-        "zh-CN": "浏览器书签与历史"
+        "zh-CN": "书签与历史记录"
       },
-      "sourceHash": "sha256:90346e7acf2e93f00583e401feec081e543f6f01b827a45d30c9ec840410d171"
+      "sourceHash": "sha256:f711fd17dde71f487d475391b91abe671fe5e47cdbbd53465d53af3221f85b0c"
     },
     {
       "key": "Plugin.BrowserSearch.Description",
