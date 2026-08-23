@@ -15,28 +15,20 @@
       "type": "array",
       "defaultValue": [
         {
-          "name": "GitHub",
-          "url": "https://github.com/search?q=org%3AWiseTechGlobal+{query}&type=code"
-        },
-        {
-          "name": "Devops Code",
-          "url": "https://devops.wisetechglobal.com/wtg/_search?text={query}&type=code"
-        },
-        {
-          "name": "Devops Wiki",
-          "url": "https://devops.wisetechglobal.com/wtg/_search?text={query}&type=wiki"
-        },
-        {
-          "name": "ediprod",
-          "url": "edient:Command=ShortCode&Id={query}&Type=WI"
-        },
-        {
-          "name": "Aggregate",
-          "url": "https://devops.wisetechglobal.com/wtg/_search?action=contents&text={query}&type=code\nhttps://github.com/search?q=org%3AWiseTechGlobal+{query}&type=code"
-        },
-        {
           "name": "Google",
           "url": "https://www.google.com/search?q={query}"
+        },
+        {
+          "name": "Chrome",
+          "url": "https://chromewebstore.google.com/search/{query}"
+        },
+        {
+          "name": "Bing",
+          "url": "https://www.bing.com/search?q={query}"
+        },
+        {
+          "name": "GitHub",
+          "url": "https://github.com/search?q={query}"
         }
       ],
       "uiHint": "table",
