@@ -30,6 +30,7 @@
         "development.ai.clear"
       ],
       "alias": ["create"],
+      "hotKey": "Alt+X",
       "detail": { "type": "web", "entry": "web/index.html" }
     }
   ]

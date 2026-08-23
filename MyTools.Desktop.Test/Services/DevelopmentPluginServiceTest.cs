@@ -49,7 +49,8 @@ public class DevelopmentPluginServiceTest
         var directory = Path.Combine(TestContext.CurrentContext.WorkDirectory, Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
         var script = Path.Combine(directory, "fake npm.cmd");
-        File.WriteAllText(script, "@echo off\r\necho npm-%1\r\n");
+        File.WriteAllText(script, "@echo off\r\nnode fake-install.js\r\n");
+        File.WriteAllText(Path.Combine(directory, "node.cmd"), "@echo off\r\necho bundled-node-%1\r\n");
         try
         {
             using var process = new Process
@@ -65,8 +66,11 @@ public class DevelopmentPluginServiceTest
             Assert.Multiple(() =>
             {
                 Assert.That(process.ExitCode, Is.Zero);
-                Assert.That(output.Trim(), Is.EqualTo("npm-install"));
+                Assert.That(output.Trim(), Is.EqualTo("bundled-node-fake-install.js"));
                 Assert.That(process.StartInfo.FileName, Does.EndWith("cmd.exe").IgnoreCase);
+                Assert.That(
+                    process.StartInfo.Environment["PATH"]!.Split(Path.PathSeparator)[0],
+                    Is.EqualTo(directory).IgnoreCase);
             });
         }
         finally

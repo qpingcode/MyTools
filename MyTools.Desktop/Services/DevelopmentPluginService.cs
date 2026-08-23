@@ -587,7 +587,28 @@ public sealed class DevelopmentPluginService : IDisposable
             CreateNoWindow = !keepOpen
         };
         ApplyCurrentWindowsEnvironment(info);
+        PrependCommandDirectoryToPath(info, npmCommand);
         return info;
+    }
+
+    private static void PrependCommandDirectoryToPath(ProcessStartInfo info, string command)
+    {
+        var directory = Path.GetDirectoryName(Path.GetFullPath(command));
+        if (string.IsNullOrWhiteSpace(directory)) return;
+
+        var current = info.Environment.TryGetValue("PATH", out var configuredPath)
+            ? configuredPath ?? string.Empty
+            : string.Empty;
+        var directories = current.Split(
+            Path.PathSeparator,
+            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (directories.Any(item =>
+                string.Equals(item.Trim('"'), directory, StringComparison.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
+        info.Environment["PATH"] = directory + Path.PathSeparator + current;
     }
 
     internal static string? ResolveCommand(string command)
