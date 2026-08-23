@@ -99,6 +99,7 @@ internal sealed class NodePluginActionResponse
 {
     public NodePluginLocalizedTextDto? Message { get; init; }
     public bool Close { get; init; }
+    public bool Refresh { get; init; }
     public NodePluginHostActionDto? Host { get; init; }
     public NodePluginWebActionDto? Web { get; init; }
     public NodePluginDetailViewDto? Detail { get; init; }

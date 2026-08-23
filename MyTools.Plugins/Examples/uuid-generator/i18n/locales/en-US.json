@@ -1,17 +1,18 @@
 {
   "Plugin.UuidGenerator.Name": "UUID/GUID Generator",
-  "Plugin.UuidGenerator.Action.Standard": "Standard format",
-  "Plugin.UuidGenerator.Action.StandardDescription": "Copy with hyphens",
-  "Plugin.UuidGenerator.Action.NoDash": "Without hyphens",
-  "Plugin.UuidGenerator.Action.NoDashDescription": "Copy without hyphens",
-  "Plugin.UuidGenerator.Action.Uppercase": "Uppercase format",
-  "Plugin.UuidGenerator.Action.UppercaseDescription": "Copy in uppercase",
-  "Plugin.UuidGenerator.Action.Braces": "Braced format",
-  "Plugin.UuidGenerator.Action.BracesDescription": "Copy wrapped in braces",
+  "Plugin.UuidGenerator.Action.Copy": "Copy",
+  "Plugin.UuidGenerator.Action.CopyDescription": "Copy the selected UUID",
+  "Plugin.UuidGenerator.Action.ToggleFormat": "Switch format",
+  "Plugin.UuidGenerator.Action.ToggleFormatDescription": "Switch every UUID to the next format",
+  "Plugin.UuidGenerator.Action.ToggleFormatSuccess": "UUID format switched",
   "Plugin.UuidGenerator.Action.CopyAllHistory": "Add all to clipboard history",
   "Plugin.UuidGenerator.Action.CopyAllHistoryDescription": "Add every generated UUID for sequential paste",
   "Plugin.UuidGenerator.Action.CopyAllHistorySuccess": "Added all UUIDs to clipboard history",
   "Plugin.UuidGenerator.HelpTitle": "GUID Generator Help",
-  "Plugin.UuidGenerator.Help": "Enter a number to generate that many UUIDs (maximum 1000). Use an action to choose the output format.",
-  "Plugin.UuidGenerator.ResultSubtitle": "GUID {{index}} of {{count}}"
+  "Plugin.UuidGenerator.Help": "Enter a number to generate that many UUIDs (maximum 1000). Use the toggle action to switch format.",
+  "Plugin.UuidGenerator.ResultSubtitle": "GUID {{index}} of {{count}} · {{format}}",
+  "Plugin.UuidGenerator.Format.Standard": "Standard",
+  "Plugin.UuidGenerator.Format.NoDash": "Without hyphens",
+  "Plugin.UuidGenerator.Format.Uppercase": "Uppercase",
+  "Plugin.UuidGenerator.Format.Braces": "Braced"
 }

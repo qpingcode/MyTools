@@ -34,6 +34,10 @@ public static class ResultItemExtensions
         {
             WeakReferenceMessenger.Default.Send(new SearchWindowCloseMessage());
         }
+        else if (actionResult.ActionType == ActionTypeEnum.Refresh)
+        {
+            WeakReferenceMessenger.Default.Send(new SearchRefreshMessage());
+        }
 
         if (!actionResult.Success)
         {

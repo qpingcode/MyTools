@@ -13,11 +13,15 @@ type UuidFormat = "standard" | "nodash" | "uppercase" | "braces";
 type UuidItem = { uuid: string; batch: string[] };
 
 const MaxBatchSize = 1000;
-const actionIds = ["standard", "nodash", "uppercase", "braces", "copy-all-history"];
+const formats: UuidFormat[] = ["standard", "nodash", "uppercase", "braces"];
+const actionIds = ["copy", "toggle-format", "copy-all-history"];
+let currentFormat: UuidFormat = "standard";
+let currentQuery = "";
+let currentBatch: string[] = [];
 
 function helpText(): string {
   return mytoolsI18n.t("Plugin.UuidGenerator.Help", {
-    defaultValue: "Enter a number to generate that many UUIDs (maximum 1000). Use an action to choose the output format.",
+    defaultValue: "Enter a number to generate that many UUIDs (maximum 1000). Use the toggle action to switch format.",
   });
 }
 
@@ -35,6 +39,25 @@ function formatUuid(value: string, format: UuidFormat): string {
   }
 }
 
+function batchFor(query: string): string[] {
+  if (query !== currentQuery || currentBatch.length === 0) {
+    currentQuery = query;
+    currentBatch = Array.from({ length: requestedCount(query) }, () => randomUUID());
+  }
+  return currentBatch;
+}
+
+function formatName(format: UuidFormat) {
+  const names = {
+    standard: ["Plugin.UuidGenerator.Format.Standard", "Standard"],
+    nodash: ["Plugin.UuidGenerator.Format.NoDash", "Without hyphens"],
+    uppercase: ["Plugin.UuidGenerator.Format.Uppercase", "Uppercase"],
+    braces: ["Plugin.UuidGenerator.Format.Braces", "Braced"],
+  } as const;
+  const [key, defaultValue] = names[format];
+  return mytoolsI18n.t(key, { defaultValue });
+}
+
 function search(params: PluginSearchParams) {
   const query = (params.query || "").trim().toLowerCase();
   if (!query || query.includes("help")) {
@@ -50,16 +73,17 @@ function search(params: PluginSearchParams) {
     };
   }
 
-  const count = requestedCount(query);
-  const batch = Array.from({ length: count }, () => randomUUID());
+  const batch = batchFor(query);
+  const count = batch.length;
   return {
     items: batch.map((uuid, index) => ({
       id: `uuid-generator:${uuid}`,
-      title: uuid,
+      title: formatUuid(uuid, currentFormat),
       subtitle: mytoolsI18n.t("Plugin.UuidGenerator.ResultSubtitle", {
-        defaultValue: "GUID {{index}} of {{count}}",
+        defaultValue: "GUID {{index}} of {{count}} · {{format}}",
         index: index + 1,
         count,
+        format: formatName(currentFormat),
       }),
       priority: 100,
       icon: { kind: "emoji", value: "🔑" },
@@ -68,12 +92,6 @@ function search(params: PluginSearchParams) {
       actions: actionIds,
     })),
   };
-}
-
-function copyAs(format: UuidFormat) {
-  return ({ item }: ActionContext<UuidItem>) => ({
-    host: { kind: HostAction.Copy, text: formatUuid(item?.uuid ?? "", format) },
-  });
 }
 
 const plugin = createPlugin();
@@ -85,31 +103,26 @@ plugin
   })
   .actions<UuidItem>([
     {
-      id: "standard",
-      title: { key: "Plugin.UuidGenerator.Action.Standard", defaultValue: "Standard format" },
-      description: { key: "Plugin.UuidGenerator.Action.StandardDescription", defaultValue: "Copy with hyphens" },
-      execute: copyAs("standard"),
+      id: "copy",
+      title: { key: "Plugin.UuidGenerator.Action.Copy", defaultValue: "Copy" },
+      description: { key: "Plugin.UuidGenerator.Action.CopyDescription", defaultValue: "Copy the selected UUID" },
+      execute: ({ item }: ActionContext<UuidItem>) => ({
+        host: { kind: HostAction.Copy, text: formatUuid(item?.uuid ?? "", currentFormat) },
+        close: true
+      }),
     },
     {
-      id: "nodash",
-      title: { key: "Plugin.UuidGenerator.Action.NoDash", defaultValue: "Without hyphens" },
-      description: { key: "Plugin.UuidGenerator.Action.NoDashDescription", defaultValue: "Copy without hyphens" },
-      hotkey: { key: Key.D2, modifiers: Modifiers.Control },
-      execute: copyAs("nodash"),
-    },
-    {
-      id: "uppercase",
-      title: { key: "Plugin.UuidGenerator.Action.Uppercase", defaultValue: "Uppercase format" },
-      description: { key: "Plugin.UuidGenerator.Action.UppercaseDescription", defaultValue: "Copy in uppercase" },
-      hotkey: { key: Key.D3, modifiers: Modifiers.Control },
-      execute: copyAs("uppercase"),
-    },
-    {
-      id: "braces",
-      title: { key: "Plugin.UuidGenerator.Action.Braces", defaultValue: "Braced format" },
-      description: { key: "Plugin.UuidGenerator.Action.BracesDescription", defaultValue: "Copy wrapped in braces" },
-      hotkey: { key: Key.D4, modifiers: Modifiers.Control },
-      execute: copyAs("braces"),
+      id: "toggle-format",
+      title: { key: "Plugin.UuidGenerator.Action.ToggleFormat", defaultValue: "Switch format" },
+      description: { key: "Plugin.UuidGenerator.Action.ToggleFormatDescription", defaultValue: "Switch every UUID to the next format" },
+      hotkey: { key: Key.T, modifiers: Modifiers.Control },
+      execute: () => {
+        currentFormat = formats[(formats.indexOf(currentFormat) + 1) % formats.length];
+        return {
+          refresh: true,
+          message: { key: "Plugin.UuidGenerator.Action.ToggleFormatSuccess", defaultValue: "UUID format switched" },
+        };
+      },
     },
     {
       id: "copy-all-history",
@@ -120,11 +133,15 @@ plugin
       },
       hotkey: { key: Key.C, modifiers: Modifiers.ControlShift },
       execute: ({ item }) => ({
-        host: { kind: HostAction.AddClipboardHistory, texts: item?.batch ?? [] },
+        host: {
+          kind: HostAction.AddClipboardHistory,
+          texts: (item?.batch ?? []).map((uuid) => formatUuid(uuid, currentFormat)),
+        },
         message: {
           key: "Plugin.UuidGenerator.Action.CopyAllHistorySuccess",
           defaultValue: "Added all UUIDs to clipboard history",
         },
+        close: true
       }),
     },
   ])

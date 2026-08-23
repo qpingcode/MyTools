@@ -226,7 +226,7 @@ public class ClipBoardPlugin(ILogger<ClipBoardPlugin> logger) : PluginBase, IWin
                 logger.LogWarning("Sequential clipboard paste completed but history item {ItemId} was already removed.", item.Id);
             }
             WeakReferenceMessenger.Default.Send(new ClipboardHistoryChangedMessage());
-            logger.LogInformation("Sequentially pasted and removed clipboard history item {ItemId}.", item.Id);
+            logger.LogDebug("Sequentially pasted and removed clipboard history item {ItemId}.", item.Id);
             return true;
         }
         catch (Exception ex)

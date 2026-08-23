@@ -8,6 +8,16 @@ namespace MyTools.Plugins.Test.NodePlugins;
 public class NodePluginWellKnownActionsTest
 {
     [Test]
+    public void ActionResponse_Refresh_ReadsRefreshFlag()
+    {
+        var response = JsonSerializer.Deserialize<NodePluginActionResponse>(
+            """{"refresh":true}""",
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        Assert.That(response?.Refresh, Is.True);
+    }
+
+    [Test]
     public void HostActionDto_Copy_UsesItsOwnTextField()
     {
         var action = JsonSerializer.Deserialize<NodePluginHostActionDto>(

@@ -647,7 +647,11 @@ internal sealed class NodePluginInvokeAction : IAction
                 navigator.OpenDetail(detailContext);
             }
 
-            var actionType = response.Close && detailContext == null ? ActionTypeEnum.Close : ActionTypeEnum.None;
+            var actionType = response.Close && detailContext == null
+                ? ActionTypeEnum.Close
+                : response.Refresh && detailContext == null
+                    ? ActionTypeEnum.Refresh
+                    : ActionTypeEnum.None;
             var message = response.Message == null
                 ? $"Executed {title}"
                 : new LocalizedMessage(response.Message.Key, response.Message.DefaultValue)

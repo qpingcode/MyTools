@@ -111,6 +111,8 @@ export type ActionOutcome = {
   message?: LocalizedText;
   /** Close the search window afterwards. Defaults to false. */
   close?: boolean;
+  /** Refresh the current search results afterwards. Defaults to false. */
+  refresh?: boolean;
 };
 
 /**

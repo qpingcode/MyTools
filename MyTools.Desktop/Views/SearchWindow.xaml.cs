@@ -12,6 +12,7 @@ namespace MyTools.Desktop.Views
 {
     public partial class SearchWindow :
         IRecipient<SearchWindowCloseMessage>,
+        IRecipient<SearchRefreshMessage>,
         IRecipient<ClipboardHistoryChangedMessage>
     {
         private static readonly object singletonLock = new();
@@ -41,6 +42,7 @@ namespace MyTools.Desktop.Views
             MouseLeftButtonDown += (s, e) => DragMove();
             
             WeakReferenceMessenger.Default.Register<SearchWindowCloseMessage>(this);
+            WeakReferenceMessenger.Default.Register<SearchRefreshMessage>(this);
             WeakReferenceMessenger.Default.Register<ClipboardHistoryChangedMessage>(this);
         }
 
@@ -196,6 +198,11 @@ namespace MyTools.Desktop.Views
         public void Receive(SearchWindowCloseMessage message)
         {
             Dispatcher.Invoke(Shutdown);
+        }
+
+        public void Receive(SearchRefreshMessage message)
+        {
+            Dispatcher.Invoke(viewModel.Refresh);
         }
     }
 }
