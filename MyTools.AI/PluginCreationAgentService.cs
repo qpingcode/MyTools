@@ -32,7 +32,9 @@ public sealed class PluginCreationAgentService : IDisposable
     {
         this.context = context;
         existingPlugins = new ConcurrentDictionary<string, ExistingPlugin>(
-            context.ExistingPlugins.ToDictionary(plugin => plugin.Id, StringComparer.OrdinalIgnoreCase),
+            context.ExistingPlugins
+                .DistinctBy(plugin => plugin.Id, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(plugin => plugin.Id, StringComparer.OrdinalIgnoreCase),
             StringComparer.OrdinalIgnoreCase);
     }
 

@@ -132,10 +132,10 @@ public sealed class DevelopmentPluginService : IDisposable
 
     public IReadOnlyList<(string Id, string Name)> GetKnownPlugins()
     {
-        return builtInPlugins.Select(plugin => (plugin.PluginId, plugin.Name))
-            .Concat(nodePluginCatalog.Plugins.Select(plugin => (plugin.ParentId, plugin.Name)))
-            .Concat(DevelopmentPluginRegistrationStore.Load().Select(plugin => (plugin.PluginId, plugin.Name)))
-            .Distinct()
+        return builtInPlugins.Select(plugin => (Id: plugin.PluginId, plugin.Name))
+            .Concat(nodePluginCatalog.Plugins.Select(plugin => (Id: plugin.ParentId, plugin.Name)))
+            .Concat(DevelopmentPluginRegistrationStore.Load().Select(plugin => (Id: plugin.PluginId, plugin.Name)))
+            .DistinctBy(plugin => plugin.Id, StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
 

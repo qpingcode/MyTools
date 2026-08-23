@@ -53,6 +53,28 @@ public sealed class PluginCreationAgentServiceTest
     }
 
     [Test]
+    public void ConstructorAcceptsDuplicatePluginIdsFromMultiEntryPlugins()
+    {
+        var root = TestContext.CurrentContext.WorkDirectory;
+        var context = new PluginCreationContext(
+            root,
+            root,
+            root,
+            root,
+            root,
+            Path.Combine(root, "SKILL.md"),
+            [
+                new ExistingPlugin("deepseek-translator", "Translator"),
+                new ExistingPlugin("DEEPSEEK-TRANSLATOR", "Anki Cards")
+            ]);
+
+        Assert.DoesNotThrow(() =>
+        {
+            using var service = new PluginCreationAgentService(context);
+        });
+    }
+
+    [Test]
     public void BundledSkillReferencesAreCompleteAndContainSourceOnly()
     {
         var skillRoot = Path.Combine(AppContext.BaseDirectory, "skills", "create-plugin");
