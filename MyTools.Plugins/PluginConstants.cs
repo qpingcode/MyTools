@@ -2,7 +2,6 @@
 
 public class PluginConstants
 {
-    public const string ClipboardHistory = "cb";
     public const string FileSearcherCachePrefix = "FileSearcher_";
 }
 

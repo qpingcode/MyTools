@@ -100,10 +100,6 @@ public class PluginLoader(ILogger<PluginLoader> logger, IKeywordRegistry keyword
         keywordRegistry.Clear();
         globalSearchRegistry.Clear();
 
-        // register keyword plugins
-        var clipboard = plugins.OfType<ClipBoardPlugin>().First();
-        keywordRegistry.Register(PluginConstants.ClipboardHistory, clipboard);
-
         RegisterNodePlugins(dynamicPlugins.OfType<NodePlugin>());
         
         foreach (var plugin in plugins)
