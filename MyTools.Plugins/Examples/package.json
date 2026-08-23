@@ -4,7 +4,6 @@
   "private": true,
   "workspaces": [
     "sdk-v3",
-    "hello-search",
     "deepseek-chat",
     "translator",
     "json-formatter",

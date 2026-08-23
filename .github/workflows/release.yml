@@ -140,7 +140,13 @@ jobs:
           npm ci
           npm run build
 
-          $pluginDirectories = @('hello-search', 'deepseek-chat', 'translator')
+          $pluginDirectories = Get-ChildItem -Path $PWD -Directory |
+              Where-Object { Test-Path (Join-Path $_.FullName 'plugin.json') } |
+              Select-Object -ExpandProperty Name
+          if ($pluginDirectories.Count -eq 0) {
+              throw "No Node plugin examples found."
+          }
+
           foreach ($pluginDirectory in $pluginDirectories) {
               $manifestPath = Join-Path (Join-Path $PWD $pluginDirectory) 'dist\plugin.json'
               if (-not (Test-Path $manifestPath -PathType Leaf)) {
@@ -150,12 +156,15 @@ jobs:
               $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
               foreach ($entry in $manifest.entries) {
                   $backendPath = Join-Path (Split-Path $manifestPath) $entry.entry
-                  $detailPath = Join-Path (Split-Path $manifestPath) $entry.detail.entry
                   if (-not (Test-Path $backendPath -PathType Leaf)) {
                       throw "Node plugin backend is missing: $backendPath"
                   }
-                  if (-not (Test-Path $detailPath -PathType Leaf)) {
-                      throw "Node plugin detail page is missing: $detailPath"
+
+                  if ($entry.detail -and $entry.detail.entry) {
+                      $detailPath = Join-Path (Split-Path $manifestPath) $entry.detail.entry
+                      if (-not (Test-Path $detailPath -PathType Leaf)) {
+                          throw "Node plugin detail page is missing: $detailPath"
+                      }
                   }
               }
 
