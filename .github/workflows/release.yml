@@ -443,8 +443,8 @@ jobs:
           $requiredSkillFiles = @(
               (Join-Path $skillRoot 'SKILL.md'),
               (Join-Path $skillRoot 'references\Examples\calculator\plugin.json'),
-              (Join-Path $skillRoot 'references\Examples\calculator\src\index.ts'),
-              (Join-Path $skillRoot 'references\Examples\sdk-v3\src\index.ts'),
+              (Join-Path $skillRoot 'references\Examples\calculator\src\backend\index.mts'),
+              (Join-Path $skillRoot 'references\Examples\sdk-v3\src\node.ts'),
               (Join-Path $skillRoot 'references\Examples\create-plugin\src\templates\common\build-plugin.mjs.mustache')
           )
           foreach ($skillFile in $requiredSkillFiles) {
