@@ -601,14 +601,10 @@ public sealed class DevelopmentPluginService : IDisposable
             : string.Empty;
         var directories = current.Split(
             Path.PathSeparator,
-            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (directories.Any(item =>
-                string.Equals(item.Trim('"'), directory, StringComparison.OrdinalIgnoreCase)))
-        {
-            return;
-        }
-
-        info.Environment["PATH"] = directory + Path.PathSeparator + current;
+            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(item => !string.Equals(
+                item.Trim('"'), directory, StringComparison.OrdinalIgnoreCase));
+        info.Environment["PATH"] = string.Join(Path.PathSeparator, directories.Prepend(directory));
     }
 
     internal static string? ResolveCommand(string command)

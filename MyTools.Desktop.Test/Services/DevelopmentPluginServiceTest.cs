@@ -80,7 +80,7 @@ public class DevelopmentPluginServiceTest
     }
 
     [Test]
-    public void CreateNpmStartInfo_InheritsProcessEnvironmentAndBuildsCurrentPath()
+    public void CreateNpmStartInfo_InheritsProcessEnvironmentAndPrependsNpmDirectoryToPath()
     {
         const string key = "MYTOOLS_NPM_ENVIRONMENT_TEST";
         var previous = Environment.GetEnvironmentVariable(key);
@@ -88,13 +88,21 @@ public class DevelopmentPluginServiceTest
         {
             Environment.SetEnvironmentVariable(key, "available");
 
+            var npmDirectory = Path.Combine(TestContext.CurrentContext.WorkDirectory, "bundled node runtime");
             var info = DevelopmentPluginService.CreateNpmStartInfo(
-                @"C:\Program Files\nodejs\npm.cmd", TestContext.CurrentContext.WorkDirectory, "install", false);
+                Path.Combine(npmDirectory, "npm.cmd"),
+                TestContext.CurrentContext.WorkDirectory,
+                "install",
+                false);
+            var pathDirectories = info.Environment["PATH"]!.Split(Path.PathSeparator);
 
             Assert.Multiple(() =>
             {
                 Assert.That(info.Environment[key], Is.EqualTo("available"));
-                Assert.That(info.Environment["PATH"], Is.EqualTo(DevelopmentPluginService.BuildCurrentPath()));
+                Assert.That(pathDirectories[0], Is.EqualTo(npmDirectory).IgnoreCase);
+                Assert.That(
+                    string.Join(Path.PathSeparator, pathDirectories.Skip(1)),
+                    Is.EqualTo(DevelopmentPluginService.BuildCurrentPath()));
             });
         }
         finally
