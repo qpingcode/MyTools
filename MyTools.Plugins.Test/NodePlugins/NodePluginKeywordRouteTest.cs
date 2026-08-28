@@ -109,10 +109,17 @@ public class NodePluginKeywordRouteTest
         using var plugin = CreatePlugin();
 
         var context = plugin.CreateActionDetailContext(
-            "item", "tr value", "value", new NodePluginDetailViewDto());
+            "item", "tr value", "value", new NodePluginDetailViewDto
+            {
+                Actions = ["run-once"]
+            });
 
         Assert.That(context, Is.Not.Null);
-        Assert.That(context!.EntryFullPath, Is.EqualTo(detailPath));
+        Assert.Multiple(() =>
+        {
+            Assert.That(context!.EntryFullPath, Is.EqualTo(detailPath));
+            Assert.That(context.ActionIds, Is.EqualTo(new[] { "run-once" }));
+        });
     }
 
     private NodePlugin CreatePlugin(bool withWebDetail = true)

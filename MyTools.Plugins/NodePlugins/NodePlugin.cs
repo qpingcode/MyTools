@@ -359,6 +359,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
             Query = query,
             Keyword = PrimaryKeyword,
             InitialState = CloneJson(detail?.InitialState),
+            ActionIds = detail?.Actions.Count > 0 ? detail.Actions.ToArray() : null,
             Locale = localizationService.CurrentLocale,
             FallbackLocale = manifest.DefaultLocale,
             Messages = GetCurrentMessages()

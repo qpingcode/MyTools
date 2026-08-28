@@ -4,7 +4,7 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "moduleDetection": "legacy",
-    "lib": ["ES2024"],
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
     "types": ["node"],
     "strict": false,
     "noImplicitAny": true,
@@ -14,6 +14,6 @@
     "rootDir": ".",
     "outDir": "dist"
   },
-  "include": ["src/backend/**/*.mts"],
+  "include": ["src/backend/**/*.mts", "src/web/**/*.ts"],
   "exclude": ["dist"]
 }

@@ -1,4 +1,11 @@
-import { createPlugin, HostAction, type PluginSearchParams, type RunSpec } from "@qping/plugin-bus/node";
+import {
+  createPlugin,
+  HostAction,
+  Key,
+  Modifiers,
+  type PluginSearchParams,
+  type RunSpec,
+} from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 import { isSubsequence } from "@qping/plugin-bus/search";
 
@@ -17,6 +24,17 @@ type OwnConfiguration = {
     Commands?: CommandConfig[];
   };
 };
+
+type CommandItem = {
+  command: RunSpec;
+};
+
+type StageOverridesPayload = {
+  itemId?: string;
+  command?: CommandConfig;
+};
+
+const stagedOverrides = new Map<string, RunSpec>();
 
 function normalizeScripts(scripts: string | string[] | undefined): string[] {
   if (Array.isArray(scripts)) {
@@ -74,7 +92,7 @@ async function search(params: PluginSearchParams) {
     priority: 100,
     icon: { kind: "emoji", value: "🚀" },
     command: toRunSpec(config),
-    actions: ["run"],
+    actions: ["run", "runWithOverrides"],
   }));
   return { items };
 }
@@ -86,17 +104,75 @@ plugin
     mytoolsI18n.configure(params);
     return {};
   })
-  .actions<{ command: RunSpec }>([{
-    id: "run",
-    title: { key: "Plugin.CommandRunner.Action.Run", defaultValue: "Run" },
-    description: {
-      key: "Plugin.CommandRunner.Action.RunDescription",
-      defaultValue: "Run the selected command",
+  .actions<CommandItem>([
+    {
+      id: "run",
+      title: { key: "Plugin.CommandRunner.Action.Run", defaultValue: "Run" },
+      description: {
+        key: "Plugin.CommandRunner.Action.RunDescription",
+        defaultValue: "Run the selected command",
+      },
+      execute: ({ item }) => ({
+        target: { kind: "host", action: { kind: HostAction.Run, command: item?.command ?? { command: "" } } },
+        after: "close",
+      }),
     },
-    execute: ({ item }) => ({
-      target: { kind: "host", action: { kind: HostAction.Run, command: item?.command ?? { command: "" } } },
-      after: "close",
-    }),
-  }])
+    {
+      id: "runWithOverrides",
+      title: {
+        key: "Plugin.CommandRunner.Action.RunWithOverrides",
+        defaultValue: "Run with Overrides",
+      },
+      description: {
+        key: "Plugin.CommandRunner.Action.RunWithOverridesDescription",
+        defaultValue: "Temporarily adjust the command configuration and run without saving changes",
+      },
+      hotkey: { key: Key.Enter, modifiers: Modifiers.Control },
+      execute: ({ item, itemId }) => {
+        const command = item?.command ?? { command: "" };
+        stagedOverrides.set(itemId, command);
+        return {
+          target: {
+            kind: "detail",
+            page: "web/overrides.html",
+            title: mytoolsI18n.t("Plugin.CommandRunner.Action.RunWithOverrides", {
+              defaultValue: "Run with Overrides",
+            }),
+            initialState: { itemId, command },
+            actions: ["runOverrides"],
+          },
+        };
+      },
+    },
+    {
+      id: "runOverrides",
+      title: { key: "Plugin.CommandRunner.Action.Run", defaultValue: "Run" },
+      description: {
+        key: "Plugin.CommandRunner.Action.RunOverridesDescription",
+        defaultValue: "Run once with the temporary configuration",
+      },
+      execute: ({ itemId }) => {
+        const command = stagedOverrides.get(itemId);
+        if (!command) {
+          throw new Error(mytoolsI18n.t("Plugin.CommandRunner.Error.OverridesUnavailable", {
+            defaultValue: "The temporary command configuration is no longer available. Reopen Run with Overrides.",
+          }));
+        }
+        stagedOverrides.delete(itemId);
+        return {
+          target: { kind: "host", action: { kind: HostAction.Run, command } },
+          after: "close",
+        };
+      },
+    },
+  ])
+  .handle("stageOverrides", (payload: StageOverridesPayload) => {
+    const itemId = typeof payload?.itemId === "string" ? payload.itemId : "";
+    if (!itemId || !payload?.command || typeof payload.command !== "object") {
+      throw new Error("Invalid temporary command configuration.");
+    }
+    stagedOverrides.set(itemId, toRunSpec(payload.command));
+    return {};
+  })
   .search(search)
   .start();

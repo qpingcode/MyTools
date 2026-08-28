@@ -94,6 +94,8 @@ export type DetailRequest = {
   page?: string;
   title?: string;
   initialState?: unknown;
+  /** Restricts the action bar for this detail page. Omit to expose every registered action. */
+  actions?: string[];
 };
 
 export type ActionTarget =

@@ -61,7 +61,7 @@ public class NodePluginWellKnownActionsTest
     public void ActionOutcome_TargetDetail_NormalizesDetail()
     {
         var response = JsonSerializer.Deserialize<NodePluginActionOutcome>(
-            """{"target":{"kind":"detail","page":"detail.html","title":"Result","initialState":{"id":1}}}""",
+            """{"target":{"kind":"detail","page":"detail.html","title":"Result","initialState":{"id":1},"actions":["run-once"]}}""",
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
         var normalized = response!.Normalize();
@@ -73,6 +73,7 @@ public class NodePluginWellKnownActionsTest
             Assert.That(target.Detail.Page, Is.EqualTo("detail.html"));
             Assert.That(target.Detail.Title, Is.EqualTo("Result"));
             Assert.That(target.Detail.InitialState.GetProperty("id").GetInt32(), Is.EqualTo(1));
+            Assert.That(target.Detail.Actions, Is.EqualTo(new[] { "run-once" }));
         });
     }
 
@@ -81,6 +82,8 @@ public class NodePluginWellKnownActionsTest
     [TestCase("{\"target\":{\"kind\":\"detail\",\"payload\":{}}}")]
     [TestCase("{\"target\":{\"kind\":\"host\"}}")]
     [TestCase("{\"target\":{\"kind\":\"host\",\"action\":{\"kind\":\"copy\"},\"payload\":{}}}")]
+    [TestCase("{\"target\":{\"kind\":\"host\",\"action\":{\"kind\":\"copy\",\"text\":\"x\"},\"actions\":[\"run\"]}}")]
+    [TestCase("{\"target\":{\"kind\":\"web\",\"actions\":[\"run\"]}}")]
     public void ActionOutcome_ConflictingTarget_Throws(string json)
     {
         var response = JsonSerializer.Deserialize<NodePluginActionOutcome>(

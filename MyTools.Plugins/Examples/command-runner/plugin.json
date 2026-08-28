@@ -1,6 +1,6 @@
 {
   "id": "command-runner",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "protocolVersion": "3.0",
   "icon": "mdi-console-line",
   "i18n": {
@@ -42,7 +42,7 @@
             "visibility": "${isBashScript == false}",
             "label": {
               "key": "Plugin.CommandRunner.Column.Command",
-              "defaultValue": "Command / URL"
+              "defaultValue": "Command"
             },
             "uiHint": "input"
           },

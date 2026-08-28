@@ -103,7 +103,7 @@ public partial class NodePluginDetailViewModel : ObservableObject, ISwitchableVi
     /// </summary>
     private List<IActionWithHotkey> BuildDetailActions(NodePluginDetailContext? context)
     {
-        return context?.Plugin.BuildActions(forwardToWeb: ForwardToWeb) ?? [];
+        return context?.Plugin.BuildActions(context.ActionIds, ForwardToWeb) ?? [];
     }
 
     private void ForwardToWeb(JsonElement payload)

@@ -124,7 +124,8 @@ internal sealed class NodePluginActionOutcome
 
                     if (!string.IsNullOrWhiteSpace(Target.Page) ||
                         !string.IsNullOrWhiteSpace(Target.Title) ||
-                        Target.InitialState.ValueKind != JsonValueKind.Undefined)
+                        Target.InitialState.ValueKind != JsonValueKind.Undefined ||
+                        Target.Actions.Count > 0)
                     {
                         throw new InvalidOperationException("A web target cannot contain detail fields.");
                     }
@@ -146,7 +147,8 @@ internal sealed class NodePluginActionOutcome
                     {
                         Page = Target.Page,
                         Title = Target.Title,
-                        InitialState = Target.InitialState
+                        InitialState = Target.InitialState,
+                        Actions = Target.Actions
                     });
                     break;
                 default:
@@ -176,7 +178,8 @@ internal sealed class NodePluginActionOutcome
         if (target.Payload.ValueKind != JsonValueKind.Undefined ||
             !string.IsNullOrWhiteSpace(target.Page) ||
             !string.IsNullOrWhiteSpace(target.Title) ||
-            target.InitialState.ValueKind != JsonValueKind.Undefined)
+            target.InitialState.ValueKind != JsonValueKind.Undefined ||
+            target.Actions.Count > 0)
         {
             throw new InvalidOperationException($"A {kind} target cannot contain web or detail fields.");
         }
@@ -224,6 +227,9 @@ internal sealed class NodePluginActionTargetDto
 
     /// <summary>detail</summary>
     public JsonElement InitialState { get; init; }
+
+    /// <summary>detail；为空时详情页显示该 entry 注册的全部 action。</summary>
+    public List<string> Actions { get; init; } = [];
 }
 
 /// <summary>
@@ -276,6 +282,7 @@ internal sealed class NodePluginDetailViewDto
     public string Page { get; init; } = string.Empty;
     public string Title { get; init; } = string.Empty;
     public JsonElement InitialState { get; init; }
+    public List<string> Actions { get; init; } = [];
 }
 
 public sealed class NodePluginEventReceivedEventArgs : EventArgs

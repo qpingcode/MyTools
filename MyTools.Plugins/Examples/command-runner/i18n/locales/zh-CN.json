@@ -11,5 +11,11 @@
   "Plugin.CommandRunner.Column.RunAsAdmin": "以管理员运行",
   "Plugin.CommandRunner.Action.Run": "运行",
   "Plugin.CommandRunner.Action.RunDescription": "运行所选命令",
+  "Plugin.CommandRunner.Action.RunWithOverrides": "调整后运行",
+  "Plugin.CommandRunner.Action.RunWithOverridesDescription": "临时调整命令配置并运行；更改不会保存",
+  "Plugin.CommandRunner.Action.RunOverridesDescription": "使用临时配置运行一次",
+  "Plugin.CommandRunner.Overrides.Notice": "更改仅应用于本次运行，不会保存。",
+  "Plugin.CommandRunner.Error.OverridesUnavailable": "临时命令配置已失效，请重新打开“调整后运行”。",
+  "Plugin.CommandRunner.Error.OverridesSyncFailed": "无法更新临时配置：{{message}}",
   "Plugin.CommandRunner.Untitled": "未命名命令"
 }

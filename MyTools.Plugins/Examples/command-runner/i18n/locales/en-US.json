@@ -11,5 +11,11 @@
   "Plugin.CommandRunner.Column.RunAsAdmin": "Run as administrator",
   "Plugin.CommandRunner.Action.Run": "Run",
   "Plugin.CommandRunner.Action.RunDescription": "Run the selected command",
+  "Plugin.CommandRunner.Action.RunWithOverrides": "Run with Overrides",
+  "Plugin.CommandRunner.Action.RunWithOverridesDescription": "Temporarily adjust the command configuration and run without saving changes",
+  "Plugin.CommandRunner.Action.RunOverridesDescription": "Run once with the temporary configuration",
+  "Plugin.CommandRunner.Overrides.Notice": "Changes apply only to this run and won't be saved.",
+  "Plugin.CommandRunner.Error.OverridesUnavailable": "The temporary command configuration is no longer available. Reopen Run with Overrides.",
+  "Plugin.CommandRunner.Error.OverridesSyncFailed": "Could not update the temporary configuration: {{message}}",
   "Plugin.CommandRunner.Untitled": "Untitled command"
 }

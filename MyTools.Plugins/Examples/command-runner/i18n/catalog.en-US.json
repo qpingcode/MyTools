@@ -101,6 +101,54 @@
       "sourceHash": "sha256:placeholder"
     },
     {
+      "key": "Plugin.CommandRunner.Action.RunWithOverrides",
+      "defaultValue": "Run with Overrides",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "调整后运行" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.CommandRunner.Action.RunWithOverridesDescription",
+      "defaultValue": "Temporarily adjust the command configuration and run without saving changes",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "临时调整命令配置并运行；更改不会保存" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.CommandRunner.Action.RunOverridesDescription",
+      "defaultValue": "Run once with the temporary configuration",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "使用临时配置运行一次" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.CommandRunner.Overrides.Notice",
+      "defaultValue": "Changes apply only to this run and won't be saved.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "更改仅应用于本次运行，不会保存。" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.CommandRunner.Error.OverridesUnavailable",
+      "defaultValue": "The temporary command configuration is no longer available. Reopen Run with Overrides.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "临时命令配置已失效，请重新打开“调整后运行”。" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
+      "key": "Plugin.CommandRunner.Error.OverridesSyncFailed",
+      "defaultValue": "Could not update the temporary configuration: {{message}}",
+      "placeholders": ["message"],
+      "references": [],
+      "existingTranslations": { "zh-CN": "无法更新临时配置：{{message}}" },
+      "sourceHash": "sha256:placeholder"
+    },
+    {
       "key": "Plugin.CommandRunner.Untitled",
       "defaultValue": "Untitled command",
       "placeholders": [],

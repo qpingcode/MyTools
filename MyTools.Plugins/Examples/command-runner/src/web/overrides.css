@@ -1,0 +1,133 @@
+:root {
+    color-scheme: dark;
+}
+
+body {
+    min-height: 100vh;
+    margin: 0;
+    overflow: auto;
+    background: var(--mt-surface-bg, #1e1e1e);
+    color: var(--mt-text, #f5f5f5);
+    font-family: "Segoe UI", sans-serif;
+}
+
+.page {
+    box-sizing: border-box;
+    display: grid;
+    gap: 12px;
+    width: min(760px, 100%);
+    margin: 0 auto;
+    padding: 16px;
+}
+
+.notice {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 12px;
+    border: 1px solid color-mix(in srgb, var(--mt-accent, #60a5fa) 45%, transparent);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--mt-accent, #60a5fa) 10%, var(--mt-surface, #1a1a1a));
+    color: var(--mt-text-secondary, #d6d9df);
+    font-size: 13px;
+}
+
+.notice-icon {
+    color: var(--mt-accent, #60a5fa);
+    font-size: 18px;
+    line-height: 1;
+}
+
+.form-card {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid var(--mt-border, #333333);
+    border-radius: 12px;
+    background: var(--mt-surface, #1a1a1a);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.14);
+}
+
+.field,
+.field-group {
+    display: grid;
+    gap: 6px;
+}
+
+.field > span {
+    color: var(--mt-text-secondary, #c7cad1);
+    font-size: 12px;
+}
+
+.field-wide {
+    grid-column: 1 / -1;
+}
+
+input[type="text"],
+textarea {
+    box-sizing: border-box;
+    width: 100%;
+    border: 1px solid var(--mt-border, #4b4b4b);
+    border-radius: 8px;
+    outline: none;
+    background: var(--mt-surface-alt, #252525);
+    color: var(--mt-text, #f5f5f5);
+    padding: 9px 10px;
+    font: inherit;
+    font-size: 13px;
+}
+
+input[type="text"]:focus,
+textarea:focus {
+    border-color: var(--mt-accent, #60a5fa);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--mt-accent, #60a5fa) 20%, transparent);
+}
+
+textarea {
+    min-height: 128px;
+    resize: vertical;
+    line-height: 1.45;
+}
+
+.code-input {
+    font-family: "Cascadia Code", "Consolas", "Courier New", monospace;
+}
+
+.check-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--mt-text-secondary, #d1d4da);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.check-field input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: var(--mt-accent, #60a5fa);
+}
+
+.status {
+    min-height: 18px;
+    margin: 0;
+    color: var(--mt-danger, #ff8b8b);
+    font-size: 12px;
+}
+
+.hidden {
+    display: none;
+}
+
+@media (max-width: 560px) {
+    .page {
+        padding: 10px;
+    }
+
+    .form-card {
+        grid-template-columns: 1fr;
+        padding: 12px;
+    }
+}

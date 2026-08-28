@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title data-i18n="[text]Plugin.CommandRunner.Action.RunWithOverrides"
+           data-i18n-default-value="Run with Overrides"></title>
+    <link rel="stylesheet" href="overrides.css">
+</head>
+<body>
+    <main class="page">
+        <section class="notice">
+            <span class="notice-icon">↻</span>
+            <span data-i18n="[text]Plugin.CommandRunner.Overrides.Notice"
+                  data-i18n-default-value="Changes apply only to this run and won't be saved."></span>
+        </section>
+
+        <section class="form-card">
+            <label class="field field-wide">
+                <span data-i18n="[text]Plugin.CommandRunner.Column.Name" data-i18n-default-value="Name"></span>
+                <input id="name" type="text" autocomplete="off">
+            </label>
+
+            <label class="check-field field-wide">
+                <input id="isBashScript" type="checkbox">
+                <span data-i18n="[text]Plugin.CommandRunner.Column.ScriptMode"
+                      data-i18n-default-value="Batch script"></span>
+            </label>
+
+            <div id="commandFields" class="field-group field-wide">
+                <label class="field">
+                    <span data-i18n="[text]Plugin.CommandRunner.Column.Command"
+                          data-i18n-default-value="Command"></span>
+                    <input id="command" class="code-input" type="text" autocomplete="off" spellcheck="false">
+                </label>
+                <label class="field">
+                    <span data-i18n="[text]Plugin.CommandRunner.Column.Args"
+                          data-i18n-default-value="Arguments"></span>
+                    <input id="args" class="code-input" type="text" autocomplete="off" spellcheck="false">
+                </label>
+            </div>
+
+            <label id="scriptsField" class="field field-wide hidden">
+                <span data-i18n="[text]Plugin.CommandRunner.Column.Scripts"
+                      data-i18n-default-value="Script lines"></span>
+                <textarea id="scripts" class="code-input" rows="7" spellcheck="false"></textarea>
+            </label>
+
+            <label class="field field-wide">
+                <span data-i18n="[text]Plugin.CommandRunner.Column.WorkingDirectory"
+                      data-i18n-default-value="Working directory"></span>
+                <input id="workingDirectory" class="code-input" type="text" autocomplete="off" spellcheck="false">
+            </label>
+
+            <label class="check-field field-wide">
+                <input id="runAsAdmin" type="checkbox">
+                <span data-i18n="[text]Plugin.CommandRunner.Column.RunAsAdmin"
+                      data-i18n-default-value="Run as administrator"></span>
+            </label>
+        </section>
+
+        <p id="status" class="status" role="status" aria-live="polite"></p>
+    </main>
+    <script src="overrides.js"></script>
+</body>
+</html>
