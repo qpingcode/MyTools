@@ -1,5 +1,6 @@
 using Moq;
 using MyTools.Common.Config.Interfaces;
+using MyTools.Common.Config.Models;
 using MyTools.Desktop.Services;
 using NUnit.Framework;
 
@@ -8,6 +9,37 @@ namespace MyTools.Desktop.Test.Services;
 [TestFixture]
 public class ConfigurationRegistryTest
 {
+    [Test]
+    public void SaveChanges_RaisesConfigurationChangedAfterPersistingChangedValue()
+    {
+        var stored = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var storage = new Mock<IConfigurationStorage>();
+        storage.Setup(value => value.Exists(It.IsAny<string>()))
+            .Returns((string key) => stored.ContainsKey(key));
+        storage.Setup(value => value.Retrieve(It.IsAny<string>()))
+            .Returns((string key) => stored.GetValueOrDefault(key));
+        storage.Setup(value => value.Store(It.IsAny<string>(), It.IsAny<string>()))
+            .Callback((string key, string value) => stored[key] = value);
+
+        var registry = new ConfigurationRegistry(storage.Object);
+        var category = registry.AddCategory("Test", "Test", "");
+        var setting = registry.AddSetting(category, "Value", "Value", "", "old", serializer: null);
+        ConfigurationChangedEventArgs? received = null;
+        registry.ConfigurationChanged += (_, args) => received = args;
+
+        setting.CurrentValue = "new";
+        registry.SaveChanges();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(stored["Test.Value"], Is.EqualTo("new"));
+            Assert.That(received, Is.Not.Null);
+            Assert.That(received!.Setting, Is.SameAs(setting));
+            Assert.That(received.OldValue, Is.EqualTo("old"));
+            Assert.That(received.NewValue, Is.EqualTo("new"));
+        });
+    }
+
     [Test]
     public void RemoveCategory_RemovesCategoryChildrenAndSettingsFromIndexes()
     {

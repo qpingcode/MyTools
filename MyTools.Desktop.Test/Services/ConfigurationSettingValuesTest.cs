@@ -137,6 +137,12 @@ public class ConfigurationSettingValuesTest
 
     private sealed class FakeRegistry : IConfigurationRegistry
     {
+        public event EventHandler<ConfigurationChangedEventArgs>? ConfigurationChanged
+        {
+            add { }
+            remove { }
+        }
+
         public List<ConfigurationSetting> Settings { get; } = [];
 
         public ConfigurationSetting AddArraySetting(string pluginId, string name)

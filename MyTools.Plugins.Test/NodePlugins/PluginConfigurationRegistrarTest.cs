@@ -205,6 +205,12 @@ public class PluginConfigurationRegistrarTest
 
     private sealed class FakeRegistry : IConfigurationRegistry
     {
+        public event EventHandler<ConfigurationChangedEventArgs>? ConfigurationChanged
+        {
+            add { }
+            remove { }
+        }
+
         public List<ConfigurationCategory> Categories { get; } = [];
         public List<ConfigurationSetting> Settings { get; } = [];
 
