@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- Vulnerability auditing requires network access and emits NU1900 in offline builds. -->
+    <NuGetAudit>false</NuGetAudit>
+  </PropertyGroup>
+</Project>

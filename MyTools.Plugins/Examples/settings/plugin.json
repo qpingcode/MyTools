@@ -1,6 +1,6 @@
 {
   "id": "settings",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "protocolVersion": "3.0",
   "icon": "mdi-cog-outline",
   "i18n": {

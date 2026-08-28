@@ -19,8 +19,11 @@ const props = defineProps<{
     setting: Setting;
 }>();
 
+type EditorMode = "add" | "edit" | "clone";
+
 const editorOpen = ref(false);
 const editingIndex = ref<number | null>(null);
+const editorMode = ref<EditorMode>("add");
 const tableQuery = ref("");
 const draft = reactive<Record<string, unknown>>({});
 
@@ -56,11 +59,16 @@ const labels = computed(() => ({
     search: t("Plugin.Settings.Table.Search", "Search"),
     add: t("Plugin.Settings.Table.Add", "Add"),
     edit: t("Plugin.Settings.Table.Edit", "Edit"),
+    clone: t("Plugin.Settings.Table.Clone", "Clone"),
     delete: t("Plugin.Settings.Table.Delete", "Delete"),
     empty: t("Plugin.Settings.Table.Empty", "No items"),
     apply: t("Plugin.Settings.Table.Apply", "Apply"),
     cancel: t("Plugin.Settings.Cancel", "Cancel"),
 }));
+const editorTitle = computed(() =>
+    editorMode.value === "clone" ? labels.value.clone : editorMode.value === "edit" ? labels.value.edit : labels.value.add);
+const editorIcon = computed(() =>
+    editorMode.value === "clone" ? "mdi-content-copy" : editorMode.value === "edit" ? "mdi-pencil-outline" : "mdi-plus");
 
 function currentRows(): Record<string, unknown>[] {
     return rows.value.map((row) => ({ ...row }));
@@ -80,14 +88,26 @@ function emptyRow(): Record<string, unknown> {
 
 function openEditor(index: number | null): void {
     editingIndex.value = index;
+    editorMode.value = index == null ? "add" : "edit";
     const source = index == null ? emptyRow() : { ...rows.value[index] };
+    populateDraft(source);
+    editorOpen.value = true;
+}
+
+function openCloneEditor(index: number): void {
+    editingIndex.value = null;
+    editorMode.value = "clone";
+    populateDraft(structuredClone(rows.value[index]));
+    editorOpen.value = true;
+}
+
+function populateDraft(source: Record<string, unknown>): void {
     for (const key of Object.keys(draft)) {
         delete draft[key];
     }
     for (const property of properties.value) {
         draft[property.key] = coercePropertyValue(property.type, source[property.key] ?? defaultPropertyValue(property.type, property.defaultValue));
     }
-    editorOpen.value = true;
 }
 
 function saveEditor(): void {
@@ -165,6 +185,9 @@ function removeRow(index: number): void {
                         <button type="button" class="icon-btn" :title="labels.edit" @click="openEditor(item.index)">
                             <i class="mdi mdi-pencil-outline"></i>
                         </button>
+                        <button type="button" class="icon-btn" :title="labels.clone" @click="openCloneEditor(item.index)">
+                            <i class="mdi mdi-content-copy"></i>
+                        </button>
                         <button type="button" class="icon-btn icon-delete" :title="labels.delete" @click="removeRow(item.index)">
                             <i class="mdi mdi-trash-can-outline"></i>
                         </button>
@@ -174,25 +197,55 @@ function removeRow(index: number): void {
         </div>
 
         <n-modal v-model:show="editorOpen" :mask-closable="false">
-            <n-card class="row-editor" role="dialog" aria-modal="true">
-                <div class="editor-title">
-                    {{ editingIndex == null ? labels.add : labels.edit }}
+            <n-card
+                class="row-editor"
+                :class="`mode-${editorMode}`"
+                :bordered="false"
+                content-style="padding: 0;"
+                role="dialog"
+                aria-modal="true"
+            >
+                <div class="editor-header">
+                    <span class="editor-header-icon">
+                        <i class="mdi" :class="editorIcon"></i>
+                    </span>
+                    <div class="editor-heading">
+                        <div class="editor-title">{{ editorTitle }}</div>
+                        <div v-if="setting.title" class="editor-context">{{ setting.title }}</div>
+                    </div>
+                    <button
+                        type="button"
+                        class="editor-close"
+                        :title="labels.cancel"
+                        :aria-label="labels.cancel"
+                        @click="editorOpen = false"
+                    >
+                        <i class="mdi mdi-close"></i>
+                    </button>
                 </div>
-                <div class="editor-form">
-                    <template v-for="property in visibleEditorProperties" :key="property.key">
-                        <div class="form-label">{{ property.title || property.key }}</div>
-                        <SettingField
-                            :type="property.type"
-                            :ui-hint="property.uiHint"
-                            :title="property.title || property.key"
-                            :model-value="draft[property.key]"
-                            @update:model-value="draft[property.key] = $event"
-                        />
-                    </template>
+                <div class="editor-body">
+                    <div class="editor-form">
+                        <div v-for="property in visibleEditorProperties" :key="property.key" class="editor-field">
+                            <div class="form-label">{{ property.title || property.key }}</div>
+                            <SettingField
+                                :type="property.type"
+                                :ui-hint="property.uiHint"
+                                :title="property.title || property.key"
+                                :model-value="draft[property.key]"
+                                @update:model-value="draft[property.key] = $event"
+                            />
+                        </div>
+                    </div>
                 </div>
-                <div class="editor-actions">
-                    <n-button size="small" @click="editorOpen = false">{{ labels.cancel }}</n-button>
-                    <n-button size="small" type="primary" @click="saveEditor">{{ labels.apply }}</n-button>
+                <div class="editor-toolbar">
+                    <div class="toolbar-spacer"></div>
+                    <n-button secondary @click="editorOpen = false">{{ labels.cancel }}</n-button>
+                    <n-button type="primary" @click="saveEditor">
+                        <template #icon>
+                            <i class="mdi mdi-check"></i>
+                        </template>
+                        {{ labels.apply }}
+                    </n-button>
                 </div>
             </n-card>
         </n-modal>
@@ -281,7 +334,7 @@ function removeRow(index: number): void {
 }
 
 .col-actions {
-    flex: 0 0 72px;
+    flex: 0 0 100px;
     position: sticky;
     right: 0;
     z-index: 2;
@@ -326,36 +379,194 @@ function removeRow(index: number): void {
 }
 
 .row-editor {
-    width: min(560px, calc(100vw - 32px));
+    --editor-accent: var(--settings-accent, #22c55e);
+    width: min(620px, calc(100vw - 32px));
+    max-height: min(760px, calc(100vh - 32px));
+    overflow: hidden;
     background: var(--mt-surface, #292929);
+    border: 1px solid color-mix(in srgb, var(--mt-border, #404040) 88%, var(--editor-accent));
+    border-radius: 16px;
+    box-shadow:
+        0 24px 64px rgba(0, 0, 0, 0.3),
+        0 4px 16px rgba(0, 0, 0, 0.16);
+}
+
+.row-editor.mode-edit {
+    --editor-accent: #60a5fa;
+}
+
+.row-editor.mode-clone {
+    --editor-accent: #a78bfa;
+}
+
+.editor-header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 46px;
+    box-sizing: border-box;
+    padding: 7px 12px 7px 14px;
+    border-bottom: 1px solid color-mix(in srgb, var(--mt-border, #404040) 76%, var(--editor-accent));
+    background:
+        linear-gradient(90deg, color-mix(in srgb, var(--editor-accent) 13%, transparent), transparent 58%),
+        color-mix(in srgb, var(--mt-surface-alt, #333333) 56%, var(--mt-surface, #292929));
+    box-shadow: 0 1px 0 color-mix(in srgb, var(--mt-text, #fff) 3%, transparent);
+}
+
+.editor-header-icon {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 32px;
+    border: 1px solid color-mix(in srgb, var(--editor-accent) 28%, transparent);
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--editor-accent) 16%, transparent);
+    color: var(--editor-accent);
+    font-size: 17px;
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 8%, transparent);
+}
+
+.editor-heading {
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .editor-title {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 12px;
+    font-size: 17px;
+    font-weight: 650;
+    line-height: 1.25;
+    color: var(--mt-text, #fff);
+    letter-spacing: -0.01em;
+}
+
+.editor-context {
+    margin-top: 3px;
+    overflow: hidden;
+    color: var(--mt-text-tertiary, #aaaaaa);
+    font-size: 12px;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.editor-close {
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 30px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--mt-text-tertiary, #aaaaaa);
+    cursor: pointer;
+    font-size: 18px;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.editor-close:hover {
+    border-color: var(--mt-border, #404040);
+    background: var(--mt-surface-hover, #3a3a3a);
+    color: var(--mt-text, #fff);
+}
+
+.editor-close:focus-visible {
+    outline: 2px solid var(--editor-accent);
+    outline-offset: 2px;
+}
+
+.editor-body {
+    max-height: calc(min(760px, 100vh - 32px) - 93px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 20px;
+    background: var(--mt-surface, #292929);
+}
+
+.editor-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.editor-body::-webkit-scrollbar-thumb {
+    border-radius: 8px;
+    background: var(--mt-border, #404040);
+}
+
+.editor-body::-webkit-scrollbar-track {
+    background: transparent;
 }
 
 .editor-form {
     display: grid;
-    grid-template-columns: max-content minmax(0, 1fr);
-    column-gap: 12px;
-    row-gap: 10px;
+    gap: 12px;
+}
+
+.editor-field {
+    display: grid;
+    grid-template-columns: minmax(120px, 160px) minmax(0, 1fr);
     align-items: start;
+    gap: 16px;
+    min-width: 0;
+    padding: 2px 0;
 }
 
 .form-label {
-    padding-top: 6px;
+    padding-top: 7px;
     font-size: 13px;
-    font-weight: 500;
-    color: var(--mt-text, #fff);
-    white-space: nowrap;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--mt-text-secondary, var(--mt-text, #fff));
+    overflow-wrap: anywhere;
 }
 
-.editor-actions {
-    margin-top: 14px;
+.editor-toolbar {
     display: flex;
+    align-items: center;
     justify-content: flex-end;
-    gap: 8px;
+    gap: 10px;
+    min-height: 46px;
+    box-sizing: border-box;
+    padding: 6px 14px;
+    border-top: 1px solid var(--mt-border, #404040);
+    background: color-mix(in srgb, var(--mt-surface-alt, #333333) 64%, var(--mt-surface, #292929));
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.toolbar-spacer {
+    flex: 1 1 auto;
+}
+
+@media (max-width: 520px) {
+    .row-editor {
+        width: calc(100vw - 20px);
+        max-height: calc(100vh - 20px);
+        border-radius: 14px;
+    }
+
+    .editor-header {
+        padding-inline: 14px 12px;
+    }
+
+    .editor-body {
+        max-height: calc(100vh - 113px);
+        padding: 16px;
+    }
+
+    .editor-field {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+
+    .form-label {
+        padding-top: 0;
+    }
+
+    .editor-toolbar {
+        padding-inline: 14px;
+    }
 }
 </style>

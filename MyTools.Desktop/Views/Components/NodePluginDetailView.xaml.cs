@@ -238,7 +238,8 @@ public partial class NodePluginDetailView : UserControl
 
     private Uri BuildPluginEntryUri(string entryPath)
     {
-        var pluginDirectory = viewModel?.CurrentContext?.PluginDirectory;
+        var context = viewModel?.CurrentContext;
+        var pluginDirectory = context?.PluginDirectory;
         if (string.IsNullOrWhiteSpace(pluginDirectory) || !Directory.Exists(pluginDirectory))
         {
             return new Uri(entryPath);
@@ -251,7 +252,7 @@ public partial class NodePluginDetailView : UserControl
             return new Uri(entryPath);
         }
 
-        var hostName = BuildPluginHostName(fullPluginDirectory);
+        var hostName = BuildPluginHostName(fullPluginDirectory, context!.Version);
         PluginBrowser.CoreWebView2.SetVirtualHostNameToFolderMapping(
             hostName,
             fullPluginDirectory,
@@ -262,9 +263,10 @@ public partial class NodePluginDetailView : UserControl
         return new Uri($"https://{hostName}/{escapedEntryPath}");
     }
 
-    private static string BuildPluginHostName(string pluginDirectory)
+    internal static string BuildPluginHostName(string pluginDirectory, string pluginVersion)
     {
-        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(pluginDirectory))).ToLowerInvariant()[..16];
+        var cacheIdentity = $"{pluginDirectory}\n{pluginVersion}";
+        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(cacheIdentity))).ToLowerInvariant()[..16];
         return $"plugin-{hash}.mytools.localhost";
     }
 
