@@ -348,6 +348,7 @@ public sealed class PluginCreationAgentService : IDisposable
         HttpClient httpClient,
         Action<string, string?> report)
     {
+        private readonly AgentWebTools webTools = new(httpClient, report);
         public SelectedPluginContext? SelectedPlugin { get; } = selectedPlugin;
         public CreatedPluginArtifact? CreatedPlugin { get; private set; }
         public void Report(string kind, string? detail = null) => report(kind, detail);
@@ -462,27 +463,16 @@ public sealed class PluginCreationAgentService : IDisposable
         }
 
         [Description("Searches the public web when current documentation is needed. Returns a small text result set.")]
-        public async Task<string> SearchWebAsync([Description("Search query.")] string query)
-        {
-            if (string.IsNullOrWhiteSpace(query)) return "Search query is empty.";
-            var uri = new Uri("https://html.duckduckgo.com/html/?q=" + Uri.EscapeDataString(query.Trim()));
-            Report("searchingWeb", uri.ToString());
-            var html = await httpClient.GetStringAsync(uri);
-            return ToPlainText(html, 12000);
-        }
+        public Task<string> SearchWebAsync(
+            [Description("Search query.")] string query,
+            CancellationToken cancellationToken = default) =>
+            webTools.SearchWebAsync(query, cancellationToken);
 
         [Description("Fetches a public HTTPS documentation URL. Private/local network targets are rejected.")]
-        public async Task<string> FetchUrlAsync([Description("Public HTTPS URL.")] string url)
-        {
-            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
-            {
-                return "Only absolute HTTPS URLs are supported.";
-            }
-            if (uri.IsLoopback || await ResolvesToPrivateAddress(uri.Host)) return "Local and private network URLs are not allowed.";
-            Report("fetchingUrl", uri.ToString());
-            var text = await httpClient.GetStringAsync(uri);
-            return ToPlainText(text, 20000);
-        }
+        public Task<string> FetchUrlAsync(
+            [Description("Public HTTPS URL.")] string url,
+            CancellationToken cancellationToken = default) =>
+            webTools.FetchUrlAsync(url, cancellationToken);
 
         [Description("Validates and finalizes a generated plugin. Call only after every required file has been written.")]
         public string CompletePlugin(
@@ -659,36 +649,5 @@ public sealed class PluginCreationAgentService : IDisposable
             return value.GetString()!;
         }
 
-        private static async Task<bool> ResolvesToPrivateAddress(string host)
-        {
-            try
-            {
-                var addresses = await Dns.GetHostAddressesAsync(host);
-                return addresses.Length == 0 || addresses.Any(IsPrivateAddress);
-            }
-            catch
-            {
-                return true;
-            }
-        }
-
-        private static bool IsPrivateAddress(IPAddress address)
-        {
-            if (IPAddress.IsLoopback(address)) return true;
-            var bytes = address.GetAddressBytes();
-            if (address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-                return bytes[0] == 10 || bytes[0] == 127 || (bytes[0] == 169 && bytes[1] == 254)
-                    || (bytes[0] == 172 && bytes[1] is >= 16 and <= 31) || (bytes[0] == 192 && bytes[1] == 168);
-            return address.IsIPv6LinkLocal || address.IsIPv6SiteLocal || address.Equals(IPAddress.IPv6Loopback);
-        }
-
-        private static string ToPlainText(string content, int limit)
-        {
-            var text = Regex.Replace(content, "<script[\\s\\S]*?</script>|<style[\\s\\S]*?</style>", " ", RegexOptions.IgnoreCase);
-            text = Regex.Replace(text, "<[^>]+>", " ");
-            text = WebUtility.HtmlDecode(text);
-            text = Regex.Replace(text, "\\s+", " ").Trim();
-            return text.Length <= limit ? text : text[..limit];
-        }
     }
 }

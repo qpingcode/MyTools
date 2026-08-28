@@ -95,6 +95,47 @@ body {
     font-size: 15px;
 }
 
+.message.markdown {
+    white-space: normal;
+}
+
+.message.markdown > :first-child {
+    margin-top: 0;
+}
+
+.message.markdown > :last-child {
+    margin-bottom: 0;
+}
+
+.message.markdown p,
+.message.markdown ul,
+.message.markdown ol,
+.message.markdown pre,
+.message.markdown blockquote {
+    margin: 0.55em 0;
+}
+
+.message.markdown pre {
+    overflow-x: auto;
+    border-radius: 8px;
+    padding: 9px;
+    background: var(--mt-surface-alt, #161616);
+}
+
+.message.markdown code {
+    font-family: Consolas, "Cascadia Code", monospace;
+}
+
+.message.markdown :not(pre) > code {
+    border-radius: 4px;
+    padding: 1px 4px;
+    background: var(--mt-surface-alt, #333333);
+}
+
+.message.markdown a {
+    color: var(--mt-accent, #60a5fa);
+}
+
 .message.user {
     margin-left: auto;
     border-color: var(--mt-accent, rgba(96, 165, 250, 0.32));
@@ -117,13 +158,55 @@ body {
     color: #fca5a5;
 }
 
+.status-message {
+    margin: 2px 0 10px;
+    color: var(--mt-text-tertiary, #888888);
+    font-size: 12px;
+}
+
+.token-usage {
+    margin: -5px 0 10px 5px;
+    color: var(--mt-text-tertiary, #777777);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+}
+
 .composer {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+    border-top: 1px solid var(--mt-border, #292929);
+}
+
+.composer-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: end;
     gap: 8px;
-    padding: 8px;
-    border-top: 1px solid var(--mt-border, #292929);
+}
+
+.model-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--mt-text-muted, #cccccc);
+    font-size: 12px;
+}
+
+.model-row select {
+    min-width: 170px;
+    border: 1px solid var(--mt-border-subtle, #444444);
+    border-radius: 7px;
+    padding: 4px 28px 4px 8px;
+    background: var(--mt-surface, #222222);
+    color: var(--mt-text, #ffffff);
+    font: inherit;
+}
+
+.provider {
+    margin-left: auto;
+    color: var(--mt-text-tertiary, #777777);
 }
 
 #promptInput {
@@ -150,12 +233,23 @@ body {
     color: var(--mt-text-tertiary, #666666);
 }
 
-.send-button {
+.send-button,
+.stop-button {
     min-height: 38px;
     padding-inline: 14px;
 }
 
-.send-button:disabled {
+.stop-button {
+    border: 1px solid rgba(248, 113, 113, 0.45);
+    border-radius: 999px;
+    background: rgba(220, 38, 38, 0.12);
+    color: #fca5a5;
+    font: inherit;
+    cursor: pointer;
+}
+
+.send-button:disabled,
+.stop-button:disabled {
     opacity: 0.6;
     cursor: default;
 }

@@ -116,6 +116,22 @@ public static class DesktopServiceCollectionExtensions
         serviceCollection.AddSingleton<DevelopmentPluginHostCallHandler>();
         serviceCollection.AddSingleton<IPluginHostCapabilityHandler>(sp =>
             sp.GetRequiredService<DevelopmentPluginHostCallHandler>());
+        serviceCollection.AddSingleton(sp =>
+        {
+            var repositoryRoot = FindRepositoryRoot();
+            return new ChatAgentService(
+                new ChatAgentContext(
+                    repositoryRoot,
+                    [
+                        Path.Combine(AppContext.BaseDirectory, "skills"),
+                        Path.Combine(repositoryRoot, ".github", "skills")
+                    ],
+                    sp.GetRequiredService<IPluginCreationProxyProvider>()),
+                sp.GetRequiredService<ILogger<ChatAgentService>>());
+        });
+        serviceCollection.AddSingleton<ChatPluginHostCallHandler>();
+        serviceCollection.AddSingleton<IPluginHostCapabilityHandler>(sp =>
+            sp.GetRequiredService<ChatPluginHostCallHandler>());
         serviceCollection.AddSingleton<NodePluginHostCallRouter>();
         serviceCollection.AddSingleton<InputActionCaptureService>();
         serviceCollection.AddSingleton<PluginOverrideProvider>();

@@ -1,0 +1,12 @@
+{
+  "Plugin.Chat.Name": "聊天",
+  "Plugin.Chat.Detail.New": "新对话",
+  "Plugin.Chat.Detail.Empty": "向 MyTools 提问",
+  "Plugin.Chat.Detail.InputPlaceholder": "输入消息",
+  "Plugin.Chat.Detail.Send": "发送",
+  "Plugin.Chat.Detail.Stop": "中止",
+  "Plugin.Chat.Detail.Model": "模型",
+  "Plugin.Chat.Detail.Streaming": "…",
+  "Plugin.Chat.Detail.Cancelled": "已中止回答",
+  "Plugin.Chat.Detail.TokenUsage": "{{total}} tokens · 输入 {{input}} · 输出 {{output}}"
+}

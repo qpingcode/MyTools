@@ -7,7 +7,7 @@ description: Develop a MyTools Node plugin (backend + optional WebView2 detail p
 
 MyTools Node 插件 = 独立 Node 进程里的后端 + 可选的 WebView2 HTML 详情页。不写 `detail` 时宿主用 `search` 结果走原生列表。通信走 v3 消息总线（Named Pipe + WebView2 postMessage），协议版本 **3.0**。
 
-随 MyTools 安装的参考包位于 [`references/Examples/`](references/Examples/)；它是当前版本的权威源码参考，不依赖用户安装目录之外的仓库。常用入口：[`calculator`](references/Examples/calculator/)（简单标准插件）、[`json-formatter`](references/Examples/json-formatter/) / [`xml-formatter`](references/Examples/xml-formatter/)（页面自包含）、[`settings`](references/Examples/settings/)（`hostCall`）、[`snippet`](references/Examples/snippet/) / [`command-runner`](references/Examples/command-runner/)（`plugin.json` configuration + `configuration.readOwn`）、[`deepseek-chat`](references/Examples/deepseek-chat/)、[`translator`](references/Examples/translator/)（多 entry）。SDK 源码在 [`sdk-v3`](references/Examples/sdk-v3/)（包名 `@qping/plugin-bus`）。创建或编辑前只读取与需求最相关的最小参考集合。
+随 MyTools 安装的参考包位于 [`references/Examples/`](references/Examples/)；它是当前版本的权威源码参考，不依赖用户安装目录之外的仓库。常用入口：[`calculator`](references/Examples/calculator/)（简单标准插件）、[`json-formatter`](references/Examples/json-formatter/) / [`xml-formatter`](references/Examples/xml-formatter/)（页面自包含）、[`settings`](references/Examples/settings/)（`hostCall`）、[`snippet`](references/Examples/snippet/) / [`command-runner`](references/Examples/command-runner/)（`plugin.json` configuration + `configuration.readOwn`）、[`chat`](references/Examples/chat/)、[`translator`](references/Examples/translator/)（多 entry）。SDK 源码在 [`sdk-v3`](references/Examples/sdk-v3/)（包名 `@qping/plugin-bus`）。创建或编辑前只读取与需求最相关的最小参考集合。
 
 创建模式下选择唯一的插件 ID 和名称，从完整目录结构开始生成。编辑模式下，先读取 Host 提供的
 `selectedPlugin`（ID、名称、类型和源码目录）并检查现有文件，只能修改该插件目录；保持插件 ID，

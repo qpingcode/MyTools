@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title data-i18n="[text]Plugin.Chat.Name" data-i18n-default-value="Chat"></title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="page">
+        <section class="panel">
+            <div class="label-row">
+                <div class="label" data-i18n="[text]Plugin.Chat.Name" data-i18n-default-value="Chat"></div>
+                <button id="newChatButton" class="new-chat-button" type="button"
+                        data-i18n="[text]Plugin.Chat.Detail.New" data-i18n-default-value="New chat"></button>
+            </div>
+            <div id="messages" class="messages empty"
+                 data-i18n="[text]Plugin.Chat.Detail.Empty" data-i18n-default-value="Ask MyTools anything"></div>
+            <div class="composer">
+                <div class="composer-row">
+                    <textarea id="promptInput" spellcheck="false"
+                              data-i18n="[placeholder]Plugin.Chat.Detail.InputPlaceholder"
+                              data-i18n-default-value="Type a message"></textarea>
+                    <button id="sendButton" class="send-button" type="button"
+                            data-i18n="[text]Plugin.Chat.Detail.Send" data-i18n-default-value="Send"></button>
+                    <button id="stopButton" class="stop-button" type="button" hidden
+                            data-i18n="[text]Plugin.Chat.Detail.Stop" data-i18n-default-value="Stop"></button>
+                </div>
+                <div class="model-row">
+                    <label for="modelSelect" data-i18n="[text]Plugin.Chat.Detail.Model" data-i18n-default-value="Model"></label>
+                    <select id="modelSelect" aria-label="Model"></select>
+                    <span id="modelProvider" class="provider"></span>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script src="main.js"></script>
+</body>
+</html>

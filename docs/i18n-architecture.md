@@ -112,7 +112,7 @@ MyTools Locale Service ──> Node RPC locale 上下文
 2. `builtin:{pluginId}`：内置 .NET 插件；复用宿主 `.resx`，key 使用 `Plugin.{PluginId}.*` 前缀。
 3. `plugin:{pluginId}`：Node/Web 插件；每个插件独立 JSON namespace。
 
-插件 ID 必须稳定且不可翻译。当前实际示例：`hello-search`、`deepseek-chat`、`deepseek-translator`（Node/Web 插件，kebab-case）；`DllInterfaceReader`（内置 .NET 插件，PascalCase）。
+插件 ID 必须稳定且不可翻译。当前实际示例：`hello-search`、`chat`、`deepseek-translator`（Node/Web 插件，kebab-case）；`DllInterfaceReader`（内置 .NET 插件，PascalCase）。
 
 ---
 
@@ -592,7 +592,7 @@ MyTools 维护两类共享资产：
 1. `plugin.json.i18n` 已定义；`NodePluginCatalog` 装载 catalog 与 locale JSON 合并。
 2. Node RPC（`initialize`/`search`/`invokeAction`/`detailEvent`/`detailCall`）与 WebView2 初始化消息携带 `locale`/`fallbackLocale`/`messages`；实现 `language-changed`。
 3. Node/JS SDK（`Examples/common/web-tool.ts`、`events.ts`、`i18n.ts`）：初始化 i18next、`defaultValue` 约束、HTML `data-i18n` 应用工具。
-4. `hello-search`、`deepseek-chat`、`deepseek-translator` 示例均为规范参考实现。
+4. `hello-search`、`chat`、`deepseek-translator` 示例均为规范参考实现。
 
 ### Phase 4：提取与 CI ⏳（待实现）
 

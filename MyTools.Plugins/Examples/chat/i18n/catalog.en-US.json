@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "scope": "plugin:chat",
+  "pluginId": "chat",
+  "sourceLocale": "en-US",
+  "entries": [
+    { "key": "Plugin.Chat.Name", "defaultValue": "Chat", "placeholders": [], "references": [] },
+    { "key": "Plugin.Chat.Detail.New", "defaultValue": "New chat", "placeholders": [], "references": [] },
+    { "key": "Plugin.Chat.Detail.Empty", "defaultValue": "Ask MyTools anything", "placeholders": [], "references": [] },
+    { "key": "Plugin.Chat.Detail.InputPlaceholder", "defaultValue": "Type a message", "placeholders": [], "references": [] },
+    { "key": "Plugin.Chat.Detail.Send", "defaultValue": "Send", "placeholders": [], "references": [] },
+    { "key": "Plugin.Chat.Detail.Stop", "defaultValue": "Stop", "placeholders": [], "references": [] },
+    { "key": "Plugin.Chat.Detail.Model", "defaultValue": "Model", "placeholders": [], "references": [] },
+    { "key": "Plugin.Chat.Detail.Streaming", "defaultValue": "…", "placeholders": [], "references": [] },
+    { "key": "Plugin.Chat.Detail.Cancelled", "defaultValue": "Response stopped", "placeholders": [], "references": [] },
+    { "key": "Plugin.Chat.Detail.TokenUsage", "defaultValue": "{{total}} tokens · input {{input}} · output {{output}}", "placeholders": ["total", "input", "output"], "references": [] }
+  ]
+}

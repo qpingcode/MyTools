@@ -1,0 +1,12 @@
+{
+  "Plugin.Chat.Name": "Chat",
+  "Plugin.Chat.Detail.New": "New chat",
+  "Plugin.Chat.Detail.Empty": "Ask MyTools anything",
+  "Plugin.Chat.Detail.InputPlaceholder": "Type a message",
+  "Plugin.Chat.Detail.Send": "Send",
+  "Plugin.Chat.Detail.Stop": "Stop",
+  "Plugin.Chat.Detail.Model": "Model",
+  "Plugin.Chat.Detail.Streaming": "…",
+  "Plugin.Chat.Detail.Cancelled": "Response stopped",
+  "Plugin.Chat.Detail.TokenUsage": "{{total}} tokens · input {{input}} · output {{output}}"
+}

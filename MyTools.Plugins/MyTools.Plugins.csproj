@@ -5,6 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <!-- Node plugin examples contain their own source tree and node_modules; only dist outputs below belong to this assembly. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);Examples\**</DefaultItemExcludes>
     <!-- This library uses WPF types but owns no XAML pages. Avoid passing the
          unmatched default **/*.xaml glob to the WPF markup compiler. -->
     <EnableDefaultPageItems>false</EnableDefaultPageItems>

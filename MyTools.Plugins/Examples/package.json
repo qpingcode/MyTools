@@ -4,7 +4,7 @@
   "private": true,
   "workspaces": [
     "sdk-v3",
-    "deepseek-chat",
+    "chat",
     "translator",
     "json-formatter",
     "xml-formatter",
@@ -22,7 +22,7 @@
   ],
   "scripts": {
     "clean": "npm run clean --workspaces --if-present",
-    "build": "npm run build -w @qping/plugin-bus && npm run build -w mytools-plugin-deepseek-chat && npm run build -w mytools-plugin-translator && npm run build -w mytools-plugin-json-formatter && npm run build -w mytools-plugin-xml-formatter && npm run build -w mytools-plugin-settings && npm run build -w mytools-plugin-calculator && npm run build -w mytools-plugin-uuid-generator && npm run build -w mytools-plugin-process-killer && npm run build -w mytools-plugin-command-runner && npm run build -w mytools-plugin-openpath && npm run build -w mytools-plugin-snippet && npm run build -w mytools-plugin-search-engine && npm run build -w mytools-plugin-plugin-search && npm run build -w mytools-plugin-browser-search && npm run build -w mytools-plugin-create-plugin",
-    "check": "npm run check -w @qping/plugin-bus && npm run check -w mytools-plugin-deepseek-chat && npm run check -w mytools-plugin-translator && npm run check -w mytools-plugin-json-formatter && npm run check -w mytools-plugin-xml-formatter && npm run check -w mytools-plugin-settings && npm run check -w mytools-plugin-calculator && npm run check -w mytools-plugin-uuid-generator && npm run check -w mytools-plugin-process-killer && npm run check -w mytools-plugin-command-runner && npm run check -w mytools-plugin-openpath && npm run check -w mytools-plugin-snippet && npm run check -w mytools-plugin-search-engine && npm run check -w mytools-plugin-plugin-search && npm run check -w mytools-plugin-browser-search && npm run check -w mytools-plugin-create-plugin"
+    "build": "npm run build -w @qping/plugin-bus && npm run build -w mytools-plugin-chat && npm run build -w mytools-plugin-translator && npm run build -w mytools-plugin-json-formatter && npm run build -w mytools-plugin-xml-formatter && npm run build -w mytools-plugin-settings && npm run build -w mytools-plugin-calculator && npm run build -w mytools-plugin-uuid-generator && npm run build -w mytools-plugin-process-killer && npm run build -w mytools-plugin-command-runner && npm run build -w mytools-plugin-openpath && npm run build -w mytools-plugin-snippet && npm run build -w mytools-plugin-search-engine && npm run build -w mytools-plugin-plugin-search && npm run build -w mytools-plugin-browser-search && npm run build -w mytools-plugin-create-plugin",
+    "check": "npm run check -w @qping/plugin-bus && npm run check -w mytools-plugin-chat && npm run check -w mytools-plugin-translator && npm run check -w mytools-plugin-json-formatter && npm run check -w mytools-plugin-xml-formatter && npm run check -w mytools-plugin-settings && npm run check -w mytools-plugin-calculator && npm run check -w mytools-plugin-uuid-generator && npm run check -w mytools-plugin-process-killer && npm run check -w mytools-plugin-command-runner && npm run check -w mytools-plugin-openpath && npm run check -w mytools-plugin-snippet && npm run check -w mytools-plugin-search-engine && npm run check -w mytools-plugin-plugin-search && npm run check -w mytools-plugin-browser-search && npm run check -w mytools-plugin-create-plugin"
   }
 }

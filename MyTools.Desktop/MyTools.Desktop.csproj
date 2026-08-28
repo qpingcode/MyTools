@@ -50,7 +50,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="..\.github\skills\create-plugin\SKILL.md" Link="skills\create-plugin\SKILL.md">
+      <Content Include="..\.github\skills\**\*" Link="skills\%(RecursiveDir)%(Filename)%(Extension)">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </Content>

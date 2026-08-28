@@ -61,7 +61,7 @@ MyTools 当前只有一套硬编码的深色界面：WPF 窗口里散落着 `#1e
 
 ### 3.2 Web 插件侧
 
-1. 示例插件 `deepseek-chat/src/web/style.css` 中 `body { background:#1e1e1e; color:#ffffff }` 等全部硬编码深色。
+1. 示例插件 `chat/src/web/style.css` 中 `body { background:#1e1e1e; color:#ffffff }` 等全部硬编码深色。
 2. WebView2 容器 `NodePluginDetailView` 外层 `Border` 背景为固定深色 `#292929`。
 3. **首帧闪烁根因**：HTML 加载后，浏览器先按 CSS 默认值（深色）渲染；而宿主的 `initialize-detail` 消息（携带主题上下文）要等 `NavigationCompleted` 之后才通过 `PostWebMessageAsJson` 到达。两者之间存在一段「HTML 已渲染、主题消息未到」的窗口，导致白色主题下出现先黑后白、或黑夜主题下从默认白底短暂闪烁。
 4. SDK `MyTools.Plugins/Examples/common/web-tool.ts` 的 `dispatch` 当前只识别 `tool-response`、`tool-event`、`language-changed` 三类消息，没有 `theme-changed`。
@@ -631,7 +631,7 @@ body { background: var(--mt-surface-bg, #1e1e1e); color: var(--mt-text, #ffffff)
 
 1. **始终为 `var()` 提供 fallback**（如 `var(--mt-surface-bg, #1e1e1e)`），这样即便宿主引导脚本未注入（如脱离宿主单独调试），插件也能呈现合理外观。
 2. fallback 值建议取深色，与默认主题一致。
-3. 三个示例插件（`hello-search`、`deepseek-chat`、`deepseek-translator`）需同步改造为参考实现。
+3. 三个示例插件（`hello-search`、`chat`、`deepseek-translator`）需同步改造为参考实现。
 
 ---
 
@@ -675,7 +675,7 @@ body { background: var(--mt-surface-bg, #1e1e1e); color: var(--mt-text, #ffffff)
 ### Phase 5：SDK 与示例插件
 
 1. `events.ts` 增加 `themeChanged`；`web-tool.ts` 增加 `theme-changed` 分支与 `mytoolsTheme` 助手。
-2. 把 `hello-search`、`deepseek-chat`、`deepseek-translator` 的 CSS 改为 `var(--mt-..., fallback)`。
+2. 把 `hello-search`、`chat`、`deepseek-translator` 的 CSS 改为 `var(--mt-..., fallback)`。
 3. 验证三个示例插件在 Light/Dark 下均正确，且脱离宿主单独打开时 fallback 生效。
 
 ### Phase 6：Node RPC 主题透传
