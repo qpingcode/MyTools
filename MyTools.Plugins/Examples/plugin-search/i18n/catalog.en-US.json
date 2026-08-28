@@ -9,40 +9,35 @@
       "defaultValue": "Plugin Search",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "插件搜索" },
-      "sourceHash": "sha256:5c5c152f86bc54a0f66198650aa66ad5efcec969d4e842a54ad681a89ab1547b"
+      "existingTranslations": { "zh-CN": "插件搜索" }
     },
     {
       "key": "Plugin.PluginSearch.Description",
       "defaultValue": "Search installed plugins by name, hotkey, or alias",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "按名称、热键或别名搜索已安装的插件" },
-      "sourceHash": "sha256:88d52306e7af9c85ba1e1b2b7d488cb7f04f353c78d5cf0bd57b7dfb12488342"
+      "existingTranslations": { "zh-CN": "按名称、热键或别名搜索已安装的插件" }
     },
     {
       "key": "Plugin.PluginSearch.Result.Subtitle",
       "defaultValue": "Hotkey: {{hotKey}}    Alias: {{alias}}",
       "placeholders": ["hotKey", "alias"],
       "references": [],
-      "existingTranslations": { "zh-CN": "热键：{{hotKey}}    别名：{{alias}}" },
-      "sourceHash": "sha256:35244b918497b5e146895783e6199851fcfacdb7f390a83edfcec445adf17f85"
+      "existingTranslations": { "zh-CN": "热键：{{hotKey}}    别名：{{alias}}" }
     },
     {
       "key": "Plugin.PluginSearch.Action.Open",
       "defaultValue": "Open Plugin",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "打开插件" },
-      "sourceHash": "sha256:950e4788453bf6fe4634881c848ebb311e03cef3f04225b93fb25182c367902c"
+      "existingTranslations": { "zh-CN": "打开插件" }
     },
     {
       "key": "Plugin.PluginSearch.Action.OpenDescription",
       "defaultValue": "Open the plugin window",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "打开插件窗口" },
-      "sourceHash": "sha256:d46e913554fb7dd93178e27e50d173e0f26cef7b12163489149f96739344c455"
+      "existingTranslations": { "zh-CN": "打开插件窗口" }
     }
   ]
 }

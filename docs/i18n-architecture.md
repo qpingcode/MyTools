@@ -430,8 +430,7 @@ document.querySelector("#refresh").textContent = i18next.t(
       ],
       "existingTranslations": {
         "zh-CN": "请求 Node 运行时刷新"
-      },
-      "sourceHash": "sha256:..."
+      }
     }
   ]
 }
@@ -439,7 +438,7 @@ document.querySelector("#refresh").textContent = i18next.t(
 
 字段要求：
 
-1. `key`、`defaultValue`、`sourceHash`、`references` 必填。
+1. `key`、`defaultValue`、`references` 必填。
 2. `filePath` 相对插件根目录或仓库根目录，不能包含用户机器绝对路径。
 3. 同时保留 `pluginId`（稳定插件标识）与 `scope`（命名空间，如 `plugin:hello-search` / `host`）：`pluginId` 用于缓存键、版本、术语归属；`scope` 用于翻译查找与 key 隔离。两者都必填（宿主文本 `pluginId` 留空、`scope` 为 `host`）。
 4. `symbol` 是类/方法/函数/DOM selector 等可读定位信息；无法识别时使用空字符串。
@@ -481,7 +480,7 @@ mytoolsI18n.t("Plugin.Example.Action.OpenFile", {
 
 ## 11. 自动翻译、术语与质量控制（待实现）
 
-> 本节描述的翻译协调器、AI 缓存、术语表与翻译记忆均**尚未实现**。当前阶段宿主只依赖 `.resx` 人工翻译与插件自带 JSON 翻译，缺失语言回退到英文 fallback。本节作为后续迭代的设计基线。
+> 本节描述的翻译协调器、AI 缓存、术语表与翻译记忆均**尚未实现**。当前阶段宿主只依赖 `.resx` 人工翻译与插件自带 JSON 翻译，缺失语言回退到英文 fallback，catalog 暂不生成 `sourceHash`。本节作为后续迭代的设计基线；实现 AI 翻译时再引入 `sourceHash`。
 
 ### 11.1 触发时机
 

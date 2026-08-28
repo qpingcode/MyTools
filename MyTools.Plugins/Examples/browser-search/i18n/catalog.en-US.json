@@ -11,8 +11,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "书签与历史记录"
-      },
-      "sourceHash": "sha256:f711fd17dde71f487d475391b91abe671fe5e47cdbbd53465d53af3221f85b0c"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Description",
@@ -21,8 +20,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "搜索 Chrome、Edge 和 Firefox 的书签与浏览历史"
-      },
-      "sourceHash": "sha256:a9452d7baa654d702e169a5b0b9e4dc3307dbb77ac7e03ec1b86953271640d1a"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Setting.ChromeEnabled",
@@ -31,8 +29,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "搜索 Chrome"
-      },
-      "sourceHash": "sha256:0524ce1b08c2821537e2e826f8dcf3ae6e12aa28a1b66485d99ea2eb06373b51"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Setting.ChromeEnabled.Description",
@@ -41,8 +38,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "包含 Google Chrome 的书签和历史记录。"
-      },
-      "sourceHash": "sha256:c0f6ed79000f7e5ab2f84df2c7d82ce2e055442df6a8527561573521574e635b"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Setting.EdgeEnabled",
@@ -51,8 +47,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "搜索 Edge"
-      },
-      "sourceHash": "sha256:4fece5761e72d0851e27aab64d76d7e9d51c9cadde2a934ae4370f6778ff8046"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Setting.EdgeEnabled.Description",
@@ -61,8 +56,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "包含 Microsoft Edge 的书签和历史记录。"
-      },
-      "sourceHash": "sha256:baaa105937b1ce8ee49bd0631543ffcf0c0a7bb71c091e67d2e56c8d4c2e3c03"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Setting.FirefoxEnabled",
@@ -71,8 +65,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "搜索 Firefox"
-      },
-      "sourceHash": "sha256:caaa0bf749494e69a72fd142b5b7612117492ff39f3633fd2966d83b3936923b"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Setting.FirefoxEnabled.Description",
@@ -81,8 +74,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "包含 Firefox 的书签和历史记录。"
-      },
-      "sourceHash": "sha256:29e9c0a56cc0a8913e82fed3c9366dba15dfd84ad5ba93f9bb22c3bf66a164ce"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Setting.SearchBookmarks",
@@ -91,8 +83,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "搜索书签"
-      },
-      "sourceHash": "sha256:f7e62e8448fcc3168bef3b0591dc738d45588af677103c60a6e48d51067cd0eb"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Setting.SearchBookmarks.Description",
@@ -101,8 +92,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "在搜索结果中包含浏览器书签。"
-      },
-      "sourceHash": "sha256:8ed0e64162bdc951b3426626a69c06ee9c13a8cf9d128051aee5f465d68e4ef5"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Setting.SearchHistory",
@@ -111,8 +101,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "搜索历史记录"
-      },
-      "sourceHash": "sha256:df165949f5ddf03d1facfa645a69735eb8fc2a0d8cfd4eb7462e9ef494e16cfa"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Setting.SearchHistory.Description",
@@ -121,8 +110,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "在搜索结果中包含浏览历史记录。"
-      },
-      "sourceHash": "sha256:dfad65251755cbc5a97a1230cb3db840568d2cd4a7cf1050f9e1d5b37ec71746"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Setting.ChromeUserDataDir",
@@ -131,8 +119,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "Chrome 用户数据目录"
-      },
-      "sourceHash": "sha256:62e198649359e1ede22524612a0eec24aeacf86c6ee915745211c81becc82d87"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Setting.ChromeUserDataDir.Description",
@@ -141,8 +128,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "留空则使用默认的 Chrome User Data 目录。可指向 User Data 以扫描所有用户，或指向某个配置目录（如 Default、Profile 1）。"
-      },
-      "sourceHash": "sha256:ed255587fdcb8f5bc5ed8f0f2d575e8e2328a673f355e5da05bb6e947d313434"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Setting.ChromeProfile",
@@ -151,8 +137,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "Chrome 用户"
-      },
-      "sourceHash": "sha256:d5381208ebc2a44820a80e56bc6c2b4e2c3b156d0cbb86ef89abf6676e959d37"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Setting.ChromeProfile.Description",
@@ -161,8 +146,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "可选的配置文件夹或用户名（Default、Profile 1，或 Chrome 里显示的名称）。留空则搜索该用户数据目录下的全部配置。"
-      },
-      "sourceHash": "sha256:da2106babaed732d5597b5bbcea68e6c6f28febea5697d1ca2b89acb69a48fef"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Setting.EdgeUserDataDir",
@@ -171,8 +155,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "Edge 用户数据目录"
-      },
-      "sourceHash": "sha256:dde0cfa9750077401d303a3a66d465ba35c684d34586ce1ce84d00a936e90f5f"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Setting.EdgeUserDataDir.Description",
@@ -181,8 +164,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "留空则使用默认的 Edge User Data 目录。可指向 User Data 以扫描所有用户，或指向某个配置目录（如 Default、Profile 1）。"
-      },
-      "sourceHash": "sha256:659e38715deffe3ab61caf974367459289672662f9ee08a20612f4a64f84936f"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Setting.EdgeProfile",
@@ -191,8 +173,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "Edge 用户"
-      },
-      "sourceHash": "sha256:1fcc7156065df256deb3381923620234367a44e6c33b6add806d5e6a2584c9ff"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Setting.EdgeProfile.Description",
@@ -201,8 +182,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "可选的配置文件夹或用户名（Default、Profile 1，或 Edge 里显示的名称）。留空则搜索该用户数据目录下的全部配置。"
-      },
-      "sourceHash": "sha256:f2d33225950ef97ecd6bf4f784b10332a243a3261200611ad08f9a0e32325e22"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Setting.FirefoxProfilesDir",
@@ -211,8 +191,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "Firefox 配置目录"
-      },
-      "sourceHash": "sha256:7635c58451ca3bfbc80ecb19345c20ede600d2edc1d4b735589f123595414300"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Setting.FirefoxProfilesDir.Description",
@@ -221,8 +200,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "留空则使用默认 Firefox 目录。可指向 Firefox 目录、Profiles 目录，或包含 places.sqlite 的单个配置文件夹。"
-      },
-      "sourceHash": "sha256:9f9c6c7beabdc87250412525564b394f257fd35e50c8a1b1280615b01efddca8"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Setting.FirefoxProfile",
@@ -231,8 +209,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "Firefox 配置"
-      },
-      "sourceHash": "sha256:f6996d49a0bb7c2d8c66f3df9c191b32b50114749c11d0f5dc1c4d973fcba70b"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Setting.FirefoxProfile.Description",
@@ -241,8 +218,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "可选的 Firefox 配置名称或文件夹。留空则搜索全部配置。"
-      },
-      "sourceHash": "sha256:b0d4b2aa48814b74f5035cada66436cbe9ce618438a50edce4c688898545a7d5"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Browser.Chrome",
@@ -251,8 +227,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "Chrome"
-      },
-      "sourceHash": "sha256:c4ef2ec214f90032f39dddfbfe51add7ef2c79da14fb2ccf14cb4c9ad15e5c9a"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Browser.Edge",
@@ -261,8 +236,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "Edge"
-      },
-      "sourceHash": "sha256:0f82fe727756eb9a80e0e95581f2ef26aeaffb0bf903dcf8106d575878960fb6"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Browser.Firefox",
@@ -271,8 +245,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "Firefox"
-      },
-      "sourceHash": "sha256:2f26233595d165e6868c5bb9e5e835506039e72c61a36a1bafb0827abfe746a5"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Kind.Bookmark",
@@ -281,8 +254,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "书签"
-      },
-      "sourceHash": "sha256:1bac4007880ba12995a974e315751b4f5e70829c753ec57326f7101772abe5a6"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Kind.History",
@@ -291,8 +263,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "历史"
-      },
-      "sourceHash": "sha256:0e769600933790607b2a13b33ddfade0fa17810eb62c3b28ee23e59516516491"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Result.Subtitle",
@@ -305,8 +276,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "{{browser}} · {{kind}} · {{location}}"
-      },
-      "sourceHash": "sha256:1941a8011411035c6f9cf30bc1974185c36ed5b7bafdba64148073c6c20fbfe4"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Action.Open",
@@ -315,8 +285,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "在浏览器中打开"
-      },
-      "sourceHash": "sha256:32f8dcaafb6ccafc0f9acfebc5c8131a1a5072f2e5212a0c52aba80ce8255cac"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Action.OpenDescription",
@@ -325,8 +294,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "用默认浏览器打开此网址"
-      },
-      "sourceHash": "sha256:fca41fd09de7708071866bcaa51cee18d660e240369c88ebe5cfdc0dd4dbcece"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Action.CopyUrl",
@@ -335,8 +303,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "复制网址"
-      },
-      "sourceHash": "sha256:b26d1037f1c2da31a0296d915982f12049f91bfedb998b105ce967b73a796699"
+      }
     },
     {
       "key": "Plugin.BrowserSearch.Action.CopyUrlDescription",
@@ -345,8 +312,7 @@
       "references": [],
       "existingTranslations": {
         "zh-CN": "将此网址复制到剪贴板"
-      },
-      "sourceHash": "sha256:70574bf057d54fdb6b595495c2980e4855cbc7c40e8045e6fd4a0b8e1fb76df3"
+      }
     }
   ]
 }

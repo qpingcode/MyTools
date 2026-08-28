@@ -19,8 +19,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "翻译"
-      },
-      "sourceHash": "sha256:e6fe8ee281de7e498bbc76a9a7a27d18b4b21b77ea20658fa692dd1a5debe64f"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Result.Title",
@@ -39,8 +38,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "翻译：{{text}}"
-      },
-      "sourceHash": "sha256:eec798718387001745000167854b005adc8357637e3d8c83cae91fdf44b48a23"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Result.Subtitle",
@@ -57,8 +55,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "使用 DeepSeek 翻译句子或单词，并显示国际音标"
-      },
-      "sourceHash": "sha256:44f18edd2d5be74f81fe83b92810c803fbc3097571b8f7afd138931613777387"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Action.Open.Title",
@@ -75,8 +72,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "打开翻译器"
-      },
-      "sourceHash": "sha256:516a35fd1532c1f56ee32e1976186d52b402271c3a80d313a98cb21996345591"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Action.Open.Description",
@@ -93,8 +89,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "打开翻译详情页"
-      },
-      "sourceHash": "sha256:28f86dc06461d912b309ece777d6401e299b25771f84ea4ff01d03f472929f46"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Action.Open.Success",
@@ -111,8 +106,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "已打开翻译器"
-      },
-      "sourceHash": "sha256:6a0b93a387d43ad2e61fc7a6f54764f1ea6d2ac7947cf02c3046895390da023b"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Error.MissingApiKey",
@@ -129,8 +123,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "缺少 DEEPSEEK_API_KEY 环境变量。"
-      },
-      "sourceHash": "sha256:34a96ff8efbd9188eb5df2b0fa6ad6179abe22bbb63db42a2a7164726a697b23"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Error.CardGenerationFailed",
@@ -150,8 +143,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "DeepSeek 卡片生成失败（{{status}}）：{{body}}"
-      },
-      "sourceHash": "sha256:6ccf96a41e4e187130022e4380816f471bc9a9dfa5adc8002c4b277593a761b3"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Error.EmptyCardContent",
@@ -168,8 +160,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "DeepSeek 返回了空的 Anki 卡片内容。"
-      },
-      "sourceHash": "sha256:9b88c116bce4a19f9789b165cdb3249a887d218788ca1737cc0ecc9025d6d2fe"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Error.NonJsonCardContent",
@@ -186,8 +177,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "DeepSeek 返回的 Anki 卡片内容不是 JSON。"
-      },
-      "sourceHash": "sha256:3ec0cb818b889b04d2bec78499b65bc53af757c35c737e30f155b1f32f4c81ae"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Error.NoCardsReturned",
@@ -204,8 +194,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "DeepSeek 没有返回 Anki 卡片。"
-      },
-      "sourceHash": "sha256:77709fa444921c0cd3bcf14fbaa9c5ba83981865a8360d29869f7e1ed1f36ff1"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Error.TranslationRequired",
@@ -222,8 +211,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "保存前必须先翻译句子。"
-      },
-      "sourceHash": "sha256:b7bf009cb91cdc2b16bb113123179f0e59d96fd3f8d01d4572c49a9a81ba642c"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Error.InvalidFavorite",
@@ -240,8 +228,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "只能保存有效的英文单词。"
-      },
-      "sourceHash": "sha256:dec6feed1700ad107e479cd30c0a9b70d795e405eb77d17416265e82b41ac25d"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Error.TranslateBeforeSaving",
@@ -258,8 +245,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "请先翻译句子再保存。"
-      },
-      "sourceHash": "sha256:27864146d967fbe08e5a8a3509ddb3b51d37aa29f8e54a386a8f1a4aa1c2d7d8"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Error.ApiFailed",
@@ -279,8 +265,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "DeepSeek API 请求失败（{{status}}）：{{body}}"
-      },
-      "sourceHash": "sha256:e27125f0a824e6c0c802c490cef506d421a17f081694a8331d10e4401e0df291"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Error.EmptyTranslation",
@@ -297,8 +282,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "DeepSeek API 返回了空翻译。"
-      },
-      "sourceHash": "sha256:0fd86be4bd6bc253e72dea7a5cd32bdaf7a98b3d6455bd98f880368409aa02be"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Error.NonJson",
@@ -315,8 +299,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "DeepSeek API 返回的内容不是 JSON。"
-      },
-      "sourceHash": "sha256:721d83ed095aaa37e24d432ef0021589d4bc235043da9265f1d097d73a0b0491"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Input",
@@ -333,8 +316,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "输入"
-      },
-      "sourceHash": "sha256:36ecb4f8669133ce744c21982ba4abe2ecd7086e1dc2226ccd6f266f3a5005f8"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.History",
@@ -351,8 +333,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "翻译历史"
-      },
-      "sourceHash": "sha256:3ad4a3eea19a532c45894d1bd1970d9ed49b1cebf735b3f1127d2521fd64d467"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.FavoriteList",
@@ -369,8 +350,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "收藏列表"
-      },
-      "sourceHash": "sha256:750032abc4840cfd48df8734a43c13c656e8b33cff3ff7afdd86c44a84e5b975"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.InputPlaceholder",
@@ -387,8 +367,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "输入要翻译的文本"
-      },
-      "sourceHash": "sha256:57b64bebea883d51a6e5fa318d04e284551ceb0c888e1f7c9fe6cf09bd958dbf"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Back",
@@ -405,8 +384,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "返回翻译"
-      },
-      "sourceHash": "sha256:9092338eb80033d8d082daab8ec5b7a3fc3ba0fc1ad8f08d49b59dd21d596387"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Translation",
@@ -423,8 +401,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "翻译"
-      },
-      "sourceHash": "sha256:6fbd766b1a71cc4d296d92f84976a1fd5f5a750ae0f0cc929db2c6458d3dc9ea"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Empty",
@@ -441,8 +418,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "翻译结果将显示在这里"
-      },
-      "sourceHash": "sha256:5ba183300c2f67fccfc899c2d0eab41758531b9a9327c5814bce4d22c0e3a836"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.PleaseWait",
@@ -459,8 +435,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "请稍候"
-      },
-      "sourceHash": "sha256:650cfe3a448fe06bf71303a9a3f115546a3f699dc9a3ce28b8d1e4b4cd5cb117"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.PressEnter",
@@ -477,8 +452,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "按 Ctrl+Enter 翻译"
-      },
-      "sourceHash": "sha256:adba4fedca203dac840c4388c1e0b97c9a6ea87b6ed46289b717f7efe99eae30"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Copied",
@@ -495,8 +469,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "已复制"
-      },
-      "sourceHash": "sha256:8d525e5f158b9afe05f3122af363ac67763bdc4e1395b46597b320c289766ce3"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Action.Copy",
@@ -513,8 +486,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "复制"
-      },
-      "sourceHash": "sha256:e21f935f11d7e966dbbae78da9daa378fe8142a14e7c0cd7434183005faa6c5c"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Action.CopyDescription",
@@ -531,8 +503,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "把译文复制到剪贴板"
-      },
-      "sourceHash": "sha256:c5cb751988b7b6cb15e5aad72b202b76943ffc1ea84494700515d2aa6d5d11f6"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Source.Cache",
@@ -549,8 +520,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "来自缓存"
-      },
-      "sourceHash": "sha256:50fc39638faacb0ef0b551060f30a094c9dac18b30d0f449fbda00efc3abac85"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Source.Api",
@@ -567,8 +537,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "来自 API"
-      },
-      "sourceHash": "sha256:0d1359fec632aaced65bcba1cdab2ae0dfaba128aab4cde6fa0cd2ab33868ebe"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Source.ApiTokens",
@@ -587,8 +556,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "来自 API · {{count}} 个令牌"
-      },
-      "sourceHash": "sha256:80b6dbf8a541d52360b22f2c2ebaa5098e208f4f082dc97c992aa76d896c0211"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Tokens.Total",
@@ -607,8 +575,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "总计：{{count}}"
-      },
-      "sourceHash": "sha256:4e04f51a9623120aa24e316053bbe51a978783b464a99ce3136a22e4dbe9d144"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Tokens.Input",
@@ -627,8 +594,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "输入：{{count}}"
-      },
-      "sourceHash": "sha256:9ba8562e5371323fd2c2828750c188205331211fa2dee36eec0b86fa9f75523c"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Tokens.Output",
@@ -647,8 +613,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "输出：{{count}}"
-      },
-      "sourceHash": "sha256:856d39609e7730d3712675f671c7a0066a59bcfaf4a71309f67bc44cc18e1c46"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Tokens.CachedInput",
@@ -667,8 +632,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "缓存输入：{{count}}"
-      },
-      "sourceHash": "sha256:5004c0121ab42dc7a31a2f4db7efd20d159fc542b3dcb647d6f93a0c6c58bbda"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Favorite.Remove",
@@ -685,8 +649,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "取消收藏"
-      },
-      "sourceHash": "sha256:18720329ca307c792fee6c6c1f707145c981d07c2b5a1b7127732ccd6e7203eb"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Favorite.Save",
@@ -703,8 +666,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "添加到收藏"
-      },
-      "sourceHash": "sha256:d99b44623137610de8119f9a5d627c9c8948eff90f9c7ff259909093e98b2908"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Favorite.Removing",
@@ -721,8 +683,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "正在取消收藏"
-      },
-      "sourceHash": "sha256:3a36204b3ef0e4a4ec1e086b5001c8908dfd18535c532bff473d285d16f4f5b0"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Favorite.Saving",
@@ -739,8 +700,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "正在添加到收藏"
-      },
-      "sourceHash": "sha256:5a3a82261646951ed22c0ebb047a6a1cc2ffc93b99ede43ddaff8f4b039f7d19"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Loading",
@@ -757,8 +717,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "正在加载 "
-      },
-      "sourceHash": "sha256:5077a2b6b7cc9d06c67f99302cedbf20b01d1dfda9577a802ad2f625e6483fb1"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.InvalidWord",
@@ -775,8 +734,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "这不是有效的英文单词。"
-      },
-      "sourceHash": "sha256:5027f805110472e029856735a4db50e28f8e49cb0e4093e259eb565df664561d"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.NoDefinition",
@@ -793,8 +751,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "未返回英文释义"
-      },
-      "sourceHash": "sha256:7dbbc8f80f6060052ceaa2fd364dc8f7fad5333c8896903152df01de2e65d17d"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Collapse",
@@ -811,8 +768,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "收起"
-      },
-      "sourceHash": "sha256:be6eb1fc3b05bf9dceebad2eac7841d1b2f40bda9aa2da34df8ca22af02bc3ed"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Expand",
@@ -829,8 +785,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "展开"
-      },
-      "sourceHash": "sha256:07548c2c6511d4d1780564de8a237a1966cf9c99a97cf5c8a185e6c2aeacff09"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.HistoryTitle",
@@ -847,8 +802,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "历史记录"
-      },
-      "sourceHash": "sha256:0e769600933790607b2a13b33ddfade0fa17810eb62c3b28ee23e59516516491"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.NoHistory",
@@ -865,8 +819,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "暂无翻译历史"
-      },
-      "sourceHash": "sha256:fddafc0f271d3bc57b66a840c02e314629ea90d72cd3908c1f38f5ba575e738b"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.FavoritesTitle",
@@ -883,8 +836,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "收藏"
-      },
-      "sourceHash": "sha256:7a1f2a83aca9a0819f244d5b4a7a0e7f6b779eb709dd4744136b22e724dbb10b"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.NoFavorites",
@@ -901,8 +853,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "暂无收藏项目"
-      },
-      "sourceHash": "sha256:f1f9a03f5b7a5c876649bc4e8fc37f9edadb66abda8506e89f96449e7b372fec"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.TranslateAgain",
@@ -919,8 +870,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "重新翻译"
-      },
-      "sourceHash": "sha256:48f09dffd992d259f1a759afd3631f7611995b7ecf16f699e722dcda4adcdc0d"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.InputType.Word",
@@ -937,8 +887,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "单词"
-      },
-      "sourceHash": "sha256:3a2860ece5a4ee0b48b41ee96dd8054cf9bc6f113249ec601478b2582d72ead4"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.InputType.Text",
@@ -955,8 +904,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "文本"
-      },
-      "sourceHash": "sha256:71988c4d8e0803ba4519f0b2864c1331c14a1890bf8694e251379177bfedb5c3"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.ErrorStatus",
@@ -973,8 +921,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "错误"
-      },
-      "sourceHash": "sha256:54a0e8c17ebb21a11f8a25b8042786ef7efe52441e6cc87e92c67e0c4c0c6e78"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.TranslationFailed",
@@ -991,8 +938,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "翻译失败"
-      },
-      "sourceHash": "sha256:03709106859035ec3f0fc8192ca3837d5ea03e214c1b73af49aef832b02d9ea2"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.NoTranslation",
@@ -1009,8 +955,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "未返回翻译结果"
-      },
-      "sourceHash": "sha256:77ef6d4df41215ff9094b1eebd5d6d82dff6ec5a0f238b9cb7b5b0375c85cf2e"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Mode.Realtime",
@@ -1027,8 +972,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "实时模式"
-      },
-      "sourceHash": "sha256:21c778b638e45e027ed4a49209cc981819c23bf8598140f7ba701fa49e797e86"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Mode.Enter",
@@ -1045,8 +989,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "手动模式"
-      },
-      "sourceHash": "sha256:ac34e64e7b164c351da06d3531ffb5670f956b65a181bb55f27d2c554f45e064"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Mode.RealtimeTip",
@@ -1063,8 +1006,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "实时模式"
-      },
-      "sourceHash": "sha256:d19b85887cb324030291cc812010b494928a8a319537fbe05ba460f8f8681a9c"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Mode.EnterTip",
@@ -1081,8 +1023,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "手动模式。按 Ctrl+Enter 翻译。"
-      },
-      "sourceHash": "sha256:054d85141f560756ac458fb28a39d75f13739a1c69c2aba30d6bcce0d29991c4"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.LoadingHistory",
@@ -1099,8 +1040,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "正在加载历史记录"
-      },
-      "sourceHash": "sha256:f6c8ca7e5d515851d4cea92326b64bbc29f8347b859d655536a199731c70ee61"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.LoadingFavorites",
@@ -1117,8 +1057,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "正在加载收藏"
-      },
-      "sourceHash": "sha256:53208734357c4f2792ccf7e4582cc279d663131bde56c49ccd8e7553e26b2097"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Name",
@@ -1135,8 +1074,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "Anki 卡片"
-      },
-      "sourceHash": "sha256:676f45fe1eb88c8bf2e71c2f298c054da12de9a7b20a6bdd26d1f14a36d4f11a"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Result.Subtitle",
@@ -1153,8 +1091,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "使用 FSRS 调度复习生成的卡片"
-      },
-      "sourceHash": "sha256:414c8d3592f2fe6bf5cfc0ba8a6414eb1824766cfbde6ad1d2dcfadcb242829f"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Action.Review.Title",
@@ -1171,8 +1108,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "复习卡片"
-      },
-      "sourceHash": "sha256:78ee94763968c33b9485e87b8544193efbf52467a7e80880800a369053cad12f"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Action.Review.Description",
@@ -1189,8 +1125,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "打开 Anki 卡片复习页"
-      },
-      "sourceHash": "sha256:a571db8d43735f21152cde7ee9a539c4c30f7a0e7ae547c5cdeb95d2f1a93950"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Action.Review.Success",
@@ -1207,8 +1142,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "已打开 Anki 卡片"
-      },
-      "sourceHash": "sha256:ea3720d7eca8c494b4487b83b2ea10e70777f4cb1636f524a15cfa58660e79b2"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Error.CardNotFound",
@@ -1225,8 +1159,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "未找到卡片。"
-      },
-      "sourceHash": "sha256:11c86715640ec9195c0d4a29c701178090db3a01092923a2bf7d5a7d1ef72976"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Error.InvalidBasicCard",
@@ -1243,8 +1176,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "基础卡片必须包含来源、正面和背面。"
-      },
-      "sourceHash": "sha256:13ae270ee6c866dd3d0d3799a95781de4d7b738e50df3cf6f6085f4fe2f81822"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Error.InvalidChoiceCard",
@@ -1261,8 +1193,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "选择卡片必须包含来源、正面、背面、答案，以及至少两个且包含答案的选项。"
-      },
-      "sourceHash": "sha256:efa9d72d51df042eb23d401faa4b22e6edcd6595a85781a090d8326c361cd802"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Error.InvalidRating",
@@ -1279,8 +1210,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "无效的复习评分。"
-      },
-      "sourceHash": "sha256:31586fd60fc7ce9e03291dd24acc27bcf533016d1b6049265e70ad57f87abf2d"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.BackToReview",
@@ -1297,8 +1227,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "返回复习"
-      },
-      "sourceHash": "sha256:3945f0a53536602b0feb012007a2b5c3877a5d73c519d2cdf9408774fa2291fc"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.BrowseAll",
@@ -1315,8 +1244,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "浏览全部卡片"
-      },
-      "sourceHash": "sha256:2ffa4e330844660c22d0b74aad0b7ddde60b15bceb4056509253eded26a4ad98"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Label",
@@ -1333,8 +1261,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "Anki 卡片"
-      },
-      "sourceHash": "sha256:622529b5f163f55fcf3e2c7b855c9f7c95ca54e4e0b7528ae883456aea965abe"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.InitialSummary",
@@ -1351,8 +1278,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "0 张待复习"
-      },
-      "sourceHash": "sha256:30035eb3979ad44b6525e554ee39f05fd1e72652f5c10bd0700fd222e973b6c4"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Loading",
@@ -1369,8 +1295,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "正在加载卡片"
-      },
-      "sourceHash": "sha256:ca4d769d1b90f3d825843b6ae283fd87378f5baf751422cd699e0bf1de9605d1"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Summary",
@@ -1390,8 +1315,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "{{due}} 张待复习 · 共 {{total}} 张"
-      },
-      "sourceHash": "sha256:ec23efb396eccffff6f9f113bd0970902a8201a95ad4bdd594bdf88bef8d8891"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Type.Original",
@@ -1408,8 +1332,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "原始卡片"
-      },
-      "sourceHash": "sha256:88d759ea02cef4b82885c6c620473162757c75522805707c20e2be76a40a2825"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Type.ChineseToEnglish",
@@ -1426,8 +1349,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "中文选英文"
-      },
-      "sourceHash": "sha256:865828f0fc3eaee64d52994908916731f6ce47aba4918225e29168f85cb05d24"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Type.EnglishToChinese",
@@ -1444,8 +1366,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "英文选中文"
-      },
-      "sourceHash": "sha256:91dba69d51c0bdc59f6348daa24d539eee27b4eb871c831ca2e92ef7b0b3f8f4"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.LoadFailed",
@@ -1462,8 +1383,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "加载卡片失败"
-      },
-      "sourceHash": "sha256:7aa0f2a8d91b2ab4d2e3306b0302e792f7bf1fda7d1141b5da2ec9fc6fc0adfe"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.NoDueCards",
@@ -1480,8 +1400,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "当前没有待复习的卡片。收藏单词后会自动生成 Anki 卡片。"
-      },
-      "sourceHash": "sha256:20805c666a6bb7af3f34caf5873f3c01c899a5e93891df57e67568b74ae0a560"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.ShowAnswer",
@@ -1498,8 +1417,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "显示答案"
-      },
-      "sourceHash": "sha256:b3f97e40b87a2ff5e04e8a44711bb81d716e9d024a2534eb695a8db1b3c1ccba"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.NoCards",
@@ -1516,8 +1434,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "尚未生成卡片。"
-      },
-      "sourceHash": "sha256:250d6b4862b6f3347a4a9cdfa7c475d5a06a3cf5723b05c6bd3abde5bbf90ec9"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.BrowsePosition",
@@ -1539,8 +1456,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "浏览 {{page}} / {{total}} · {{type}} · {{source}}"
-      },
-      "sourceHash": "sha256:e0f6b790cbee974c1dd5f6a85808e63a5ee8fbbb08e7e40173a30dae358c3e19"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Back",
@@ -1559,8 +1475,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "背面：{{back}}"
-      },
-      "sourceHash": "sha256:3b6fef677da7beec327836e7ec4fb191ed137d5f68b63b039d2f25d8c8499ca5"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.AnswerWithExplanation",
@@ -1580,8 +1495,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "答案：{{answer}} · {{explanation}}"
-      },
-      "sourceHash": "sha256:ee06c16d17bed9b3982c7af683f1cf0f4fc13d252bbe1f02ca39c6bd02501c32"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Answer",
@@ -1600,8 +1514,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "答案：{{answer}}"
-      },
-      "sourceHash": "sha256:deceef043234b02d21cbaebda6d9046553751354aeb73498e06ec1cb6c23ee9b"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Previous",
@@ -1618,8 +1531,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "上一张"
-      },
-      "sourceHash": "sha256:a57b08a480b822a0a572b993391c292ede593bf8000b406675b180bbb16260fa"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Next",
@@ -1636,8 +1548,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "下一张"
-      },
-      "sourceHash": "sha256:1ff57a29d7c9d11bdf61c1b80f2b289b44c1ea844824d4b94a0d52b6ba5fc858"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.NewCard",
@@ -1654,8 +1565,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "新建卡片"
-      },
-      "sourceHash": "sha256:df1e64d823528ba5df9dfe787cd333d5ef9955dd6d7a61e3c2bd4d5d9c11f964"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Edit",
@@ -1672,8 +1582,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "编辑"
-      },
-      "sourceHash": "sha256:464c4ffd019e1e9691dcf0537c797353ef2b1c1d4833d3d463e5b74ae4547344"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Delete",
@@ -1690,8 +1599,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "删除"
-      },
-      "sourceHash": "sha256:e2d0a54968ead24efc0dffa6ac78fc606dceec34a0f586177a74a54cc2272cf8"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.EditCard",
@@ -1708,8 +1616,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "编辑卡片"
-      },
-      "sourceHash": "sha256:42eb1e3f7227aa186300a05f687c27f0f44355ca75acfdeae3e25a01fa69f4d7"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Field.Source",
@@ -1726,8 +1633,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "来源"
-      },
-      "sourceHash": "sha256:0e570ca6fabe24f94e52c1833f3ffd25567022beb826fa16891f3322051bc221"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Field.Phonetic",
@@ -1744,8 +1650,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "音标"
-      },
-      "sourceHash": "sha256:520a1456f7ab80aeb2dfff09ad939d4c77b0c68bd4b290e23f45809616d8b9d9"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Field.Front",
@@ -1762,8 +1667,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "正面"
-      },
-      "sourceHash": "sha256:a61759020289882109fa92ad765e1200b6a9069b98190891d2747c65474669e2"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Field.Back",
@@ -1780,8 +1684,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "背面"
-      },
-      "sourceHash": "sha256:76900f1bfd16c8d4dd3d25e6f46638d7165aee23883ccea6bfe071c514421769"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Field.Answer",
@@ -1798,8 +1701,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "答案"
-      },
-      "sourceHash": "sha256:b2a3aa602762a782e47a4f8e93bb5ae1b8819d1b92b7e6ceb3ef46a3c7077eb0"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Field.Options",
@@ -1816,8 +1718,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "选项（每行一个）"
-      },
-      "sourceHash": "sha256:6603a1659781dc97ea25d0767a28a535feebe4953c545d036fbfaf7a689d0156"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Field.Type",
@@ -1834,8 +1735,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "类型"
-      },
-      "sourceHash": "sha256:baaddf70fb5d432b8bd948ef91d6f910124a6d138edae4d5f000c4610ddc8eae"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.FormType.Original",
@@ -1852,8 +1752,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "原始 Anki 卡片"
-      },
-      "sourceHash": "sha256:a2ab88a1416d4a8085e5ef9a7c5a3f9bb96506f95f388af0d575bad7b5eca0e2"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.FormType.EnglishToChinese",
@@ -1870,8 +1769,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "选择题：英文选中文"
-      },
-      "sourceHash": "sha256:493f983380328cd8151bbebd0b414d95cb787cc298a4ea7a9cb5126902bdfc5e"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.FormType.ChineseToEnglish",
@@ -1888,8 +1786,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "选择题：中文选英文"
-      },
-      "sourceHash": "sha256:0f8bc894ba76c32a16d30b348d35f141ca32238d7ea05566c24c9a6333beb56f"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Cancel",
@@ -1906,8 +1803,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "取消"
-      },
-      "sourceHash": "sha256:19766ed6ccb2f4a32778eed80d1928d2c87a18d7c275ccb163ec6709d3eb2e27"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Save",
@@ -1924,8 +1820,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "保存"
-      },
-      "sourceHash": "sha256:1509f561f2416598629b886ad7d3c05a7e221e4e0675c84bbff4ee6d9e03913d"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.ConfirmDelete",
@@ -1942,8 +1837,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "删除这张卡片？"
-      },
-      "sourceHash": "sha256:52c85ff812cdb9f7ff67288600e3ee89f3821691776c57dcd85c65522be5b3a3"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Correct",
@@ -1960,8 +1854,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "正确 · 评分为简单"
-      },
-      "sourceHash": "sha256:31405662d9eb93fa246461648a21600ed15961b8e4a60aa0e3111a4e730587e1"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Wrong",
@@ -1978,8 +1871,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "错误 · 评分为重来"
-      },
-      "sourceHash": "sha256:f26b9f43e7f01f138212689cd2e1d7ef620bd75174dfa0c2fa853d5173cc04d6"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.NextCountdown",
@@ -1998,8 +1890,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "{{seconds}} 秒后进入下一张"
-      },
-      "sourceHash": "sha256:a0d47d3c6b083d961f8819031c317e5a99dc6cfbde3e08ab80acab1dfad80007"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Rating.Again",
@@ -2016,8 +1907,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "重来"
-      },
-      "sourceHash": "sha256:f72894d8fbb37340c691d9f94f1148cf8f37eddcf1a3e13ba38115ea6243096f"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Rating.Hard",
@@ -2034,8 +1924,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "困难"
-      },
-      "sourceHash": "sha256:9e73f8fa9cb76c441b3118628a15b2bdf4116324954957961bacc171fbead4a3"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Rating.Good",
@@ -2052,8 +1941,7 @@
       ],
       "existingTranslations": {
         "zh-CN": "良好"
-      },
-      "sourceHash": "sha256:c939327ca16dcf97ca32521d8b834bf1de16573d21deda3bb2a337cf403787a6"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Anki.Detail.Rating.Easy",
@@ -2070,72 +1958,63 @@
       ],
       "existingTranslations": {
         "zh-CN": "简单"
-      },
-      "sourceHash": "sha256:d6915875decb6e43dbf131d2453a2f065d78b915a3d0580777e834b9bf6afafd"
+      }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Action.Translate",
       "defaultValue": "Translate",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "翻译" },
-      "sourceHash": "sha256:8fe147696fbf47f30d37aeb7ba669ce027c1a598e0d260cbbf0532c64f88a57e"
+      "existingTranslations": { "zh-CN": "翻译" }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Action.ToggleMode",
       "defaultValue": "Switch Translation Mode",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "切换翻译模式" },
-      "sourceHash": "sha256:2fa7b67471b058a5367dd06d98f8dc902afc215c711d8f8d80de06dafaabd78e"
+      "existingTranslations": { "zh-CN": "切换翻译模式" }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Action.History",
       "defaultValue": "History List",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "历史列表" },
-      "sourceHash": "sha256:22e8ff8667a4dd90f68cee9cc0907a61c284588fbd067251d96ee5afb785f564"
+      "existingTranslations": { "zh-CN": "历史列表" }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Action.Favorites",
       "defaultValue": "Favorites List",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "收藏列表" },
-      "sourceHash": "sha256:0ee63fed0398f98934452aec5820929bea8823e7cc640ac458c0ab1328b4dd67"
+      "existingTranslations": { "zh-CN": "收藏列表" }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Action.ToggleFavorite",
       "defaultValue": "Favorite / Unfavorite",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "收藏/取消收藏" },
-      "sourceHash": "sha256:4390fd8a6ab321cdc79f497b03a11a099db087bf6bbd78c897d9e7b82383171e"
+      "existingTranslations": { "zh-CN": "收藏/取消收藏" }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Toolbar.Service",
       "defaultValue": "Translation service",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "翻译服务" },
-      "sourceHash": "sha256:d054ef74d80d08932686eb910b7b24fca8608bd3123183e7d9a48866060e5c3a"
+      "existingTranslations": { "zh-CN": "翻译服务" }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Toolbar.Mode",
       "defaultValue": "Translation mode",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "翻译模式" },
-      "sourceHash": "sha256:b34e84086e2c3bc41b58e50fec20f375f69f48d945ad6c350a39f7de1db8ee04"
+      "existingTranslations": { "zh-CN": "翻译模式" }
     },
     {
       "key": "Plugin.DeepSeekTranslator.Detail.Delete",
       "defaultValue": "Delete",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "删除" },
-      "sourceHash": "sha256:e2d0a54968ead24efc0dffa6ac78fc606dceec34a0f586177a74a54cc2272cf8"
+      "existingTranslations": { "zh-CN": "删除" }
     }
   ]
 }

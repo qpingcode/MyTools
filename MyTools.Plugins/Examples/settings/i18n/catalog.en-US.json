@@ -9,824 +9,728 @@
       "defaultValue": "Settings",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "设置" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "设置" }
     },
     {
       "key": "Plugin.Settings.Subtitle",
       "defaultValue": "Application settings",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "应用设置" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "应用设置" }
     },
     {
       "key": "Plugin.Settings.Action.Open",
       "defaultValue": "Open Settings",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "打开设置" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "打开设置" }
     },
     {
       "key": "Plugin.Settings.Search.Placeholder",
       "defaultValue": "Search settings...",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "搜索设置..." },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "搜索设置..." }
     },
     {
       "key": "Plugin.Settings.Save",
       "defaultValue": "Save",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "保存" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "保存" }
     },
     {
       "key": "Plugin.Settings.Saved",
       "defaultValue": "Settings saved successfully.",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "设置已保存。" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "设置已保存。" }
     },
     {
       "key": "Plugin.Settings.Loading",
       "defaultValue": "Loading...",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "加载中..." },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "加载中..." }
     },
     {
       "key": "Plugin.Settings.NoSettings",
       "defaultValue": "No settings in this category",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "此分类没有设置项" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "此分类没有设置项" }
     },
     {
       "key": "Plugin.Settings.NoResults",
       "defaultValue": "No matching settings found",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "未找到匹配的设置" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "未找到匹配的设置" }
     },
     {
       "key": "Plugin.Settings.RestartPrompt",
       "defaultValue": "Language changed. Restart to apply?",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "语言已更改，是否重启以应用？" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "语言已更改，是否重启以应用？" }
     },
     {
       "key": "Plugin.Settings.Restart",
       "defaultValue": "Restart",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "重启" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "重启" }
     },
     {
       "key": "Plugin.Settings.Cancel",
       "defaultValue": "Cancel",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "取消" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "取消" }
     },
     {
       "key": "Plugin.Settings.Restarting",
       "defaultValue": "Please restart MyTools to apply the new language.",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "请重启 MyTools 以应用新语言。" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "请重启 MyTools 以应用新语言。" }
     },
     {
       "key": "Plugin.Settings.Category.Plugins",
       "defaultValue": "Plugins",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "插件" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "插件" }
     },
     {
       "key": "Plugin.Settings.Category.Plugins.Description",
       "defaultValue": "Enable plugins, assign hotkeys, and set aliases used in global search.",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "启用或关闭插件，并为每个插件设置快捷键和搜索别名。" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "启用或关闭插件，并为每个插件设置快捷键和搜索别名。" }
     },
     {
       "key": "Plugin.Settings.Keymap.HeaderEnabled",
       "defaultValue": "Enabled",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "启用" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "启用" }
     },
     {
       "key": "Plugin.Settings.Keymap.HeaderName",
       "defaultValue": "Plugin Name",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "插件名" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "插件名" }
     },
     {
       "key": "Plugin.Settings.Keymap.HeaderHotkey",
       "defaultValue": "Hotkey",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "快捷键" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "快捷键" }
     },
     {
       "key": "Plugin.Settings.Keymap.HeaderKeywords",
       "defaultValue": "Alias",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "别名" },
-      "sourceHash": "b19e02e9502bbe5ac59dff4b2d4160768a4a7b8feff5693e5769613562290a45"
+      "existingTranslations": { "zh-CN": "别名" }
     },
     {
       "key": "Plugin.Settings.Keymap.HeaderKeywordsTip",
       "defaultValue": "Aliases used to open this plugin directly",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "用于直接打开此插件的别名" },
-      "sourceHash": "c9ab8ade414816086ec96b3c71a79c99833cb23cab4dd26c335745878604904d"
+      "existingTranslations": { "zh-CN": "用于直接打开此插件的别名" }
     },
     {
       "key": "Plugin.Settings.Keymap.HeaderGlobalResults",
       "defaultValue": "Global",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "全局结果" },
-      "sourceHash": "a258b30f88c30650e73073d5bdde5cfcc6987100ae62d37789e5c46a0d85b7c6"
+      "existingTranslations": { "zh-CN": "全局结果" }
     },
     {
       "key": "Plugin.Settings.Keymap.HeaderGlobalResultsTip",
       "defaultValue": "Include this plugin in global search when no alias is used",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "未使用别名时是否出现在全局搜索结果中" },
-      "sourceHash": "8c659d4be3ca8d78bb92ae51ab25e29ab872589c017b04058a366afba68e57f7"
+      "existingTranslations": { "zh-CN": "未使用别名时是否出现在全局搜索结果中" }
     },
     {
       "key": "Plugin.Settings.Keymap.KeywordsPlaceholder",
       "defaultValue": "None",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "无" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "无" }
     },
     {
       "key": "Plugin.Settings.Keymap.NoHotkey",
       "defaultValue": "None",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "无" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "无" }
     },
     {
       "key": "Plugin.Settings.Keymap.Recording",
       "defaultValue": "Press shortcut...",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "按下快捷键..." },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "按下快捷键..." }
     },
     {
       "key": "Plugin.Settings.Keymap.ClearHotkey",
       "defaultValue": "Clear hotkey",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "清除快捷键" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "清除快捷键" }
     },
     {
       "key": "Plugin.Settings.Keymap.ConflictsWith",
       "defaultValue": "conflicts with",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "与" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "与" }
     },
     {
       "key": "Plugin.Settings.Keymap.HasConflicts",
       "defaultValue": "Conflicts detected. Resolve them before saving.",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "检测到冲突，请先解决冲突再保存。" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "检测到冲突，请先解决冲突再保存。" }
     },
     {
       "key": "Plugin.Settings.RestartPrompt",
       "defaultValue": "Some changes require a restart to take effect. Restart now?",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "部分设置需要重启才能生效，是否立即重启？" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "部分设置需要重启才能生效，是否立即重启？" }
     },
     {
       "key": "Plugin.Settings.Category.Gestures",
       "defaultValue": "Mouse Gestures",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "鼠标手势" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "鼠标手势" }
     },
     {
       "key": "Plugin.Settings.Gestures.HeaderAction",
       "defaultValue": "Action Name",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "动作名称" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "动作名称" }
     },
     {
       "key": "Plugin.Settings.Gestures.HeaderActionTip",
       "defaultValue": "The name of this gesture action.",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "该手势动作的名称。" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "该手势动作的名称。" }
     },
     {
       "key": "Plugin.Settings.Gestures.HeaderGesture",
       "defaultValue": "Trigger Gesture",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "触发手势" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "触发手势" }
     },
     {
       "key": "Plugin.Settings.Gestures.HeaderGestureTip",
       "defaultValue": "Click to re-record. Hold the right mouse button and draw.",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "点击可重新录制。按住鼠标右键画出方向。" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "点击可重新录制。按住鼠标右键画出方向。" }
     },
     {
       "key": "Plugin.Settings.Gestures.HeaderTrigger",
       "defaultValue": "Action",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "操作" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "操作" }
     },
     {
       "key": "Plugin.Settings.Gestures.HeaderTriggerTip",
       "defaultValue": "The action to run. Click to choose a keyboard shortcut or mouse button.",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "手势触发时执行的操作。点击后选择键盘快捷键或鼠标按键。" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "手势触发时执行的操作。点击后选择键盘快捷键或鼠标按键。" }
     },
     {
       "key": "Plugin.Settings.Gestures.HeaderProcess",
       "defaultValue": "Target Process",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "触发进程" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "触发进程" }
     },
     {
       "key": "Plugin.Settings.Gestures.HeaderProcessTip",
       "defaultValue": "Only trigger this gesture in the specified processes. Leave empty to apply to all processes.",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "仅在指定进程中触发该手势。留空则对所有进程生效。" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "仅在指定进程中触发该手势。留空则对所有进程生效。" }
     },
     {
       "key": "Plugin.Settings.Gestures.HeaderEnabled",
       "defaultValue": "Enabled",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "启用" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "启用" }
     },
     {
       "key": "Plugin.Settings.Gestures.HeaderEnabledTip",
       "defaultValue": "Enable or disable this gesture.",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "启用或禁用该手势。" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "启用或禁用该手势。" }
     },
     {
       "key": "Plugin.Settings.Gestures.Add",
       "defaultValue": "Add Gesture",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "添加手势" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "添加手势" }
     },
     {
       "key": "Plugin.Settings.Gestures.Record",
       "defaultValue": "Record",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "录制" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "录制" }
     },
     {
       "key": "Plugin.Settings.Gestures.Recording",
       "defaultValue": "Hold right button to draw...",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "按住右键画手势..." },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "按住右键画手势..." }
     },
     {
       "key": "Plugin.Settings.Gestures.Delete",
       "defaultValue": "Delete",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "删除" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "删除" }
     },
     {
       "key": "Plugin.Settings.Gestures.NamePlaceholder",
       "defaultValue": "e.g. Close Tab",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "如：关闭标签页" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "如：关闭标签页" }
     },
     {
       "key": "Plugin.Settings.Gestures.ProcessPlaceholder",
       "defaultValue": "Any",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "任意" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "任意" }
     },
     {
       "key": "Plugin.Settings.Gestures.ProcessHint",
       "defaultValue": "Comma-separated process names",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "逗号分隔的进程名" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "逗号分隔的进程名" }
     },
     {
       "key": "Plugin.Settings.Gestures.TriggerHotkey",
       "defaultValue": "Hotkey",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "快捷键" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "快捷键" }
     },
     {
       "key": "Plugin.Settings.Gestures.TriggerMouse",
       "defaultValue": "Mouse Button",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "鼠标按键" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "鼠标按键" }
     },
     {
       "key": "Plugin.Settings.Gestures.MouseBack",
       "defaultValue": "Back (XButton1)",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "后退 (XButton1)" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "后退 (XButton1)" }
     },
     {
       "key": "Plugin.Settings.Gestures.MouseForward",
       "defaultValue": "Forward (XButton2)",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "前进 (XButton2)" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "前进 (XButton2)" }
     },
     {
       "key": "Plugin.Settings.Gestures.MouseLeft",
       "defaultValue": "Left",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "左键" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "左键" }
     },
     {
       "key": "Plugin.Settings.Gestures.MouseRight",
       "defaultValue": "Right",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "右键" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "右键" }
     },
     {
       "key": "Plugin.Settings.Gestures.MouseMiddle",
       "defaultValue": "Middle",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "中键" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "中键" }
     },
     {
       "key": "Plugin.Settings.Gestures.Empty",
       "defaultValue": "No gestures configured",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "暂无手势配置" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "暂无手势配置" }
     },
     {
       "key": "Plugin.Settings.Gestures.NoGesture",
       "defaultValue": "Not set",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "未设置" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "未设置" }
     },
     {
       "key": "Plugin.Settings.Gestures.Saved",
       "defaultValue": "Gestures saved and applied.",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "手势已保存并应用。" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "手势已保存并应用。" }
     },
     {
       "key": "Plugin.Settings.Gestures.ConflictWins",
       "defaultValue": "Conflicts with \"{{name}}\". This one takes priority.",
       "placeholders": ["name"],
       "references": [],
-      "existingTranslations": { "zh-CN": "与「{{name}}」冲突。此项会优先执行。" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "与「{{name}}」冲突。此项会优先执行。" }
     },
     {
       "key": "Plugin.Settings.Gestures.ConflictLose",
       "defaultValue": "Conflicts with \"{{name}}\", which will take priority.",
       "placeholders": ["name"],
       "references": [],
-      "existingTranslations": { "zh-CN": "与「{{name}}」冲突，对方会优先执行。" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "与「{{name}}」冲突，对方会优先执行。" }
     },
     {
       "key": "Plugin.Settings.Gestures.Unnamed",
       "defaultValue": "Unnamed",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "未命名" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "未命名" }
     },
     {
       "key": "Plugin.Settings.Gestures.ClickToRecord",
       "defaultValue": "Click to record",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "点击录制" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "点击录制" }
     },
     {
       "key": "Plugin.Settings.Gestures.ClickToSetAction",
       "defaultValue": "Click to set action",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "点击设置操作" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "点击设置操作" }
     },
     {
       "key": "Plugin.Settings.Gestures.NoAction",
       "defaultValue": "Not set",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "未设置" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "未设置" }
     },
     {
       "key": "Plugin.Settings.Gestures.MouseBackShort",
       "defaultValue": "Back",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "后退" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "后退" }
     },
     {
       "key": "Plugin.Settings.Gestures.MouseForwardShort",
       "defaultValue": "Forward",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "前进" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "前进" }
     },
     {
       "key": "Plugin.Settings.Gestures.MouseLeftShort",
       "defaultValue": "Left",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "左键" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "左键" }
     },
     {
       "key": "Plugin.Settings.Gestures.MouseRightShort",
       "defaultValue": "Right",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "右键" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "右键" }
     },
     {
       "key": "Plugin.Settings.Gestures.MouseMiddleShort",
       "defaultValue": "Middle",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "中键" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "中键" }
     },
     {
       "key": "Plugin.Settings.ActionPicker.Title",
       "defaultValue": "Choose action",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "选择操作" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "选择操作" }
     },
     {
       "key": "Plugin.Settings.ActionPicker.Reset",
       "defaultValue": "Reset to default",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "恢复默认" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "恢复默认" }
     },
     {
       "key": "Plugin.Settings.ActionPicker.Ok",
       "defaultValue": "OK",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "确定" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "确定" }
     },
     {
       "key": "Plugin.Settings.ActionPicker.Conflict",
       "defaultValue": "Already used by {{name}}",
       "placeholders": ["name"],
       "references": [],
-      "existingTranslations": { "zh-CN": "已与「{{name}}」冲突" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "已与「{{name}}」冲突" }
     },
     {
       "key": "Plugin.Settings.ActionPicker.Reserved",
       "defaultValue": "{{hotKey}} is a common shortcut (copy/paste/select all, etc.) and is not recommended as a global hotkey.",
       "placeholders": ["hotKey"],
       "references": [],
-      "existingTranslations": { "zh-CN": "{{hotKey}} 是常用系统快捷键（复制/粘贴/全选等），不建议设为全局热键。" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "{{hotKey}} 是常用系统快捷键（复制/粘贴/全选等），不建议设为全局热键。" }
     },
     {
       "key": "Plugin.Settings.SearchHotKey.PickerTitle",
       "defaultValue": "Set search hotkey",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "设置搜索热键" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "设置搜索热键" }
     },
     {
       "key": "Plugin.Settings.Keymap.PickerTitle",
       "defaultValue": "Set plugin hotkey",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "设置插件热键" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "设置插件热键" }
     },
     {
       "key": "Plugin.Settings.Capture.Waiting",
       "defaultValue": "Waiting for input...",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "正在等待输入..." },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "正在等待输入..." }
     },
     {
       "key": "Plugin.Settings.Category.CommandRunner",
       "defaultValue": "Scripts",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "脚本" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "脚本" }
     },
     {
       "key": "Plugin.Settings.CommandRunner.Empty",
       "defaultValue": "No commands configured",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "暂无命令配置" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "暂无命令配置" }
     },
     {
       "key": "Plugin.Settings.CommandRunner.HeaderName",
       "defaultValue": "Name",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "名称" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "名称" }
     },
     {
       "key": "Plugin.Settings.CommandRunner.HeaderCommand",
       "defaultValue": "Command",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "命令" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "命令" }
     },
     {
       "key": "Plugin.Settings.CommandRunner.HeaderAdmin",
       "defaultValue": "Admin",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "管理员" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "管理员" }
     },
     {
       "key": "Plugin.Settings.CommandRunner.Add",
       "defaultValue": "Add command",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "添加命令" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "添加命令" }
     },
     {
       "key": "Plugin.Settings.CommandRunner.Edit",
       "defaultValue": "Edit command",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "编辑命令" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "编辑命令" }
     },
     {
       "key": "Plugin.Settings.CommandRunner.Delete",
       "defaultValue": "Delete",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "删除" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "删除" }
     },
     {
       "key": "Plugin.Settings.CommandRunner.Name",
       "defaultValue": "Name",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "名称" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "名称" }
     },
     {
       "key": "Plugin.Settings.CommandRunner.ScriptMode",
       "defaultValue": "Batch script",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "批处理脚本" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "批处理脚本" }
     },
     {
       "key": "Plugin.Settings.CommandRunner.Scripts",
       "defaultValue": "Script lines",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "脚本内容" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "脚本内容" }
     },
     {
       "key": "Plugin.Settings.CommandRunner.ScriptsHint",
       "defaultValue": "One command per line",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "每行一条命令" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "每行一条命令" }
     },
     {
       "key": "Plugin.Settings.CommandRunner.Command",
       "defaultValue": "Command / URL",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "命令 / 网址" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "命令 / 网址" }
     },
     {
       "key": "Plugin.Settings.CommandRunner.Args",
       "defaultValue": "Arguments",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "参数" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "参数" }
     },
     {
       "key": "Plugin.Settings.CommandRunner.WorkingDirectory",
       "defaultValue": "Working directory",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "工作目录" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "工作目录" }
     },
     {
       "key": "Plugin.Settings.CommandRunner.RunAsAdmin",
       "defaultValue": "Run as administrator",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "以管理员运行" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "以管理员运行" }
     },
     {
       "key": "Plugin.Settings.CommandRunner.Apply",
       "defaultValue": "Apply",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "应用" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "应用" }
     },
     {
       "key": "Plugin.Settings.CommandRunner.Saved",
       "defaultValue": "Commands saved.",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "命令已保存。" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "命令已保存。" }
     },
     {
       "key": "Plugin.Settings.Table.Search",
       "defaultValue": "Search",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "搜索" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "搜索" }
     },
     {
       "key": "Plugin.Settings.Table.Add",
       "defaultValue": "Add",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "新增" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "新增" }
     },
     {
       "key": "Plugin.Settings.Table.Edit",
       "defaultValue": "Edit",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "编辑" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "编辑" }
+    },
+    {
+      "key": "Plugin.Settings.Table.Clone",
+      "defaultValue": "Clone",
+      "placeholders": [],
+      "references": ["src/web/components/ArraySettingTable.vue"],
+      "existingTranslations": { "zh-CN": "克隆" }
     },
     {
       "key": "Plugin.Settings.Table.Delete",
       "defaultValue": "Delete",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "删除" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "删除" }
     },
     {
       "key": "Plugin.Settings.Table.Empty",
       "defaultValue": "No items",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "暂无数据" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "暂无数据" }
     },
     {
       "key": "Plugin.Settings.Table.Apply",
       "defaultValue": "Apply",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "应用" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "应用" }
     },
     {
       "key": "Plugin.Settings.Table.Yes",
       "defaultValue": "Yes",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "是" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "是" }
     },
     {
       "key": "Plugin.Settings.Table.No",
       "defaultValue": "No",
       "placeholders": [],
       "references": [],
-      "existingTranslations": { "zh-CN": "否" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "否" }
     },
     {
       "key": "Plugin.Settings.PleaseInput",
       "defaultValue": "Please input",
       "placeholders": [],
       "references": ["src/web/components/SettingField.vue"],
-      "existingTranslations": { "zh-CN": "请输入" },
-      "sourceHash": "sha256:placeholder"
+      "existingTranslations": { "zh-CN": "请输入" }
     }
   ]
 }
