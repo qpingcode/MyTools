@@ -12,6 +12,8 @@ public class ConfigurationRegistry(IConfigurationStorage storage) : IConfigurati
     private readonly Dictionary<string, ConfigurationSetting> _settingsByName = new();
     private readonly Dictionary<string, ConfigurationCategory> _categoriesByPath = new();
 
+    public event EventHandler<ConfigurationChangedEventArgs>? ConfigurationChanged;
+
     public ConfigurationCategory AddCategory(string name, string description, ConfigurationCategory? parent = null, bool IsSelectable = true)
     {
         return AddCategory(name, name, description, parent, IsSelectable);
@@ -261,17 +263,38 @@ public class ConfigurationRegistry(IConfigurationStorage storage) : IConfigurati
             return;
         }
 
-        if (setting.CurrentValue == null)
+        var oldValue = GetStoredValue(setting) ?? setting.DefaultValue;
+        var newValue = setting.CurrentValue;
+        var changed = !ValuesEqual(setting, oldValue, newValue);
+
+        if (newValue == null)
         {
             storage.Delete(setting.FullPath);
         }
         else
         {
-            var serializedString = setting.Serializer.Serialize(setting.CurrentValue);
+            var serializedString = setting.Serializer.Serialize(newValue);
             storage.Store(setting.FullPath, serializedString);
         }
         
         setting.IsDirty = false;
+        if (changed)
+        {
+            ConfigurationChanged?.Invoke(this, new ConfigurationChangedEventArgs(setting, oldValue, newValue));
+        }
+    }
+
+    private static bool ValuesEqual(ConfigurationSetting setting, object? left, object? right)
+    {
+        if (left is null || right is null)
+        {
+            return left is null && right is null;
+        }
+
+        return string.Equals(
+            setting.Serializer.Serialize(left),
+            setting.Serializer.Serialize(right),
+            StringComparison.Ordinal);
     }
     
     public void Reload()
@@ -289,10 +312,17 @@ public class ConfigurationRegistry(IConfigurationStorage storage) : IConfigurati
             return;
         }
 
+        var oldValue = setting.CurrentValue;
         var storedValue = GetStoredValue(setting);
         if (storedValue != null)
         {
             setting.InitValueWithoutNotify(storedValue);
+            if (!ValuesEqual(setting, oldValue, storedValue))
+            {
+                ConfigurationChanged?.Invoke(
+                    this,
+                    new ConfigurationChangedEventArgs(setting, oldValue, storedValue));
+            }
         }
     }
     

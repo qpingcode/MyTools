@@ -112,6 +112,10 @@
   <data name="Plugin.ProcessKiller.Description" xml:space="preserve"><value>搜索并管理正在运行的进程</value></data>
   <data name="Plugin.FileSearcher.Name" xml:space="preserve"><value>文件搜索</value></data>
   <data name="Plugin.FileSearcher.Description" xml:space="preserve"><value>搜索文件和脚本</value></data>
+  <data name="Plugin.FileSearcher.Settings.Category.Description" xml:space="preserve"><value>选择需要搜索快捷方式和 PowerShell 脚本的目录</value></data>
+  <data name="Plugin.FileSearcher.Settings.SearchDirectories.Title" xml:space="preserve"><value>搜索目录</value></data>
+  <data name="Plugin.FileSearcher.Settings.SearchDirectories.Description" xml:space="preserve"><value>添加或删除包含快捷方式（.lnk）和 PowerShell 脚本（.ps1）的目录</value></data>
+  <data name="Plugin.FileSearcher.Settings.SearchDirectories.Path" xml:space="preserve"><value>目录</value></data>
   <data name="Plugin.CommandRunner.Name" xml:space="preserve"><value>脚本</value></data>
   <data name="Plugin.CommandRunner.Description" xml:space="preserve"><value>配置可从搜索启动的命令</value></data>
   <data name="Plugin.DllInterfaceReader.Name" xml:space="preserve"><value>DLL 接口读取器</value></data>
