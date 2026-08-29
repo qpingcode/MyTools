@@ -31,7 +31,6 @@ import { marked } from "marked";
     const stopButton = document.getElementById("stopButton") as HTMLButtonElement;
     const newChatButton = document.getElementById("newChatButton") as HTMLButtonElement;
     const modelSelect = document.getElementById("modelSelect") as HTMLSelectElement;
-    const modelProvider = document.getElementById("modelProvider") as HTMLElement;
     let sessionId = "";
     let pollTimer: number | null = null;
     let currentState: ChatState | null = null;
@@ -184,7 +183,6 @@ import { marked } from "marked";
                 modelSelect.appendChild(option);
             });
             modelSelect.value = status.selectedModel;
-            modelProvider.textContent = status.provider;
             if (!status.available) {
                 promptInput.disabled = true;
                 sendButton.disabled = true;
