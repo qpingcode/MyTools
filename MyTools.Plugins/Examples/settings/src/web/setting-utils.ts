@@ -1,7 +1,5 @@
 export type PathKind = "file" | "directory" | "fileOrDirectory";
 
-const IlSpyPathFullPath = "dllinterfacereader.ilspypathsetting";
-
 export function defaultUiHint(type: string, uiHint?: string | null): string {
     if (uiHint && uiHint.trim()) return uiHint.trim().toLowerCase();
     const normalized = (type || "").trim().toLowerCase();
@@ -22,9 +20,8 @@ export function isTopLevelHeading(type?: string | null): boolean {
     return (type || "").trim().toLowerCase() === "h1";
 }
 
-export function isPathType(type?: string | null, fullPath?: string | null): boolean {
-    if ((type || "").trim().toLowerCase() === "path") return true;
-    return (fullPath || "").toLowerCase() === IlSpyPathFullPath;
+export function isPathType(type?: string | null, key?: string | null): boolean {
+    return (type || "").trim().toLowerCase() === "path";
 }
 
 export function normalizePathKind(uiHint?: string | null): PathKind {
@@ -37,9 +34,8 @@ export function normalizePathKind(uiHint?: string | null): PathKind {
 export function resolvePathKind(
     type?: string | null,
     uiHint?: string | null,
-    fullPath?: string | null,
+    key?: string | null,
 ): PathKind {
-    if ((fullPath || "").toLowerCase() === IlSpyPathFullPath) return "file";
     return normalizePathKind(uiHint);
 }
 
@@ -48,8 +44,8 @@ export function resolveMacros(value: string | undefined | null): string {
     return value.replaceAll("${DateTime.Now}", new Date().toISOString());
 }
 
-export function settingKey(setting: { fullPath: string }): string {
-    const path = setting.fullPath || "";
+export function settingKey(setting: { key: string }): string {
+    const path = setting.key || "";
     const index = path.lastIndexOf(".");
     return index >= 0 ? path.slice(index + 1) : path;
 }

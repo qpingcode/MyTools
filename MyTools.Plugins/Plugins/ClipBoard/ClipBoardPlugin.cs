@@ -24,7 +24,7 @@ public class ClipBoardPlugin(ILogger<ClipBoardPlugin> logger) : PluginBase, IWin
     public const int DefaultMaxHistoryDays = 10;
     public const int DefaultMaxHistoryCount = 500;
 
-    public override string PluginId => "ClipBoard";
+    public override PluginId PluginId => new("clipboard");
     protected override string SettingsCategoryName => GetCaption(
         "Plugin.ClipBoard.Settings.Category.Name", "Clipboard History");
     protected override string SettingsCategoryDescription => GetCaption(
@@ -57,6 +57,7 @@ public class ClipBoardPlugin(ILogger<ClipBoardPlugin> logger) : PluginBase, IWin
             GetCaption("Plugin.ClipBoard.Settings.HotKey.Description", "Keyboard shortcut that opens clipboard history"),
             DefaultHotKey,
             valueType: SettingValueTypes.HotKey);
+
         configurationRegistry.AddSetting(
             pluginCategory,
             "SequentialPasteHotKey",
@@ -64,12 +65,14 @@ public class ClipBoardPlugin(ILogger<ClipBoardPlugin> logger) : PluginBase, IWin
             GetCaption("Plugin.ClipBoard.Settings.SequentialPasteHotKey.Description", "Paste and remove the newest clipboard history entry without opening MyTools"),
             DefaultSequentialPasteHotKey,
             valueType: SettingValueTypes.HotKey);
+
         maxHistoryDaysSetting = configurationRegistry.AddSetting(
             pluginCategory,
             "MaxHistoryDays",
             GetCaption("Plugin.ClipBoard.Settings.MaxHistoryDays.Title", "Maximum retention days"),
             GetCaption("Plugin.ClipBoard.Settings.MaxHistoryDays.Description", "Delete clipboard entries older than this many days"),
             DefaultMaxHistoryDays);
+
         maxHistoryCountSetting = configurationRegistry.AddSetting(
             pluginCategory,
             "MaxHistoryCount",

@@ -95,7 +95,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
             ? ""
             : manifest.DescriptionMessage.Resolve(PluginLocalization);
 
-    public string PluginId => manifest.Id;
+    public PluginId PluginId => new(manifest.Id);
 
     /// <summary>
     /// Stable key for this installed plugin instance. Unlike <see cref="PluginId"/>,

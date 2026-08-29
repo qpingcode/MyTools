@@ -2,6 +2,7 @@ using System.Text.Json;
 using MyTools.Common.Config.Enums;
 using MyTools.Common.Config.Interfaces;
 using MyTools.Common.Config.Models;
+using MyTools.Common.Plugins;
 using MyTools.Desktop.Services;
 using MyTools.Desktop.Serializers;
 using MyTools.Plugins.NodePlugins;
@@ -13,12 +14,10 @@ namespace MyTools.Desktop.Test.Services;
 public class ConfigurationSettingValuesTest
 {
     [Test]
-    public void Owns_ShouldMatchPluginPrefixOnly()
+    public void Owns_ShouldMatchPluginId()
     {
-        Assert.That(ConfigurationSettingValues.Owns("snippet", "snippet.Phrases"), Is.True);
-        Assert.That(ConfigurationSettingValues.Owns("snippet", "openpath.RiderInstallPath"), Is.False);
-        Assert.That(ConfigurationSettingValues.Owns("snippet", "snippet"), Is.False);
-        Assert.That(ConfigurationSettingValues.Owns("", "snippet.Phrases"), Is.False);
+        Assert.That(ConfigurationSettingValues.Owns(new PluginId("snippet"), CreateOwned("snippet", "Phrases")), Is.True);
+        Assert.That(ConfigurationSettingValues.Owns(new PluginId("snippet"), CreateOwned("openpath", "RiderInstallPath")), Is.False);
     }
 
     [Test]
@@ -117,7 +116,10 @@ public class ConfigurationSettingValuesTest
         var snippet = registry.AddArraySetting("snippet", "Phrases");
         using var document = JsonDocument.Parse("""{"Engines":[{"name":"Google"}],"Phrases":[{"trigger":"x"}]}""");
 
-        var applied = ConfigurationSettingValues.ApplyOwnedValues(registry, "search-engine", document.RootElement);
+        var applied = ConfigurationSettingValues.ApplyOwnedValues(
+            registry,
+            new PluginId("search-engine"),
+            document.RootElement);
 
         Assert.That(applied, Is.EqualTo(1));
         Assert.That(((JsonElement)searchEngine.CurrentValue!).GetArrayLength(), Is.EqualTo(1));
@@ -125,10 +127,25 @@ public class ConfigurationSettingValuesTest
         Assert.That(((JsonElement)snippet.CurrentValue!).GetRawText(), Is.EqualTo("[]"));
     }
 
+    private static ConfigurationSetting CreateOwned(string pluginId, string name)
+    {
+        var category = new ConfigurationCategory { Key = pluginId, Name = pluginId, PluginId = new PluginId(pluginId) };
+        return new ConfigurationSetting
+        {
+            Key = $"{pluginId}.{name}",
+            Name = name,
+            PluginId = new PluginId(pluginId),
+            Category = category,
+            ValueType = SettingValueTypes.String,
+            Serializer = new StringSerializer()
+        };
+    }
+
     private static ConfigurationSetting CreateArraySetting()
     {
         return new ConfigurationSetting
         {
+            Key = "snippet.Phrases",
             Name = "Phrases",
             ValueType = SettingValueTypes.Array,
             Serializer = new JsonElementSettingSerializer()
@@ -143,14 +160,16 @@ public class ConfigurationSettingValuesTest
             remove { }
         }
 
-        public List<ConfigurationSetting> Settings { get; } = [];
+        public List<ConfigurationSetting> Settings { get; } = new();
 
         public ConfigurationSetting AddArraySetting(string pluginId, string name)
         {
-            var category = new ConfigurationCategory { Key = pluginId, Name = pluginId };
+            var category = new ConfigurationCategory { Key = pluginId, Name = pluginId, PluginId = new PluginId(pluginId) };
             var setting = new ConfigurationSetting
             {
+                Key = $"{pluginId}.{name}",
                 Name = name,
+                PluginId = new PluginId(pluginId),
                 Category = category,
                 ValueType = SettingValueTypes.Array,
                 Serializer = new JsonElementSettingSerializer()
@@ -160,10 +179,12 @@ public class ConfigurationSettingValuesTest
             return setting;
         }
 
-        public ConfigurationCategory AddCategory(string name, string description, ConfigurationCategory? parent = null, bool IsSelectable = true) =>
-            throw new NotSupportedException();
-
-        public ConfigurationCategory AddCategory(string key, string name, string description, ConfigurationCategory? parent = null, bool IsSelectable = true) =>
+        public ConfigurationCategory AddCategory(
+            string key,
+            string name,
+            string description,
+            bool IsSelectable = true,
+            PluginId? pluginId = null) =>
             throw new NotSupportedException();
 
         public ConfigurationSetting AddSetting<T>(
@@ -179,11 +200,9 @@ public class ConfigurationSettingValuesTest
 
         public IEnumerable<ConfigurationCategory> GetRootCategories() => [];
         public ConfigurationCategory? FindCategory(string path) => null;
-        public ConfigurationSetting? FindSetting(string path) =>
-            Settings.FirstOrDefault(s => string.Equals(s.FullPath, path, StringComparison.OrdinalIgnoreCase));
+        public ConfigurationSetting? FindSetting(string key) =>
+            Settings.FirstOrDefault(s => string.Equals(s.Key, key, StringComparison.OrdinalIgnoreCase));
         public bool RemoveCategory(string path) => false;
-        public IEnumerable<object> Search(string query) => [];
-        public IEnumerable<ConfigurationSetting> GetModifiedSettings() => [];
         public void SaveChanges() { }
         public void Reload() { }
         public void Reload(ConfigurationSetting setting) { }

@@ -1,4 +1,5 @@
 using MyTools.Common;
+using MyTools.Common.Plugins;
 using MyTools.Plugins;
 using MyTools.Plugins.NodePlugins;
 
@@ -41,10 +42,10 @@ public sealed class PluginKeymapService
     {
         var plugins = nodePlugins.ToList();
         var duplicateIds = plugins
-            .GroupBy(plugin => plugin.PluginId, StringComparer.OrdinalIgnoreCase)
+            .GroupBy(plugin => plugin.PluginId)
             .Where(group => group.Count() > 1)
             .Select(group => group.Key)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            .ToHashSet();
 
         foreach (var plugin in plugins)
         {
@@ -68,7 +69,7 @@ public sealed class PluginKeymapService
 
         foreach (var group in plugins
                      .Where(plugin => duplicateIds.Contains(plugin.PluginId))
-                     .GroupBy(plugin => plugin.PluginId, StringComparer.OrdinalIgnoreCase))
+                     .GroupBy(plugin => plugin.PluginId))
         {
             var enabledPlugins = group.Where(plugin => plugin.IsEnabled).ToList();
             if (enabledPlugins.Count <= 1)

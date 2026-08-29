@@ -195,7 +195,7 @@ public static class DesktopServiceCollectionExtensions
     
     public static IServiceCollection AddConfigurationSystem(this IServiceCollection services)
     {
-        services.AddSingleton<IConfigurationStorage, JsonConfigurationStorage>();
+        services.AddSingleton<IConfigurationStorage>(_ => new CompositeConfigurationStorage());
         services.AddSingleton<IConfigurationRegistry, ConfigurationRegistry>();
        
         

@@ -4,7 +4,7 @@
     "key": "Plugin.Settings.Name",
     "defaultValue": "Settings"
   },
-  "version": "0.0.9",
+  "version": "0.0.10",
   "protocolVersion": "3.0",
   "icon": "mdi-cog-outline",
   "i18n": {

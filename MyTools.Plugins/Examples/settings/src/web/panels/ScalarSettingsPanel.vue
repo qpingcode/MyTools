@@ -38,12 +38,12 @@ function usesSchemaControl(setting: Setting): boolean {
         || setting.valueType === "HotKey") {
         return false;
     }
-    if (isPathType(setting.valueType, setting.fullPath)) return true;
+    if (isPathType(setting.valueType, setting.key)) return true;
     return !!setting.uiHint;
 }
 
 function fieldType(setting: Setting): string {
-    if (isPathType(setting.valueType, setting.fullPath)) return "path";
+    if (isPathType(setting.valueType, setting.key)) return "path";
     const valueType = setting.valueType.toLowerCase();
     if (valueType === "integer") return "int";
     if (valueType === "bool") return "bool";
@@ -52,8 +52,8 @@ function fieldType(setting: Setting): string {
 }
 
 function fieldUiHint(setting: Setting): string | undefined {
-    if (isPathType(setting.valueType, setting.fullPath)) {
-        return resolvePathKind(setting.valueType, setting.uiHint, setting.fullPath);
+    if (isPathType(setting.valueType, setting.key)) {
+        return resolvePathKind(setting.valueType, setting.uiHint, setting.key);
     }
     return setting.uiHint;
 }
@@ -83,7 +83,7 @@ function onField(setting: Setting, value: unknown): void {
 }
 
 function currentValue(setting: Setting): string {
-    const dirty = store.dirtySettings.get(setting.fullPath);
+    const dirty = store.dirtySettings.get(setting.key);
     if (dirty !== undefined) return dirty;
     return setting.currentValue ?? "";
 }
@@ -97,15 +97,15 @@ function optionsFor(setting: Setting): Option[] {
 }
 
 function onText(setting: Setting, value: string | number | null): void {
-    markSettingDirty(setting.fullPath, value == null ? "" : String(value));
+    markSettingDirty(setting.key, value == null ? "" : String(value));
 }
 
 function onBool(setting: Setting, value: boolean): void {
-    markSettingDirty(setting.fullPath, value ? "True" : "False");
+    markSettingDirty(setting.key, value ? "True" : "False");
 }
 
 function onHotKey(setting: Setting, value: string | null): void {
-    markSettingDirty(setting.fullPath, value || "");
+    markSettingDirty(setting.key, value || "");
 }
 </script>
 
@@ -120,7 +120,7 @@ function onHotKey(setting: Setting, value: string | null): void {
         <div v-if="visibleSettings.length === 0" class="empty">
             {{ t("Plugin.Settings.NoSettings", "No settings in this category") }}
         </div>
-        <template v-for="setting in visibleSettings" :key="setting.fullPath">
+        <template v-for="setting in visibleSettings" :key="setting.key">
             <div
                 v-if="isHeading(setting)"
                 class="setting-heading setting-heading-h2"
@@ -169,8 +169,8 @@ function onHotKey(setting: Setting, value: string | null): void {
                     class="control-hotkey"
                     :model-value="currentValue(setting)"
                     :default-hot-key="setting.defaultValue ?? ''"
-                    :exclude-plugin-id="setting.fullPath"
-                    :exclude-search-hot-key="setting.fullPath === 'General.SearchHotKey'"
+                    :exclude-plugin-id="setting.key"
+                    :exclude-search-hot-key="setting.key === 'General.SearchHotKey'"
                     :current-search-hot-key="store.dirtySettings.get('General.SearchHotKey')"
                     @update:model-value="onHotKey(setting, $event)"
                 />

@@ -343,7 +343,7 @@ public partial class NodePluginDetailView : UserControl
         _webEndpoint = new EndpointId(
             binding.PluginId, binding.SessionId, binding.EndpointId, IsNode: false);
         _bus.RegisterEndpoint(_webEndpoint, _webTransport);
-        StaticLogger.LogInformation(
+        StaticLogger.LogDebug(
             "Attached WebView2Transport endpoint={Endpoint} session={Session}",
             endpointLabel, sessionId);
     }
@@ -367,7 +367,7 @@ public partial class NodePluginDetailView : UserControl
         {
             CancelHandshakeTimeout();
             HideHandshakeError();
-            StaticLogger.LogInformation(
+            StaticLogger.LogDebug(
                 "WebView handshake succeeded endpoint={Endpoint} version={Version}",
                 _webTransport?.Binding.EndpointId, version);
             TrySendPageReadyMessages();

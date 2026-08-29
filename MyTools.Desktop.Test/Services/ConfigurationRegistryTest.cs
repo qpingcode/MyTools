@@ -1,6 +1,7 @@
 using Moq;
 using MyTools.Common.Config.Interfaces;
 using MyTools.Common.Config.Models;
+using MyTools.Common.Plugins;
 using MyTools.Desktop.Services;
 using NUnit.Framework;
 
@@ -14,12 +15,12 @@ public class ConfigurationRegistryTest
     {
         var stored = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var storage = new Mock<IConfigurationStorage>();
-        storage.Setup(value => value.Exists(It.IsAny<string>()))
-            .Returns((string key) => stored.ContainsKey(key));
-        storage.Setup(value => value.Retrieve(It.IsAny<string>()))
-            .Returns((string key) => stored.GetValueOrDefault(key));
-        storage.Setup(value => value.Store(It.IsAny<string>(), It.IsAny<string>()))
-            .Callback((string key, string value) => stored[key] = value);
+        storage.Setup(value => value.Exists(It.IsAny<string>(), It.IsAny<PluginId?>()))
+            .Returns((string key, PluginId? _) => stored.ContainsKey(key));
+        storage.Setup(value => value.Retrieve(It.IsAny<string>(), It.IsAny<PluginId?>()))
+            .Returns((string key, PluginId? _) => stored.GetValueOrDefault(key));
+        storage.Setup(value => value.Store(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<PluginId?>()))
+            .Callback((string key, string value, PluginId? _) => stored[key] = value);
 
         var registry = new ConfigurationRegistry(storage.Object);
         var category = registry.AddCategory("Test", "Test", "");
@@ -41,13 +42,11 @@ public class ConfigurationRegistryTest
     }
 
     [Test]
-    public void RemoveCategory_RemovesCategoryChildrenAndSettingsFromIndexes()
+    public void RemoveCategory_RemovesFlatCategoryAndSettingsFromIndexes()
     {
         var registry = new ConfigurationRegistry(new Mock<IConfigurationStorage>().Object);
         var category = registry.AddCategory("development-plugin", "Development plugin", "");
-        var child = registry.AddCategory("advanced", "Advanced", "", category);
         registry.AddSetting(category, "Endpoint", "Endpoint", "", "https://example.test", serializer: null);
-        registry.AddSetting(child, "Retries", "Retries", "", 3, serializer: null);
 
         var removed = registry.RemoveCategory("development-plugin");
 
@@ -55,10 +54,40 @@ public class ConfigurationRegistryTest
         {
             Assert.That(removed, Is.True);
             Assert.That(registry.FindCategory("development-plugin"), Is.Null);
-            Assert.That(registry.FindCategory("development-plugin.advanced"), Is.Null);
             Assert.That(registry.FindSetting("development-plugin.Endpoint"), Is.Null);
-            Assert.That(registry.FindSetting("development-plugin.advanced.Retries"), Is.Null);
             Assert.That(registry.GetRootCategories(), Is.Empty);
+        });
+    }
+
+    [Test]
+    public void AddSetting_UsesGlobalKeyAndPluginRelativeStorageKey()
+    {
+        var registry = new ConfigurationRegistry(new Mock<IConfigurationStorage>().Object);
+        var pluginId = new PluginId("quick-text");
+        var category = registry.AddCategory("quick-text", "Quick Text", "", pluginId: pluginId);
+        var rootSetting = registry.AddSetting(category, "Phrases", "Phrases", "", "[]", serializer: null);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(rootSetting.PluginId, Is.EqualTo(pluginId));
+            Assert.That(rootSetting.Key, Is.EqualTo("quick-text.Phrases"));
+            Assert.That(rootSetting.StorageKey, Is.EqualTo("Phrases"));
+        });
+    }
+
+    [Test]
+    public void AddSetting_HostSettingUsesGlobalKeyForStorage()
+    {
+        var registry = new ConfigurationRegistry(new Mock<IConfigurationStorage>().Object);
+        var category = registry.AddCategory("General", "常规", "");
+
+        var setting = registry.AddSetting(category, "Language", "语言", "", "zh-CN", serializer: null);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(setting.Key, Is.EqualTo("General.Language"));
+            Assert.That(setting.StorageKey, Is.EqualTo("General.Language"));
+            Assert.That(registry.FindSetting("general.language"), Is.SameAs(setting));
         });
     }
 }

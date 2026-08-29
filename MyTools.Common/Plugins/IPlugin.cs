@@ -6,7 +6,7 @@ namespace MyTools.Plugins;
 
 public interface IPlugin
 {
-    string PluginId { get; }
+    PluginId PluginId { get; }
     string Name { get; }
     string Description { get; }
     public List<IActionWithHotkey> Actions { get; }

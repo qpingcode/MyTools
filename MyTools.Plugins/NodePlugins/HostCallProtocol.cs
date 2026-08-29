@@ -29,13 +29,12 @@ public sealed class CategoryDto
     public string? Description { get; init; }
     public string? Icon { get; init; }
     public bool IsSelectable { get; init; }
-    public List<CategoryDto> Children { get; init; } = new();
     public List<SettingDto> Settings { get; init; } = new();
 }
 
 public sealed class SettingDto
 {
-    public string FullPath { get; init; } = "";
+    public string Key { get; init; } = "";
     public string Title { get; init; } = "";
     public string? Description { get; init; }
     public string ValueType { get; init; } = "";
@@ -49,7 +48,7 @@ public sealed class SettingDto
 
 public sealed class SettingSchemaDto
 {
-    public List<SettingSchemaPropertyDto> Properties { get; init; } = [];
+    public List<SettingSchemaPropertyDto> Properties { get; init; } = new();
 }
 
 public sealed class SettingSchemaPropertyDto
@@ -60,7 +59,7 @@ public sealed class SettingSchemaPropertyDto
     public string? UiHint { get; init; }
     public string? DefaultValue { get; init; }
     public bool Hidden { get; init; }
-    public bool Table { get; init; } = true;
+    public bool ShowInTable { get; init; } = true;
     public string? Visibility { get; init; }
 }
 
@@ -79,7 +78,7 @@ public sealed class SaveConfigurationRequest
 
 public sealed class SettingChangeDto
 {
-    public string FullPath { get; init; } = "";
+    public string Key { get; init; } = "";
     public string? Value { get; init; }
 }
 

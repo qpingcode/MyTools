@@ -46,7 +46,7 @@ MyTools 是一个 WPF 宿主，同时支持内置 .NET 插件、Node 后端和 W
 1. **宿主 RESX 与 `ILocalizationService` 已实现**：`MyTools.Common/Localization/ILocalizationService.cs` 定义了不依赖 WPF 的本地化抽象；`MyTools.Desktop/Services/LanguageService.cs` 实现该接口，通过 `ResourceManager` 读取 `MyTools.Desktop/Localization/HostStrings.resx` / `HostStrings.zh-CN.resx` / `HostStrings.fr-FR.resx`。`LanguageService` 不再依赖 `Application.Current.Resources`，旧 `RefreshResourceDictionaries()` 实现已删除。
 2. **旧 XAML 资源字典已退役**：`Strings.en-US.xaml`、`Strings.zh-CN.xaml` 已删除，`App.xaml` 的 `Application.Resources` 为空字典；XAML 文案改由 `LocExtension`（`MyTools.Desktop/Localization/LocExtension.cs`）经 `ILocalizationService` 解析并随 `LocaleChanged` 自动刷新。
 3. **`LocalizedMessage` 已进入跨层模型**：`Result.LocalizedErrorMessage`、`ActionResult.LocalizedMessage`、`ResultItem.LocalizedTitle/LocalizedSubTitle` 已存在；调用方可在解析时通过 `LocalizedMessage.Resolve(ILocalizationService)` 得到当前语言文本。
-4. **配置路径已基于稳定 `PluginId`**：`PluginBase.PluginId`（默认为类型名去掉 `Plugin` 后缀，可覆盖）作为 `Plugins.{PluginId}.{Setting}` 配置路径的来源；`Name`/`Description` 仅用于展示，可自由本地化而不影响持久化路径。
+4. **配置键已基于稳定 `PluginId`**：插件设置在 registry/DTO 中使用 `{PluginId}.{Setting}`，持久化时按 `PluginId` 路由到插件自己的 `settings.json`，文件内只保存相对的 setting name；分类显示名和描述可自由本地化。
 5. **Node RPC 已透传 locale**：`NodePluginProcessHost` 的 `initialize`、`search`、`invokeAction`、`detailEvent`、`detailCall` 全部携带 `locale` 与 `fallbackLocale`；`initialize` 还携带合并后的 `messages`。
 6. **WebView2 详情页已下发语言上下文**：`NodePluginDetailView` 的初始化消息（subject `mytools.host.initialize`）携带 `locale`、`fallbackLocale`、`translationRevision`、`messages`；并实现 `language-changed` 消息用于运行时切换。
 7. **插件 SDK 与示例已落地**：`MyTools.Plugins/Examples/common/` 提供 `web-tool.ts`、`events.ts`、`i18n.ts`（基于 `i18next` 的 `mytoolsI18n` 包装）；示例插件 HTML 使用 `data-i18n` + `data-i18n-default-value`；`plugin.json` 已声明 `i18n` 块（`defaultLocale`、`catalog`、`localesPath`、`supportedLocales`）。
@@ -228,7 +228,7 @@ WPF 调用统一服务语义（已实现）：
 后续维护要求：
 
 1. 新增用户可见文案必须经 `ILocalizationService` / `LocExtension` / `LocalizedMessage`，禁止新增裸露字符串（待 CI 扫描强制，见第 10、13 节）。
-2. 配置路径基于稳定 `PluginId`（`Plugins.{PluginId}.{Setting}`）；`PluginBase.Name`、`ConfigurationCategory.Name`、`ConfigurationSetting.Name` 仅作显示用，可自由本地化，不会写回持久化路径。
+2. 插件配置键基于稳定 `PluginId`（`{PluginId}.{Setting}`）；`ConfigurationCategory.Name` 和 `ConfigurationSetting.Title` 仅作显示用，可自由本地化，不会写回持久化键。
 
 ---
 
@@ -584,7 +584,7 @@ MyTools 维护两类共享资产：
 ### Phase 2：内置插件与结果模型 ✅
 
 1. 内置 .NET 插件文案走宿主 RESX（`Plugin.{PluginId}.*` key）。
-2. 配置持久化路径基于 `PluginId`（`Plugins.{PluginId}.{Setting}`），与本地化显示名解耦。
+2. 配置查找键基于 `PluginId`（`{PluginId}.{Setting}`），持久化按 `PluginId` 分文件并使用相对 setting name，与本地化显示名解耦。
 3. `Result.LocalizedErrorMessage`、`ActionResult.LocalizedMessage`、`ResultItem.LocalizedTitle/LocalizedSubTitle` 已落地；保留字符串兼容字段并存。
 
 ### Phase 3：插件 SDK、Catalog 和协议 ✅

@@ -48,7 +48,7 @@ public class SearchHistoryDbHelperTest
     {
         var helper = new SearchHistoryDbHelper(_dbPath);
         var plugin = new FakePlugin();
-        helper.RecordSelection("calc", plugin.PluginId, "fav");
+        helper.RecordSelection("calc", plugin.PluginId.Value, "fav");
 
         var searcher = new Searcher(new FakeGlobalSearchRegistry(plugin), new MemoryCache(new MemoryCacheOptions()), helper, NullLogger<Searcher>.Instance);
         var result = await ((ISearcher)searcher).SearchAsync(null, "calc", CancellationToken.None);
@@ -61,7 +61,7 @@ public class SearchHistoryDbHelperTest
     {
         var helper = new SearchHistoryDbHelper(_dbPath);
         var plugin = new ChronologicalPlugin();
-        helper.RecordSelection(string.Empty, plugin.PluginId, "old");
+        helper.RecordSelection(string.Empty, plugin.PluginId.Value, "old");
 
         var searcher = new Searcher(
             new FakeGlobalSearchRegistry(plugin),
@@ -113,7 +113,7 @@ public class SearchHistoryDbHelperTest
 
     private sealed class FakePlugin : PluginBase
     {
-        public override string PluginId => GetType().FullName!;
+        public override PluginId PluginId => new(GetType().FullName!);
 
         public override string Name => "Fake";
         public override string Description => "Fake";
@@ -140,7 +140,7 @@ public class SearchHistoryDbHelperTest
 
     private sealed class ChronologicalPlugin : PluginBase
     {
-        public override string PluginId => GetType().FullName!;
+        public override PluginId PluginId => new(GetType().FullName!);
         public override string Name => "Chronological";
         public override string Description => "Chronological";
         public override List<IActionWithHotkey> Actions => [];
@@ -172,7 +172,7 @@ public class SearchHistoryDbHelperTest
 
     private sealed class EmptyStatePlugin : PluginBase
     {
-        public override string PluginId => GetType().FullName!;
+        public override PluginId PluginId => new(GetType().FullName!);
         public override string Name => "Empty";
         public override string Description => "Empty";
         public override List<IActionWithHotkey> Actions => [];

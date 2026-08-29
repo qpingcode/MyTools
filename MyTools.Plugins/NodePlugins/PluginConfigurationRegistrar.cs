@@ -4,6 +4,7 @@ using MyTools.Common.Config.Enums;
 using MyTools.Common.Config.Interfaces;
 using MyTools.Common.Config.Models;
 using MyTools.Common.Localization;
+using MyTools.Common.Plugins;
 using MyTools.Protocol.Manifest;
 
 namespace MyTools.Plugins.NodePlugins;
@@ -22,35 +23,22 @@ public static class PluginConfigurationRegistrar
         ILocalizationService localization,
         string? icon = null)
     {
-        if (configuration.Count == 0 || registry.FindCategory(pluginId) != null)
+        var ownerId = new PluginId(pluginId);
+        if (configuration.Count == 0 || registry.FindCategory(ownerId.Value) != null)
         {
             return;
         }
 
-        var category = registry.AddCategory(pluginId, categoryName, categoryDescription);
+        var category = registry.AddCategory(
+            ownerId.Value,
+            categoryName,
+            categoryDescription,
+            pluginId: ownerId);
         category.Icon = NormalizeIcon(icon);
         foreach (var item in configuration)
         {
-            RegisterSetting(registry, category, pluginId, item, localization);
+            RegisterSetting(registry, category, item, localization);
         }
-    }
-
-    public static string SettingName(string pluginId, string key)
-    {
-        var trimmed = key.Trim();
-        var pluginPrefix = pluginId + ".";
-        if (trimmed.StartsWith(pluginPrefix, StringComparison.OrdinalIgnoreCase))
-        {
-            return trimmed[pluginPrefix.Length..];
-        }
-
-        var pluginsPrefix = "Plugins." + pluginId + ".";
-        if (trimmed.StartsWith(pluginsPrefix, StringComparison.OrdinalIgnoreCase))
-        {
-            return trimmed[pluginsPrefix.Length..];
-        }
-
-        return trimmed;
     }
 
     public static string? NormalizeIcon(string? icon)
@@ -69,7 +57,6 @@ public static class PluginConfigurationRegistrar
     private static void RegisterSetting(
         IConfigurationRegistry registry,
         ConfigurationCategory category,
-        string pluginId,
         PluginConfigurationSettingV3 item,
         ILocalizationService localization)
     {
@@ -85,7 +72,7 @@ public static class PluginConfigurationRegistrar
             return;
         }
 
-        var name = SettingName(pluginId, item.Key);
+        var name = item.Key.Trim();
         var title = ResolveLabel(item.Label, "", localization);
         var description = ResolveLabel(item.Description, "", localization);
         var uiHint = string.IsNullOrWhiteSpace(item.UiHint)
@@ -150,6 +137,19 @@ public static class PluginConfigurationRegistrar
         setting.Visibility = string.IsNullOrWhiteSpace(item.Visibility) ? null : item.Visibility.Trim();
     }
 
+    private static SchemaPropertyType ToSchemaPropertyType(string type)
+    {
+        return PluginConfigurationTypes.Normalize(type) switch
+        {
+            PluginConfigurationTypes.Bool => SchemaPropertyType.Bool,
+            PluginConfigurationTypes.Int => SchemaPropertyType.Int,
+            PluginConfigurationTypes.Double => SchemaPropertyType.Double,
+            PluginConfigurationTypes.Path => SchemaPropertyType.Path,
+            PluginConfigurationTypes.Hidden => SchemaPropertyType.Hidden,
+            _ => SchemaPropertyType.String
+        };
+    }
+
     private static ConfigurationSetting RegisterScalar(
         IConfigurationRegistry registry,
         ConfigurationCategory category,
@@ -179,16 +179,12 @@ public static class PluginConfigurationRegistrar
         {
             Properties = properties.Select(property =>
             {
-                var type = PluginConfigurationTypes.Normalize(property.Type);
-                if (string.Equals(property.Type, PluginConfigurationTypes.Hidden, StringComparison.OrdinalIgnoreCase))
-                {
-                    type = PluginConfigurationTypes.Hidden;
-                }
+                var type = ToSchemaPropertyType(property.Type);
 
                 var uiHint = string.IsNullOrWhiteSpace(property.UiHint)
-                    ? PluginConfigurationTypes.DefaultUiHint(type)
+                    ? PluginConfigurationTypes.DefaultUiHint(type.ToWireString())
                     : property.UiHint.Trim();
-                if (PluginConfigurationTypes.IsPathType(type))
+                if (PluginConfigurationTypes.IsPathType(type.ToWireString()))
                 {
                     uiHint = PluginConfigurationTypes.NormalizePathKind(uiHint);
                 }
@@ -199,7 +195,7 @@ public static class PluginConfigurationRegistrar
                     Title = ResolveLabel(property.Label, property.Key, localization),
                     UiHint = string.IsNullOrEmpty(uiHint) ? null : uiHint,
                     DefaultValue = ToStringValue(property.DefaultValue),
-                    Table = property.Table,
+                    ShowInTable = property.ShowInTable,
                     Visibility = string.IsNullOrWhiteSpace(property.Visibility) ? null : property.Visibility.Trim()
                 };
             }).ToList()

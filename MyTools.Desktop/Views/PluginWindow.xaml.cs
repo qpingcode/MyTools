@@ -57,7 +57,7 @@ public partial class PluginWindow
     /// </summary>
     public void SetPlugin(NodePlugin plugin, NodePluginDetailContext? context)
     {
-        PluginId = plugin.PluginId;
+        PluginId = plugin.PluginId.Value;
         viewModel.SetPlugin(plugin, context);
     }
 

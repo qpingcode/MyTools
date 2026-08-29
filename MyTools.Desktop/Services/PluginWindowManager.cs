@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using MyTools.Common.Plugins;
 using MyTools.Desktop.Views;
 using MyTools.Plugins.NodePlugins;
 
@@ -12,7 +13,7 @@ namespace MyTools.Desktop.Services;
 /// </summary>
 public sealed class PluginWindowManager
 {
-    private readonly Dictionary<string, PluginWindow> windows = new();
+    private readonly Dictionary<PluginId, PluginWindow> windows = new();
     private readonly IServiceProvider serviceProvider;
     private readonly WindowPlacementService windowPlacement;
 
@@ -38,7 +39,7 @@ public sealed class PluginWindowManager
         var window = serviceProvider.GetRequiredService<PluginWindow>();
         window.Closed += (_, _) => windows.Remove(plugin.PluginId);
         window.SetPlugin(plugin, context);
-        var placementKey = WindowPlacementService.PluginKey(plugin.PluginId);
+        var placementKey = WindowPlacementService.PluginKey(plugin.PluginId.Value);
         windowPlacement.Restore(window, placementKey);
         windowPlacement.Track(window, placementKey);
         window.Show();
@@ -49,7 +50,7 @@ public sealed class PluginWindowManager
 
     public void RefreshOpenPlugins(IEnumerable<NodePlugin> plugins)
     {
-        var current = plugins.ToDictionary(plugin => plugin.PluginId, StringComparer.OrdinalIgnoreCase);
+        var current = plugins.ToDictionary(plugin => plugin.PluginId);
         foreach (var (pluginId, window) in windows.ToList())
         {
             if (!current.TryGetValue(pluginId, out var plugin))
@@ -64,7 +65,7 @@ public sealed class PluginWindowManager
 
     public void RefreshOpenPlugin(string parentPluginId, IEnumerable<NodePlugin> plugins)
     {
-        var current = plugins.ToDictionary(plugin => plugin.PluginId, StringComparer.OrdinalIgnoreCase);
+        var current = plugins.ToDictionary(plugin => plugin.PluginId);
         foreach (var (pluginId, window) in windows.ToList())
         {
             if (!IsEntryOf(pluginId, parentPluginId))
@@ -83,6 +84,6 @@ public sealed class PluginWindowManager
         }
     }
 
-    private static bool IsEntryOf(string pluginId, string parentPluginId) =>
-        pluginId.StartsWith(parentPluginId + ":", StringComparison.OrdinalIgnoreCase);
+    private static bool IsEntryOf(PluginId pluginId, string parentPluginId) =>
+        pluginId.Value.StartsWith(parentPluginId + ":", StringComparison.OrdinalIgnoreCase);
 }

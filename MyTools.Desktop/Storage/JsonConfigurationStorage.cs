@@ -2,6 +2,7 @@ using System.IO;
 using Newtonsoft.Json;
 using MyTools.Common.Config;
 using MyTools.Common.Config.Interfaces;
+using MyTools.Common.Plugins;
 
 namespace MyTools.Desktop.Storage;
 
@@ -13,15 +14,18 @@ public class JsonConfigurationStorage : IConfigurationStorage, IDisposable
     private readonly string _jsonFilePath;
     private Dictionary<string, StoredSetting> _settings;
     private readonly object _lockObject = new object();
-    private bool _disposed = false;
+    private bool _disposed ;
     
-    /// <summary>
-    /// 构造函数
-    /// </summary>
     public JsonConfigurationStorage()
+        : this(Path.Combine(ConfigPath.Base, "Settings.json"))
     {
-        _jsonFilePath = Path.Combine(ConfigPath.Base, "Settings.json");
-        _settings = new Dictionary<string, StoredSetting>();
+    }
+
+    public JsonConfigurationStorage(string jsonFilePath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(jsonFilePath);
+        _jsonFilePath = jsonFilePath;
+        _settings = new Dictionary<string, StoredSetting>(StringComparer.OrdinalIgnoreCase);
         Initialize();
     }
     
@@ -37,7 +41,7 @@ public class JsonConfigurationStorage : IConfigurationStorage, IDisposable
         catch (Exception)
         {
             // 如果加载失败，使用空的设置集合
-            _settings = new Dictionary<string, StoredSetting>();
+            _settings = new Dictionary<string, StoredSetting>(StringComparer.OrdinalIgnoreCase);
         }
     }
     
@@ -46,7 +50,7 @@ public class JsonConfigurationStorage : IConfigurationStorage, IDisposable
     /// </summary>
     /// <param name="name">配置项名称</param>
     /// <param name="value">配置值</param>
-    public void Store(string name, string value)
+    public void Store(string name, string value, PluginId? pluginId = null)
     {
         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("配置项名称不能为空", nameof(name));
@@ -70,7 +74,7 @@ public class JsonConfigurationStorage : IConfigurationStorage, IDisposable
     /// </summary>
     /// <param name="name">配置项名称</param>
     /// <returns>配置值，如果不存在返回null</returns>
-    public string? Retrieve(string name)
+    public string? Retrieve(string name, PluginId? pluginId = null)
     {
         if (string.IsNullOrEmpty(name))
             return null;
@@ -86,7 +90,7 @@ public class JsonConfigurationStorage : IConfigurationStorage, IDisposable
     /// </summary>
     /// <param name="name">配置项名称</param>
     /// <returns>是否存在</returns>
-    public bool Exists(string name)
+    public bool Exists(string name, PluginId? pluginId = null)
     {
         if (string.IsNullOrEmpty(name))
             return false;
@@ -101,7 +105,7 @@ public class JsonConfigurationStorage : IConfigurationStorage, IDisposable
     /// 删除配置项
     /// </summary>
     /// <param name="name">配置项名称</param>
-    public void Delete(string name)
+    public void Delete(string name, PluginId? pluginId = null)
     {
         if (string.IsNullOrEmpty(name))
             return;
@@ -131,7 +135,7 @@ public class JsonConfigurationStorage : IConfigurationStorage, IDisposable
     /// 获取所有配置项名称
     /// </summary>
     /// <returns>配置项名称集合</returns>
-    public IEnumerable<string> GetAllNames()
+    public IEnumerable<string> GetAllNames(PluginId? pluginId = null)
     {
         lock (_lockObject)
         {
@@ -146,7 +150,7 @@ public class JsonConfigurationStorage : IConfigurationStorage, IDisposable
     {
         if (!File.Exists(_jsonFilePath))
         {
-            _settings = new Dictionary<string, StoredSetting>();
+            _settings = new Dictionary<string, StoredSetting>(StringComparer.OrdinalIgnoreCase);
             return;
         }
         
@@ -155,24 +159,27 @@ public class JsonConfigurationStorage : IConfigurationStorage, IDisposable
             var jsonContent = File.ReadAllText(_jsonFilePath);
             if (string.IsNullOrWhiteSpace(jsonContent))
             {
-                _settings = new Dictionary<string, StoredSetting>();
+                _settings = new Dictionary<string, StoredSetting>(StringComparer.OrdinalIgnoreCase);
                 return;
             }
             
             var settingsList = JsonConvert.DeserializeObject<List<StoredSetting>>(jsonContent);
             if (settingsList != null)
             {
-                _settings = settingsList.ToDictionary(s => s.Name, s => s);
+                _settings = settingsList.ToDictionary(
+                    setting => setting.Name,
+                    setting => setting,
+                    StringComparer.OrdinalIgnoreCase);
             }
             else
             {
-                _settings = new Dictionary<string, StoredSetting>();
+                _settings = new Dictionary<string, StoredSetting>(StringComparer.OrdinalIgnoreCase);
             }
         }
         catch (Exception)
         {
             // 如果反序列化失败，使用空的设置集合
-            _settings = new Dictionary<string, StoredSetting>();
+            _settings = new Dictionary<string, StoredSetting>(StringComparer.OrdinalIgnoreCase);
         }
     }
     
@@ -240,7 +247,7 @@ public class StoredSetting
     /// </summary>
     [JsonProperty("name")]
     public string Name { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 配置值
     /// </summary>

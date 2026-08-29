@@ -4,6 +4,7 @@ using MyTools.Common.Config.Enums;
 using MyTools.Common.Config.Interfaces;
 using MyTools.Common.Config.Models;
 using MyTools.Common.Localization;
+using MyTools.Common.Plugins;
 using MyTools.Plugins.NodePlugins;
 using MyTools.Protocol.Manifest;
 using NUnit.Framework;
@@ -13,14 +14,6 @@ namespace MyTools.Plugins.Test.NodePlugins;
 [TestFixture]
 public class PluginConfigurationRegistrarTest
 {
-    [Test]
-    public void SettingName_ShouldStripPluginPrefixes()
-    {
-        Assert.That(PluginConfigurationRegistrar.SettingName("snippet", "Phrases"), Is.EqualTo("Phrases"));
-        Assert.That(PluginConfigurationRegistrar.SettingName("snippet", "snippet.Phrases"), Is.EqualTo("Phrases"));
-        Assert.That(PluginConfigurationRegistrar.SettingName("snippet", "Plugins.Snippet.Phrases"), Is.EqualTo("Phrases"));
-    }
-
     [Test]
     public void NormalizeIcon_ShouldPrefixMdi()
     {
@@ -48,7 +41,7 @@ public class PluginConfigurationRegistrarTest
                     [
                         new() { Key = "trigger", Type = "string", Label = new LocalizedNameV3 { Key = "t", DefaultValue = "Trigger" } },
                         new() { Key = "timestamp", Type = "hidden", DefaultValue = JsonValue.Create("${DateTime.Now}") },
-                        new() { Key = "content", Type = "string", UiHint = "textarea", Table = false, Visibility = "${enabled == true}" }
+                        new() { Key = "content", Type = "string", UiHint = "textarea", ShowInTable = false, Visibility = "${enabled == true}" }
                     ]
                 }
             }
@@ -61,7 +54,9 @@ public class PluginConfigurationRegistrarTest
         Assert.That(registry.Categories[0].Icon, Is.EqualTo("mdi-message-text-outline"));
         Assert.That(registry.Settings, Has.Count.EqualTo(1));
         var setting = registry.Settings[0];
-        Assert.That(setting.FullPath, Is.EqualTo("snippet.Phrases"));
+        Assert.That(setting.Key, Is.EqualTo("snippet.Phrases"));
+        Assert.That(setting.PluginId, Is.EqualTo(new PluginId("snippet")));
+        Assert.That(setting.StorageKey, Is.EqualTo("Phrases"));
         Assert.That(setting.ValueType, Is.EqualTo(SettingValueTypes.Array));
         Assert.That(setting.UiHint, Is.EqualTo("table"));
         Assert.That(setting.Title, Is.EqualTo("Phrases"));
@@ -70,9 +65,9 @@ public class PluginConfigurationRegistrarTest
         Assert.That(setting.Schema.Properties[1].Hidden, Is.True);
         Assert.That(setting.Schema.Properties[1].DefaultValue, Is.EqualTo("${DateTime.Now}"));
         Assert.That(setting.Schema.Properties[2].UiHint, Is.EqualTo("textarea"));
-        Assert.That(setting.Schema.Properties[2].Table, Is.False);
+        Assert.That(setting.Schema.Properties[2].ShowInTable, Is.False);
         Assert.That(setting.Schema.Properties[2].Visibility, Is.EqualTo("${enabled == true}"));
-        Assert.That(setting.Schema.Properties[0].Table, Is.True);
+        Assert.That(setting.Schema.Properties[0].ShowInTable, Is.True);
         Assert.That(setting.Schema.Properties[0].Visibility, Is.Null);
         Assert.That(((JsonElement)setting.DefaultValue!).GetRawText(), Is.EqualTo("[]"));
     }
@@ -104,10 +99,10 @@ public class PluginConfigurationRegistrarTest
 
         Assert.That(registry.Categories[0].Icon, Is.EqualTo("mdi-folder-open-outline"));
         Assert.That(registry.Settings, Has.Count.EqualTo(2));
-        Assert.That(registry.Settings[0].FullPath, Is.EqualTo("openpath.RiderInstallPath"));
+        Assert.That(registry.Settings[0].Key, Is.EqualTo("openpath.RiderInstallPath"));
         Assert.That(registry.Settings[0].ValueType, Is.EqualTo(SettingValueTypes.Path));
         Assert.That(registry.Settings[0].UiHint, Is.EqualTo("fileOrDirectory"));
-        Assert.That(registry.Settings[1].FullPath, Is.EqualTo("openpath.WorkingDirectory"));
+        Assert.That(registry.Settings[1].Key, Is.EqualTo("openpath.WorkingDirectory"));
         Assert.That(registry.Settings[1].ValueType, Is.EqualTo(SettingValueTypes.Path));
         Assert.That(registry.Settings[1].UiHint, Is.EqualTo("directory"));
     }
@@ -171,7 +166,7 @@ public class PluginConfigurationRegistrarTest
         Assert.That(registry.Settings[0].Title, Is.EqualTo("Custom Commands"));
         Assert.That(registry.Settings[0].Description, Is.EqualTo("Configure commands."));
         Assert.That(registry.Settings[0].Name, Does.StartWith("__heading_h1_"));
-        Assert.That(registry.Settings[1].FullPath, Is.EqualTo("command-runner.Commands"));
+        Assert.That(registry.Settings[1].Key, Is.EqualTo("command-runner.Commands"));
         Assert.That(registry.Settings[1].Title, Is.EqualTo(""));
     }
 
@@ -211,15 +206,24 @@ public class PluginConfigurationRegistrarTest
             remove { }
         }
 
-        public List<ConfigurationCategory> Categories { get; } = [];
-        public List<ConfigurationSetting> Settings { get; } = [];
+        public List<ConfigurationCategory> Categories { get; } = new();
+        public List<ConfigurationSetting> Settings { get; } = new();
 
-        public ConfigurationCategory AddCategory(string name, string description, ConfigurationCategory? parent = null, bool IsSelectable = true)
-            => AddCategory(name, name, description, parent, IsSelectable);
-
-        public ConfigurationCategory AddCategory(string key, string name, string description, ConfigurationCategory? parent = null, bool IsSelectable = true)
+        public ConfigurationCategory AddCategory(
+            string key,
+            string name,
+            string description,
+            bool IsSelectable = true,
+            PluginId? pluginId = null)
         {
-            var category = new ConfigurationCategory { Key = key, Name = name, Description = description, Parent = parent };
+            var category = new ConfigurationCategory
+            {
+                Key = key,
+                PluginId = pluginId,
+                Name = name,
+                Description = description,
+                IsSelectable = IsSelectable
+            };
             Categories.Add(category);
             return category;
         }
@@ -238,7 +242,9 @@ public class PluginConfigurationRegistrarTest
         {
             var setting = new ConfigurationSetting
             {
+                Key = $"{category.Key}.{name}",
                 Name = name,
+                PluginId = category.PluginId,
                 Title = title,
                 Description = description,
                 DefaultValue = defaultValue,
@@ -253,11 +259,11 @@ public class PluginConfigurationRegistrarTest
             return setting;
         }
 
-        public ConfigurationCategory? FindCategory(string path) =>
-            Categories.FirstOrDefault(c => string.Equals(c.FullPath, path, StringComparison.OrdinalIgnoreCase));
+        public ConfigurationCategory? FindCategory(string key) =>
+            Categories.FirstOrDefault(c => string.Equals(c.Key, key, StringComparison.OrdinalIgnoreCase));
 
-        public ConfigurationSetting? FindSetting(string path) =>
-            Settings.FirstOrDefault(s => string.Equals(s.FullPath, path, StringComparison.OrdinalIgnoreCase));
+        public ConfigurationSetting? FindSetting(string key) =>
+            Settings.FirstOrDefault(s => string.Equals(s.Key, key, StringComparison.OrdinalIgnoreCase));
 
         public bool RemoveCategory(string path)
         {
@@ -268,8 +274,6 @@ public class PluginConfigurationRegistrarTest
             return true;
         }
 
-        public IEnumerable<object> Search(string query) => [];
-        public IEnumerable<ConfigurationSetting> GetModifiedSettings() => [];
         public void SaveChanges() { }
         public void Reload() { }
         public void Reload(ConfigurationSetting setting) { }

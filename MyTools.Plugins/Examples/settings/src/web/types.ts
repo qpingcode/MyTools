@@ -7,7 +7,7 @@ export type SettingSchemaProperty = {
     uiHint?: string;
     defaultValue?: string;
     hidden?: boolean;
-    table?: boolean;
+    showInTable?: boolean;
     visibility?: string;
 };
 
@@ -16,7 +16,7 @@ export type SettingSchema = {
 };
 
 export type Setting = {
-    fullPath: string;
+    key: string;
     title: string;
     description?: string;
     valueType: string;
@@ -34,7 +34,6 @@ export type Category = {
     description?: string;
     icon?: string;
     isSelectable: boolean;
-    children: Category[];
     settings: Setting[];
 };
 

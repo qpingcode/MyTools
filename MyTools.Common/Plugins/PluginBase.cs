@@ -13,29 +13,24 @@ public abstract class PluginBase : IPlugin
     /// Stable, non-localized identifier used for persistence and routing.
     /// Override when a public plugin id already exists.
     /// </summary>
-    public virtual string PluginId
+    public virtual PluginId PluginId
     {
         get
         {
             var typeName = GetType().Name;
-            return typeName.EndsWith("Plugin", StringComparison.Ordinal)
+            var value = typeName.EndsWith("Plugin", StringComparison.Ordinal)
                 ? typeName[..^"Plugin".Length]
                 : typeName;
+            return new PluginId(value);
         }
     }
 
     protected readonly PluginState pluginState = new();
-    public IPluginState PluginState => pluginState;
     
     public bool IsEnabled => pluginState.IsEnabled;
     public virtual ViewModelType ViewModelType => ViewModelType.Basic;
     public virtual bool IsGlobalSearchPlugin => false;
 
-    protected void DisablePlugin()
-    {
-        pluginState.IsEnabled = false;
-    }
-    
     public abstract string Name { get; }
     public abstract string Description { get; }
     public abstract List<IActionWithHotkey> Actions { get; }
@@ -70,28 +65,18 @@ public abstract class PluginBase : IPlugin
     public void RegisterSettings(IConfigurationRegistry configurationRegistry)
     {
         var thisPluginCategory = configurationRegistry.AddCategory(
-            PluginId, SettingsCategoryName, SettingsCategoryDescription);
+            PluginId.Value,
+            SettingsCategoryName,
+            SettingsCategoryDescription,
+            pluginId: PluginId);
         AddPluginSettings(thisPluginCategory, configurationRegistry);
-
-        // 如果插件没有注册任何额外设置项，则移除这个空分类，不在侧栏中显示。
+        // If the plugin does not register any additional settings, remove this empty category and do not display it in the sidebar.
         if (thisPluginCategory.Settings.Count == 0)
         {
-            if (thisPluginCategory.Parent != null)
-            {
-                thisPluginCategory.Parent.Children.Remove(thisPluginCategory);
-            }
+            configurationRegistry.RemoveCategory(thisPluginCategory.Key);
         }
     }
 
-    protected string GetSettingFullPath(string settingName)
-    {
-        return $"{PluginId}.{settingName}";
-    }
-
-    /// <summary>
-    /// 子类重写以添加插件特有的设置项。基类不再注册默认的 IsEnabled——
-    /// 启用状态统一在 Plugins 分类中管理。
-    /// </summary>
     protected virtual void AddPluginSettings(ConfigurationCategory pluginCategory, IConfigurationRegistry configurationRegistry)
     {
     }

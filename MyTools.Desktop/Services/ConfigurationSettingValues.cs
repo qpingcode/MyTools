@@ -2,21 +2,14 @@ using System.Text.Json;
 using MyTools.Common.Config.Enums;
 using MyTools.Common.Config.Interfaces;
 using MyTools.Common.Config.Models;
-using MyTools.Plugins.NodePlugins;
+using MyTools.Common.Plugins;
 
 namespace MyTools.Desktop.Services;
 
 public static class ConfigurationSettingValues
 {
-    public static bool Owns(string pluginId, string fullPath)
-    {
-        if (string.IsNullOrWhiteSpace(pluginId) || string.IsNullOrWhiteSpace(fullPath))
-        {
-            return false;
-        }
-
-        return fullPath.StartsWith(pluginId + ".", StringComparison.OrdinalIgnoreCase);
-    }
+    public static bool Owns(PluginId pluginId, ConfigurationSetting setting) =>
+        setting.PluginId == pluginId;
 
     public static string? ToDtoString(object? value)
     {
@@ -111,9 +104,9 @@ public static class ConfigurationSettingValues
         return Convert(setting, stringValue);
     }
 
-    public static int ApplyOwnedValues(IConfigurationRegistry registry, string pluginId, JsonElement values)
+    public static int ApplyOwnedValues(IConfigurationRegistry registry, PluginId pluginId, JsonElement values)
     {
-        if (string.IsNullOrWhiteSpace(pluginId) || values.ValueKind != JsonValueKind.Object)
+        if (values.ValueKind != JsonValueKind.Object)
         {
             return 0;
         }
@@ -121,9 +114,9 @@ public static class ConfigurationSettingValues
         var applied = 0;
         foreach (var property in values.EnumerateObject())
         {
-            var fullPath = pluginId + "." + property.Name;
-            var setting = registry.FindSetting(fullPath);
-            if (setting == null || setting.IsDisplayOnly || !Owns(pluginId, setting.FullPath))
+            var key = pluginId + "." + property.Name;
+            var setting = registry.FindSetting(key);
+            if (setting == null || setting.IsDisplayOnly || !Owns(pluginId, setting))
             {
                 continue;
             }

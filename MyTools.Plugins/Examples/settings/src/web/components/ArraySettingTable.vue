@@ -31,7 +31,7 @@ const properties = computed((): SettingSchemaProperty[] => props.setting.schema?
 const editorProperties = computed(() =>
     properties.value.filter((property) => !property.hidden && property.type.toLowerCase() !== "hidden"));
 const tableProperties = computed(() =>
-    editorProperties.value.filter((property) => property.table !== false));
+    editorProperties.value.filter((property) => property.showInTable !== false));
 const visibleEditorProperties = computed(() => {
     const lookup = (name: string) => {
         const match = properties.value.find((property) => property.key.toLowerCase() === name.toLowerCase());
@@ -41,7 +41,7 @@ const visibleEditorProperties = computed(() => {
 });
 
 const rows = computed(() => {
-    const dirty = store.dirtySettings.get(props.setting.fullPath);
+    const dirty = store.dirtySettings.get(props.setting.key);
     return parseArrayValue(dirty !== undefined ? dirty : props.setting.currentValue);
 });
 
@@ -75,7 +75,7 @@ function currentRows(): Record<string, unknown>[] {
 }
 
 function persist(next: Record<string, unknown>[]): void {
-    markSettingDirty(props.setting.fullPath, JSON.stringify(next));
+    markSettingDirty(props.setting.key, JSON.stringify(next));
 }
 
 function emptyRow(): Record<string, unknown> {

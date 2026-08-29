@@ -135,7 +135,7 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
     public DevelopmentPluginValidationResult Validate(string name, string pluginId)
     {
         var registrations = DevelopmentPluginRegistrationStore.Load();
-        var existingPlugins = builtInPlugins.Select(plugin => (plugin.PluginId, plugin.Name))
+        var existingPlugins = builtInPlugins.Select(plugin => (plugin.PluginId.Value, plugin.Name))
             .Concat(nodePluginCatalog.Plugins.Select(plugin => (plugin.ParentId, plugin.Name)))
             .Concat(registrations.Select(plugin => (plugin.PluginId, plugin.Name)));
         return ValidateAgainstExisting(name, pluginId, existingPlugins);
@@ -143,7 +143,7 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
 
     public IReadOnlyList<(string Id, string Name)> GetKnownPlugins()
     {
-        return builtInPlugins.Select(plugin => (Id: plugin.PluginId, plugin.Name))
+        return builtInPlugins.Select(plugin => (Id: plugin.PluginId.Value, plugin.Name))
             .Concat(nodePluginCatalog.Plugins.Select(plugin => (Id: plugin.ParentId, plugin.Name)))
             .Concat(DevelopmentPluginRegistrationStore.Load().Select(plugin => (Id: plugin.PluginId, plugin.Name)))
             .DistinctBy(plugin => plugin.Id, StringComparer.OrdinalIgnoreCase)

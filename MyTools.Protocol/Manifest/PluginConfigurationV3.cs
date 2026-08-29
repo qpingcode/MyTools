@@ -1,11 +1,13 @@
 using System.Collections.Generic;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 
 namespace MyTools.Protocol.Manifest;
 
 /// <summary>
 /// A plugin-declared item in <c>plugin.json</c> <c>configuration</c>.
-/// Persisted settings use <c>key</c> (stored as <c>{pluginId}.{key}</c>).
+/// Registry and DTO lookups use <c>{pluginId}.{key}</c>. The plugin's own
+/// <c>settings.json</c> stores only the relative <c>key</c>.
 /// Display-only <c>h1</c>/<c>h2</c> headings omit <c>key</c>.
 /// </summary>
 public sealed class PluginConfigurationSettingV3
@@ -47,7 +49,8 @@ public sealed class PluginConfigurationPropertyV3
     /// When <c>false</c>, the property is omitted from the settings table and only shown in the edit dialog.
     /// Omitted means <c>true</c>.
     /// </summary>
-    public bool Table { get; init; } = true;
+    [JsonPropertyName("table")]
+    public bool ShowInTable { get; init; } = true;
     /// <summary>
     /// Visibility condition macro, for example <c>${isBashScript == true}</c>.
     /// The expression may reference sibling schema property keys of the same row.

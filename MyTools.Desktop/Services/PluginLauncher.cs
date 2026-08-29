@@ -1,4 +1,5 @@
 using System.Windows;
+using MyTools.Common.Plugins;
 using MyTools.Desktop.Utils;
 using MyTools.Plugins;
 using MyTools.Plugins.NodePlugins;
@@ -40,7 +41,7 @@ public sealed class PluginLauncher : IPluginLauncher
     {
         foreach (var plugin in pluginLoader.LoadedPlugins)
         {
-            if (string.Equals(plugin.PluginId, pluginId, StringComparison.OrdinalIgnoreCase))
+            if (plugin.PluginId == new PluginId(pluginId))
             {
                 return plugin;
             }

@@ -2,6 +2,7 @@ using System.IO;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using MyTools.Common.Config;
+using MyTools.Common.Plugins;
 
 namespace MyTools.Desktop.Services;
 
@@ -28,22 +29,22 @@ public sealed class PluginOverrideProvider
         Load();
     }
 
-    public string? GetHotKey(string overrideKey, string? legacyPluginId = null)
+    public string? GetHotKey(string overrideKey, PluginId? legacyPluginId = null)
     {
         return GetOverride(overrideKey, legacyPluginId)?.HotKey;
     }
 
-    public List<string>? GetKeywords(string overrideKey, string? legacyPluginId = null)
+    public List<string>? GetKeywords(string overrideKey, PluginId? legacyPluginId = null)
     {
         return GetOverride(overrideKey, legacyPluginId)?.Keywords;
     }
 
-    public bool? GetIsEnabled(string overrideKey, string? legacyPluginId = null)
+    public bool? GetIsEnabled(string overrideKey, PluginId? legacyPluginId = null)
     {
         return GetOverride(overrideKey, legacyPluginId)?.IsEnabled;
     }
 
-    public bool? GetIncludeInGlobalResults(string overrideKey, string? legacyPluginId = null)
+    public bool? GetIncludeInGlobalResults(string overrideKey, PluginId? legacyPluginId = null)
     {
         return GetOverride(overrideKey, legacyPluginId)?.IncludeInGlobalResults;
     }
@@ -59,15 +60,15 @@ public sealed class PluginOverrideProvider
         Persist();
     }
 
-    private PluginOverride? GetOverride(string overrideKey, string? legacyPluginId)
+    private PluginOverride? GetOverride(string overrideKey, PluginId? legacyPluginId)
     {
         if (overrides.TryGetValue(overrideKey, out var value))
         {
             return value;
         }
 
-        return !string.IsNullOrWhiteSpace(legacyPluginId)
-               && overrides.TryGetValue(legacyPluginId, out value)
+        return legacyPluginId is not null
+               && overrides.TryGetValue(legacyPluginId.Value, out value)
             ? value
             : null;
     }

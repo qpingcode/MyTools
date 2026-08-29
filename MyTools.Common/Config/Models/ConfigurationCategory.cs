@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using MyTools.Common.Plugins;
 
 namespace MyTools.Common.Config.Models;
 
@@ -8,15 +9,14 @@ namespace MyTools.Common.Config.Models;
 /// </summary>
 public partial class ConfigurationCategory : ObservableObject, ICloneable
 {
-    public string Key { get; set; } = string.Empty;
+    public PluginId? PluginId { get; init; }
+
+    /// <summary>Stable, non-localized key used by the registry and UI.</summary>
+    public string Key { get; init; } = string.Empty;
 
     public string Name { get; set; } = string.Empty;
     
     public string Description { get; set; } = string.Empty;
-    
-    public ConfigurationCategory? Parent { get; set; }
-    
-    public ObservableCollection<ConfigurationCategory> Children { get; set; } = new();
     
     public ObservableCollection<ConfigurationSetting> Settings { get; set; } = new();
     
@@ -29,21 +29,27 @@ public partial class ConfigurationCategory : ObservableObject, ICloneable
     public bool IsSelectable { get; set; } = true;
     
     [ObservableProperty]
-    private bool isExpanded = false;
-    
-    public string FullPath => Parent != null ? $"{Parent.FullPath}.{EffectiveKey}" : EffectiveKey;
-
-    private string EffectiveKey => string.IsNullOrWhiteSpace(Key) ? Name : Key;
+    private bool isExpanded;
     
     public void AddSetting(ConfigurationSetting setting)
     {
+        if (PluginId != setting.PluginId)
+        {
+            throw new ArgumentException($"Cannot add settings with different plugin id, setting: {setting}, category: {this}");
+        }
         Settings.Add(setting);
     }
-    
+
+    public override string ToString()
+    {
+        return Key;
+    }
+
     public object Clone()
     {
         return new ConfigurationCategory()
         {
+            PluginId = PluginId,
             Key = Key,
             Name = Name,
             Description = Description,
@@ -51,10 +57,8 @@ public partial class ConfigurationCategory : ObservableObject, ICloneable
             SortOrder = SortOrder,
             IsVisible = IsVisible,
             IsSelectable = IsSelectable,
-            Parent = Parent,
             IsExpanded = true,
         };
     }
 }
-
 

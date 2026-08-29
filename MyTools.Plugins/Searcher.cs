@@ -136,7 +136,7 @@ public class Searcher(IGlobalSearchRegistry globalSearchRegistry, IMemoryCache c
 
     private IEnumerable<ResultItem> PrepareResultItems(IEnumerable<ResultItem> items, IPlugin plugin, string query)
     {
-        var pluginId = plugin.PluginId;
+        var pluginId = plugin.PluginId.Value;
         foreach (var resultItem in items)
         {
             resultItem.AllowedActions = resultItem.AllowedActions.Any() ? resultItem.AllowedActions : plugin.Actions;

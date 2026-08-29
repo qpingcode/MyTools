@@ -80,7 +80,7 @@ public class PluginRegistryTest
 
     private sealed class TestPlugin : IPlugin
     {
-        public string PluginId => "test";
+        public PluginId PluginId => new("test");
         public string Name => "Test";
         public string Description => "Test plugin";
         public List<IActionWithHotkey> Actions { get; } = [];

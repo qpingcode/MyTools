@@ -1,5 +1,6 @@
 using System.Windows.Input;
 using Microsoft.Extensions.Logging;
+using MyTools.Common.Plugins;
 using MyTools.Desktop.Models;
 using MyTools.Plugins.NodePlugins;
 
@@ -10,7 +11,7 @@ public sealed class PluginHotKeyService
     private readonly HotKeyManager hotKeyManager;
     private readonly PluginOverrideProvider overrideProvider;
     private readonly ILogger<PluginHotKeyService> logger;
-    private readonly Dictionary<string, int> hotKeyIds = new();
+    private readonly Dictionary<PluginId, int> hotKeyIds = new();
 
     public PluginHotKeyService(
         HotKeyManager hotKeyManager,
@@ -86,8 +87,8 @@ public sealed class PluginHotKeyService
         RegisterAll(nodePlugins, openDetail);
     }
 
-    private static bool IsEntryOf(string pluginId, string parentPluginId) =>
-        pluginId.StartsWith(parentPluginId + ":", StringComparison.OrdinalIgnoreCase);
+    private static bool IsEntryOf(PluginId pluginId, string parentPluginId) =>
+        pluginId.Value.StartsWith(parentPluginId + ":", StringComparison.OrdinalIgnoreCase);
 
     public List<PluginOverrideConflict> Validate(
         IReadOnlyDictionary<string, string?> pendingHotKeys,

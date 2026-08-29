@@ -27,7 +27,7 @@ namespace MyTools.Plugins;
 public sealed class FileSearcher : PluginBase, IDisposable
 {
     public const string SearchDirectoriesSettingName = "SearchDirectories";
-    public const string SearchDirectoriesSettingPath = "FileSearcher.SearchDirectories";
+    public const string SearchDirectoriesSettingPath = "file-searcher.SearchDirectories";
 
     private const LuceneVersion LuceneVersion = Lucene.Net.Util.LuceneVersion.LUCENE_48;
     private const string IndexDir = "FileSearcherIndex";
@@ -59,7 +59,7 @@ public sealed class FileSearcher : PluginBase, IDisposable
         this.cache = cache;
     }
 
-    public override string PluginId => "FileSearcher";
+    public override PluginId PluginId => new("file-searcher");
     public override string Name => GetCaption("Plugin.FileSearcher.Name", "File Searcher");
     public override string Description => GetCaption("Plugin.FileSearcher.Description", "Search for files and scripts");
     protected override string SettingsCategoryName => Name;
@@ -103,7 +103,7 @@ public sealed class FileSearcher : PluginBase, IDisposable
                 new SettingSchemaProperty
                 {
                     Key = "Path",
-                    Type = "path",
+                    Type = SchemaPropertyType.Path,
                     Title = GetCaption("Plugin.FileSearcher.Settings.SearchDirectories.Path", "Directory"),
                     UiHint = "directory"
                 }
@@ -128,7 +128,7 @@ public sealed class FileSearcher : PluginBase, IDisposable
 
     private void OnConfigurationChanged(object? sender, ConfigurationChangedEventArgs args)
     {
-        if (string.Equals(args.Setting.FullPath, SearchDirectoriesSettingPath, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(args.Setting.Key, SearchDirectoriesSettingPath, StringComparison.OrdinalIgnoreCase))
         {
             QueueConfigurationApply(args.NewValue);
         }

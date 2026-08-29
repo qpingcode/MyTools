@@ -7,6 +7,7 @@ using MyTools.Common.Config.Interfaces;
 using MyTools.Common.Config.Enums;
 using MyTools.Common.DependencyInjection;
 using MyTools.Common.Localization;
+using MyTools.Common.Plugins;
 using MyTools.Common.Theming;
 using MyTools.Common.Utils;
 using MyTools.Desktop.Models;
@@ -217,13 +218,13 @@ public class AppBootstrapper : IDisposable
     {
         hotKeyManager.RegisterySearchHotKey(SearchHotKey);
 
-        var clipboardHotKeyText = registry.FindSetting("ClipBoard.HotKey")?.GetValue<string>()
+        var clipboardHotKeyText = registry.FindSetting("clipboard.HotKey")?.GetValue<string>()
                                   ?? ClipBoardPlugin.DefaultHotKey;
         var clipboardHotKey = new HotKeyConfig(clipboardHotKeyText);
         hotKeyManager.RegisterClipboardHotKey(clipboardHotKey,
-            () => pluginLauncher.Open("ClipBoard"));
+            () => pluginLauncher.Open("clipboard"));
 
-        var sequentialPasteHotKeyText = registry.FindSetting("ClipBoard.SequentialPasteHotKey")?.GetValue<string>()
+        var sequentialPasteHotKeyText = registry.FindSetting("clipboard.SequentialPasteHotKey")?.GetValue<string>()
                                         ?? ClipBoardPlugin.DefaultSequentialPasteHotKey;
         var sequentialPasteHotKey = new HotKeyConfig(sequentialPasteHotKeyText);
         var clipboardPlugin = plugins.OfType<ClipBoardPlugin>().First();
@@ -261,13 +262,13 @@ public class AppBootstrapper : IDisposable
         pluginKeymapService.ReRegisterKeywords(pluginLoader.LoadedPlugins);
     }
 
-    private static IReadOnlyList<IGrouping<string, NodePlugin>> GetDuplicatePluginGroups(
+    private static IReadOnlyList<IGrouping<PluginId, NodePlugin>> GetDuplicatePluginGroups(
         IEnumerable<NodePlugin> nodePlugins) =>
-        nodePlugins.GroupBy(plugin => plugin.PluginId, StringComparer.OrdinalIgnoreCase)
+        nodePlugins.GroupBy(plugin => plugin.PluginId)
             .Where(group => group.Count() > 1)
             .ToList();
 
-    private void ShowDuplicatePluginIdWarning(IReadOnlyList<IGrouping<string, NodePlugin>> duplicateGroups)
+    private void ShowDuplicatePluginIdWarning(IReadOnlyList<IGrouping<PluginId, NodePlugin>> duplicateGroups)
     {
         if (duplicateGroups.Count == 0)
         {

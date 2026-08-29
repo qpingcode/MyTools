@@ -123,8 +123,8 @@ public class PluginConfigurationV3Test
             Is.EqualTo("${isBashScript == false}"));
         Assert.That(schema.Properties.Single(property => property.Key == "scripts").Visibility,
             Is.EqualTo("${isBashScript == true}"));
-        Assert.That(schema.Properties.Single(property => property.Key == "command").Table, Is.False);
-        Assert.That(schema.Properties.Single(property => property.Key == "name").Table, Is.True);
+        Assert.That(schema.Properties.Single(property => property.Key == "command").ShowInTable, Is.False);
+        Assert.That(schema.Properties.Single(property => property.Key == "name").ShowInTable, Is.True);
         Assert.That(PluginManifestV3Validator.Validate(m).IsValid, Is.True);
     }
 

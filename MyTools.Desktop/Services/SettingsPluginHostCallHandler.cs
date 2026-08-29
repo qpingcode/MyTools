@@ -8,6 +8,7 @@ using MyTools.Common.Config;
 using MyTools.Common.Config.Enums;
 using MyTools.Common.Config.Interfaces;
 using MyTools.Common.Config.Models;
+using MyTools.Common.Plugins;
 using MyTools.Common.Utils;
 using MyTools.Desktop.Models;
 using MyTools.Desktop.Utils;
@@ -24,6 +25,7 @@ namespace MyTools.Desktop.Services;
 /// </summary>
 public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
 {
+    private const string IlSpyPathSettingKey = "dllinterfacereader.ILSpyPathSetting";
     private readonly IConfigurationRegistry registry;
     private readonly ThemeService themeService;
     private readonly LanguageService languageService;
@@ -44,7 +46,6 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     private readonly NodePluginCatalog nodePluginCatalog;
     private readonly IKeyboardHelper keyboardHelper;
     private readonly ILogger<SettingsPluginHostCallHandler> logger;
-    private const string IlSpyPathSettingFullPath = "DllInterfaceReader.ILSpyPathSetting";
 
     private static readonly JsonSerializerOptions JsonCamelCaseOptions = new()
     {
@@ -182,12 +183,11 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     {
         return new CategoryDto
         {
-            Key = category.FullPath,
+            Key = category.Key,
             Name = category.Name,
             Description = category.Description,
             Icon = category.Icon,
             IsSelectable = category.IsSelectable,
-            Children = category.Children.Select(MapCategory).ToList(),
             Settings = category.Settings.Select(MapSetting).ToList()
         };
     }
@@ -196,7 +196,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     {
         return new SettingDto
         {
-            FullPath = setting.FullPath,
+            Key = setting.Key,
             Title = setting.Title,
             Description = setting.Description,
             ValueType = setting.ValueType switch
@@ -226,20 +226,21 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
             Properties = schema.Properties.Select(property => new SettingSchemaPropertyDto
             {
                 Key = property.Key,
-                Type = property.Type,
+                Type = property.Type.ToWireString(),
                 Title = property.Title,
                 UiHint = property.UiHint,
                 DefaultValue = property.DefaultValue,
                 Hidden = property.Hidden,
-                Table = property.Table,
+                ShowInTable = property.ShowInTable,
                 Visibility = property.Visibility
             }).ToList()
         };
     }
 
-    private JsonElement GetOwnConfiguration(string pluginId)
+    private JsonElement GetOwnConfiguration(string pluginIdString)
     {
         var values = new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
+        var pluginId = new PluginId(pluginIdString);
         foreach (var category in registry.GetRootCategories())
         {
             CollectOwnSettings(category, pluginId, values);
@@ -248,9 +249,9 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         return JsonSerializer.SerializeToElement(new { values }, JsonCamelCaseOptions);
     }
 
-    private JsonElement SaveOwnConfiguration(string pluginId, JsonElement payload)
+    private JsonElement SaveOwnConfiguration(string pluginIdString, JsonElement payload)
     {
-        if (string.IsNullOrWhiteSpace(pluginId))
+        if (string.IsNullOrWhiteSpace(pluginIdString))
         {
             throw new InvalidOperationException("configuration.writeOwn requires a plugin id.");
         }
@@ -260,6 +261,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
             throw new InvalidOperationException("configuration.writeOwn requires a values object.");
         }
 
+        var pluginId = new PluginId(pluginIdString);
         ConfigurationSettingValues.ApplyOwnedValues(registry, pluginId, values);
         registry.SaveChanges();
         return JsonSerializer.SerializeToElement(new { success = true }, JsonCamelCaseOptions);
@@ -267,23 +269,18 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
 
     private static void CollectOwnSettings(
         ConfigurationCategory category,
-        string pluginId,
+        PluginId pluginId,
         Dictionary<string, JsonElement> values)
     {
         foreach (var setting in category.Settings)
         {
-            if (!ConfigurationSettingValues.Owns(pluginId, setting.FullPath)
+            if (!ConfigurationSettingValues.Owns(pluginId, setting)
                 || setting.IsDisplayOnly)
             {
                 continue;
             }
 
             values[setting.Name] = ConfigurationSettingValues.ToJsonElement(setting.CurrentValue ?? setting.DefaultValue);
-        }
-
-        foreach (var child in category.Children)
-        {
-            CollectOwnSettings(child, pluginId, values);
         }
     }
 
@@ -297,16 +294,16 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
 
         foreach (var change in request.Changes)
         {
-            var setting = registry.FindSetting(change.FullPath);
+            var setting = registry.FindSetting(change.Key);
             if (setting == null || setting.IsDisplayOnly)
             {
-                logger.LogWarning("Setting not found: {FullPath}", change.FullPath);
+                logger.LogWarning("Setting not found: {Key}", change.Key);
                 continue;
             }
 
             ValidatePathSettingIfNeeded(setting, change.Value);
 
-            if (setting.FullPath is "ClipBoard.MaxHistoryDays" or "ClipBoard.MaxHistoryCount"
+            if (setting.Key is "clipboard.MaxHistoryDays" or "clipboard.MaxHistoryCount"
                 && (!int.TryParse(change.Value, out var positiveValue) || positiveValue <= 0))
             {
                 throw new InvalidOperationException($"{setting.Title} must be greater than zero.");
@@ -355,7 +352,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         {
             foreach (var change in request.Changes)
             {
-                var setting = registry.FindSetting(change.FullPath);
+                var setting = registry.FindSetting(change.Key);
                 if (setting != null && (setting.Options & SettingOptions.RequiresRestart) != 0)
                 {
                     requiresRestart = true;
@@ -409,13 +406,13 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
             var overrideKey = p.OverrideKey;
             var ov = overrides.TryGetValue(overrideKey, out var installationOverride)
                 ? installationOverride
-                : !duplicateIds.Contains(pluginId) && overrides.TryGetValue(pluginId, out var legacyOverride)
+                : !duplicateIds.Contains(pluginId) && overrides.TryGetValue(pluginId.Value, out var legacyOverride)
                     ? legacyOverride
                     : null;
             var defaultKeywords = p.Keywords.ToList();
             return new KeymapPluginDto
             {
-                PluginId = pluginId,
+                PluginId = pluginId.Value,
                 OverrideKey = overrideKey,
                 Location = p.PluginDirectory,
                 Name = p.GetDisplayName(),
@@ -425,7 +422,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
                 DefaultIncludeInGlobalResults = p.DefaultIncludeInGlobalResults,
                 IncludeInGlobalResults = ov?.IncludeInGlobalResults ?? p.DefaultIncludeInGlobalResults,
                 IsNodePlugin = true,
-                IsDevelopment = nodePluginCatalog.IsDevelopmentPlugin(pluginId)
+                IsDevelopment = nodePluginCatalog.IsDevelopmentPlugin(pluginId.Value)
             };
         }).ToList();
 
@@ -507,7 +504,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
                 var defaultHotKey = p.HotKey ?? "";
                 return new HotKeyPluginDto
                 {
-                    PluginId = p.PluginId,
+                    PluginId = p.PluginId.Value,
                     OverrideKey = p.OverrideKey,
                     DefaultHotKey = defaultHotKey,
                     CurrentHotKey = pluginOverrideProvider.GetHotKey(p.OverrideKey, p.PluginId) ?? defaultHotKey
@@ -556,7 +553,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
 
             items.Add(new PluginListItemDto
             {
-                PluginId = plugin.PluginId,
+                PluginId = plugin.PluginId.Value,
                 Name = plugin is NodePlugin node ? node.GetDisplayName() : plugin.Name,
                 Aliases = GetAliases(plugin, aliasesByPlugin),
                 HotKey = GetHotKey(plugin)
@@ -733,12 +730,12 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         }
 
         AddClipboardHotKeyForInspection(pluginHotKeys, pluginNames,
-            "ClipBoard.HotKey",
+            "clipboard.HotKey",
             "Plugin.ClipBoard.Settings.HotKey.Title",
             "Shortcut",
             ClipBoardPlugin.DefaultHotKey);
         AddClipboardHotKeyForInspection(pluginHotKeys, pluginNames,
-            "ClipBoard.SequentialPasteHotKey",
+            "clipboard.SequentialPasteHotKey",
             "Plugin.ClipBoard.Settings.SequentialPasteHotKey.Title",
             "Sequential paste shortcut",
             ClipBoardPlugin.DefaultSequentialPasteHotKey);
@@ -794,7 +791,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
 
     private void ApplyClipboardHotKeyFromSettings()
     {
-        var text = registry.FindSetting("ClipBoard.HotKey")?.GetValue<string>()?.Trim()
+        var text = registry.FindSetting("clipboard.HotKey")?.GetValue<string>()?.Trim()
                    ?? ClipBoardPlugin.DefaultHotKey;
         if (string.IsNullOrWhiteSpace(text))
         {
@@ -809,10 +806,10 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
                 return;
             }
 
-            hotKeyManager.RegisterClipboardHotKey(parsed, () => pluginLauncher.Open("ClipBoard"));
+            hotKeyManager.RegisterClipboardHotKey(parsed, () => pluginLauncher.Open("clipboard"));
         }
 
-        var sequentialText = registry.FindSetting("ClipBoard.SequentialPasteHotKey")?.GetValue<string>()?.Trim()
+        var sequentialText = registry.FindSetting("clipboard.SequentialPasteHotKey")?.GetValue<string>()?.Trim()
                              ?? ClipBoardPlugin.DefaultSequentialPasteHotKey;
         if (string.IsNullOrWhiteSpace(sequentialText))
         {
@@ -852,7 +849,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     {
         var duplicateGroups = pluginLoader.LoadedPlugins
             .OfType<NodePlugin>()
-            .GroupBy(plugin => plugin.PluginId, StringComparer.OrdinalIgnoreCase)
+            .GroupBy(plugin => plugin.PluginId)
             .Where(group => group.Count() > 1);
 
         foreach (var group in duplicateGroups)
@@ -876,11 +873,11 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         }
     }
 
-    private static HashSet<string> GetDuplicatePluginIds(IEnumerable<NodePlugin> plugins) =>
-        plugins.GroupBy(plugin => plugin.PluginId, StringComparer.OrdinalIgnoreCase)
+    private static HashSet<PluginId> GetDuplicatePluginIds(IEnumerable<NodePlugin> plugins) =>
+        plugins.GroupBy(plugin => plugin.PluginId)
             .Where(group => group.Count() > 1)
             .Select(group => group.Key)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            .ToHashSet();
 
     private static string GetInstallationDisplayName(NodePlugin plugin) =>
         $"{plugin.GetDisplayName()} ({Path.GetFileName(plugin.PluginDirectory)})";
@@ -907,7 +904,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
             return PluginConfigurationTypes.NormalizePathKind(setting.UiHint);
         }
 
-        return string.Equals(setting.FullPath, IlSpyPathSettingFullPath, StringComparison.OrdinalIgnoreCase)
+        return string.Equals(setting.Key, IlSpyPathSettingKey, StringComparison.OrdinalIgnoreCase)
             ? PluginConfigurationTypes.PathFile
             : null;
     }

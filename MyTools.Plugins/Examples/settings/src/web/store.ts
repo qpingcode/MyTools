@@ -72,16 +72,11 @@ export function showToast(message: string, color: "success" | "error"): void {
 }
 
 export function findCategory(categories: Category[], key: string): Category | null {
-    for (const cat of categories) {
-        if (cat.key === key) return cat;
-        const child = findCategory(cat.children, key);
-        if (child) return child;
-    }
-    return null;
+    return categories.find((category) => category.key === key) ?? null;
 }
 
 export function currentSettingRawValue(setting: Setting): string {
-    const dirty = store.dirtySettings.get(setting.fullPath);
+    const dirty = store.dirtySettings.get(setting.key);
     if (dirty !== undefined) return dirty;
     return setting.currentValue ?? "";
 }
@@ -225,8 +220,8 @@ export async function loadGestures(): Promise<void> {
     refreshDirty();
 }
 
-export function markSettingDirty(fullPath: string, value: string): void {
-    store.dirtySettings.set(fullPath, value);
+export function markSettingDirty(key: string, value: string): void {
+    store.dirtySettings.set(key, value);
     refreshDirty();
     scheduleSave();
 }
@@ -257,20 +252,18 @@ function scheduleSave(): void {
 
 function applyDirtySettingsToConfig(): void {
     if (!store.config) return;
-    for (const [fullPath, value] of store.dirtySettings.entries()) {
-        const setting = findSetting(store.config.categories, fullPath);
+    for (const [key, value] of store.dirtySettings.entries()) {
+        const setting = findSetting(store.config.categories, key);
         if (setting) {
             setting.currentValue = value;
         }
     }
 }
 
-function findSetting(categories: Category[], fullPath: string): Setting | null {
+function findSetting(categories: Category[], key: string): Setting | null {
     for (const category of categories) {
-        const match = category.settings.find((setting) => setting.fullPath === fullPath);
+        const match = category.settings.find((setting) => setting.key === key);
         if (match) return match;
-        const nested = findSetting(category.children, fullPath);
-        if (nested) return nested;
     }
     return null;
 }
@@ -293,8 +286,8 @@ export async function saveSettings(): Promise<void> {
         let requiresRestart = false;
 
         if (store.dirtySettings.size > 0) {
-            const changes = Array.from(store.dirtySettings.entries()).map(([fullPath, value]) => ({
-                fullPath,
+            const changes = Array.from(store.dirtySettings.entries()).map(([key, value]) => ({
+                key,
                 value,
             }));
             const result = await bus.call<{ requiresRestart: boolean }>("saveConfiguration", { changes });

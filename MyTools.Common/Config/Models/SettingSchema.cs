@@ -1,3 +1,5 @@
+using MyTools.Common.Config.Enums;
+
 namespace MyTools.Common.Config.Models;
 
 /// <summary>Runtime schema for an array setting, copied from plugin.json at registration.</summary>
@@ -9,11 +11,11 @@ public sealed class SettingSchema
 public sealed class SettingSchemaProperty
 {
     public string Key { get; init; } = "";
-    public string Type { get; init; } = "string";
+    public SchemaPropertyType Type { get; init; } = SchemaPropertyType.String;
     public string Title { get; init; } = "";
     public string? UiHint { get; init; }
     public string? DefaultValue { get; init; }
-    public bool Table { get; init; } = true;
+    public bool ShowInTable { get; init; } = true;
     public string? Visibility { get; init; }
-    public bool Hidden => string.Equals(Type, "hidden", StringComparison.OrdinalIgnoreCase);
+    public bool Hidden => Type == SchemaPropertyType.Hidden;
 }

@@ -157,9 +157,6 @@ public partial class MouseTrailWindow
 
             _originalLeft = screenBounds.Left;
             _originalTop = screenBounds.Top;
-
-            _logger.LogInformation("Window initialized with DPI scale: {DpiScale}, Size: {Width}x{Height}",
-                _dpiScale, Width, Height);
         };
     }
 

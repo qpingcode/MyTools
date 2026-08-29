@@ -35,13 +35,13 @@ let isDrawing = false;
 
 const gestures = computed(() => store.gestureConfigs || []);
 const enableSetting = computed(() =>
-    currentCategory.value?.settings.find((setting) => setting.fullPath === "Gestures.EnableGesture") ?? null);
+    currentCategory.value?.settings.find((setting) => setting.key === "Gestures.EnableGesture") ?? null);
 const tableQuery = ref("");
 const highlightQuery = computed(() => tableQuery.value.trim() || store.searchQuery);
 
 function onEnableChange(value: boolean): void {
     if (!enableSetting.value) return;
-    markSettingDirty(enableSetting.value.fullPath, value ? "True" : "False");
+    markSettingDirty(enableSetting.value.key, value ? "True" : "False");
 }
 
 const headers = computed(() => ({

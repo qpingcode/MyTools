@@ -1,57 +1,26 @@
+using MyTools.Common.Plugins;
+
 namespace MyTools.Common.Config.Interfaces;
 
 /// <summary>
-/// 配置存储接口
+/// 配置存储接口。宿主设置 <paramref name="pluginId"/> 为 null；
+/// 插件设置必须传入所属 <see cref="PluginId"/>，由实现路由到该插件的数据目录。
 /// </summary>
 public interface IConfigurationStorage
 {
-    /// <summary>
-    /// 存储配置值
-    /// </summary>
-    /// <param name="name">配置项名称</param>
-    /// <param name="value">配置值（字节数组）</param>
-    void Store(string name, string value);
-    
-    /// <summary>
-    /// 获取配置值
-    /// </summary>
-    /// <param name="name">配置项名称</param>
-    /// <returns>配置值（字节数组），如果不存在返回null</returns>
-    string? Retrieve(string name);
-    
-    /// <summary>
-    /// 检查配置项是否存在
-    /// </summary>
-    /// <param name="name">配置项名称</param>
-    /// <returns>是否存在</returns>
-    bool Exists(string name);
-    
-    /// <summary>
-    /// 删除配置项
-    /// </summary>
-    /// <param name="name">配置项名称</param>
-    void Delete(string name);
-    
-    /// <summary>
-    /// 清空所有配置
-    /// </summary>
+    void Store(string name, string value, PluginId? pluginId = null);
+
+    string? Retrieve(string name, PluginId? pluginId = null);
+
+    bool Exists(string name, PluginId? pluginId = null);
+
+    void Delete(string name, PluginId? pluginId = null);
+
     void Clear();
-    
-    /// <summary>
-    /// 获取所有配置项名称
-    /// </summary>
-    /// <returns>配置项名称集合</returns>
-    IEnumerable<string> GetAllNames();
-    
-    /// <summary>
-    /// 初始化存储
-    /// </summary>
+
+    IEnumerable<string> GetAllNames(PluginId? pluginId = null);
+
     void Initialize();
-    
-    /// <summary>
-    /// 关闭存储
-    /// </summary>
+
     void Dispose();
 }
-
-
