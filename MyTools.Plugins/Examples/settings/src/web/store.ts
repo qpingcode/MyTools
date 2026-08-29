@@ -231,9 +231,9 @@ export function markSettingDirty(fullPath: string, value: string): void {
     scheduleSave();
 }
 
-export function markKeymapDirty(pluginId: string, change: KeymapDirty): void {
-    const existing = store.keymapDirty.get(pluginId) || {};
-    store.keymapDirty.set(pluginId, { ...existing, ...change });
+export function markKeymapDirty(overrideKey: string, change: KeymapDirty): void {
+    const existing = store.keymapDirty.get(overrideKey) || {};
+    store.keymapDirty.set(overrideKey, { ...existing, ...change });
     refreshDirty();
     scheduleSave();
 }
@@ -338,13 +338,13 @@ async function savePluginOverridesInternal(): Promise<boolean> {
     let hasKeymapChanges = false;
 
     for (const plugin of store.keymapPlugins) {
-        const dirty = store.keymapDirty.get(plugin.pluginId);
+        const dirty = store.keymapDirty.get(plugin.overrideKey);
         if (!dirty) continue;
         if (dirty.keywords !== undefined
             || dirty.isEnabled !== undefined
             || dirty.includeInGlobalResults !== undefined) {
             hasKeymapChanges = true;
-            keymapOverrides[plugin.pluginId] = {
+            keymapOverrides[plugin.overrideKey] = {
                 keywords: dirty.keywords !== undefined ? dirty.keywords : plugin.currentKeywords,
                 isEnabled: dirty.isEnabled !== undefined ? dirty.isEnabled : plugin.isEnabled,
                 includeInGlobalResults: dirty.includeInGlobalResults !== undefined
@@ -353,9 +353,9 @@ async function savePluginOverridesInternal(): Promise<boolean> {
             };
         }
         if (dirty.hotKey !== undefined) {
-            hotKeysToValidate[plugin.pluginId] = dirty.hotKey;
+            hotKeysToValidate[plugin.overrideKey] = dirty.hotKey;
         }
-        if (dirty.keywords !== undefined) keywordsToValidate[plugin.pluginId] = dirty.keywords;
+        if (dirty.keywords !== undefined) keywordsToValidate[plugin.overrideKey] = dirty.keywords;
     }
 
     const conflicts: KeymapConflict[] = [];

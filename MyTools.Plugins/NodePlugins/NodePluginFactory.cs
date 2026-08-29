@@ -30,7 +30,14 @@ public sealed class NodePluginFactory
 
     public IReadOnlyList<NodePlugin> CreatePlugins(IEnumerable<NodePluginManifest> manifests)
     {
-        return manifests
+        var manifestList = manifests.ToList();
+        var duplicateIds = manifestList
+            .GroupBy(manifest => manifest.Id, StringComparer.OrdinalIgnoreCase)
+            .Where(group => group.Count() > 1)
+            .Select(group => group.Key)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        return manifestList
             .Select(manifest =>
             {
                 INodePluginHost host = new NodePluginBusHost(
@@ -38,9 +45,14 @@ public sealed class NodePluginFactory
                 {
                     NodeExePath = NodeRuntimeLocator.Resolve()
                 };
-                return new NodePlugin(
+                var plugin = new NodePlugin(
                     manifest, host, loggerFactory.CreateLogger<NodePlugin>(),
                     localizationService, themeService);
+                if (duplicateIds.Contains(manifest.Id))
+                {
+                    plugin.IsEnabled = false;
+                }
+                return plugin;
             })
             .ToList();
     }

@@ -97,6 +97,14 @@ public sealed class NodePlugin : IPlugin, IDisposable
 
     public string PluginId => manifest.Id;
 
+    /// <summary>
+    /// Stable key for this installed plugin instance. Unlike <see cref="PluginId"/>,
+    /// this remains unique when two plugin directories declare the same id.
+    /// </summary>
+    public string OverrideKey => manifest.PluginDirectory;
+
+    public string PluginDirectory => manifest.PluginDirectory;
+
     /// <summary>Bus session id after the Node process has been started.</summary>
     public string? BusSessionId => processHost.SessionId;
 

@@ -31,7 +31,7 @@ public sealed class PluginHotKeyService
                 continue;
             }
 
-            var hotKeyText = overrideProvider.GetHotKey(plugin.PluginId) ?? plugin.HotKey;
+            var hotKeyText = overrideProvider.GetHotKey(plugin.OverrideKey, plugin.PluginId) ?? plugin.HotKey;
             if (string.IsNullOrWhiteSpace(hotKeyText))
             {
                 continue;

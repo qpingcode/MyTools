@@ -48,6 +48,8 @@ export type Config = {
 
 export type KeymapPlugin = {
     pluginId: string;
+    overrideKey: string;
+    location: string;
     name: string;
     defaultHotKey: string;
     currentHotKey: string;

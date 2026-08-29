@@ -27,23 +27,23 @@ const filteredPlugins = computed(() => {
 const highlightQuery = computed(() => tableQuery.value.trim() || store.searchQuery);
 
 function hotKeyOf(plugin: KeymapPlugin): string | null {
-    const dirty = store.keymapDirty.get(plugin.pluginId);
+    const dirty = store.keymapDirty.get(plugin.overrideKey);
     return dirty?.hotKey !== undefined ? dirty.hotKey : plugin.currentHotKey;
 }
 
 function keywordsOf(plugin: KeymapPlugin): string {
-    const dirty = store.keymapDirty.get(plugin.pluginId);
+    const dirty = store.keymapDirty.get(plugin.overrideKey);
     const value = dirty?.keywords !== undefined ? dirty.keywords : plugin.currentKeywords;
     return (value || []).join(", ");
 }
 
 function enabledOf(plugin: KeymapPlugin): boolean {
-    const dirty = store.keymapDirty.get(plugin.pluginId);
+    const dirty = store.keymapDirty.get(plugin.overrideKey);
     return dirty?.isEnabled !== undefined ? dirty.isEnabled : plugin.isEnabled;
 }
 
 function globalOf(plugin: KeymapPlugin): boolean {
-    const dirty = store.keymapDirty.get(plugin.pluginId);
+    const dirty = store.keymapDirty.get(plugin.overrideKey);
     return dirty?.includeInGlobalResults !== undefined
         ? dirty.includeInGlobalResults
         : plugin.includeInGlobalResults;
@@ -59,7 +59,7 @@ function conflictOf(pluginId: string): string {
 
 function onKeywords(plugin: KeymapPlugin, value: string): void {
     const keywords = value.split(",").map((item) => item.trim()).filter(Boolean).slice(0, 3);
-    markKeymapDirty(plugin.pluginId, { keywords });
+    markKeymapDirty(plugin.overrideKey, { keywords });
 }
 
 function searchHotKey(): string | undefined {
@@ -67,7 +67,23 @@ function searchHotKey(): string | undefined {
 }
 
 function onPluginHotKeyChange(plugin: KeymapPlugin, value: string | null): void {
-    markKeymapDirty(plugin.pluginId, { hotKey: value ?? "" });
+    markKeymapDirty(plugin.overrideKey, { hotKey: value ?? "" });
+}
+
+function hasDuplicateId(plugin: KeymapPlugin): boolean {
+    return plugins.value.some((item) => item !== plugin && item.pluginId.toLowerCase() === plugin.pluginId.toLowerCase());
+}
+
+function onEnabled(plugin: KeymapPlugin, enabled: boolean): void {
+    if (enabled) {
+        for (const sibling of plugins.value) {
+            if (sibling.overrideKey !== plugin.overrideKey
+                && sibling.pluginId.toLowerCase() === plugin.pluginId.toLowerCase()) {
+                markKeymapDirty(sibling.overrideKey, { isEnabled: false });
+            }
+        }
+    }
+    markKeymapDirty(plugin.overrideKey, { isEnabled: enabled });
 }
 
 async function refreshDevelopmentPlugins(): Promise<void> {
@@ -109,17 +125,20 @@ async function refreshDevelopmentPlugins(): Promise<void> {
             </div>
             <div class="col-enabled">{{ t("Plugin.Settings.Keymap.HeaderEnabled", "Enabled") }}</div>
         </div>
-        <div v-for="plugin in filteredPlugins" :key="plugin.pluginId" class="keymap-item">
+        <div v-for="plugin in filteredPlugins" :key="plugin.overrideKey" class="keymap-item">
             <div class="keymap-row">
                 <div class="col-name" :title="plugin.name">
                     <HighlightText :text="plugin.name" :query="highlightQuery" />
                     <span v-if="plugin.isDevelopment" class="development-badge">{{ t("Plugin.Settings.Keymap.Development", "Developing") }}</span>
+                    <div v-if="hasDuplicateId(plugin)" class="duplicate-id" :title="plugin.location">
+                        ID: {{ plugin.pluginId }} · {{ plugin.location }}
+                    </div>
                 </div>
                 <div class="col-hotkey">
                     <HotKeyRecorder
                         :model-value="hotKeyOf(plugin)"
                         default-hot-key=""
-                        :exclude-plugin-id="plugin.pluginId"
+                        :exclude-plugin-id="plugin.overrideKey"
                         :current-search-hot-key="searchHotKey()"
                         @update:model-value="onPluginHotKeyChange(plugin, $event)"
                     />
@@ -137,18 +156,18 @@ async function refreshDevelopmentPlugins(): Promise<void> {
                     <n-checkbox
                         :checked="globalOf(plugin)"
                         :title="t('Plugin.Settings.Keymap.HeaderGlobalResultsTip', 'Include this plugin in global search when no plugin alias is typed')"
-                        @update:checked="markKeymapDirty(plugin.pluginId, { includeInGlobalResults: !!$event })"
+                        @update:checked="markKeymapDirty(plugin.overrideKey, { includeInGlobalResults: !!$event })"
                     />
                 </div>
                 <div class="col-enabled">
                     <n-checkbox
                         :checked="enabledOf(plugin)"
-                        @update:checked="markKeymapDirty(plugin.pluginId, { isEnabled: !!$event })"
+                        @update:checked="onEnabled(plugin, !!$event)"
                     />
                 </div>
             </div>
-            <div v-if="conflictOf(plugin.pluginId)" class="keymap-conflict">
-                ⚠ {{ conflictOf(plugin.pluginId) }}
+            <div v-if="conflictOf(plugin.overrideKey)" class="keymap-conflict">
+                ⚠ {{ conflictOf(plugin.overrideKey) }}
             </div>
         </div>
     </div>
@@ -168,6 +187,7 @@ async function refreshDevelopmentPlugins(): Promise<void> {
 .plugin-toolbar > :first-child { flex: 1; }
 .refresh-icon { font-size: 20px; line-height: 1; }
 .development-badge { margin-left: 6px; padding: 2px 6px; border-radius: 999px; background: #4f7cff22; color: #7ea0ff; font-size: 10px; vertical-align: middle; }
+.duplicate-id { margin-top: 3px; overflow: hidden; color: #f0a020; font-size: 10px; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
 
 .keymap-header,
 .keymap-row {

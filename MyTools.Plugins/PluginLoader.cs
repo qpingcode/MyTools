@@ -78,6 +78,11 @@ public class PluginLoader(ILogger<PluginLoader> logger, IKeywordRegistry keyword
         var tasks = new List<Task>();
         foreach (var plugin in pluginsToInitialize ?? GetAllPlugins())
         {
+            if (!plugin.IsEnabled)
+            {
+                continue;
+            }
+
             tasks.Add(Task.Run(async () =>
             {
                 try

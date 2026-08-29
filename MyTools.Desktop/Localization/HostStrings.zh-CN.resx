@@ -82,6 +82,8 @@
   <data name="Configuration.Gestures.Description" xml:space="preserve"><value>按住鼠标右键并移动来绘制手势，松开后执行对应操作。每个手势可限定生效进程，并绑定键盘快捷键或鼠标按键。</value></data>
   <data name="Configuration.Plugins.Name" xml:space="preserve"><value>插件</value></data>
   <data name="Configuration.Plugins.Description" xml:space="preserve"><value>启用或关闭插件，并为每个插件设置快捷键和搜索别名。</value></data>
+  <data name="Plugin.DuplicateId.Title" xml:space="preserve"><value>插件 ID 冲突</value></data>
+  <data name="Plugin.DuplicateId.Message" xml:space="preserve"><value>检测到重复的插件 ID。未选择的冲突插件已自动禁用。请打开“设置 &gt; 插件”，启用你想使用的安装实例。&#xA;&#xA;{0}</value></data>
   <data name="Plugin.Calculator.Name" xml:space="preserve"><value>计算器</value></data>
   <data name="Plugin.Calculator.Description" xml:space="preserve"><value>执行基本算术计算。</value></data>
   <data name="Plugin.Calculator.InvalidExpression" xml:space="preserve"><value>无效的算术表达式。</value></data>

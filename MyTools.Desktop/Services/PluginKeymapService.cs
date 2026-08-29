@@ -22,7 +22,7 @@ public sealed class PluginKeymapService
         foreach (var plugin in allPlugins.OfType<NodePlugin>())
         {
             keywordRegistry.UnregisterPlugin(plugin);
-            var keywords = overrideProvider.GetKeywords(plugin.PluginId) ?? plugin.Keywords.ToList();
+            var keywords = overrideProvider.GetKeywords(plugin.OverrideKey, plugin.PluginId) ?? plugin.Keywords.ToList();
             plugin.SetEffectiveKeywords(keywords);
 
             if (!plugin.IsEnabled)
@@ -39,16 +39,47 @@ public sealed class PluginKeymapService
 
     public void ApplyOverrides(IEnumerable<NodePlugin> nodePlugins)
     {
-        foreach (var plugin in nodePlugins)
+        var plugins = nodePlugins.ToList();
+        var duplicateIds = plugins
+            .GroupBy(plugin => plugin.PluginId, StringComparer.OrdinalIgnoreCase)
+            .Where(group => group.Count() > 1)
+            .Select(group => group.Key)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var plugin in plugins)
         {
-            var enabled = overrideProvider.GetIsEnabled(plugin.PluginId);
+            // A legacy plugin-id override is ambiguous for duplicate installations.
+            // Only an explicit installation override may enable one of them.
+            var enabled = duplicateIds.Contains(plugin.PluginId)
+                ? overrideProvider.GetIsEnabled(plugin.OverrideKey)
+                : overrideProvider.GetIsEnabled(plugin.OverrideKey, plugin.PluginId);
             if (enabled.HasValue)
             {
                 plugin.IsEnabled = enabled.Value;
             }
+            else if (duplicateIds.Contains(plugin.PluginId))
+            {
+                plugin.IsEnabled = false;
+            }
 
-            plugin.IsGlobalSearchPlugin = overrideProvider.GetIncludeInGlobalResults(plugin.PluginId)
+            plugin.IsGlobalSearchPlugin = overrideProvider.GetIncludeInGlobalResults(plugin.OverrideKey, plugin.PluginId)
                 ?? plugin.DefaultIncludeInGlobalResults;
+        }
+
+        foreach (var group in plugins
+                     .Where(plugin => duplicateIds.Contains(plugin.PluginId))
+                     .GroupBy(plugin => plugin.PluginId, StringComparer.OrdinalIgnoreCase))
+        {
+            var enabledPlugins = group.Where(plugin => plugin.IsEnabled).ToList();
+            if (enabledPlugins.Count <= 1)
+            {
+                continue;
+            }
+
+            foreach (var plugin in enabledPlugins)
+            {
+                plugin.IsEnabled = false;
+            }
         }
     }
 

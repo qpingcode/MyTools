@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
@@ -400,15 +401,23 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     {
         var nodePlugins = pluginLoader.LoadedPlugins.OfType<NodePlugin>().ToList();
         var overrides = pluginOverrideProvider.GetAll();
+        var duplicateIds = GetDuplicatePluginIds(nodePlugins);
 
         var plugins = nodePlugins.Select(p =>
         {
             var pluginId = p.PluginId;
-            var ov = overrides.TryGetValue(pluginId, out var o) ? o : null;
+            var overrideKey = p.OverrideKey;
+            var ov = overrides.TryGetValue(overrideKey, out var installationOverride)
+                ? installationOverride
+                : !duplicateIds.Contains(pluginId) && overrides.TryGetValue(pluginId, out var legacyOverride)
+                    ? legacyOverride
+                    : null;
             var defaultKeywords = p.Keywords.ToList();
             return new KeymapPluginDto
             {
                 PluginId = pluginId,
+                OverrideKey = overrideKey,
+                Location = p.PluginDirectory,
                 Name = p.GetDisplayName(),
                 DefaultKeywords = defaultKeywords,
                 CurrentKeywords = ov?.Keywords ?? defaultKeywords,
@@ -428,18 +437,20 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     {
         var request = payload.Deserialize<KeymapSaveRequest>(JsonCamelCaseOptions);
         var merged = pluginOverrideProvider.GetAll()
-            .ToDictionary(kv => kv.Key, kv => CloneOverride(kv.Value));
+            .ToDictionary(kv => kv.Key, kv => CloneOverride(kv.Value), StringComparer.OrdinalIgnoreCase);
 
         if (request?.Overrides != null)
         {
-            foreach (var (pluginId, item) in request.Overrides)
+            foreach (var (overrideKey, item) in request.Overrides)
             {
-                var current = merged.GetValueOrDefault(pluginId) ?? new PluginOverride();
+                var current = merged.GetValueOrDefault(overrideKey) ?? new PluginOverride();
                 current.Keywords = item.Keywords;
                 current.IsEnabled = item.IsEnabled;
                 current.IncludeInGlobalResults = item.IncludeInGlobalResults;
-                merged[pluginId] = current;
+                merged[overrideKey] = current;
             }
+
+            EnforceSingleEnabledInstallation(request.Overrides, merged);
         }
 
         pluginOverrideProvider.Save(merged);
@@ -461,11 +472,15 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     {
         var request = payload.Deserialize<KeymapValidateRequest>(JsonCamelCaseOptions);
         var nodePlugins = pluginLoader.LoadedPlugins.OfType<NodePlugin>().ToList();
-        var pluginNames = nodePlugins.ToDictionary(p => p.PluginId, p => p.Name);
+        var pluginNames = nodePlugins.ToDictionary(
+            p => p.OverrideKey,
+            GetInstallationDisplayName,
+            StringComparer.OrdinalIgnoreCase);
 
         var currentKeywords = nodePlugins.ToDictionary(
-            p => p.PluginId,
-            p => (List<string>?)(pluginOverrideProvider.GetKeywords(p.PluginId) ?? p.Keywords.ToList()));
+            p => p.OverrideKey,
+            p => (List<string>?)(pluginOverrideProvider.GetKeywords(p.OverrideKey, p.PluginId) ?? p.Keywords.ToList()),
+            StringComparer.OrdinalIgnoreCase);
 
         var conflicts = new List<KeymapConflictDto>();
 
@@ -493,8 +508,9 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
                 return new HotKeyPluginDto
                 {
                     PluginId = p.PluginId,
+                    OverrideKey = p.OverrideKey,
                     DefaultHotKey = defaultHotKey,
-                    CurrentHotKey = pluginOverrideProvider.GetHotKey(p.PluginId) ?? defaultHotKey
+                    CurrentHotKey = pluginOverrideProvider.GetHotKey(p.OverrideKey, p.PluginId) ?? defaultHotKey
                 };
             })
             .ToList();
@@ -554,7 +570,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     {
         if (plugin is NodePlugin nodePlugin)
         {
-            return pluginOverrideProvider.GetKeywords(nodePlugin.PluginId) ?? nodePlugin.Keywords.ToList();
+            return pluginOverrideProvider.GetKeywords(nodePlugin.OverrideKey, nodePlugin.PluginId) ?? nodePlugin.Keywords.ToList();
         }
 
         return aliasesByPlugin.GetValueOrDefault(plugin) ?? [];
@@ -567,14 +583,14 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
             return "";
         }
 
-        return pluginOverrideProvider.GetHotKey(nodePlugin.PluginId) ?? nodePlugin.HotKey ?? "";
+        return pluginOverrideProvider.GetHotKey(nodePlugin.OverrideKey, nodePlugin.PluginId) ?? nodePlugin.HotKey ?? "";
     }
 
     private JsonElement SaveHotKeys(JsonElement payload)
     {
         var request = payload.Deserialize<HotKeysSaveRequest>(JsonCamelCaseOptions);
         var merged = pluginOverrideProvider.GetAll()
-            .ToDictionary(kv => kv.Key, kv => CloneOverride(kv.Value));
+            .ToDictionary(kv => kv.Key, kv => CloneOverride(kv.Value), StringComparer.OrdinalIgnoreCase);
 
         if (request?.HotKeys != null)
         {
@@ -600,10 +616,14 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     {
         var request = payload.Deserialize<HotKeysValidateRequest>(JsonCamelCaseOptions);
         var nodePlugins = pluginLoader.LoadedPlugins.OfType<NodePlugin>().ToList();
-        var pluginNames = nodePlugins.ToDictionary(p => p.PluginId, p => p.Name);
+        var pluginNames = nodePlugins.ToDictionary(
+            p => p.OverrideKey,
+            GetInstallationDisplayName,
+            StringComparer.OrdinalIgnoreCase);
         var currentHotKeys = nodePlugins.ToDictionary(
-            p => p.PluginId,
-            p => (string?)(pluginOverrideProvider.GetHotKey(p.PluginId) ?? p.HotKey));
+            p => p.OverrideKey,
+            p => (string?)(pluginOverrideProvider.GetHotKey(p.OverrideKey, p.PluginId) ?? p.HotKey),
+            StringComparer.OrdinalIgnoreCase);
         currentHotKeys["__search__"] = registry.FindSetting(GeneralSettings.SearchHotKeyPath)?.CurrentValue as string
             ?? GeneralSettings.DefaultSearchHotKey;
         pluginNames["__search__"] = languageService.GetCaption(
@@ -703,13 +723,13 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
             // A malformed or transient development-plugin catalog must not crash the capture window.
             // Keep the first loaded plugin, matching the order used elsewhere by the plugin loader.
             if (!pluginHotKeys.TryAdd(
-                    plugin.PluginId,
-                    pluginOverrideProvider.GetHotKey(plugin.PluginId) ?? plugin.HotKey))
+                    plugin.OverrideKey,
+                    pluginOverrideProvider.GetHotKey(plugin.OverrideKey, plugin.PluginId) ?? plugin.HotKey))
             {
                 continue;
             }
 
-            pluginNames.Add(plugin.PluginId, plugin.GetDisplayName());
+            pluginNames.Add(plugin.OverrideKey, GetInstallationDisplayName(plugin));
         }
 
         AddClipboardHotKeyForInspection(pluginHotKeys, pluginNames,
@@ -826,6 +846,45 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         };
     }
 
+    private void EnforceSingleEnabledInstallation(
+        IReadOnlyDictionary<string, KeymapOverrideItem> requestedOverrides,
+        Dictionary<string, PluginOverride> merged)
+    {
+        var duplicateGroups = pluginLoader.LoadedPlugins
+            .OfType<NodePlugin>()
+            .GroupBy(plugin => plugin.PluginId, StringComparer.OrdinalIgnoreCase)
+            .Where(group => group.Count() > 1);
+
+        foreach (var group in duplicateGroups)
+        {
+            var selected = group
+                .Where(plugin => requestedOverrides.TryGetValue(plugin.OverrideKey, out var item)
+                                 && item.IsEnabled == true)
+                .OrderBy(plugin => plugin.OverrideKey, StringComparer.OrdinalIgnoreCase)
+                .FirstOrDefault();
+            if (selected == null)
+            {
+                continue;
+            }
+
+            foreach (var plugin in group)
+            {
+                var current = merged.GetValueOrDefault(plugin.OverrideKey) ?? new PluginOverride();
+                current.IsEnabled = ReferenceEquals(plugin, selected);
+                merged[plugin.OverrideKey] = current;
+            }
+        }
+    }
+
+    private static HashSet<string> GetDuplicatePluginIds(IEnumerable<NodePlugin> plugins) =>
+        plugins.GroupBy(plugin => plugin.PluginId, StringComparer.OrdinalIgnoreCase)
+            .Where(group => group.Count() > 1)
+            .Select(group => group.Key)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    private static string GetInstallationDisplayName(NodePlugin plugin) =>
+        $"{plugin.GetDisplayName()} ({Path.GetFileName(plugin.PluginDirectory)})";
+
     private void ValidatePathSettingIfNeeded(ConfigurationSetting setting, string? value)
     {
         var kind = PathKindOf(setting);
@@ -865,6 +924,8 @@ public sealed class KeymapDto
 public sealed class KeymapPluginDto
 {
     public string PluginId { get; init; } = "";
+    public string OverrideKey { get; init; } = "";
+    public string Location { get; init; } = "";
     public string Name { get; init; } = "";
     public List<string> DefaultKeywords { get; init; } = new();
     public List<string> CurrentKeywords { get; init; } = new();
@@ -900,6 +961,7 @@ public sealed class HotKeysDto
 public sealed class HotKeyPluginDto
 {
     public string PluginId { get; init; } = "";
+    public string OverrideKey { get; init; } = "";
     public string DefaultHotKey { get; init; } = "";
     public string CurrentHotKey { get; init; } = "";
 }

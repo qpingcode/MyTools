@@ -98,6 +98,8 @@ public class AppBootstrapper : IDisposable
         // Node plugins (and their plugin.json configuration) must exist before settings
         // are registered, otherwise Tools categories like Snippet never appear.
         var nodePlugins = LoadNodePlugins();
+        pluginKeymapService.ApplyOverrides(nodePlugins);
+        var duplicatePluginGroups = GetDuplicatePluginGroups(nodePlugins);
 
         InitializeConfigurationData();
 
@@ -116,6 +118,8 @@ public class AppBootstrapper : IDisposable
         // Apply the user-configured theme and keep WPF in sync on hot-swap.
         ThemeManager.ApplyTheme(themeService.CurrentTheme);
         themeService.ThemeChanged += OnThemeChanged;
+
+        ShowDuplicatePluginIdWarning(duplicatePluginGroups);
     }
 
     private void OnDevelopmentPluginsReloadRequested(object? sender, DevelopmentPluginReloadRequestedEventArgs e)
@@ -255,6 +259,40 @@ public class AppBootstrapper : IDisposable
         pluginKeymapService.ApplyOverrides(plugins);
         pluginHotKeyService.RegisterAll(plugins, OpenNodePluginDetail);
         pluginKeymapService.ReRegisterKeywords(pluginLoader.LoadedPlugins);
+    }
+
+    private static IReadOnlyList<IGrouping<string, NodePlugin>> GetDuplicatePluginGroups(
+        IEnumerable<NodePlugin> nodePlugins) =>
+        nodePlugins.GroupBy(plugin => plugin.PluginId, StringComparer.OrdinalIgnoreCase)
+            .Where(group => group.Count() > 1)
+            .ToList();
+
+    private void ShowDuplicatePluginIdWarning(IReadOnlyList<IGrouping<string, NodePlugin>> duplicateGroups)
+    {
+        if (duplicateGroups.Count == 0)
+        {
+            return;
+        }
+
+        var details = string.Join(
+            Environment.NewLine + Environment.NewLine,
+            duplicateGroups.Select(group =>
+                $"ID: {group.Key}{Environment.NewLine}"
+                + string.Join(Environment.NewLine, group.Select(plugin => $"  • {plugin.PluginDirectory}"))));
+
+        logger.LogWarning("Duplicate plugin ids detected at startup: {DuplicatePluginIds}.",
+            string.Join(", ", duplicateGroups.Select(group => group.Key)));
+
+        var message = string.Format(
+            localization.GetCaption(
+                "Plugin.DuplicateId.Message",
+                "Duplicate plugin IDs were detected. Unselected conflicting plugins have been disabled automatically. Open Settings > Plugins and enable the installation you want to use.\n\n{0}"),
+            details);
+        TopmostMessageBox.Show(
+            message,
+            localization.GetCaption("Plugin.DuplicateId.Title", "Plugin ID conflict"),
+            System.Windows.MessageBoxButton.OK,
+            System.Windows.MessageBoxImage.Warning);
     }
 
     private void OpenNodePluginDetail(NodePlugin nodePlugin)

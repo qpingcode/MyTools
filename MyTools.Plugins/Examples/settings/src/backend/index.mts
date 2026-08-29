@@ -24,12 +24,12 @@ plugin
       plugin.hostCall("hotkeys.read") as Promise<any>,
     ]);
     const hotkeysByPlugin = new Map<string, Record<string, unknown>>(
-      (hotkeys?.plugins || []).map((item: Record<string, unknown>) => [String(item.pluginId), item]),
+      (hotkeys?.plugins || []).map((item: Record<string, unknown>) => [String(item.overrideKey), item]),
     );
     return {
       plugins: (keymap?.plugins || []).map((item: any) => ({
         ...item,
-        ...(hotkeysByPlugin.get(item.pluginId) || {}),
+        ...(hotkeysByPlugin.get(item.overrideKey) || {}),
       })),
     };
   })

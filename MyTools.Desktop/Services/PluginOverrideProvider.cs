@@ -20,7 +20,7 @@ public sealed class PluginOverrideProvider
     };
 
     private readonly ILogger<PluginOverrideProvider> logger;
-    private Dictionary<string, PluginOverride> overrides = new();
+    private Dictionary<string, PluginOverride> overrides = new(StringComparer.OrdinalIgnoreCase);
 
     public PluginOverrideProvider(ILogger<PluginOverrideProvider> logger)
     {
@@ -28,24 +28,24 @@ public sealed class PluginOverrideProvider
         Load();
     }
 
-    public string? GetHotKey(string pluginId)
+    public string? GetHotKey(string overrideKey, string? legacyPluginId = null)
     {
-        return overrides.TryGetValue(pluginId, out var o) ? o.HotKey : null;
+        return GetOverride(overrideKey, legacyPluginId)?.HotKey;
     }
 
-    public List<string>? GetKeywords(string pluginId)
+    public List<string>? GetKeywords(string overrideKey, string? legacyPluginId = null)
     {
-        return overrides.TryGetValue(pluginId, out var o) ? o.Keywords : null;
+        return GetOverride(overrideKey, legacyPluginId)?.Keywords;
     }
 
-    public bool? GetIsEnabled(string pluginId)
+    public bool? GetIsEnabled(string overrideKey, string? legacyPluginId = null)
     {
-        return overrides.TryGetValue(pluginId, out var o) ? o.IsEnabled : null;
+        return GetOverride(overrideKey, legacyPluginId)?.IsEnabled;
     }
 
-    public bool? GetIncludeInGlobalResults(string pluginId)
+    public bool? GetIncludeInGlobalResults(string overrideKey, string? legacyPluginId = null)
     {
-        return overrides.TryGetValue(pluginId, out var o) ? o.IncludeInGlobalResults : null;
+        return GetOverride(overrideKey, legacyPluginId)?.IncludeInGlobalResults;
     }
 
     public IReadOnlyDictionary<string, PluginOverride> GetAll()
@@ -55,8 +55,21 @@ public sealed class PluginOverrideProvider
 
     public void Save(Dictionary<string, PluginOverride> newOverrides)
     {
-        overrides = newOverrides;
+        overrides = new Dictionary<string, PluginOverride>(newOverrides, StringComparer.OrdinalIgnoreCase);
         Persist();
+    }
+
+    private PluginOverride? GetOverride(string overrideKey, string? legacyPluginId)
+    {
+        if (overrides.TryGetValue(overrideKey, out var value))
+        {
+            return value;
+        }
+
+        return !string.IsNullOrWhiteSpace(legacyPluginId)
+               && overrides.TryGetValue(legacyPluginId, out value)
+            ? value
+            : null;
     }
 
     private void Load()
@@ -65,19 +78,20 @@ public sealed class PluginOverrideProvider
         {
             if (!File.Exists(FilePath))
             {
-                overrides = new Dictionary<string, PluginOverride>();
+                overrides = new Dictionary<string, PluginOverride>(StringComparer.OrdinalIgnoreCase);
                 Persist();
                 return;
             }
 
             var json = File.ReadAllText(FilePath);
-            overrides = JsonSerializer.Deserialize<Dictionary<string, PluginOverride>>(json, JsonOptions)
-                        ?? new Dictionary<string, PluginOverride>();
+            var loaded = JsonSerializer.Deserialize<Dictionary<string, PluginOverride>>(json, JsonOptions)
+                         ?? new Dictionary<string, PluginOverride>();
+            overrides = new Dictionary<string, PluginOverride>(loaded, StringComparer.OrdinalIgnoreCase);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to load PluginOverrides.json.");
-            overrides = new Dictionary<string, PluginOverride>();
+            overrides = new Dictionary<string, PluginOverride>(StringComparer.OrdinalIgnoreCase);
         }
     }
 

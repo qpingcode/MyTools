@@ -82,6 +82,8 @@
   <data name="Configuration.Gestures.Description" xml:space="preserve"><value>Hold the right mouse button and draw a gesture, then release it to run the assigned action. Each gesture can be limited to specific processes and mapped to a keyboard shortcut or mouse button.</value></data>
   <data name="Configuration.Plugins.Name" xml:space="preserve"><value>Plugins</value></data>
   <data name="Configuration.Plugins.Description" xml:space="preserve"><value>Enable plugins, assign hotkeys, and set aliases used in global search.</value></data>
+  <data name="Plugin.DuplicateId.Title" xml:space="preserve"><value>Plugin ID conflict</value></data>
+  <data name="Plugin.DuplicateId.Message" xml:space="preserve"><value>Duplicate plugin IDs were detected. Unselected conflicting plugins have been disabled automatically. Open Settings &gt; Plugins and enable the installation you want to use.&#xA;&#xA;{0}</value></data>
   <data name="Plugin.Calculator.Name" xml:space="preserve"><value>Calculator</value></data>
   <data name="Plugin.Calculator.Description" xml:space="preserve"><value>Perform basic arithmetic calculations.</value></data>
   <data name="Plugin.Calculator.InvalidExpression" xml:space="preserve"><value>Invalid arithmetic expression.</value></data>
