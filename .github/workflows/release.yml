@@ -154,72 +154,25 @@ jobs:
               }
 
               $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
-              foreach ($entry in $manifest.entries) {
-                  $backendPath = Join-Path (Split-Path $manifestPath) $entry.entry
-                  if (-not (Test-Path $backendPath -PathType Leaf)) {
-                      throw "Node plugin backend is missing: $backendPath"
-                  }
+              if (-not $manifest.entry) {
+                  throw "Node plugin $($pluginDirectory) is missing entry"
+              }
 
-                  if ($entry.detail -and $entry.detail.entry) {
-                      $detailPath = Join-Path (Split-Path $manifestPath) $entry.detail.entry
-                      if (-not (Test-Path $detailPath -PathType Leaf)) {
-                          throw "Node plugin detail page is missing: $detailPath"
-                      }
+              $backendPath = Join-Path (Split-Path $manifestPath) $manifest.entry
+              if (-not (Test-Path $backendPath -PathType Leaf)) {
+                  throw "Node plugin backend is missing: $backendPath"
+              }
+
+              if ($manifest.detail -and $manifest.detail.entry) {
+                  $detailPath = Join-Path (Split-Path $manifestPath) $manifest.detail.entry
+                  if (-not (Test-Path $detailPath -PathType Leaf)) {
+                      throw "Node plugin detail page is missing: $detailPath"
                   }
               }
 
-              Write-Host "Verified Node plugin: $($manifest.name)"
+              Write-Host "Verified Node plugin: $($pluginDirectory)"
           }
-
-      - name: Validate v3 protocol fixtures and migrated manifests
-        shell: pwsh
-        run: |
-          # TS-side drift self-check: the hand-written protocol types must round-trip the canonical
-          # fixtures shared with the C# side (MyTools.Protocol.Test/Fixtures/*.json). No build step —
-          # the self-check is plain ESM.
-          node .\MyTools.Plugins\Examples\sdk-v3\fixtures-selfcheck.mjs
-          if ($LASTEXITCODE -ne 0) {
-              throw "v3 protocol fixture drift self-check failed"
-          }
-
-          # Node SDK v3 unit tests (protocol codec + framing + transport + router), mirroring the C# side.
-          # Glob the files: Node on Windows treats `node --test path\to\dir\` as a single CJS
-          # module (`Cannot find module ...\test`) instead of expanding the directory.
-          node --test "MyTools.Plugins/Examples/sdk-v3/test/**/*.test.mjs"
-          if ($LASTEXITCODE -ne 0) {
-              throw "v3 Node SDK tests failed"
-          }
-
-          # Validate every example plugin.json carries protocolVersion 3.0 and non-empty entries.
-          $manifests = Get-ChildItem -Path .\MyTools.Plugins\Examples -Filter 'plugin.json' -Recurse |
-              Where-Object { $_.FullName -notmatch '\\dist\\|\\node_modules\\|\\sdk-v3\\|\\common\\' }
-          if ($manifests.Count -eq 0) {
-              throw "No plugin.json manifests found under Examples."
-          }
-          foreach ($manifestFile in $manifests) {
-              $m = Get-Content $manifestFile.FullName -Raw | ConvertFrom-Json
-              if ($m.protocolVersion -ne '3.0') {
-                  throw "$($manifestFile.FullName): protocolVersion must be '3.0', got '$($m.protocolVersion)'"
-              }
-              if (-not $m.entries -or $m.entries.Count -eq 0) {
-                  throw "$($manifestFile.FullName): must declare at least one entry"
-              }
-              $entryIds = @()
-              foreach ($entry in $m.entries) {
-                  if (-not $entry.id) {
-                      throw "$($manifestFile.FullName): entry missing id"
-                  }
-                  if ($entryIds -contains $entry.id) {
-                      throw "$($manifestFile.FullName): duplicate entry id '$($entry.id)'"
-                  }
-                  $entryIds += $entry.id
-                  if (-not $entry.entry) {
-                      throw "$($manifestFile.FullName): entry '$($entry.id)' missing entry"
-                  }
-              }
-              Write-Host "Verified plugin manifest: $($manifestFile.FullName)"
-          }
-
+          
       - name: Restore dependencies and tools
         shell: pwsh
         run: |
