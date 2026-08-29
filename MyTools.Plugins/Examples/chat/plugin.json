@@ -4,7 +4,7 @@
     "key": "Plugin.Chat.Name",
     "defaultValue": "Chat"
   },
-  "version": "0.1.0",
+  "version": "0.1.12",
   "protocolVersion": "3.0",
   "icon": "mdi-chat-processing-outline",
   "i18n": {
@@ -21,6 +21,7 @@
     "ai.chat.status",
     "ai.chat.send",
     "ai.chat.state",
+    "ai.chat.list",
     "ai.chat.cancel",
     "ai.chat.clear"
   ],
@@ -30,6 +31,9 @@
   "hotKey": "Alt+V",
   "search": {
     "global": false
+  },
+  "window": {
+    "showStatusBar": false
   },
   "detail": {
     "type": "web",

@@ -126,7 +126,8 @@ public static class DesktopServiceCollectionExtensions
                         Path.Combine(AppContext.BaseDirectory, "skills"),
                         Path.Combine(repositoryRoot, ".github", "skills")
                     ],
-                    sp.GetRequiredService<IPluginCreationProxyProvider>()),
+                    sp.GetRequiredService<IPluginCreationProxyProvider>(),
+                    Path.Combine(ConfigPath.PluginDataDirectory("chat"), "conversations.json")),
                 sp.GetRequiredService<ILogger<ChatAgentService>>());
         });
         serviceCollection.AddSingleton<ChatPluginHostCallHandler>();

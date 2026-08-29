@@ -1,6 +1,19 @@
 {
   "Plugin.Chat.Name": "聊天",
   "Plugin.Chat.Detail.New": "新对话",
+  "Plugin.Chat.Detail.Recent": "最近对话",
+  "Plugin.Chat.Detail.Untitled": "新对话",
+  "Plugin.Chat.Detail.NoRecent": "暂无最近对话",
+  "Plugin.Chat.Detail.Questions": "请完成以下问题",
+  "Plugin.Chat.Detail.QuestionProgress": "第 {{current}} 题，共 {{total}} 题",
+  "Plugin.Chat.Detail.OtherAnswer": "输入其他答案",
+  "Plugin.Chat.Detail.Previous": "上一题",
+  "Plugin.Chat.Detail.Next": "下一题",
+  "Plugin.Chat.Detail.SubmitAnswers": "提交",
+  "Plugin.Chat.Detail.AnswerHeading": "我的回答：",
+  "Plugin.Chat.Detail.AnswersSubmitted": "已提交 {{count}} 个回答",
+  "Plugin.Chat.Detail.ViewAnswers": "查看",
+  "Plugin.Chat.Detail.HideAnswers": "收起",
   "Plugin.Chat.Detail.Empty": "向 MyTools 提问",
   "Plugin.Chat.Detail.InputPlaceholder": "输入消息",
   "Plugin.Chat.Detail.Send": "发送",
@@ -8,5 +21,9 @@
   "Plugin.Chat.Detail.Model": "模型",
   "Plugin.Chat.Detail.Streaming": "…",
   "Plugin.Chat.Detail.Cancelled": "已中止回答",
-  "Plugin.Chat.Detail.TokenUsage": "{{total}} tokens · 输入 {{input}} · 输出 {{output}}"
+  "Plugin.Chat.Detail.TokenUsage": "{{total}} tokens · 输入 {{input}} · 输出 {{output}}",
+  "Plugin.Chat.Detail.DurationMilliseconds": "{{duration}} 毫秒",
+  "Plugin.Chat.Detail.DurationSeconds": "{{duration}} 秒",
+  "Plugin.Chat.Detail.CopyCode": "复制",
+  "Plugin.Chat.Detail.CodeCopied": "已复制"
 }

@@ -58,6 +58,9 @@ public partial class PluginWindow
     public void SetPlugin(NodePlugin plugin, NodePluginDetailContext? context)
     {
         PluginId = plugin.PluginId.Value;
+        PluginStatusBar.Visibility = plugin.ShowStatusBarInPluginWindow
+            ? Visibility.Visible
+            : Visibility.Collapsed;
         viewModel.SetPlugin(plugin, context);
     }
 

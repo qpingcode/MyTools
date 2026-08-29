@@ -14,7 +14,7 @@ public sealed class ChatPluginHostCallHandler(ChatAgentService chatService) : IP
 
     public IReadOnlyCollection<string> Capabilities { get; } =
     [
-        "ai.chat.status", "ai.chat.send", "ai.chat.state", "ai.chat.cancel", "ai.chat.clear"
+        "ai.chat.status", "ai.chat.send", "ai.chat.state", "ai.chat.list", "ai.chat.cancel", "ai.chat.clear"
     ];
 
     public async Task<JsonElement> HandleAsync(HostCallRequest request, CancellationToken cancellationToken)
@@ -28,6 +28,7 @@ public sealed class ChatPluginHostCallHandler(ChatAgentService chatService) : IP
             "ai.chat.state" => Serialize(chatService.GetState(
                 RequiredString(request.Params, "sessionId"),
                 OptionalString(request.Params, "model"))),
+            "ai.chat.list" => Serialize(new { conversations = chatService.ListConversations() }),
             "ai.chat.cancel" => Serialize(new
             {
                 cancelled = chatService.Cancel(RequiredString(request.Params, "sessionId"))

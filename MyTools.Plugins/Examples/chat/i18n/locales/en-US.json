@@ -1,6 +1,19 @@
 {
   "Plugin.Chat.Name": "Chat",
   "Plugin.Chat.Detail.New": "New chat",
+  "Plugin.Chat.Detail.Recent": "Recent",
+  "Plugin.Chat.Detail.Untitled": "New conversation",
+  "Plugin.Chat.Detail.NoRecent": "No recent conversations",
+  "Plugin.Chat.Detail.Questions": "A few questions",
+  "Plugin.Chat.Detail.QuestionProgress": "{{current}} of {{total}}",
+  "Plugin.Chat.Detail.OtherAnswer": "Enter another answer",
+  "Plugin.Chat.Detail.Previous": "Previous",
+  "Plugin.Chat.Detail.Next": "Next",
+  "Plugin.Chat.Detail.SubmitAnswers": "Submit",
+  "Plugin.Chat.Detail.AnswerHeading": "My answers:",
+  "Plugin.Chat.Detail.AnswersSubmitted": "Submitted {{count}} answers",
+  "Plugin.Chat.Detail.ViewAnswers": "View",
+  "Plugin.Chat.Detail.HideAnswers": "Hide",
   "Plugin.Chat.Detail.Empty": "Ask MyTools anything",
   "Plugin.Chat.Detail.InputPlaceholder": "Type a message",
   "Plugin.Chat.Detail.Send": "Send",
@@ -8,5 +21,9 @@
   "Plugin.Chat.Detail.Model": "Model",
   "Plugin.Chat.Detail.Streaming": "…",
   "Plugin.Chat.Detail.Cancelled": "Response stopped",
-  "Plugin.Chat.Detail.TokenUsage": "{{total}} tokens · input {{input}} · output {{output}}"
+  "Plugin.Chat.Detail.TokenUsage": "{{total}} tokens · input {{input}} · output {{output}}",
+  "Plugin.Chat.Detail.DurationMilliseconds": "{{duration}} ms",
+  "Plugin.Chat.Detail.DurationSeconds": "{{duration}} s",
+  "Plugin.Chat.Detail.CopyCode": "Copy",
+  "Plugin.Chat.Detail.CodeCopied": "Copied"
 }

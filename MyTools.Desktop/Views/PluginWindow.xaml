@@ -263,7 +263,8 @@
                             Grid.Row="1" />
 
             <!-- 状态栏 -->
-            <Grid Grid.Row="2"
+            <Grid x:Name="PluginStatusBar"
+                  Grid.Row="2"
                   VerticalAlignment="Bottom">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />

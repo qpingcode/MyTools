@@ -3,7 +3,14 @@ import { mytoolsI18n } from "@qping/plugin-bus/i18n";
 
 const CHAT_HOST_TIMEOUT_MS = 20 * 60_000;
 
-type SendPayload = { sessionId: string; message: string; model: string };
+type InteractionAnswer = { questionId: string; prompt: string; values: string[]; text: string };
+type InteractionResponse = { interactionId: string; answers: InteractionAnswer[] };
+type SendPayload = {
+  sessionId: string;
+  message: string;
+  model: string;
+  interactionResponse?: InteractionResponse;
+};
 
 const plugin = createPlugin();
 
@@ -24,6 +31,7 @@ plugin
   })
   .handle("poll", async (payload: { sessionId: string; model?: string }) =>
     plugin.hostCall("ai.chat.state", payload))
+  .handle("list", async () => plugin.hostCall("ai.chat.list"))
   .handle("cancel", async (payload: { sessionId: string }) =>
     plugin.hostCall("ai.chat.cancel", payload))
   .handle("clear", async (payload: { sessionId?: string }) =>

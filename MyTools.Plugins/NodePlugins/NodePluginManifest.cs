@@ -27,6 +27,8 @@ public sealed class NodePluginManifest
     /// <summary>Absolute web detail path, or null when this entry uses the native list UI.</summary>
     public string? DetailEntryFullPath { get; init; }
     public bool HasWebDetail => !string.IsNullOrWhiteSpace(DetailEntryFullPath);
+    /// <summary>Show the host status bar in a standalone PluginWindow. Defaults to true.</summary>
+    public bool ShowStatusBarInPluginWindow { get; init; } = true;
     public IReadOnlyList<string> Keywords { get; init; } = [];
     /// <summary>Participate in unscoped (global) search. Default false when omitted in plugin.json.</summary>
     public bool SearchGlobal { get; init; }

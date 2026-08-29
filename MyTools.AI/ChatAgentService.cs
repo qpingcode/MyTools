@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -21,9 +22,13 @@ namespace MyTools.AI;
 public sealed class ChatAgentService(ChatAgentContext context, ILogger<ChatAgentService>? logger = null) : IDisposable
 {
     private const int MaxHistoryMessages = 24;
+    private const int MaxStoredConversations = 50;
     private static readonly Regex ValidSessionId = new("^[a-zA-Z0-9_-]{1,64}$", RegexOptions.Compiled);
     private static readonly Regex ValidSkillName = new("^[a-zA-Z0-9_.-]{1,100}$", RegexOptions.Compiled);
+    private static readonly Regex ValidInteractionId = new("^[a-zA-Z0-9_.-]{1,64}$", RegexOptions.Compiled);
     private readonly ConcurrentDictionary<string, Conversation> conversations = new();
+    private readonly object historySync = new();
+    private volatile bool historyLoaded;
 
     public ChatModelAvailability GetAvailability()
     {
@@ -48,6 +53,7 @@ public sealed class ChatAgentService(ChatAgentContext context, ILogger<ChatAgent
 
     public ChatAgentState GetState(string sessionId, string? requestedModel = null)
     {
+        EnsureHistoryLoaded();
         ValidateSessionId(sessionId);
         var model = ResolveModel(requestedModel);
         return conversations.GetOrAdd(sessionId, _ => new Conversation(sessionId, model)).Snapshot();
@@ -57,12 +63,14 @@ public sealed class ChatAgentService(ChatAgentContext context, ILogger<ChatAgent
         ChatAgentRequest request,
         CancellationToken cancellationToken = default)
     {
+        EnsureHistoryLoaded();
         ValidateSessionId(request.SessionId);
         var availability = GetAvailability();
         if (!availability.Available) throw new InvalidOperationException(availability.UnavailableReason);
 
         var message = request.Message.Trim();
         if (message.Length == 0) throw new InvalidOperationException("Enter a message.");
+        ValidateInteractionResponse(request.InteractionResponse);
         var model = ResolveModel(request.Model);
         var conversation = conversations.GetOrAdd(request.SessionId, _ => new Conversation(request.SessionId, model));
         await conversation.Gate.WaitAsync(cancellationToken);
@@ -70,7 +78,7 @@ public sealed class ChatAgentService(ChatAgentContext context, ILogger<ChatAgent
         try
         {
             activeCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            conversation.BeginTurn(message, model, activeCancellation);
+            conversation.BeginTurn(message, model, activeCancellation, request.InteractionResponse);
 
             var route = ResolveNetworkRoute();
             using var aiHttpClient = CreateHttpClient(route, TimeSpan.FromMinutes(10));
@@ -114,21 +122,90 @@ public sealed class ChatAgentService(ChatAgentContext context, ILogger<ChatAgent
         {
             conversation.EndTurn(activeCancellation);
             conversation.Gate.Release();
+            SaveHistory();
         }
         return conversation.Snapshot();
     }
 
     public bool Cancel(string sessionId)
     {
+        EnsureHistoryLoaded();
         ValidateSessionId(sessionId);
         return conversations.TryGetValue(sessionId, out var conversation) && conversation.CancelActiveRequest();
     }
 
     public void Clear(string? sessionId)
     {
+        EnsureHistoryLoaded();
         if (string.IsNullOrWhiteSpace(sessionId)) return;
         ValidateSessionId(sessionId);
-        if (conversations.TryRemove(sessionId, out var conversation)) conversation.CancelActiveRequest();
+        if (conversations.TryRemove(sessionId, out var conversation))
+        {
+            conversation.CancelActiveRequest();
+            SaveHistory();
+        }
+    }
+
+    public IReadOnlyList<ChatConversationSummary> ListConversations()
+    {
+        EnsureHistoryLoaded();
+        return conversations.Values
+            .Select(item => item.Summary())
+            .Where(item => item is not null)
+            .Cast<ChatConversationSummary>()
+            .OrderByDescending(item => item.UpdatedAt)
+            .Take(MaxStoredConversations)
+            .ToArray();
+    }
+
+    private void EnsureHistoryLoaded()
+    {
+        if (historyLoaded) return;
+        lock (historySync)
+        {
+            if (historyLoaded) return;
+            historyLoaded = true;
+            var path = context.ConversationHistoryPath;
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return;
+            try
+            {
+                var stored = JsonSerializer.Deserialize<StoredConversation[]>(File.ReadAllText(path)) ?? [];
+                foreach (var item in stored.Take(MaxStoredConversations))
+                {
+                    if (!ValidSessionId.IsMatch(item.SessionId) || item.Messages.Count == 0) continue;
+                    conversations[item.SessionId] = Conversation.FromStored(item);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger?.LogWarning(ex, "Could not load chat conversation history from {Path}", path);
+            }
+        }
+    }
+
+    private void SaveHistory()
+    {
+        var path = context.ConversationHistoryPath;
+        if (string.IsNullOrWhiteSpace(path)) return;
+        lock (historySync)
+        {
+            try
+            {
+                var stored = conversations.Values
+                    .Select(item => item.StoredSnapshot())
+                    .Where(item => item is not null)
+                    .Cast<StoredConversation>()
+                    .OrderByDescending(item => item.UpdatedAt)
+                    .Take(MaxStoredConversations)
+                    .ToArray();
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                File.WriteAllText(path, JsonSerializer.Serialize(stored));
+            }
+            catch (Exception ex)
+            {
+                logger?.LogWarning(ex, "Could not save chat conversation history to {Path}", path);
+            }
+        }
     }
 
     private ChatClientAgent CreateAgent(string model, HttpClient httpClient, ReadOnlyChatTools run)
@@ -169,6 +246,30 @@ public sealed class ChatAgentService(ChatAgentContext context, ILogger<ChatAgent
                     Use search_web and fetch_url when current public information is needed. Use list_skills and read_skill_file
                     when a system skill is relevant; follow the skill instructions you read. Tool access is read-only. Never claim
                     to have changed files or external state.
+
+                    When the user must choose among options before you can continue, end the response with exactly one fenced
+                    `mytools-interaction` JSON block. Keep any explanation before the block. Use this schema:
+                    ```mytools-interaction
+                    {
+                      "version": 1,
+                      "id": "stable_interaction_id",
+                      "title": "Optional short heading",
+                      "questions": [
+                        {
+                          "id": "stable_id",
+                          "prompt": "Question shown to the user",
+                          "options": ["First choice", "Second choice"],
+                          "multiple": false,
+                          "allowText": true,
+                          "textPlaceholder": "Enter another answer"
+                        }
+                      ]
+                    }
+                    ```
+                    Give every interaction and question a short unique ASCII id. `questions` may contain several questions
+                    and the UI will paginate them. `multiple` defaults to false,
+                    `allowText` defaults to false, and either options or free text may be used. Do not use this block for
+                    rhetorical questions or when a normal text response is sufficient. Never put Markdown inside JSON strings.
                     """,
                 Tools = tools
             }
@@ -214,6 +315,12 @@ public sealed class ChatAgentService(ChatAgentContext context, ILogger<ChatAgent
 
     private sealed record NetworkRoute(Uri? ProxyUri, bool UseSystemProxy);
 
+    private sealed record StoredConversation(
+        string SessionId,
+        string SelectedModel,
+        IReadOnlyList<ChatAgentMessage> Messages,
+        DateTimeOffset UpdatedAt);
+
     private sealed class Conversation(string sessionId, string selectedModel)
     {
         private readonly object sync = new();
@@ -223,10 +330,16 @@ public sealed class ChatAgentService(ChatAgentContext context, ILogger<ChatAgent
         private bool cancelled;
         private string error = "";
         private string selectedModel = selectedModel;
+        private long turnStartedTimestamp;
+        private DateTimeOffset updatedAt = DateTimeOffset.UtcNow;
         public List<Microsoft.Extensions.AI.ChatMessage> AgentMessages { get; } = [];
         public SemaphoreSlim Gate { get; } = new(1, 1);
 
-        public void BeginTurn(string message, string model, CancellationTokenSource cancellation)
+        public void BeginTurn(
+            string message,
+            string model,
+            CancellationTokenSource cancellation,
+            ChatInteractionResponse? interactionResponse)
         {
             lock (sync)
             {
@@ -235,7 +348,13 @@ public sealed class ChatAgentService(ChatAgentContext context, ILogger<ChatAgent
                 streaming = true;
                 cancelled = false;
                 error = "";
-                messages.Add(new ChatAgentMessage("user", message, DateTimeOffset.UtcNow.ToString("O")));
+                turnStartedTimestamp = Stopwatch.GetTimestamp();
+                updatedAt = DateTimeOffset.UtcNow;
+                messages.Add(new ChatAgentMessage(
+                    "user",
+                    message,
+                    DateTimeOffset.UtcNow.ToString("O"),
+                    InteractionResponse: interactionResponse));
                 messages.Add(new ChatAgentMessage("assistant", "", DateTimeOffset.UtcNow.ToString("O")));
                 AgentMessages.Add(new Microsoft.Extensions.AI.ChatMessage(ChatRole.User, message));
                 if (AgentMessages.Count > MaxHistoryMessages)
@@ -291,7 +410,17 @@ public sealed class ChatAgentService(ChatAgentContext context, ILogger<ChatAgent
         {
             lock (sync)
             {
+                if (turnStartedTimestamp != 0 && messages.Count > 0 && messages[^1].Role == "assistant")
+                {
+                    var duration = Stopwatch.GetElapsedTime(turnStartedTimestamp);
+                    messages[^1] = messages[^1] with
+                    {
+                        DurationMilliseconds = Math.Max(1L, (long)Math.Round(duration.TotalMilliseconds))
+                    };
+                }
+                turnStartedTimestamp = 0;
                 streaming = false;
+                updatedAt = DateTimeOffset.UtcNow;
                 if (ReferenceEquals(activeRequest, cancellation)) activeRequest = null;
             }
             cancellation?.Dispose();
@@ -311,6 +440,67 @@ public sealed class ChatAgentService(ChatAgentContext context, ILogger<ChatAgent
         {
             lock (sync)
                 return new ChatAgentState(sessionId, messages.ToArray(), selectedModel, streaming, cancelled, error);
+        }
+
+        public ChatConversationSummary? Summary()
+        {
+            lock (sync)
+            {
+                var firstUserMessage = messages.FirstOrDefault(item => item.Role == "user")?.Content;
+                if (string.IsNullOrWhiteSpace(firstUserMessage)) return null;
+                var title = Regex.Replace(firstUserMessage.Trim(), "\\s+", " ");
+                if (title.Length > 42) title = title[..42].TrimEnd() + "…";
+                return new ChatConversationSummary(sessionId, title, updatedAt);
+            }
+        }
+
+        public StoredConversation? StoredSnapshot()
+        {
+            lock (sync)
+            {
+                if (messages.All(item => item.Role != "user")) return null;
+                return new StoredConversation(sessionId, selectedModel, messages.ToArray(), updatedAt);
+            }
+        }
+
+        public static Conversation FromStored(StoredConversation stored)
+        {
+            var conversation = new Conversation(stored.SessionId, stored.SelectedModel);
+            lock (conversation.sync)
+            {
+                conversation.messages.AddRange(stored.Messages);
+                conversation.updatedAt = stored.UpdatedAt;
+                foreach (var message in stored.Messages.TakeLast(MaxHistoryMessages))
+                {
+                    var role = message.Role == "user" ? ChatRole.User : ChatRole.Assistant;
+                    if (!string.IsNullOrWhiteSpace(message.Content))
+                        conversation.AgentMessages.Add(new Microsoft.Extensions.AI.ChatMessage(role, message.Content));
+                }
+            }
+            return conversation;
+        }
+    }
+
+    private static void ValidateInteractionResponse(ChatInteractionResponse? response)
+    {
+        if (response is null) return;
+        if (string.IsNullOrWhiteSpace(response.InteractionId)
+            || !ValidInteractionId.IsMatch(response.InteractionId)
+            || response.Answers is null
+            || response.Answers.Count is < 1 or > 12)
+            throw new InvalidOperationException("Invalid chat interaction response.");
+        foreach (var answer in response.Answers)
+        {
+            if (string.IsNullOrWhiteSpace(answer.QuestionId)
+                || !ValidInteractionId.IsMatch(answer.QuestionId)
+                || string.IsNullOrWhiteSpace(answer.Prompt)
+                || answer.Prompt.Length > 500
+                || answer.Text is null
+                || answer.Text.Length > 1000
+                || answer.Values is null
+                || answer.Values.Count > 12
+                || answer.Values.Any(value => string.IsNullOrWhiteSpace(value) || value.Length > 120))
+                throw new InvalidOperationException("Invalid chat interaction answer.");
         }
     }
 

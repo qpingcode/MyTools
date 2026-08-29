@@ -56,6 +56,9 @@ public class NodePluginCatalogTest
             "hello"
           ],
           "hotKey": "Alt+C",
+          "window": {
+            "showStatusBar": false
+          },
           "detail": {
             "type": "web",
             "entry": "web/detail.html"
@@ -76,6 +79,7 @@ public class NodePluginCatalogTest
         Assert.That(plugins[0].HotKey, Is.EqualTo("Alt+C"));
         Assert.That(plugins[0].Keywords, Is.EquivalentTo(new[] { "hello" }));
         Assert.That(plugins[0].SearchGlobal, Is.False);
+        Assert.That(plugins[0].ShowStatusBarInPluginWindow, Is.False);
         Assert.That(plugins[0].Capabilities, Is.Empty);
         Assert.That(plugins[0].EntryFullPath, Is.EqualTo(Path.Combine(pluginPath, "backend", "index.mjs")));
         Assert.That(plugins[0].DetailEntryFullPath, Is.EqualTo(Path.Combine(pluginPath, "web", "detail.html")));
@@ -336,6 +340,7 @@ public class NodePluginCatalogTest
 
         Assert.That(plugins, Has.Count.EqualTo(1));
         Assert.That(plugins[0].SearchGlobal, Is.False);
+        Assert.That(plugins[0].ShowStatusBarInPluginWindow, Is.True);
     }
 
     [Test]

@@ -130,6 +130,9 @@ public sealed class NodePlugin : IPlugin, IDisposable
     /// <summary>plugin.json <c>search.global</c> default, before user override.</summary>
     public bool DefaultIncludeInGlobalResults => manifest.SearchGlobal;
 
+    /// <summary>Whether the standalone plugin window should render its host status bar.</summary>
+    public bool ShowStatusBarInPluginWindow => manifest.ShowStatusBarInPluginWindow;
+
     public bool IsGlobalSearchPlugin { get; set; }
 
     public IReadOnlyList<string> Keywords => manifest.Keywords;
