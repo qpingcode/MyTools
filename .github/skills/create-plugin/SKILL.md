@@ -7,7 +7,7 @@ description: Develop a MyTools Node plugin (backend + optional WebView2 detail p
 
 MyTools Node 插件 = 独立 Node 进程里的后端 + 可选的 WebView2 HTML 详情页。不写 `detail` 时宿主用 `search` 结果走原生列表。通信走 v3 消息总线（Named Pipe + WebView2 postMessage），协议版本 **3.0**。
 
-随 MyTools 安装的参考包位于 [`references/Examples/`](references/Examples/)；它是当前版本的权威源码参考，不依赖用户安装目录之外的仓库。常用入口：[`calculator`](references/Examples/calculator/)（简单标准插件）、[`json-formatter`](references/Examples/json-formatter/) / [`xml-formatter`](references/Examples/xml-formatter/)（页面自包含）、[`settings`](references/Examples/settings/)（`hostCall`）、[`snippet`](references/Examples/snippet/) / [`command-runner`](references/Examples/command-runner/)（`plugin.json` configuration + `configuration.readOwn`）、[`chat`](references/Examples/chat/)、[`translator`](references/Examples/translator/)（多 entry）。SDK 源码在 [`sdk-v3`](references/Examples/sdk-v3/)（包名 `@qping/plugin-bus`）。创建或编辑前只读取与需求最相关的最小参考集合。
+随 MyTools 安装的参考包位于 [`references/Examples/`](references/Examples/)；它是当前版本的权威源码参考，不依赖用户安装目录之外的仓库。常用入口：[`calculator`](references/Examples/calculator/)（简单标准插件）、[`json-formatter`](references/Examples/json-formatter/) / [`xml-formatter`](references/Examples/xml-formatter/)（页面自包含）、[`settings`](references/Examples/settings/)（`hostCall`）、[`quick-text`](references/Examples/quick-text/) / [`scripts-runner`](references/Examples/scripts-runner/)（`plugin.json` configuration + `configuration.readOwn`）、[`chat`](references/Examples/chat/)、[`translator`](references/Examples/translator/)。SDK 源码在 [`sdk-v3`](references/Examples/sdk-v3/)（包名 `@qping/plugin-bus`）。创建或编辑前只读取与需求最相关的最小参考集合。
 
 创建模式下选择唯一的插件 ID 和名称，从完整目录结构开始生成。编辑模式下，先读取 Host 提供的
 `selectedPlugin`（ID、名称、类型和源码目录）并检查现有文件，只能修改该插件目录；保持插件 ID，
@@ -20,7 +20,7 @@ Create Plugin 的“打开目录”和“用 VS Code 打开”必须通过 Host 
 
 ## 1. 目录结构
 
-单 entry（照 [`calculator`](references/Examples/calculator/)）：
+（照 [`calculator`](references/Examples/calculator/)）：
 
 ```text
 my-plugin/
@@ -35,8 +35,6 @@ my-plugin/
     catalog.en-US.json
     locales/{en-US.json, zh-CN.json}
 ```
-
-多 entry（照 [`translator`](references/Examples/translator/)）：每个 entry 各自 `src/backend/<Id>/index.mts` 和 `src/web/<Id>/{index.html, main.ts, style.css}`。
 
 构建输出到 `dist/`。`plugin.json` 里的路径相对 `dist` 根（如 `backend/index.mjs`、`web/index.html`）。
 
@@ -111,6 +109,10 @@ SDK 把方法映射到 v3 路由：`initialize` → `plugin.call.initialize`，`
 ```json
 {
   "id": "my-plugin",
+  "name": {
+    "key": "Plugin.MyPlugin.Name",
+    "defaultValue": "My Plugin"
+  },
   "version": "0.1.0",
   "protocolVersion": "3.0",
   "icon": "mdi-star-outline",
@@ -120,21 +122,12 @@ SDK 把方法映射到 v3 路由：`initialize` → `plugin.call.initialize`，`
     "localesPath": "i18n/locales",
     "supportedLocales": ["en-US", "zh-CN"]
   },
-  "entries": [
-    {
-      "id": "my-plugin",
-      "name": {
-        "key": "Plugin.MyPlugin.Name",
-        "defaultValue": "My Plugin"
-      },
-      "entry": "backend/index.mjs",
-      "capabilities": [],
-      "alias": ["kw1"],
-      "search": { "global": false },
-      "hotKey": "Alt+V",
-      "detail": { "type": "web", "entry": "web/index.html" }
-    }
-  ]
+  "entry": "backend/index.mjs",
+  "capabilities": [],
+  "alias": ["kw1"],
+  "search": { "global": false },
+  "hotKey": "Alt+V",
+  "detail": { "type": "web", "entry": "web/index.html" }
 }
 ```
 
@@ -143,19 +136,19 @@ SDK 把方法映射到 v3 路由：`initialize` → `plugin.call.initialize`，`
 - `version` 必须是符合 [semver](https://semver.org/) 的字符串，例如 `"0.1.0"`。 会展示到界面, 用户可以看到
 - `protocolVersion` 必须是 `"3.0"`，否则宿主拒绝加载。
 - `id` 稳定、kebab-case；配置路径 `Plugins.{id}.*`，i18n scope `plugin:{id}`。
-- 每个 entry 的 `name` 是 `{ key, defaultValue }`，不是字符串。
+- 根节点的 `name` 是 `{ key, defaultValue }`，不是字符串。
 - `capabilities` 必填（可 `[]`）。只有声明过的能力才能 `hostCall`；调用的方法名必须与声明的 capability 完全一致，例如读取配置使用 `plugin.hostCall("configuration.read")` 并声明 `"configuration.read"`。
 - 顶层 `icon` 是 Settings 侧栏图标（Material Design Icons 类名，如 `"mdi-message-text-outline"`）。省略时用默认齿轮变体图标。
-- 插件级设置写在顶层 `configuration`（不是 entry 上）。宿主启动时按 schema 注册到 Settings 侧栏，分类名为插件显示名，设置完整路径为 `{pluginId}.{key}`（例如 `snippet.Phrases`）。`key` 也可以写成 `snippet.Phrases` 或 `Plugins.Snippet.Phrases`，宿主会去掉前缀。
-- 详情页标题不要用 `entries[].name`。有 `configuration` 时第一项写成展示用 `h1`（`label` / `description` 可选），宿主不保存、不读取。`h2` 是小标题。`label` / `description` 在所有类型上都是可选的：table 有则显示为与其它项相同字号的二级标题，没有则不显示；其它类型有则显示在左侧，没有则左侧留白。
+- 插件设置写在顶层 `configuration`。宿主启动时按 schema 注册到 Settings 侧栏，分类名为插件显示名，设置完整路径为 `{pluginId}.{key}`（例如 `quick-text.Phrases`）。`key` 也可以写成 `quick-text.Phrases` 或 `Plugins.QuickText.Phrases`，宿主会去掉前缀。
+- 详情页标题不要复用根节点 `name`。有 `configuration` 时第一项写成展示用 `h1`（`label` / `description` 可选），宿主不保存、不读取。`h2` 是小标题。`label` / `description` 在所有类型上都是可选的：table 有则显示为与其它项相同字号的二级标题，没有则不显示；其它类型有则显示在左侧，没有则左侧留白。
 - `type`：`string` / `bool` / `int` / `double` / `array` / `path` / `h1` / `h2`。`uiHint` 可选：string 默认 `input`（也可 `textarea` / `email` / `telephone`）；bool 默认 `checkbox`（也可 `radio` / `select`）；int/double 默认 `input-number`；array 默认 `table`，必须带 `schema.properties`。`path` 默认 `fileOrDirectory`（也可 `file` / `directory`），Settings 显示文件/目录选择器。`h1` / `h2` 没有 `key` / `defaultValue` / `schema`。列 `type: "hidden"` 表格和编辑框都不显示（时间戳等）。列 `"table": false` 只在编辑对话框出现，不出现在表格。默认值支持宏 `${DateTime.Now}`（新增行时解析）。`visibility` 可选，条件宏，用当前插件其他 configuration 的 `key` 写成表达式，例如 `"visibility": "${ChromeEnabled == true}"`。支持 `==` / `!=` / `&&` / `||` / 括号；条件为真时才在 Settings 里显示该项。省略则始终显示。
 - 需要读自己的设置时声明 `configuration.readOwn`。需要写入自己的设置时再声明 `configuration.writeOwn`。不要用 `configuration.read` / `configuration.write`（那是 settings 插件读写全部设置）。Open Path、Snippet、Command Runner、Search Engine 都走 `readOwn`。
 - `detail` 可选。省略（或 `"detail": { "type": "list" }`）时宿主用 `search` 的结果走原生列表：关键词路由停留在列表，热键打开搜索主窗口并锁定该插件。
 - 需要自定义页面时再写 `"detail": { "type": "web", "entry": "web/index.html" }`。`hotKey`、`alias`、`search` 可选。
-- action 不写在 manifest。详情页默认使用本 entry 通过 `plugin.actions()` 注册的全部 action；列表 item 用 action id 子集引用。
+- action 不写在 manifest。详情页默认使用本插件通过 `plugin.actions()` 注册的全部 action；列表 item 用 action id 子集引用。
 - `search.global`：出现在**无关键词**的全局搜索结果中。省略或 `false` 时不参与全局搜索（opt-in，避免设置类插件污染每次搜索）。用户可在设置 → 插件列表的 **全局结果** 中覆盖此项。
 - 有非空 `alias` 就会注册 `alias + 查询串` 的插件级搜索；没有 alias 则只能靠全局搜索或热键进入。只有全局、没有别名时必须设 `"search": { "global": true }`。
-- 没有顶层 `name` / `runtime`；
+- 没有顶层 `runtime`；
 - AI自动创建时 alias最多只设置一个
 
 ## 4. 后端（Node）
@@ -231,7 +224,7 @@ return {
 };
 ```
 
-`target.action.kind` 使用 `HostAction` 常量。参考 [`openpath`](references/Examples/openpath/)，动态计算后交给宿主执行。
+`target.action.kind` 使用 `HostAction` 常量。参考 [`smart-open`](references/Examples/smart-open/)，动态计算后交给宿主执行。
 - `handle(name, fn)` 给详情页 `bus.call(name)` 用。`context` 有 `action / itemId / query / locale / fallbackLocale / theme`（由宿主注入，页面不必带）。
 - 详情页工具可以用 `handle` 把页面状态同步到 Node，再由注册 action 返回 `host` target；纯 UI 动作返回 `{ target: { kind: "web", payload } }`。
 - 环境变量从 `process.env` 读。`start()` 连宿主 Named Pipe，不要自己读 stdin。
@@ -242,7 +235,7 @@ return {
 ### 可用 capabilities
 
 只有已注册 `IPluginHostCapabilityHandler` 的 capability 才能调用。Node 后端调用
-`plugin.hostCall("<capability>", params?)`，且当前 entry 的 `plugin.json` 必须在
+`plugin.hostCall("<capability>", params?)`，且当前插件的 `plugin.json` 必须在
 `capabilities` 中逐项声明完全相同的字符串。声明不匹配时宿主返回
 `CapabilityNotDeclared`。
 
@@ -271,7 +264,7 @@ return {
 | `restart` | 重启 MyTools Desktop。 | 无参数；返回空对象后执行重启。 |
 | `plugins.list` | 列出当前已启用的插件（名称、Alias、热键）。调用方自己的插件会被排除。 | 无参数；返回 `{ plugins: [{ pluginId, name, aliases, hotKey }] }`。 |
 
-上述表格是当前安装版本的 capability 契约。Host 会按 entry manifest 做声明校验和调用审计；不要依赖未列出的内部类名或源码路径。
+上述表格是当前安装版本的 capability 契约。Host 会按插件 manifest 做声明校验和调用审计；不要依赖未列出的内部类名或源码路径。
 
 不要根据测试或设计文档推断 capability 可用性。例如 `clipboard.read` 当前没有注册
 `IPluginHostCapabilityHandler`，因此尚不是可调用的宿主能力。
@@ -391,7 +384,7 @@ button {
 
 ## 8. 构建
 
-`build-plugin.mjs`：backend（`platform: "node"`, `format: "esm"`, 输出 `.mjs`），web（`format: "iife"`），并把 `plugin.json`、html、css、`i18n/**/*` 拷到 `dist/`。watch 构建成功后通过 `@qping/plugin-bus/dev` 的 `requestDevelopmentPluginRefresh()` 请求 MyTools 刷新，不要在构建脚本中写死刷新管道或消息格式。多 entry 时 `entryPoints` 传数组，`outbase: "src/backend"`（或 `src/web`）。完整 watch 实现必须以随安装发布的 [`build-plugin.mjs.mustache`](references/Examples/create-plugin/src/templates/common/build-plugin.mjs.mustache) 为准。
+`build-plugin.mjs`：backend（`platform: "node"`, `format: "esm"`, 输出 `.mjs`），web（`format: "iife"`），并把 `plugin.json`、html、css、`i18n/**/*` 拷到 `dist/`。watch 构建成功后通过 `@qping/plugin-bus/dev` 的 `requestDevelopmentPluginRefresh()` 请求 MyTools 刷新，不要在构建脚本中写死刷新管道或消息格式。完整 watch 实现必须以随安装发布的 [`build-plugin.mjs.mustache`](references/Examples/create-plugin/src/templates/common/build-plugin.mjs.mustache) 为准。
 
 esbuild 新版 watch 必须使用 `const ctx = await context(options); await ctx.watch();`，`watch()` **不接收任何参数**。需要监听构建结束时，在 options 中加入自定义插件并使用 `build.onEnd(result => ...)`。禁止生成 `ctx.watch({ onRebuild })`、`onRebuild` 或旧版 `build({ watch: ... })` 写法；这些 API 与当前 esbuild 不兼容。
 

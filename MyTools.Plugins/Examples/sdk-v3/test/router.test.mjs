@@ -9,7 +9,7 @@ import { HandlerRouter } from "../src/router.ts";
 function req(id, route, payload = {}) {
   return {
     version: "3.0", id, traceId: id, sessionId: "s",
-    pluginId: "p", entryId: "e", endpointId: "node-main",
+    pluginId: "p", endpointId: "node-main",
     kind: "request", route, timeoutMs: 5000, payload,
   };
 }
@@ -79,7 +79,7 @@ test("host.call client sends a request envelope and correlates the response", as
   // Simulate the host replying with a correlated response.
   await router.dispatch({
     version: "3.0", id: "resp-x", correlationId: sent[0].id, traceId: sent[0].traceId,
-    sessionId: "s", pluginId: "p", entryId: "e", endpointId: "host",
+    sessionId: "s", pluginId: "p", endpointId: "host",
     kind: "response", route: "host.call.configuration.read",
     payload: { value: "dark" },
   });
@@ -178,7 +178,6 @@ async function replyHostCall(router, request) {
     traceId: request.traceId,
     sessionId: "s",
     pluginId: "p",
-    entryId: "e",
     endpointId: "host",
     kind: "response",
     route: request.route,

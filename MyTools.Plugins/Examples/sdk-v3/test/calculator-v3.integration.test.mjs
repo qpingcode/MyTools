@@ -68,14 +68,12 @@ test("calculator v3 backend answers plugin.call.search over the pipe", async () 
     traceId: handshakeReq.traceId,
     sessionId: "s",
     pluginId: "calculator",
-    entryId: "calculator",
     endpointId: "host",
     kind: "response",
     route: "bus.handshake",
     payload: {
       negotiatedVersion: "3.0",
       pluginId: "calculator",
-      entryId: "calculator",
       sessionId: "s",
       endpointId: "node-main",
     },
@@ -87,7 +85,7 @@ test("calculator v3 backend answers plugin.call.search over the pipe", async () 
 
   const req = canonicalStringify({
     version: "3.0", id: "search-1", traceId: "search-1", sessionId: "s",
-    pluginId: "calculator", entryId: "calculator", endpointId: "node-main",
+    pluginId: "calculator", endpointId: "node-main",
     kind: "request", route: "plugin.call.search", timeoutMs: 5000,
     payload: { query: "1 + 2", mode: "global", locale: "en-US", fallbackLocale: "en-US" },
   });

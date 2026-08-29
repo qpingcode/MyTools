@@ -87,7 +87,7 @@ public class NodePluginKeywordRouteTest
         var context = plugin.CreateHotKeyDetailContext();
 
         Assert.That(context, Is.Not.Null);
-        Assert.That(context!.PluginId, Is.EqualTo("deepseek-translator:translator"));
+        Assert.That(context!.PluginId, Is.EqualTo("deepseek-translator"));
         Assert.That(context.Keyword, Is.EqualTo("tr"));
         Assert.That(context.SearchText, Is.EqualTo("tr "));
         Assert.That(context.EntryFullPath, Is.EqualTo(detailPath));
@@ -126,9 +126,8 @@ public class NodePluginKeywordRouteTest
     {
         var manifest = new NodePluginManifest
         {
-            Id = "deepseek-translator:translator",
+            Id = "deepseek-translator",
             ParentId = "deepseek-translator",
-            EntryId = "translator",
             NameMessage = new LocalizedMessage("DeepSeek key", "DeepSeek Translator"),
             Version = "0.1.0",
             Runtime = "node",
@@ -158,7 +157,7 @@ public class NodePluginKeywordRouteTest
             public MyTools.Host.Core.Security.ProcessIdentity? ObservedIdentity { get; }
 
             public Task StartAsync(
-                string pipeName, string pluginId, string entryId,
+                string pipeName, string pluginId,
                 Func<MyTools.Host.Core.Security.ProcessIdentity, string> issueToken,
                 CancellationToken c) => Task.CompletedTask;
 

@@ -9,7 +9,7 @@ public class BootstrapTokenValidatorTest
 {
     private static readonly DateTime BaseTime = new(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
     private static readonly ProcessIdentity NodeIdentity =
-        new(Pid: 4321, CreationTime: BaseTime, PluginId: "settings", EntryId: "main");
+        new(Pid: 4321, CreationTime: BaseTime, PluginId: "settings");
 
     private static BootstrapTokenValidator IssueWithClock(Func<DateTime> clock, TimeSpan ttl)
     {
@@ -26,7 +26,6 @@ public class BootstrapTokenValidatorTest
 
         Assert.That(token.Value, Is.Not.Null.And.Not.Empty);
         Assert.That(token.PluginId, Is.EqualTo("settings"));
-        Assert.That(token.EntryId, Is.EqualTo("main"));
         Assert.That(token.ExpectedPid, Is.EqualTo(4321));
     }
 
@@ -130,7 +129,7 @@ public class BootstrapTokenValidatorTest
         const int n = 64;
         Parallel.For(0, n, i =>
         {
-            var identity = new ProcessIdentity(i + 1, BaseTime, $"plugin-{i}", "main");
+            var identity = new ProcessIdentity(i + 1, BaseTime, $"plugin-{i}");
             var token = v.Issue(identity, TimeSpan.FromMinutes(1));
             var result = v.Validate(token.Value, identity);
             Assert.That(result.IsValid, Is.True, result.Reason);

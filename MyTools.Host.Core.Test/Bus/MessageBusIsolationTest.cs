@@ -13,7 +13,7 @@ public class MessageBusIsolationTest
     private static Envelope Request(EndpointId from, string route, string id) => new()
     {
         Version = ProtocolVersion.Current, Id = id, TraceId = id, SessionId = from.SessionId,
-        PluginId = from.PluginId, EntryId = from.EntryId, EndpointId = from.EndpointLabel,
+        PluginId = from.PluginId, EndpointId = from.EndpointLabel,
         Kind = MessageKind.Request, Route = route, TimeoutMs = 5000
     };
 
@@ -22,8 +22,8 @@ public class MessageBusIsolationTest
     {
         // A webview from plugin "A" tries to route, but only plugin "B" has a node registered.
         var bus = new MessageBus();
-        var webA = new EndpointId("pluginA", "main", "sA", "web-1", IsNode: false);
-        var nodeB = new EndpointId("pluginB", "main", "sB", "node-main", IsNode: true);
+        var webA = new EndpointId("pluginA", "sA", "web-1", IsNode: false);
+        var nodeB = new EndpointId("pluginB", "sB", "node-main", IsNode: true);
         bus.RegisterEndpoint(nodeB, new InMemoryTransport());
 
         Assert.That(async () => await bus.RouteRequestAsync(Request(webA, "plugin.call.x", "r1"), webA),
@@ -34,9 +34,9 @@ public class MessageBusIsolationTest
     public async Task Event_FromPluginA_ShouldNotBroadcastToPluginB()
     {
         var bus = new MessageBus();
-        var nodeA = new EndpointId("pluginA", "main", "sA", "node-main", IsNode: true);
-        var webA = new EndpointId("pluginA", "main", "sA", "web-1", IsNode: false);
-        var webB = new EndpointId("pluginB", "main", "sB", "web-1", IsNode: false);
+        var nodeA = new EndpointId("pluginA", "sA", "node-main", IsNode: true);
+        var webA = new EndpointId("pluginA", "sA", "web-1", IsNode: false);
+        var webB = new EndpointId("pluginB", "sB", "web-1", IsNode: false);
         var nodeAT = new InMemoryTransport();
         var webAT = new InMemoryTransport();
         var webBT = new InMemoryTransport();
@@ -47,7 +47,7 @@ public class MessageBusIsolationTest
         var evt = new Envelope
         {
             Version = ProtocolVersion.Current, Id = "evt", TraceId = "evt", SessionId = "sA",
-            PluginId = "pluginA", EntryId = "main", EndpointId = "node-main",
+            PluginId = "pluginA", EndpointId = "node-main",
             Kind = MessageKind.Event, Route = "plugin.event.changed"
         };
         nodeAT.Deliver(evt);

@@ -1,5 +1,9 @@
 {
   "id": "process-killer",
+  "name": {
+    "key": "Plugin.ProcessKiller.Name",
+    "defaultValue": "Process Killer"
+  },
   "version": "0.1.0",
   "protocolVersion": "3.0",
   "icon": "mdi-skull-outline",
@@ -7,20 +11,20 @@
     "defaultLocale": "en-US",
     "catalog": "i18n/catalog.en-US.json",
     "localesPath": "i18n/locales",
-    "supportedLocales": ["en-US", "zh-CN"]
+    "supportedLocales": [
+      "en-US",
+      "zh-CN"
+    ]
   },
-  "entries": [
-    {
-      "id": "process-killer",
-      "name": {
-        "key": "Plugin.ProcessKiller.Name",
-        "defaultValue": "Process Killer"
-      },
-      "entry": "backend/index.mjs",
-      "capabilities": [],
-      "alias": ["kill"],
-      "search": { "global": false },
-      "detail": { "type": "list" }
-    }
-  ]
+  "entry": "backend/index.mjs",
+  "capabilities": [],
+  "alias": [
+    "kill"
+  ],
+  "search": {
+    "global": false
+  },
+  "detail": {
+    "type": "list"
+  }
 }

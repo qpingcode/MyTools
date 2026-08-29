@@ -313,7 +313,7 @@ public partial class NodePluginDetailView : UserControl
 
         var endpointLabel = $"web-{_ids.NewId()[..8]}";
         var binding = new EndpointBinding(
-            plugin.ParentId, plugin.EntryId, sessionId, endpointLabel);
+            plugin.ParentId, sessionId, endpointLabel);
 
         _webChannel = new CoreWebView2MessageChannel(PluginBrowser.CoreWebView2);
         _webTransport = new WebView2Transport(
@@ -341,7 +341,7 @@ public partial class NodePluginDetailView : UserControl
         _webTransport.HandshakeFailed += OnWebHandshakeFailed;
 
         _webEndpoint = new EndpointId(
-            binding.PluginId, binding.EntryId, binding.SessionId, binding.EndpointId, IsNode: false);
+            binding.PluginId, binding.SessionId, binding.EndpointId, IsNode: false);
         _bus.RegisterEndpoint(_webEndpoint, _webTransport);
         StaticLogger.LogInformation(
             "Attached WebView2Transport endpoint={Endpoint} session={Session}",
@@ -486,11 +486,11 @@ public partial class NodePluginDetailView : UserControl
     {
         var plugin = viewModel?.CurrentContext?.Plugin;
         if (plugin is null) return;
-        if (e.PluginId != plugin.ParentId || e.EntryId != plugin.EntryId) return;
+        if (e.PluginId != plugin.ParentId) return;
 
         StaticLogger.LogWarning(
-            "Node session replaced for detail view {Plugin}/{Entry}; reloading page",
-            e.PluginId, e.EntryId);
+            "Node session replaced for detail view {Plugin}; reloading page",
+            e.PluginId);
 
         _ = Dispatcher.InvokeAsync(async () =>
         {
@@ -625,7 +625,6 @@ public partial class NodePluginDetailView : UserControl
             TraceId = id,
             SessionId = binding.SessionId,
             PluginId = binding.PluginId,
-            EntryId = binding.EntryId,
             EndpointId = binding.EndpointId,
             Kind = MessageKind.Event,
             Route = route,

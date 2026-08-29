@@ -19,7 +19,6 @@ function sampleEnvelope(id, kind = "request") {
     traceId: id,
     sessionId: "s",
     pluginId: "p",
-    entryId: "e",
     endpointId: "end",
     kind,
     route: "plugin.call.x",

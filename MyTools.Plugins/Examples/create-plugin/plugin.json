@@ -1,5 +1,9 @@
 {
   "id": "create-plugin",
+  "name": {
+    "key": "Plugin.CreatePlugin.Name",
+    "defaultValue": "Create Plugin"
+  },
   "version": "0.1.0",
   "protocolVersion": "3.0",
   "icon": "mdi-puzzle-plus-outline",
@@ -7,34 +11,36 @@
     "defaultLocale": "en-US",
     "catalog": "i18n/catalog.en-US.json",
     "localesPath": "i18n/locales",
-    "supportedLocales": ["en-US", "zh-CN"]
+    "supportedLocales": [
+      "en-US",
+      "zh-CN"
+    ]
   },
-  "entries": [
-    {
-      "id": "main",
-      "name": { "key": "Plugin.CreatePlugin.Name", "defaultValue": "Create Plugin" },
-      "entry": "backend/index.mjs",
-      "capabilities": [
-        "development.create",
-        "development.validate",
-        "development.list",
-        "development.delete",
-        "development.refresh",
-        "development.openFolder",
-        "development.openCode",
-        "development.startDebug",
-        "development.watch.start",
-        "development.watch.logs",
-        "development.logs",
-        "development.publish",
-        "development.ai.status",
-        "development.ai.chat",
-        "development.ai.progress",
-        "development.ai.clear"
-      ],
-      "alias": ["create"],
-      "hotKey": "Alt+X",
-      "detail": { "type": "web", "entry": "web/index.html" }
-    }
-  ]
+  "entry": "backend/index.mjs",
+  "capabilities": [
+    "development.create",
+    "development.validate",
+    "development.list",
+    "development.delete",
+    "development.refresh",
+    "development.openFolder",
+    "development.openCode",
+    "development.startDebug",
+    "development.watch.start",
+    "development.watch.logs",
+    "development.logs",
+    "development.publish",
+    "development.ai.status",
+    "development.ai.chat",
+    "development.ai.progress",
+    "development.ai.clear"
+  ],
+  "alias": [
+    "create"
+  ],
+  "hotKey": "Alt+X",
+  "detail": {
+    "type": "web",
+    "entry": "web/index.html"
+  }
 }

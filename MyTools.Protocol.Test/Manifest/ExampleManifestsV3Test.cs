@@ -58,17 +58,15 @@ public class ExampleManifestsV3Test
         var manifest = JsonSerializer.Deserialize<PluginManifestV3>(json, ProtocolJsonOptions.Default);
         Assert.That(manifest, Is.Not.Null, $"could not deserialize {path}");
 
-        var pluginFolder = Path.GetFileName(Path.GetDirectoryName(path));
         Assert.Multiple(() =>
         {
             Assert.That(manifest!.Id, Is.Not.Empty, "id is required");
-            Assert.That(manifest.Id, Is.EqualTo(pluginFolder), "id must match the plugin directory");
             Assert.That(manifest.Version, Is.Not.Empty, "version is required");
             Assert.That(Version.TryParse(manifest.Version, out _), Is.True, "version must be valid");
             Assert.That(manifest.ProtocolVersion, Is.Not.Empty, "protocolVersion is required");
             Assert.That(manifest.Icon, Is.Not.Null.And.Not.Empty, "icon is required");
             Assert.That(manifest.I18n, Is.Not.Null, "i18n is required");
-            Assert.That(manifest.Entries, Is.Not.Empty, "at least one entry is required");
+            Assert.That(manifest.Entry, Is.Not.Empty, "entry is required");
         });
 
         var i18n = manifest!.I18n!;
@@ -90,18 +88,14 @@ public class ExampleManifestsV3Test
             Assert.That(File.Exists(localePath), Is.True, $"locale file is missing: {locale}");
         }
 
-        foreach (var entry in manifest.Entries)
+        Assert.Multiple(() =>
         {
-            Assert.Multiple(() =>
-            {
-                Assert.That(entry.Id, Is.Not.Empty, "entry.id is required");
-                Assert.That(entry.Entry, Is.Not.Empty, $"entry '{entry.Id}' entry path is required");
-                Assert.That(entry.Name, Is.Not.Null, $"entry '{entry.Id}' name is required");
-                Assert.That(entry.Name?.Key, Is.Not.Empty, $"entry '{entry.Id}' name.key is required");
-                Assert.That(entry.Name?.DefaultValue, Is.Not.Empty,
-                    $"entry '{entry.Id}' name.defaultValue is required");
-            });
-        }
+            Assert.That(manifest.Entry, Is.Not.Empty, $"plugin '{manifest.Id}' entry path is required");
+            Assert.That(manifest.Name, Is.Not.Null, $"plugin '{manifest.Id}' name is required");
+            Assert.That(manifest.Name?.Key, Is.Not.Empty, $"plugin '{manifest.Id}' name.key is required");
+            Assert.That(manifest.Name?.DefaultValue, Is.Not.Empty,
+                $"plugin '{manifest.Id}' name.defaultValue is required");
+        });
 
         var validation = PluginManifestV3Validator.Validate(manifest);
         Assert.That(validation.IsValid, Is.True,

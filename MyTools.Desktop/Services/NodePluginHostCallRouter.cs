@@ -53,8 +53,8 @@ public sealed class NodePluginHostCallRouter
         }
 
         _logger.LogDebug(
-            "Routing hostCall method={Method} capability={Capability} plugin={PluginId} entry={EntryId}",
-            request.Method, capability, request.PluginId, request.EntryId);
+            "Routing hostCall method={Method} capability={Capability} plugin={PluginId}",
+            request.Method, capability, request.PluginId);
 
         return await handler.HandleAsync(request, cancellationToken);
     }

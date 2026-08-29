@@ -14,7 +14,7 @@ public class NodePluginFactoryTransportSelectionTest
 {
     private static NodePluginManifest Manifest() => new()
     {
-        Id = "p:main", ParentId = "p", EntryId = "main", ProtocolVersion = "3.0",
+        Id = "p", ParentId = "p", ProtocolVersion = "3.0",
         Entry = "index.mjs", PluginDirectory = "C:/p", EntryFullPath = "C:/p/index.mjs",
     };
 
@@ -52,13 +52,12 @@ public class NodePluginFactoryTransportSelectionTest
             public Task StartAsync(
                 string pipeName,
                 string pluginId,
-                string entryId,
                 Func<MyTools.Host.Core.Security.ProcessIdentity, string> issueToken,
                 CancellationToken c)
             {
                 Transport = new InMemoryTransport();
                 ObservedIdentity = new MyTools.Host.Core.Security.ProcessIdentity(
-                    1, DateTime.UtcNow, pluginId, entryId);
+                    1, DateTime.UtcNow, pluginId);
                 issueToken(ObservedIdentity);
                 return Task.CompletedTask;
             }

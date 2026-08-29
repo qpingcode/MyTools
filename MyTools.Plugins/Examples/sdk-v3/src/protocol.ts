@@ -110,7 +110,6 @@ export interface Envelope {
   traceId: string;
   sessionId: string;
   pluginId: string;
-  entryId: string;
   endpointId: string;
   kind: MessageKind;
   route: string;

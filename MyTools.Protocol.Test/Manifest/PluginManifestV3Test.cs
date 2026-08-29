@@ -14,46 +14,33 @@ public class PluginManifestV3Test
           "id": "settings",
           "version": "0.0.6",
           "protocolVersion": "3.0",
-          "entries": [
-            {
-              "id": "main",
-              "entry": "backend/index.mjs",
-              "capabilities": ["configuration.write", "clipboard.read"],
-              "detail": { "type": "web", "entry": "web/index.html" }
-            }
-          ]
+          "entry": "backend/index.mjs",
+          "capabilities": ["configuration.write", "clipboard.read"],
+          "detail": { "type": "web", "entry": "web/index.html" }
         }
         """;
 
     [Test]
-    public void Deserialize_ShouldParseIdAndEntries()
+    public void Deserialize_ShouldParseRootEntry()
     {
         var m = JsonSerializer.Deserialize<PluginManifestV3>(SampleJson, ProtocolJsonOptions.Default)!;
 
         Assert.That(m.Id, Is.EqualTo("settings"));
         Assert.That(m.Version, Is.EqualTo("0.0.6"));
         Assert.That(m.ProtocolVersion, Is.EqualTo("3.0"));
-        Assert.That(m.Entries, Has.Count.EqualTo(1));
+        Assert.That(m.Entry, Is.EqualTo("backend/index.mjs"));
+        Assert.That(m.Capabilities, Is.EqualTo(new[] { "configuration.write", "clipboard.read" }));
     }
 
     [Test]
-    public void Deserialize_Entry_ShouldCarryCapabilities()
-    {
-        var m = JsonSerializer.Deserialize<PluginManifestV3>(SampleJson, ProtocolJsonOptions.Default)!;
-
-        Assert.That(m.Entries[0].Id, Is.EqualTo("main"));
-        Assert.That(m.Entries[0].Entry, Is.EqualTo("backend/index.mjs"));
-        Assert.That(m.Entries[0].Capabilities, Is.EqualTo(new[] { "configuration.write", "clipboard.read" }));
-    }
-
-    [Test]
-    public void Serialize_Entry_ShouldUseIdAndEntryWireNames()
+    public void Serialize_ShouldUseRootIdAndEntryWireNames()
     {
         var m = JsonSerializer.Deserialize<PluginManifestV3>(SampleJson, ProtocolJsonOptions.Default)!;
         var json = JsonSerializer.Serialize(m, ProtocolJsonOptions.Default);
 
-        Assert.That(json, Does.Contain("\"id\":\"main\""));
+        Assert.That(json, Does.Contain("\"id\":\"settings\""));
         Assert.That(json, Does.Contain("\"entry\":\"backend/index.mjs\""));
+        Assert.That(json, Does.Not.Contain("entries"));
         Assert.That(json, Does.Not.Contain("entryId"));
         Assert.That(json, Does.Not.Contain("nodeEntry"));
     }
@@ -63,8 +50,7 @@ public class PluginManifestV3Test
     {
         var m = new PluginManifestV3
         {
-            Id = "p", ProtocolVersion = "3.0",
-            Entries = [new() { Id = "main", Entry = "index.mjs", Capabilities = [] }]
+            Id = "p", ProtocolVersion = "3.0", Entry = "index.mjs", Capabilities = []
         };
 
         var result = PluginManifestV3Validator.Validate(m);
@@ -73,17 +59,9 @@ public class PluginManifestV3Test
     }
 
     [Test]
-    public void Validate_DuplicateEntryIds_ShouldFail()
+    public void Validate_MissingId_ShouldFail()
     {
-        var m = new PluginManifestV3
-        {
-            Id = "p", ProtocolVersion = "3.0",
-            Entries =
-            [
-                new() { Id = "main", Entry = "a.mjs", Capabilities = [] },
-                new() { Id = "main", Entry = "b.mjs", Capabilities = [] },
-            ]
-        };
+        var m = new PluginManifestV3 { Id = "", ProtocolVersion = "3.0", Entry = "index.mjs" };
 
         var result = PluginManifestV3Validator.Validate(m);
 
@@ -92,9 +70,9 @@ public class PluginManifestV3Test
     }
 
     [Test]
-    public void Validate_NoEntries_ShouldFail()
+    public void Validate_MissingEntry_ShouldFail()
     {
-        var m = new PluginManifestV3 { Id = "p", ProtocolVersion = "3.0", Entries = [] };
+        var m = new PluginManifestV3 { Id = "p", ProtocolVersion = "3.0", Entry = "" };
 
         var result = PluginManifestV3Validator.Validate(m);
 
@@ -106,8 +84,7 @@ public class PluginManifestV3Test
     {
         var m = new PluginManifestV3
         {
-            Id = "p", ProtocolVersion = "2.0",
-            Entries = [new() { Id = "main", Entry = "index.mjs", Capabilities = [] }]
+            Id = "p", ProtocolVersion = "2.0", Entry = "index.mjs"
         };
 
         var result = PluginManifestV3Validator.Validate(m);
@@ -120,8 +97,7 @@ public class PluginManifestV3Test
     {
         var m = new PluginManifestV3
         {
-            Id = "p", ProtocolVersion = "3.0",
-            Entries = [new() { Id = "main", Entry = "index.mjs", Capabilities = [] }]
+            Id = "p", ProtocolVersion = "3.0", Entry = "index.mjs"
         };
 
         var result = PluginManifestV3Validator.Validate(m);
@@ -134,16 +110,10 @@ public class PluginManifestV3Test
     {
         var m = new PluginManifestV3
         {
-            Id = "p", ProtocolVersion = "3.0",
-            Entries =
-            [
-                new()
-                {
-                    Id = "main",
-                    Entry = "index.mjs",
-                    Detail = new EntryDetailV3 { Type = PluginDetailTypes.List }
-                }
-            ]
+            Id = "p",
+            ProtocolVersion = "3.0",
+            Entry = "index.mjs",
+            Detail = new EntryDetailV3 { Type = PluginDetailTypes.List }
         };
 
         var result = PluginManifestV3Validator.Validate(m);
@@ -156,16 +126,10 @@ public class PluginManifestV3Test
     {
         var m = new PluginManifestV3
         {
-            Id = "p", ProtocolVersion = "3.0",
-            Entries =
-            [
-                new()
-                {
-                    Id = "main",
-                    Entry = "index.mjs",
-                    Detail = new EntryDetailV3 { Type = PluginDetailTypes.Web }
-                }
-            ]
+            Id = "p",
+            ProtocolVersion = "3.0",
+            Entry = "index.mjs",
+            Detail = new EntryDetailV3 { Type = PluginDetailTypes.Web }
         };
 
         var result = PluginManifestV3Validator.Validate(m);
@@ -179,16 +143,10 @@ public class PluginManifestV3Test
     {
         var m = new PluginManifestV3
         {
-            Id = "p", ProtocolVersion = "3.0",
-            Entries =
-            [
-                new()
-                {
-                    Id = "main",
-                    Entry = "index.mjs",
-                    Detail = new EntryDetailV3 { Type = "basic" }
-                }
-            ]
+            Id = "p",
+            ProtocolVersion = "3.0",
+            Entry = "index.mjs",
+            Detail = new EntryDetailV3 { Type = "basic" }
         };
 
         var result = PluginManifestV3Validator.Validate(m);

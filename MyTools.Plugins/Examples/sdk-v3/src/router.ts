@@ -62,7 +62,6 @@ export class HandlerRouter {
   private handlers = new Map<string, Handler>();
   private pendingHostCalls = new Map<string, PendingHostCall>();
   private pluginId = "p";
-  private entryId = "e";
   private sessionId = "s";
   private endpointId: string = EndpointIds.NodeMain;
 
@@ -74,9 +73,8 @@ export class HandlerRouter {
   }
 
   /** Sets the bound identity stamped on outbound messages (after handshake). */
-  setIdentity(ids: { pluginId: string; entryId: string; sessionId: string; endpointId: string }): void {
+  setIdentity(ids: { pluginId: string; sessionId: string; endpointId: string }): void {
     this.pluginId = ids.pluginId;
-    this.entryId = ids.entryId;
     this.sessionId = ids.sessionId;
     this.endpointId = ids.endpointId;
   }
@@ -133,7 +131,6 @@ export class HandlerRouter {
         traceId: id,
         sessionId: this.sessionId,
         pluginId: this.pluginId,
-        entryId: this.entryId,
         endpointId: this.endpointId,
         kind: MessageKind.Request,
         route,
@@ -176,7 +173,6 @@ export class HandlerRouter {
       traceId: req.traceId,
       sessionId: req.sessionId,
       pluginId: req.pluginId,
-      entryId: req.entryId,
       endpointId: this.endpointId,
       kind: MessageKind.Response,
       route: req.route,

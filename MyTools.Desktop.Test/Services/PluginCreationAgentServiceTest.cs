@@ -53,7 +53,7 @@ public sealed class PluginCreationAgentServiceTest
     }
 
     [Test]
-    public void ConstructorAcceptsDuplicatePluginIdsFromMultiEntryPlugins()
+    public void ConstructorAcceptsDuplicatePluginIdsCaseInsensitively()
     {
         var root = TestContext.CurrentContext.WorkDirectory;
         var context = new PluginCreationContext(

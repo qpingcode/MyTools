@@ -27,9 +27,8 @@ public class NodePluginBusHostTest
 {
     private static NodePluginManifest Manifest() => new()
     {
-        Id = "settings:main",
+        Id = "settings",
         ParentId = "settings",
-        EntryId = "main",
         NameMessage = new MyTools.Common.Localization.LocalizedMessage("Plugin.Settings.Name", "Settings"),
         Version = "0.0.6",
         Runtime = "node",
@@ -58,7 +57,7 @@ public class NodePluginBusHostTest
         {
             Version = ProtocolVersion.Current, Id = "resp-1", CorrelationId = sentRequest.Id,
             TraceId = sentRequest.TraceId, SessionId = sessionId, PluginId = "settings",
-            EntryId = "main", EndpointId = "node-main", Kind = MessageKind.Response,
+            EndpointId = "node-main", Kind = MessageKind.Response,
             Route = "plugin.call.search",
             Payload = JsonNode.Parse("""{"items":[{"id":"1","title":"Hi","subtitle":"","priority":0}]}"""),
         });
@@ -115,7 +114,7 @@ public class NodePluginBusHostTest
         nodeT.Deliver(new Envelope
         {
             Version = ProtocolVersion.Current, Id = "evt-1", TraceId = "evt-1", SessionId = sessionId,
-            PluginId = "settings", EntryId = "main", EndpointId = "node-main",
+            PluginId = "settings", EndpointId = "node-main",
             Kind = MessageKind.Event, Route = "plugin.event.configChanged",
             Payload = JsonNode.Parse("""{"key":"theme"}"""),
         });
@@ -136,7 +135,7 @@ public class NodePluginBusHostTest
         nodeT.Deliver(new Envelope
         {
             Version = ProtocolVersion.Current, Id = "hc-1", TraceId = "hc-1", SessionId = sessionId,
-            PluginId = "forged", EntryId = "forged", EndpointId = "forged",
+            PluginId = "forged", EndpointId = "forged",
             Kind = MessageKind.Request, Route = "host.call.configuration.read", TimeoutMs = 5000,
             Payload = JsonNode.Parse("{}"),
         });
@@ -167,7 +166,7 @@ public class NodePluginBusHostTest
         nodeT.Deliver(new Envelope
         {
             Version = ProtocolVersion.Current, Id = "hc-deny", TraceId = "hc-deny", SessionId = sessionId,
-            PluginId = "settings", EntryId = "main", EndpointId = "node-main",
+            PluginId = "settings", EndpointId = "node-main",
             Kind = MessageKind.Request, Route = "host.call.configuration.read", TimeoutMs = 5000,
             Payload = JsonNode.Parse("{}"),
         });
@@ -198,7 +197,7 @@ public class NodePluginBusHostTest
 
         await host.DisposeAsync();
 
-        Assert.That(manager.TryGetSession("settings", "main", sessionId, out _), Is.False);
+        Assert.That(manager.TryGetSession("settings", sessionId, out _), Is.False);
         Assert.That(async () => await host.StartAsync("node", CancellationToken.None),
             Throws.InstanceOf<ObjectDisposedException>());
     }
@@ -212,9 +211,8 @@ public class NodePluginBusHostTest
         var manager = new PluginSessionManager(bus, gateway, factory);
         var m = new NodePluginManifest
         {
-            Id = "settings:main",
+            Id = "settings",
             ParentId = "settings",
-            EntryId = "main",
             NameMessage = new MyTools.Common.Localization.LocalizedMessage("Plugin.Settings.Name", "Settings"),
             Version = "0.0.6",
             Runtime = "node",
@@ -243,14 +241,13 @@ public class NodePluginBusHostTest
         public Task StartAsync(
             string pipeName,
             string pluginId,
-            string entryId,
             Func<ProcessIdentity, string> issueToken,
             CancellationToken ct)
         {
             var transport = new InMemoryTransport();
             Transport = transport;
             ObservedIdentity = new ProcessIdentity(7, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-                pluginId, entryId);
+                pluginId);
             var token = issueToken(ObservedIdentity);
             var payload = HandshakePayload.BuildNamedPipeRequest(PipeHandshake.HostSupportedVersions, token);
             transport.Deliver(new Envelope
@@ -260,7 +257,6 @@ public class NodePluginBusHostTest
                 TraceId = "hs-1",
                 SessionId = "",
                 PluginId = pluginId,
-                EntryId = entryId,
                 EndpointId = "node-main",
                 Kind = MessageKind.Request,
                 Route = "bus.handshake",

@@ -57,7 +57,7 @@ for (const file of files) {
 
   // Round-trip: parse the fixture as an Envelope-shaped object and re-stringify.
   const env = JSON.parse(source);
-  const required = ["version", "id", "traceId", "sessionId", "pluginId", "entryId", "endpointId", "kind", "route"];
+  const required = ["version", "id", "traceId", "sessionId", "pluginId", "endpointId", "kind", "route"];
   for (const key of required) {
     if (!(key in env)) {
       console.error(`SELF-CHECK FAIL (${file}): missing required envelope field '${key}'`);

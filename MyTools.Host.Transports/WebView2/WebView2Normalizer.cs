@@ -12,7 +12,7 @@ namespace MyTools.Host.Transports.WebView2;
 /// any of these; the host stamps them on every outbound message.
 /// </summary>
 public sealed record EndpointBinding(
-    string PluginId, string EntryId, string SessionId, string EndpointId);
+    string PluginId, string SessionId, string EndpointId);
 
 /// <summary>Result of normalizing an outbound WebView message.</summary>
 public readonly record struct NormalizationResult(bool IsRejected, BusError? Error, Envelope? Envelope)
@@ -23,7 +23,7 @@ public readonly record struct NormalizationResult(bool IsRejected, BusError? Err
 
 /// <summary>
 /// Normalizes outbound WebView2 messages at the transport boundary, enforcing the design's
-/// WebView rules: (1) the host stamps pluginId/entryId/sessionId/endpointId from the fixed binding,
+/// WebView rules: (1) the host stamps pluginId/sessionId/endpointId from the fixed binding,
 /// ignoring whatever the page declared; (2) webview may only call <c>plugin.call.*</c> or publish
 /// <c>plugin.event.*</c> — a <c>host.call.*</c> is rejected with <see cref="ErrorCode.CapabilityDenied">;
 /// (3) message byte-size is prechecked before deserialization would matter; (4) on Node restart the
@@ -66,7 +66,6 @@ public sealed class WebView2Normalizer
         var stamped = env with
         {
             PluginId = _binding.PluginId,
-            EntryId = _binding.EntryId,
             SessionId = _binding.SessionId,
             EndpointId = _binding.EndpointId,
         };

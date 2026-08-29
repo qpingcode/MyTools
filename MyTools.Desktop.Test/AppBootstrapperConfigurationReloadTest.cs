@@ -50,7 +50,6 @@ public class AppBootstrapperConfigurationReloadTest
         new()
         {
             ParentId = parentId,
-            EntryId = "main",
             Configuration = configuration
         };
 }

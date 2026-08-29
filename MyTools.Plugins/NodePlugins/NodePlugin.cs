@@ -107,9 +107,6 @@ public sealed class NodePlugin : IPlugin, IDisposable
         return busHost.StartAsync(busHost.NodeExePath, cancellationToken);
     }
 
-    /// <summary>Entry id within the plugin package (e.g. <c>main</c>).</summary>
-    public string EntryId => manifest.EntryId;
-
     /// <summary>
     /// 插件所属的根 ID（不含 entry 后缀）。例如 PluginId 为 "settings:main"，
     /// ParentId 为 "settings"。用于匹配同一插件的所有 entry。

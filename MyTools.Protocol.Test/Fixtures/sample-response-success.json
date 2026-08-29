@@ -1,1 +1,1 @@
-{"version":"3.0","id":"resp-001","correlationId":"req-001","traceId":"trace-001","sessionId":"sess-001","pluginId":"settings","entryId":"main","endpointId":"node-main","kind":"response","route":"plugin.call.saveConfiguration","payload":{"saved":true}}
+{"version":"3.0","id":"resp-001","correlationId":"req-001","traceId":"trace-001","sessionId":"sess-001","pluginId":"settings","endpointId":"node-main","kind":"response","route":"plugin.call.saveConfiguration","payload":{"saved":true}}

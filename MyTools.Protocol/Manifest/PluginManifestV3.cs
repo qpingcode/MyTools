@@ -1,20 +1,31 @@
 using System.Collections.Generic;
-using System.Linq;
 using MyTools.Protocol.Errors;
 using MyTools.Protocol.Versioning;
 
 namespace MyTools.Protocol.Manifest;
 
 /// <summary>
-/// v3 plugin manifest. Each entry declares its required capabilities explicitly; the capability
+/// v3 single-entry plugin manifest. Each plugin declares its required capabilities explicitly; the capability
 /// gateway rejects undeclared calls even for trusted plugins.
 /// </summary>
 public sealed class PluginManifestV3
 {
     public required string Id { get; init; }
+    /// <summary>Display name with i18n message key + default value.</summary>
+    public LocalizedNameV3? Name { get; init; }
     public string Version { get; init; } = "0.0.0";
     public required string ProtocolVersion { get; init; }
-    public required IReadOnlyList<PluginEntryV3> Entries { get; init; }
+    /// <summary>Node backend path relative to the plugin root. Wire name is <c>entry</c>.</summary>
+    public required string Entry { get; init; }
+    public IReadOnlyList<string> Capabilities { get; init; } = [];
+    /// <summary>Optional UI. Omitted (or <c>type: list</c>) uses the native list view.</summary>
+    public EntryDetailV3? Detail { get; init; }
+    /// <summary>Keyword aliases that route a search to this plugin.</summary>
+    public IReadOnlyList<string> Alias { get; init; } = [];
+    /// <summary>Default global-search participation.</summary>
+    public EntrySearchV3? Search { get; init; }
+    /// <summary>Global hotkey (e.g. "Alt+S") that opens this plugin.</summary>
+    public string? HotKey { get; init; }
     /// <summary>Localization configuration (default locale, catalog path, supported locales).</summary>
     public ManifestI18nV3? I18n { get; init; }
     /// <summary>
@@ -32,32 +43,8 @@ public sealed class PluginManifestV3
     public IReadOnlyList<PluginConfigurationSettingV3> Configuration { get; init; } = [];
 }
 
-public sealed class PluginEntryV3
-{
-    /// <summary>Entry identity. Wire name is <c>id</c>.</summary>
-    public required string Id { get; init; }
-
-    /// <summary>Node backend path relative to the plugin root. Wire name is <c>entry</c>.</summary>
-    public required string Entry { get; init; }
-
-    public IReadOnlyList<string> Capabilities { get; init; } = [];
-    /// <summary>
-    /// Optional UI for this entry. Omitted (or <c>type: list</c>) means the host shows
-    /// <c>search</c> results in the native list view. <c>type: web</c> requires <c>entry</c>.
-    /// </summary>
-    public EntryDetailV3? Detail { get; init; }
-    /// <summary>Keyword triggers that route a search to this entry.</summary>
-    public IReadOnlyList<string> Keywords { get; init; } = [];
-    /// <summary>Default global-search participation. Omitted means not in unscoped results.</summary>
-    public EntrySearchV3? Search { get; init; }
-    /// <summary>Global hotkey (e.g. "Alt+S") that opens this entry (web detail or native list).</summary>
-    public string? HotKey { get; init; }
-    /// <summary>Display name with i18n message key + default value.</summary>
-    public LocalizedNameV3? Name { get; init; }
-}
-
 /// <summary>
-/// Per-entry search defaults. <c>global</c> is unscoped results; keyword search is implied by <c>keywords</c>.
+/// Plugin search defaults. <c>global</c> is unscoped results; keyword search is implied by <c>alias</c>.
 /// </summary>
 public sealed class EntrySearchV3
 {
@@ -89,7 +76,7 @@ public static class PluginDetailResolver
     /// Omitted detail, empty type without entry, and <c>type: list</c> are native list.
     /// <c>type: web</c> (or omitted type with an entry path) requires <paramref name="entry"/>.
     /// </summary>
-    public static ManifestValidation TryResolve(string? type, string? entry, string entryId, out ResolvedPluginDetail resolved)
+    public static ManifestValidation TryResolve(string? type, string? entry, string pluginId, out ResolvedPluginDetail resolved)
     {
         resolved = new ResolvedPluginDetail(false, null);
         var trimmedType = type?.Trim();
@@ -111,14 +98,14 @@ public static class PluginDetailResolver
             if (!hasEntry)
             {
                 return ManifestValidation.Fail(
-                    $"entry '{entryId}' detail.entry is required when detail.type is '{PluginDetailTypes.Web}'");
+                    $"plugin '{pluginId}' detail.entry is required when detail.type is '{PluginDetailTypes.Web}'");
             }
 
             resolved = new ResolvedPluginDetail(true, entry);
             return ManifestValidation.Ok();
         }
 
-        return ManifestValidation.Fail($"entry '{entryId}' has unsupported detail.type '{type}'");
+        return ManifestValidation.Fail($"plugin '{pluginId}' has unsupported detail.type '{type}'");
     }
 }
 
@@ -153,31 +140,20 @@ public static class PluginManifestV3Validator
             return ManifestValidation.Fail(
                 $"unsupported protocolVersion '{manifest.ProtocolVersion}', expected {ProtocolVersion.CurrentWire}");
         }
-        if (manifest.Entries is null || manifest.Entries.Count == 0)
+        if (string.IsNullOrEmpty(manifest.Id))
         {
-            return ManifestValidation.Fail("manifest must declare at least one entry");
+            return ManifestValidation.Fail("manifest is missing id");
         }
-        var entryIds = new HashSet<string>();
-        foreach (var e in manifest.Entries)
+        if (string.IsNullOrEmpty(manifest.Entry))
         {
-            if (string.IsNullOrEmpty(e.Id))
-            {
-                return ManifestValidation.Fail("entry is missing id");
-            }
-            if (!entryIds.Add(e.Id))
-            {
-                return ManifestValidation.Fail($"duplicate id '{e.Id}'");
-            }
-            if (string.IsNullOrEmpty(e.Entry))
-            {
-                return ManifestValidation.Fail($"entry '{e.Id}' is missing entry");
-            }
+            return ManifestValidation.Fail($"entry '{manifest.Id}' is missing entry");
+        }
 
-            var detailResult = PluginDetailResolver.TryResolve(e.Detail?.Type, e.Detail?.Entry, e.Id, out _);
-            if (!detailResult.IsValid)
-            {
-                return detailResult;
-            }
+        var detailResult = PluginDetailResolver.TryResolve(
+            manifest.Detail?.Type, manifest.Detail?.Entry, manifest.Id, out _);
+        if (!detailResult.IsValid)
+        {
+            return detailResult;
         }
 
         var configurationResult = PluginConfigurationValidator.Validate(manifest.Configuration);

@@ -102,13 +102,13 @@ async function readBootstrapLine(): Promise<{ pipePath: string; token: string }>
 
 /**
  * Sends bus.handshake with the bootstrap token and waits for the host response that binds
- * plugin/entry/session/endpoint identity. Rejects on HandshakeFailed / ProtocolMismatch / timeout.
+ * plugin/session/endpoint identity. Rejects on HandshakeFailed / ProtocolMismatch / timeout.
  */
 export async function completeHandshake(
   transport: NodeTransport,
   token: string,
   timeoutMs = 10000,
-): Promise<{ pluginId: string; entryId: string; sessionId: string; endpointId: string }> {
+): Promise<{ pluginId: string; sessionId: string; endpointId: string }> {
   const id = randomBytes(16).toString("hex");
   const req: Envelope = {
     version: ProtocolVersion,
@@ -116,7 +116,6 @@ export async function completeHandshake(
     traceId: id,
     sessionId: "",
     pluginId: "",
-    entryId: "",
     endpointId: EndpointIds.NodeMain,
     kind: MessageKind.Request,
     route: Routes.Bus.Handshake,
@@ -144,14 +143,13 @@ export async function completeHandshake(
       }
       const p = (env.payload ?? {}) as Record<string, unknown>;
       const pluginId = String(p.pluginId ?? "");
-      const entryId = String(p.entryId ?? "");
       const sessionId = String(p.sessionId ?? "");
       const endpointId = String(p.endpointId ?? EndpointIds.NodeMain);
-      if (!pluginId || !entryId || !sessionId) {
+      if (!pluginId || !sessionId) {
         reject(new Error("bus.handshake success response missing bound identity"));
         return;
       }
-      resolve({ pluginId, entryId, sessionId, endpointId });
+      resolve({ pluginId, sessionId, endpointId });
     });
 
     transport.send(req);

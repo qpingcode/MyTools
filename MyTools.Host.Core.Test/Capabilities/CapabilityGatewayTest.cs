@@ -10,7 +10,7 @@ namespace MyTools.Host.Core.Test.Capabilities;
 public class CapabilityGatewayTest
 {
     private static PluginManifest Manifest(params string[] caps)
-        => new("settings", "main", caps);
+        => new("settings", caps);
 
     [Test]
     public void Authorize_UndeclaredCapability_ShouldReturnCapabilityNotDeclared()
@@ -18,7 +18,7 @@ public class CapabilityGatewayTest
         var gw = new CapabilityGateway();
         gw.RegisterManifest(Manifest("clipboard.read"));
 
-        var result = gw.Authorize("settings", "main", "clipboard.write");
+        var result = gw.Authorize("settings", "clipboard.write");
 
         Assert.That(result.IsAllowed, Is.False);
         Assert.That(result.Error!.Code, Is.EqualTo(ErrorCode.CapabilityNotDeclared));
@@ -30,7 +30,7 @@ public class CapabilityGatewayTest
         var gw = new CapabilityGateway();
         gw.RegisterManifest(Manifest("clipboard.read", "configuration.write"));
 
-        var result = gw.Authorize("settings", "main", "configuration.write");
+        var result = gw.Authorize("settings", "configuration.write");
 
         Assert.That(result.IsAllowed, Is.True);
         Assert.That(result.Error, Is.Null);
@@ -42,7 +42,7 @@ public class CapabilityGatewayTest
         var gw = new CapabilityGateway();
         gw.RegisterManifest(Manifest("clipboard.read"));
 
-        gw.Authorize("settings", "main", "clipboard.read");
+        gw.Authorize("settings", "clipboard.read");
 
         var audit = gw.AuditEntries;
         Assert.That(audit, Has.Count.EqualTo(1));
@@ -57,7 +57,7 @@ public class CapabilityGatewayTest
         var gw = new CapabilityGateway();
         gw.RegisterManifest(Manifest("clipboard.read"));
 
-        gw.Authorize("settings", "main", "clipboard.write");
+        gw.Authorize("settings", "clipboard.write");
 
         var audit = gw.AuditEntries;
         Assert.That(audit[0].Allowed, Is.False);
@@ -69,7 +69,7 @@ public class CapabilityGatewayTest
     {
         var gw = new CapabilityGateway();
 
-        var result = gw.Authorize("not-registered", "main", "clipboard.read");
+        var result = gw.Authorize("not-registered",  "clipboard.read");
 
         Assert.That(result.IsAllowed, Is.False);
         Assert.That(result.Error!.Code, Is.EqualTo(ErrorCode.CapabilityNotDeclared));
@@ -83,12 +83,12 @@ public class CapabilityGatewayTest
         Parallel.For(0, n, i =>
         {
             var plugin = $"p{i}";
-            gw.RegisterManifest(new PluginManifest(plugin, "main", ["configuration.write"]));
-            var allowed = gw.Authorize(plugin, "main", "configuration.write");
-            var denied = gw.Authorize(plugin, "main", "clipboard.read");
+            gw.RegisterManifest(new PluginManifest(plugin,  ["configuration.write"]));
+            var allowed = gw.Authorize(plugin,  "configuration.write");
+            var denied = gw.Authorize(plugin, "clipboard.read");
             Assert.That(allowed.IsAllowed, Is.True);
             Assert.That(denied.IsAllowed, Is.False);
-            gw.UnregisterManifest(plugin, "main");
+            gw.UnregisterManifest(plugin);
         });
 
         Assert.That(gw.AuditEntries, Has.Count.EqualTo(n * 2));

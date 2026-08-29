@@ -20,7 +20,7 @@ using MyTools.Protocol.Versioning;
 namespace MyTools.Host.Core.Bus;
 
 /// <summary>
-/// Host-call handler registered per plugin entry. Invoked after <see cref="CapabilityGateway"/>
+/// Host-call handler registered per plugin. Invoked after <see cref="CapabilityGateway"/>
 /// authorizes the route. Returns a JSON payload on success or throws on failure.
 /// </summary>
 public delegate Task<JsonElement> HostCallInvoker(
@@ -33,7 +33,7 @@ public delegate Task<JsonElement> HostCallInvoker(
 /// <see cref="HostCallInvoker"/>.
 ///
 /// Inbound identity fields are stamped from the transport-bound <see cref="EndpointId"/>; the bus
-/// never trusts peer-declared plugin/entry/session/endpoint ids. Per-endpoint
+/// never trusts peer-declared plugin/session/endpoint ids. Per-endpoint
 /// <see cref="PendingRequestTracker"/> and <see cref="BoundedEventQueue{T}"/> enforce Phase-1
 /// backpressure.
 /// </summary>
@@ -81,34 +81,34 @@ public sealed class MessageBus
 
     public void RegisterEndpoint(EndpointId id, IMessageTransport transport)
     {
-        var key = SessionKey(id.PluginId, id.EntryId, id.SessionId);
+        var key = SessionKey(id.PluginId, id.SessionId);
         var session = _sessions.GetOrAdd(key, _ => new SessionEndpoints(_pendingLimit, _eventQueueCapacity));
         Action<Envelope> handler = env => OnInbound(id, env);
         session.Add(id, transport, handler);
         transport.MessageReceived += handler;
-        _logger.LogInformation(
-            "Bus endpoint registered plugin={PluginId} entry={EntryId} session={SessionId} ep={Endpoint} isNode={IsNode}",
-            id.PluginId, id.EntryId, id.SessionId, id.EndpointLabel, id.IsNode);
+        _logger.LogDebug(
+            "Bus endpoint registered plugin={PluginId} session={SessionId} ep={Endpoint} isNode={IsNode}",
+            id.PluginId, id.SessionId, id.EndpointLabel, id.IsNode);
     }
 
     public void UnregisterEndpoint(EndpointId id)
     {
-        var key = SessionKey(id.PluginId, id.EntryId, id.SessionId);
+        var key = SessionKey(id.PluginId, id.SessionId);
         if (_sessions.TryGetValue(key, out var session)
             && session.TryRemove(id, out var transport, out var handler))
         {
             transport.MessageReceived -= handler;
-            _logger.LogInformation(
-                "Bus endpoint unregistered plugin={PluginId} entry={EntryId} session={SessionId} ep={Endpoint}",
-                id.PluginId, id.EntryId, id.SessionId, id.EndpointLabel);
+            _logger.LogDebug(
+                "Bus endpoint unregistered plugin={PluginId} session={SessionId} ep={Endpoint}",
+                id.PluginId, id.SessionId, id.EndpointLabel);
         }
     }
 
-    public void RegisterHostCallHandler(string pluginId, string entryId, HostCallInvoker handler)
-        => _hostCallHandlers[HandlerKey(pluginId, entryId)] = handler;
+    public void RegisterHostCallHandler(string pluginId, HostCallInvoker handler)
+        => _hostCallHandlers[pluginId] = handler;
 
-    public void UnregisterHostCallHandler(string pluginId, string entryId)
-        => _hostCallHandlers.TryRemove(HandlerKey(pluginId, entryId), out _);
+    public void UnregisterHostCallHandler(string pluginId)
+        => _hostCallHandlers.TryRemove(pluginId, out _);
 
     /// <summary>
     /// Routes a request from <paramref name="origin"/> to the Node endpoint of the same session.
@@ -117,7 +117,7 @@ public sealed class MessageBus
     /// </summary>
     public async Task RouteRequestAsync(Envelope request, EndpointId origin)
     {
-        var key = SessionKey(origin.PluginId, origin.EntryId, origin.SessionId);
+        var key = SessionKey(origin.PluginId, origin.SessionId);
         if (!_sessions.TryGetValue(key, out var session) || session.NodeLabel is null)
         {
             throw new InvalidOperationException($"no node endpoint registered for session {key}");
@@ -183,7 +183,7 @@ public sealed class MessageBus
                 request.Id, request.Route, origin.EndpointLabel);
             try
             {
-                var key = SessionKey(origin.PluginId, origin.EntryId, origin.SessionId);
+                var key = SessionKey(origin.PluginId, origin.SessionId);
                 if (_sessions.TryGetValue(key, out var session))
                 {
                     await session.WriteOnAsync(origin.EndpointLabel, BuildErrorReply(request, origin,
@@ -210,7 +210,7 @@ public sealed class MessageBus
         var reply = BuildHostCallReply(env, source, payload: null,
             BusError.For(ErrorCode.CapabilityDenied,
                 "webview cannot call host.call.* directly; route through plugin.call.* to Node"));
-        var key = SessionKey(source.PluginId, source.EntryId, source.SessionId);
+        var key = SessionKey(source.PluginId, source.SessionId);
         if (_sessions.TryGetValue(key, out var session))
         {
             await session.WriteOnAsync(source.EndpointLabel, reply);
@@ -219,7 +219,7 @@ public sealed class MessageBus
 
     private async Task DispatchHostCallAsync(EndpointId source, Envelope env)
     {
-        var key = SessionKey(source.PluginId, source.EntryId, source.SessionId);
+        var key = SessionKey(source.PluginId, source.SessionId);
         if (!_sessions.TryGetValue(key, out var session))
         {
             return;
@@ -237,20 +237,20 @@ public sealed class MessageBus
         try
         {
             var capability = Routes.StripHostCall(env.Route);
-            var decision = _gateway.Authorize(source.PluginId, source.EntryId, capability);
+            var decision = _gateway.Authorize(source.PluginId, capability);
             _logger.LogDebug(
-                "CapabilityAudit plugin={PluginId} entry={EntryId} route={Route} allowed={Allowed}",
-                source.PluginId, source.EntryId, capability, decision.IsAllowed);
+                "CapabilityAudit plugin={PluginId} route={Route} allowed={Allowed}",
+                source.PluginId, capability, decision.IsAllowed);
 
             Envelope reply;
             if (!decision.IsAllowed)
             {
                 reply = BuildHostCallReply(env, source, payload: null, decision.Error);
             }
-            else if (!_hostCallHandlers.TryGetValue(HandlerKey(source.PluginId, source.EntryId), out var invoker))
+            else if (!_hostCallHandlers.TryGetValue(source.PluginId, out var invoker))
             {
                 reply = BuildHostCallReply(env, source, payload: null,
-                    BusError.For(ErrorCode.InternalError, $"no host call handler for {source.PluginId}/{source.EntryId}"));
+                    BusError.For(ErrorCode.InternalError, $"no host call handler for {source.PluginId}"));
             }
             else
             {
@@ -268,9 +268,8 @@ public sealed class MessageBus
                 {
                     _logger.LogError(
                         ex,
-                        "Host call failed plugin={PluginId} entry={EntryId} route={Route} requestId={RequestId}",
+                        "Host call failed plugin={PluginId} route={Route} requestId={RequestId}",
                         source.PluginId,
-                        source.EntryId,
                         env.Route,
                         env.Id);
                     reply = BuildHostCallReply(env, source, payload: null,
@@ -298,7 +297,6 @@ public sealed class MessageBus
             TraceId = request.TraceId,
             SessionId = source.SessionId,
             PluginId = source.PluginId,
-            EntryId = source.EntryId,
             EndpointId = EndpointIds.Host,
             Kind = MessageKind.Response,
             Route = request.Route,
@@ -314,7 +312,6 @@ public sealed class MessageBus
         TraceId = request.TraceId,
         SessionId = origin.SessionId,
         PluginId = origin.PluginId,
-        EntryId = origin.EntryId,
         EndpointId = origin.EndpointLabel,
         Kind = MessageKind.Response,
         Route = request.Route,
@@ -326,7 +323,7 @@ public sealed class MessageBus
         if (env.CorrelationId is null) return;
         if (!_pending.TryRemove(env.CorrelationId, out var pending)) return;
 
-        var key = SessionKey(pending.Origin.PluginId, pending.Origin.EntryId, pending.Origin.SessionId);
+        var key = SessionKey(pending.Origin.PluginId, pending.Origin.SessionId);
         if (!_sessions.TryGetValue(key, out var session)) return;
 
         session.Release(pending.Origin.EndpointLabel, env.CorrelationId, pending.Route);
@@ -340,7 +337,7 @@ public sealed class MessageBus
 
     private void BroadcastEvent(EndpointId source, Envelope env)
     {
-        var key = SessionKey(source.PluginId, source.EntryId, source.SessionId);
+        var key = SessionKey(source.PluginId, source.SessionId);
         if (!_sessions.TryGetValue(key, out var session)) return;
         var droppedBefore = session.DroppedEvents;
         session.BroadcastExcept(source.EndpointLabel, env);
@@ -348,8 +345,8 @@ public sealed class MessageBus
         if (dropped > 0)
         {
             _logger.LogWarning(
-                "DroppedEvents plugin={PluginId} entry={EntryId} session={SessionId} route={Route} droppedDelta={Delta} total={Total}",
-                source.PluginId, source.EntryId, source.SessionId, env.Route, dropped, session.DroppedEvents);
+                "DroppedEvents plugin={PluginId} session={SessionId} route={Route} droppedDelta={Delta} total={Total}",
+                source.PluginId, source.SessionId, env.Route, dropped, session.DroppedEvents);
         }
     }
 
@@ -359,7 +356,7 @@ public sealed class MessageBus
     /// </summary>
     public Task BroadcastHostEventAsync(EndpointId anyEndpointInSession, Envelope env)
     {
-        var key = SessionKey(anyEndpointInSession.PluginId, anyEndpointInSession.EntryId, anyEndpointInSession.SessionId);
+        var key = SessionKey(anyEndpointInSession.PluginId, anyEndpointInSession.SessionId);
         if (!_sessions.TryGetValue(key, out var session)) return Task.CompletedTask;
         session.BroadcastToAll(env);
         return Task.CompletedTask;
@@ -369,19 +366,18 @@ public sealed class MessageBus
     /// Fails every pending request whose origin belongs to the given session (e.g. on Node
     /// disconnect). Delivers an error response envelope to each origin endpoint.
     /// </summary>
-    public void FailPendingForSession(string pluginId, string entryId, string sessionId, BusError error)
+    public void FailPendingForSession(string pluginId, string sessionId, BusError error)
     {
         foreach (var (requestId, pending) in _pending.ToArray())
         {
-            if (pending.Origin.PluginId != pluginId || pending.Origin.EntryId != entryId
-                || pending.Origin.SessionId != sessionId)
+            if (pending.Origin.PluginId != pluginId || pending.Origin.SessionId != sessionId)
             {
                 continue;
             }
 
             if (!_pending.TryRemove(requestId, out _)) continue;
 
-            var key = SessionKey(pending.Origin.PluginId, pending.Origin.EntryId, pending.Origin.SessionId);
+            var key = SessionKey(pending.Origin.PluginId, pending.Origin.SessionId);
             if (!_sessions.TryGetValue(key, out var session)) continue;
 
             session.Release(pending.Origin.EndpointLabel, requestId, pending.Route);
@@ -393,7 +389,6 @@ public sealed class MessageBus
                 TraceId = requestId,
                 SessionId = sessionId,
                 PluginId = pluginId,
-                EntryId = entryId,
                 EndpointId = EndpointIds.NodeMain,
                 Kind = MessageKind.Response,
                 Route = pending.Route,
@@ -403,11 +398,8 @@ public sealed class MessageBus
         }
     }
 
-    private static string SessionKey(string pluginId, string entryId, string sessionId)
-        => $"{pluginId}\u001f{entryId}\u001f{sessionId}";
-
-    private static string HandlerKey(string pluginId, string entryId)
-        => $"{pluginId}\u001f{entryId}";
+    private static string SessionKey(string pluginId, string sessionId)
+        => $"{pluginId}\u001f{sessionId}";
 
     private readonly record struct PendingOrigin(EndpointId Origin, string Route, long StartedAt);
 

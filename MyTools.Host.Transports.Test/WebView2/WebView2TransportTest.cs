@@ -13,7 +13,7 @@ namespace MyTools.Host.Transports.Test.WebView2;
 public class WebView2TransportTest
 {
     private static EndpointBinding Binding =>
-        new(PluginId: "settings", EntryId: "main", SessionId: "s1", EndpointId: "web-1");
+        new(PluginId: "settings", SessionId: "s1", EndpointId: "web-1");
 
     private sealed class FakeChannel : IWebViewMessageChannel
     {
@@ -26,7 +26,7 @@ public class WebView2TransportTest
     private static void CompleteHandshake(FakeChannel channel)
     {
         channel.Emit("""
-            {"version":"3.0","id":"hs1","traceId":"hs1","sessionId":"","pluginId":"","entryId":"",
+            {"version":"3.0","id":"hs1","traceId":"hs1","sessionId":"","pluginId":"",
              "endpointId":"web-1","kind":"request","route":"bus.handshake","timeoutMs":5000,
              "payload":{"version":"3.0","supportedVersions":["3.0"]}}
             """);
@@ -55,7 +55,7 @@ public class WebView2TransportTest
         transport.HandshakeFailed += err => failed = err;
 
         channel.Emit("""
-            {"version":"9.0","id":"hs1","traceId":"hs1","sessionId":"","pluginId":"","entryId":"",
+            {"version":"9.0","id":"hs1","traceId":"hs1","sessionId":"","pluginId":"",
              "endpointId":"web-1","kind":"request","route":"bus.handshake","timeoutMs":5000,
              "payload":{"version":"9.0","supportedVersions":["9.0"]}}
             """);
@@ -74,7 +74,7 @@ public class WebView2TransportTest
         var transport = new WebView2Transport(Binding, channel);
 
         channel.Emit("""
-            {"version":"3.0","id":"c1","traceId":"c1","sessionId":"","pluginId":"","entryId":"",
+            {"version":"3.0","id":"c1","traceId":"c1","sessionId":"","pluginId":"",
              "endpointId":"web-1","kind":"request","route":"plugin.call.refresh","timeoutMs":1000,
              "payload":{}}
             """);
@@ -94,7 +94,7 @@ public class WebView2TransportTest
         channel.Posted.Clear();
 
         channel.Emit("""
-            {"version":"3.0","id":"h1","traceId":"h1","sessionId":"x","pluginId":"evil","entryId":"x",
+            {"version":"3.0","id":"h1","traceId":"h1","sessionId":"x","pluginId":"evil",
              "endpointId":"x","kind":"request","route":"host.call.getConfiguration","timeoutMs":1000,
              "payload":{}}
             """);
@@ -114,11 +114,11 @@ public class WebView2TransportTest
         channel.Posted.Clear();
 
         var node = new MyTools.Host.Core.Transports.InMemoryTransport();
-        bus.RegisterEndpoint(new EndpointId("settings", "main", "s1", "web-1", IsNode: false), web);
-        bus.RegisterEndpoint(new EndpointId("settings", "main", "s1", "node-main", IsNode: true), node);
+        bus.RegisterEndpoint(new EndpointId("settings", "s1", "web-1", IsNode: false), web);
+        bus.RegisterEndpoint(new EndpointId("settings", "s1", "node-main", IsNode: true), node);
 
         channel.Emit("""
-            {"version":"3.0","id":"req-9","traceId":"req-9","sessionId":"","pluginId":"","entryId":"",
+            {"version":"3.0","id":"req-9","traceId":"req-9","sessionId":"","pluginId":"",
              "endpointId":"web-1","kind":"request","route":"plugin.call.getConfiguration","timeoutMs":1000,
              "payload":{}}
             """);
@@ -134,7 +134,6 @@ public class WebView2TransportTest
             TraceId = req.TraceId,
             SessionId = "s1",
             PluginId = "settings",
-            EntryId = "main",
             EndpointId = "node-main",
             Kind = MessageKind.Response,
             Route = req.Route,
@@ -165,7 +164,7 @@ public class WebView2TransportTest
         transport.MessageReceived += env => received = env;
 
         channel.Emit("""
-            {"version":"3.0","id":"r1","traceId":"r1","sessionId":"","pluginId":"","entryId":"",
+            {"version":"3.0","id":"r1","traceId":"r1","sessionId":"","pluginId":"",
              "endpointId":"web-1","kind":"request","route":"plugin.call.refresh","timeoutMs":1000,
              "payload":{"currentQuery":"x"}}
             """);

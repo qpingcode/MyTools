@@ -22,10 +22,10 @@ namespace MyTools.Host.Transports.Test.Process;
 [Category("Integration")]
 public class NodeProcessControllerTest
 {
-    private static Envelope Ping(string id, string sessionId, string pluginId, string entryId) => new()
+    private static Envelope Ping(string id, string sessionId, string pluginId) => new()
     {
         Version = ProtocolVersion.Current, Id = id, TraceId = id, SessionId = sessionId,
-        PluginId = pluginId, EntryId = entryId, EndpointId = "node-main",
+        PluginId = pluginId, EndpointId = "node-main",
         Kind = MessageKind.Request, Route = "bus.ping", TimeoutMs = 5000
     };
 
@@ -47,23 +47,26 @@ public class NodeProcessControllerTest
     public async Task Start_SpawnsNode_Handshakes_RoundTripsBusPing()
     {
         var entry = SdkV3EntryPath();
-        var controller = new NodeProcessController("node", entry, TestPluginsDataRoot());
+        var pluginsDataRoot = TestPluginsDataRoot();
+        var controller = new NodeProcessController("node", entry, pluginsDataRoot);
         var tokens = new BootstrapTokenValidator();
         var ids = new GuidIdGenerator();
         const string pluginId = "fixture";
-        const string entryId = "main";
         const string sessionId = "sess-it-1";
         const string endpointId = "node-main";
 
         await controller.StartAsync(
             $"mytools-it-{System.Guid.NewGuid():N}",
             pluginId,
-            entryId,
             identity => tokens.Issue(identity, TimeSpan.FromSeconds(30)).Value,
             default);
 
         Assert.That(controller.Transport, Is.Not.Null);
         Assert.That(controller.ObservedIdentity, Is.Not.Null);
+        Assert.That(Directory.Exists(pluginsDataRoot), Is.False,
+            "starting a plugin must not create the pluginsData root");
+        Assert.That(Directory.Exists(Path.Combine(pluginsDataRoot, pluginId)), Is.False,
+            "starting a plugin must not create an empty per-plugin data directory");
 
         await PipeHandshake.CompleteAsHostAsync(
             controller.Transport!,
@@ -80,7 +83,7 @@ public class NodeProcessControllerTest
         {
             if (e.Kind == MessageKind.Response && e.CorrelationId == "ping-1") response = e;
         };
-        await controller.Transport.SendAsync(Ping("ping-1", sessionId, pluginId, entryId), default);
+        await controller.Transport.SendAsync(Ping("ping-1", sessionId, pluginId), default);
 
         for (var i = 0; i < 100 && response is null; i++) await Task.Delay(50);
 
@@ -109,6 +112,6 @@ public class NodeProcessControllerTest
         return System.IO.Path.Combine(
             System.IO.Path.GetTempPath(),
             "MyTools.Host.Transports.Test",
-            "pluginsData");
+            $"pluginsData-{Guid.NewGuid():N}");
     }
 }

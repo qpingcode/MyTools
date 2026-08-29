@@ -18,7 +18,7 @@ public class EnvelopeValidatorTest
         var env = new Envelope
         {
             Version = ProtocolVersion.Current, Id = "id1", TraceId = "t1", SessionId = "s1",
-            PluginId = "settings", EntryId = "main", EndpointId = "web-1",
+            PluginId = "settings", EndpointId = "web-1",
             Kind = MessageKind.Request, Route = "plugin.call.save",
             TimeoutMs = 30000, Payload = P(new { x = 1 })
         };
@@ -34,7 +34,7 @@ public class EnvelopeValidatorTest
         var env = new Envelope
         {
             Version = ProtocolVersion.Current, Id = "", TraceId = "t1", SessionId = "s1",
-            PluginId = "settings", EntryId = "main", EndpointId = "web-1",
+            PluginId = "settings", EndpointId = "web-1",
             Kind = MessageKind.Request, Route = "plugin.call.save", TimeoutMs = 30000
         };
 
@@ -51,7 +51,7 @@ public class EnvelopeValidatorTest
         var env = new Envelope
         {
             Version = ProtocolVersion.Current, Id = "id1", TraceId = "t1", SessionId = "s1",
-            PluginId = "settings", EntryId = "main", EndpointId = "web-1",
+            PluginId = "settings", EndpointId = "web-1",
             Kind = MessageKind.Request, Route = "", TimeoutMs = 30000
         };
 
@@ -68,7 +68,7 @@ public class EnvelopeValidatorTest
         var env = new Envelope
         {
             Version = ProtocolVersion.Current, Id = "id1", CorrelationId = null, TraceId = "t1",
-            SessionId = "s1", PluginId = "settings", EntryId = "main", EndpointId = "node-1",
+            SessionId = "s1", PluginId = "settings", EndpointId = "node-1",
             Kind = MessageKind.Response, Route = "plugin.call.save"
         };
 
@@ -85,7 +85,7 @@ public class EnvelopeValidatorTest
         var env = new Envelope
         {
             Version = ProtocolVersion.Current, Id = "id1", TraceId = "t1", SessionId = "s1",
-            PluginId = "settings", EntryId = "main", EndpointId = "web-1",
+            PluginId = "settings", EndpointId = "web-1",
             Kind = MessageKind.Request, Route = "plugin.call.save", TimeoutMs = 30000,
             Error = BusError.For(ErrorCode.InternalError)
         };
@@ -102,7 +102,7 @@ public class EnvelopeValidatorTest
         // Simulate an unknown kind by deserializing from raw JSON with a bad kind string.
         const string bad = """
             {"version":"3.0","id":"id1","traceId":"t1","sessionId":"s1","pluginId":"settings",
-             "entryId":"main","endpointId":"web-1","kind":"notification","route":"plugin.call.save","timeoutMs":30000}
+             "endpointId":"web-1","kind":"notification","route":"plugin.call.save","timeoutMs":30000}
             """;
 
         Assert.That(() => JsonSerializer.Deserialize<Envelope>(bad, ProtocolJsonOptions.Default),

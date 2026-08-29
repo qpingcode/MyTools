@@ -1084,17 +1084,15 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
             var manifestPath = Path.Combine(registration.SourcePath, "plugin.json");
             if (!File.Exists(manifestPath)) return registration;
             using var document = JsonDocument.Parse(File.ReadAllText(manifestPath));
-            if (!document.RootElement.TryGetProperty("entries", out var entries) || entries.ValueKind != JsonValueKind.Array)
-                return registration;
-            var aliases = entries.EnumerateArray()
-                .Where(entry => entry.TryGetProperty("alias", out _))
-                .SelectMany(entry => entry.GetProperty("alias").EnumerateArray())
+            var root = document.RootElement;
+            var aliases = root.TryGetProperty("alias", out var alias) && alias.ValueKind == JsonValueKind.Array
+                ? alias.EnumerateArray()
                 .Select(item => item.GetString()).OfType<string>()
-                .Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
-            var hotKeys = entries.EnumerateArray()
-                .Where(entry => entry.TryGetProperty("hotKey", out var value) && value.ValueKind == JsonValueKind.String)
-                .Select(entry => entry.GetProperty("hotKey").GetString()).OfType<string>()
-                .Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+                .Distinct(StringComparer.OrdinalIgnoreCase).ToArray()
+                : [];
+            var hotKeys = root.TryGetProperty("hotKey", out var hotKey) && hotKey.ValueKind == JsonValueKind.String
+                ? new[] { hotKey.GetString()! }
+                : [];
             return registration with
             {
                 Aliases = aliases,

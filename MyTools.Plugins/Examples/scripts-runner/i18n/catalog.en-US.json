@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "scope": "plugin:scripts-runner",
+  "pluginId": "scripts-runner",
+  "sourceLocale": "en-US",
+  "entries": [
+    {
+      "key": "Plugin.CommandRunner.Name",
+      "defaultValue": "Scripts",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "脚本" }
+    },
+    {
+      "key": "Plugin.CommandRunner.Setting.Commands",
+      "defaultValue": "Commands",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "命令" }
+    },
+    {
+      "key": "Plugin.CommandRunner.Setting.Commands.Description",
+      "defaultValue": "Custom commands available in global search. Press Enter to run.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "可在全局搜索中使用的自定义命令。按回车运行。" }
+    },
+    {
+      "key": "Plugin.CommandRunner.Column.Name",
+      "defaultValue": "Name",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "名称" }
+    },
+    {
+      "key": "Plugin.CommandRunner.Column.ScriptMode",
+      "defaultValue": "Batch script",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "批处理脚本" }
+    },
+    {
+      "key": "Plugin.CommandRunner.Column.Command",
+      "defaultValue": "Command / URL",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "命令 / 网址" }
+    },
+    {
+      "key": "Plugin.CommandRunner.Column.Args",
+      "defaultValue": "Arguments",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "参数" }
+    },
+    {
+      "key": "Plugin.CommandRunner.Column.Scripts",
+      "defaultValue": "Script lines",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "脚本内容" }
+    },
+    {
+      "key": "Plugin.CommandRunner.Column.WorkingDirectory",
+      "defaultValue": "Working directory",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "工作目录" }
+    },
+    {
+      "key": "Plugin.CommandRunner.Column.RunAsAdmin",
+      "defaultValue": "Run as administrator",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "以管理员运行" }
+    },
+    {
+      "key": "Plugin.CommandRunner.Action.Run",
+      "defaultValue": "Run",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "运行" }
+    },
+    {
+      "key": "Plugin.CommandRunner.Action.RunDescription",
+      "defaultValue": "Run the selected command",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "运行所选命令" }
+    },
+    {
+      "key": "Plugin.CommandRunner.Action.RunWithOverrides",
+      "defaultValue": "Run with Overrides",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "调整后运行" }
+    },
+    {
+      "key": "Plugin.CommandRunner.Action.RunWithOverridesDescription",
+      "defaultValue": "Temporarily adjust the command configuration and run without saving changes",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "临时调整命令配置并运行；更改不会保存" }
+    },
+    {
+      "key": "Plugin.CommandRunner.Action.RunOverridesDescription",
+      "defaultValue": "Run once with the temporary configuration",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "使用临时配置运行一次" }
+    },
+    {
+      "key": "Plugin.CommandRunner.Overrides.Notice",
+      "defaultValue": "Changes apply only to this run and won't be saved.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "更改仅应用于本次运行，不会保存。" }
+    },
+    {
+      "key": "Plugin.CommandRunner.Error.OverridesUnavailable",
+      "defaultValue": "The temporary command configuration is no longer available. Reopen Run with Overrides.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "临时命令配置已失效，请重新打开“调整后运行”。" }
+    },
+    {
+      "key": "Plugin.CommandRunner.Error.OverridesSyncFailed",
+      "defaultValue": "Could not update the temporary configuration: {{message}}",
+      "placeholders": ["message"],
+      "references": [],
+      "existingTranslations": { "zh-CN": "无法更新临时配置：{{message}}" }
+    },
+    {
+      "key": "Plugin.CommandRunner.Untitled",
+      "defaultValue": "Untitled command",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "未命名命令" }
+    }
+  ]
+}

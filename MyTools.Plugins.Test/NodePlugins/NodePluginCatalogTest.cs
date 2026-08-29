@@ -34,8 +34,11 @@ public class NodePluginCatalogTest
         Directory.CreateDirectory(Path.Combine(pluginPath, "i18n", "locales"));
         File.WriteAllText(Path.Combine(pluginPath, "plugin.json"), """
         {
-          "id": "hello-search",
-          "name": "Hello Search",
+          "id": "hello",
+          "name": {
+            "key": "Plugin.HelloSearch.Name",
+            "defaultValue": "Hello Search"
+          },
           "version": "0.2.0",
           "runtime": "node",
           "protocolVersion": "3.0",
@@ -43,21 +46,20 @@ public class NodePluginCatalogTest
             "defaultLocale": "en-US",
             "catalog": "i18n/catalog.en-US.json",
             "localesPath": "i18n/locales",
-            "supportedLocales": ["en-US", "zh-CN"]
+            "supportedLocales": [
+              "en-US",
+              "zh-CN"
+            ]
           },
-          "entries": [
-            {
-              "id": "hello",
-              "name": { "key": "Plugin.HelloSearch.Name", "defaultValue": "Hello Search" },
-              "entry": "backend/index.mjs",
-              "alias": ["hello"],
-              "hotKey": "Alt+C",
-              "detail": {
-                "type": "web",
-                "entry": "web/detail.html"
-              }
-            }
-          ]
+          "entry": "backend/index.mjs",
+          "alias": [
+            "hello"
+          ],
+          "hotKey": "Alt+C",
+          "detail": {
+            "type": "web",
+            "entry": "web/detail.html"
+          }
         }
         """);
         File.WriteAllText(Path.Combine(pluginPath, "backend", "index.mjs"), "console.log('ok');");
@@ -69,9 +71,8 @@ public class NodePluginCatalogTest
         var plugins = catalog.Reload();
 
         Assert.That(plugins, Has.Count.EqualTo(1));
-        Assert.That(plugins[0].Id, Is.EqualTo("hello-search:hello"));
-        Assert.That(plugins[0].ParentId, Is.EqualTo("hello-search"));
-        Assert.That(plugins[0].EntryId, Is.EqualTo("hello"));
+        Assert.That(plugins[0].Id, Is.EqualTo("hello"));
+        Assert.That(plugins[0].ParentId, Is.EqualTo("hello"));
         Assert.That(plugins[0].HotKey, Is.EqualTo("Alt+C"));
         Assert.That(plugins[0].Keywords, Is.EquivalentTo(new[] { "hello" }));
         Assert.That(plugins[0].SearchGlobal, Is.False);
@@ -85,7 +86,7 @@ public class NodePluginCatalogTest
     }
 
     [Test]
-    public void Reload_ShouldExpandEntriesIntoIndependentNodePlugins()
+    public void Reload_ShouldRejectMultipleEntriesManifest()
     {
         var pluginPath = Path.Combine(rootPath, "deepseek-translator");
         Directory.CreateDirectory(Path.Combine(pluginPath, "backend", "Translator"));
@@ -134,17 +135,7 @@ public class NodePluginCatalogTest
 
         var plugins = catalog.Reload();
 
-        Assert.That(plugins, Has.Count.EqualTo(2));
-        var translator = plugins.Single(plugin => plugin.EntryId == "translator");
-        var history = plugins.Single(plugin => plugin.EntryId == "history");
-        Assert.That(translator.Id, Is.EqualTo("deepseek-translator:translator"));
-        Assert.That(translator.Keywords, Is.EquivalentTo(new[] { "tr", "translate" }));
-        Assert.That(translator.HotKey, Is.EqualTo("Alt+C"));
-        Assert.That(translator.EntryFullPath, Is.EqualTo(Path.Combine(pluginPath, "backend", "Translator", "index.mjs")));
-        Assert.That(translator.DetailEntryFullPath, Is.EqualTo(Path.Combine(pluginPath, "web", "Translator", "index.html")));
-        Assert.That(history.Id, Is.EqualTo("deepseek-translator:history"));
-        Assert.That(history.Keywords, Is.EquivalentTo(new[] { "trh" }));
-        Assert.That(history.HotKey, Is.EqualTo("Alt+V"));
+        Assert.That(plugins, Is.Empty);
     }
 
     [Test]
@@ -154,23 +145,19 @@ public class NodePluginCatalogTest
         Directory.CreateDirectory(pluginPath);
         File.WriteAllText(Path.Combine(pluginPath, "plugin.json"), """
         {
-          "id": "hello-search",
+          "id": "hello",
           "name": "Hello Search",
           "version": "0.2.0",
           "runtime": "node",
           "protocolVersion": "3.0",
-          "entries": [
-            {
-              "id": "hello",
-              "name": "Hello Search",
-              "entry": "backend/index.mjs",
-              "alias": ["hello"],
-              "detail": {
-                "type": "web",
-                "entry": "web/detail.html"
-              }
-            }
-          ]
+          "entry": "backend/index.mjs",
+          "alias": [
+            "hello"
+          ],
+          "detail": {
+            "type": "web",
+            "entry": "web/detail.html"
+          }
         }
         """);
 
@@ -182,7 +169,7 @@ public class NodePluginCatalogTest
     }
 
     [Test]
-    public void Reload_ShouldSkipLegacySingleEntryManifest()
+    public void Reload_ShouldLoadSingleEntryManifest()
     {
         var pluginPath = Path.Combine(rootPath, "legacy-search");
         Directory.CreateDirectory(Path.Combine(pluginPath, "backend"));
@@ -190,7 +177,6 @@ public class NodePluginCatalogTest
         File.WriteAllText(Path.Combine(pluginPath, "plugin.json"), """
         {
           "id": "legacy-search",
-          "name": "Legacy Search",
           "version": "0.2.0",
           "runtime": "node",
           "entry": "backend/index.mjs",
@@ -209,7 +195,8 @@ public class NodePluginCatalogTest
 
         var plugins = catalog.Reload();
 
-        Assert.That(plugins, Is.Empty);
+        Assert.That(plugins, Has.Count.EqualTo(1));
+        Assert.That(plugins[0].Id, Is.EqualTo("legacy-search"));
     }
 
     [Test]
@@ -223,17 +210,24 @@ public class NodePluginCatalogTest
         File.WriteAllText(Path.Combine(rootPath, "outside.json"), "{\"entries\":[]}");
         File.WriteAllText(Path.Combine(pluginPath, "plugin.json"), """
         {
-          "id": "unsafe", "name": "Unsafe", "version": "1.0.0",
-          "runtime": "node", "protocolVersion": "3.0",
+          "id": "main",
+          "name": "Unsafe",
+          "version": "1.0.0",
+          "runtime": "node",
+          "protocolVersion": "3.0",
           "i18n": {
             "defaultLocale": "en-US",
             "catalog": "../outside.json",
             "localesPath": "../"
           },
-          "entries": [{
-            "id": "main", "entry": "backend/index.mjs", "alias": ["unsafe"],
-            "detail": { "type": "web", "entry": "web/detail.html" }
-          }]
+          "entry": "backend/index.mjs",
+          "alias": [
+            "unsafe"
+          ],
+          "detail": {
+            "type": "web",
+            "entry": "web/detail.html"
+          }
         }
         """);
 
@@ -250,22 +244,24 @@ public class NodePluginCatalogTest
         Directory.CreateDirectory(Path.Combine(pluginPath, "web"));
         File.WriteAllText(Path.Combine(pluginPath, "plugin.json"), """
         {
-          "id": "settings",
+          "id": "main",
           "version": "0.0.6",
           "protocolVersion": "3.0",
-          "entries": [
-            {
-              "id": "main",
-              "name": { "key": "Plugin.Settings.Name", "defaultValue": "Settings" },
-              "entry": "backend/index.mjs",
-              "capabilities": ["configuration.write"],
-              "alias": ["settings"],
-              "detail": {
-                "type": "web",
-                "entry": "web/index.html"
-              }
-            }
-          ]
+          "name": {
+            "key": "Plugin.Settings.Name",
+            "defaultValue": "Settings"
+          },
+          "entry": "backend/index.mjs",
+          "capabilities": [
+            "configuration.write"
+          ],
+          "alias": [
+            "settings"
+          ],
+          "detail": {
+            "type": "web",
+            "entry": "web/index.html"
+          }
         }
         """);
         File.WriteAllText(Path.Combine(pluginPath, "backend", "index.mjs"), "console.log('ok');");
@@ -287,22 +283,22 @@ public class NodePluginCatalogTest
         Directory.CreateDirectory(Path.Combine(pluginPath, "web"));
         File.WriteAllText(Path.Combine(pluginPath, "plugin.json"), """
         {
-          "id": "hello-search",
+          "id": "hello",
           "version": "0.2.0",
           "protocolVersion": "3.0",
-          "entries": [
-            {
-              "id": "hello",
-              "name": { "key": "Plugin.HelloSearch.Name", "defaultValue": "Hello Search" },
-              "entry": "backend/index.mjs",
-              "alias": [],
-              "search": { "global": true },
-              "detail": {
-                "type": "web",
-                "entry": "web/index.html"
-              }
-            }
-          ]
+          "name": {
+            "key": "Plugin.HelloSearch.Name",
+            "defaultValue": "Hello Search"
+          },
+          "entry": "backend/index.mjs",
+          "alias": [],
+          "search": {
+            "global": true
+          },
+          "detail": {
+            "type": "web",
+            "entry": "web/index.html"
+          }
         }
         """);
         File.WriteAllText(Path.Combine(pluginPath, "backend", "index.mjs"), "console.log('ok');");
@@ -323,19 +319,14 @@ public class NodePluginCatalogTest
         Directory.CreateDirectory(Path.Combine(pluginPath, "web"));
         File.WriteAllText(Path.Combine(pluginPath, "plugin.json"), """
         {
-          "id": "no-kw",
+          "id": "main",
           "version": "0.1.0",
           "protocolVersion": "3.0",
-          "entries": [
-            {
-              "id": "main",
-              "entry": "backend/index.mjs",
-              "detail": {
-                "type": "web",
-                "entry": "web/index.html"
-              }
-            }
-          ]
+          "entry": "backend/index.mjs",
+          "detail": {
+            "type": "web",
+            "entry": "web/index.html"
+          }
         }
         """);
         File.WriteAllText(Path.Combine(pluginPath, "backend", "index.mjs"), "console.log('ok');");
@@ -357,14 +348,14 @@ public class NodePluginCatalogTest
         File.WriteAllText(Path.Combine(pluginPath, "web", "index.html"), "<html></html>");
         File.WriteAllText(Path.Combine(pluginPath, "plugin.json"), """
         {
-          "id": "old",
+          "id": "main",
           "version": "0.1.0",
           "protocolVersion": "2.0",
-          "entries": [{
-            "id": "main",
-            "entry": "backend/index.mjs",
-            "detail": { "type": "web", "entry": "web/index.html" }
-          }]
+          "entry": "backend/index.mjs",
+          "detail": {
+            "type": "web",
+            "entry": "web/index.html"
+          }
         }
         """);
 
@@ -378,16 +369,16 @@ public class NodePluginCatalogTest
     {
         var pluginPath = WriteBackendOnlyPlugin("""
         {
-          "id": "list-plugin",
+          "id": "main",
           "version": "0.1.0",
           "protocolVersion": "3.0",
-          "entries": [
-            {
-              "id": "main",
-              "name": { "key": "Plugin.List.Name", "defaultValue": "List Plugin" },
-              "entry": "backend/index.mjs",
-              "alias": ["list"]
-            }
+          "name": {
+            "key": "Plugin.List.Name",
+            "defaultValue": "List Plugin"
+          },
+          "entry": "backend/index.mjs",
+          "alias": [
+            "list"
           ]
         }
         """);
@@ -395,7 +386,7 @@ public class NodePluginCatalogTest
         var plugins = new NodePluginCatalog(rootPath, NullLogger<NodePluginCatalog>.Instance).Reload();
 
         Assert.That(plugins, Has.Count.EqualTo(1));
-        Assert.That(plugins[0].Id, Is.EqualTo("list-plugin:main"));
+        Assert.That(plugins[0].Id, Is.EqualTo("main"));
         Assert.That(plugins[0].DetailEntry, Is.Null);
         Assert.That(plugins[0].DetailEntryFullPath, Is.Null);
         Assert.That(plugins[0].HasWebDetail, Is.False);
@@ -407,16 +398,13 @@ public class NodePluginCatalogTest
     {
         WriteBackendOnlyPlugin("""
         {
-          "id": "list-plugin",
+          "id": "main",
           "version": "0.1.0",
           "protocolVersion": "3.0",
-          "entries": [
-            {
-              "id": "main",
-              "entry": "backend/index.mjs",
-              "detail": { "type": "list" }
-            }
-          ]
+          "entry": "backend/index.mjs",
+          "detail": {
+            "type": "list"
+          }
         }
         """);
 
@@ -432,16 +420,13 @@ public class NodePluginCatalogTest
     {
         WriteBackendOnlyPlugin("""
         {
-          "id": "basic-plugin",
+          "id": "main",
           "version": "0.1.0",
           "protocolVersion": "3.0",
-          "entries": [
-            {
-              "id": "main",
-              "entry": "backend/index.mjs",
-              "detail": { "type": "basic" }
-            }
-          ]
+          "entry": "backend/index.mjs",
+          "detail": {
+            "type": "basic"
+          }
         }
         """);
 
@@ -455,16 +440,13 @@ public class NodePluginCatalogTest
     {
         WriteBackendOnlyPlugin("""
         {
-          "id": "web-missing-entry",
+          "id": "main",
           "version": "0.1.0",
           "protocolVersion": "3.0",
-          "entries": [
-            {
-              "id": "main",
-              "entry": "backend/index.mjs",
-              "detail": { "type": "web" }
-            }
-          ]
+          "entry": "backend/index.mjs",
+          "detail": {
+            "type": "web"
+          }
         }
         """);
 
@@ -485,26 +467,38 @@ public class NodePluginCatalogTest
           "configuration": [
             {
               "key": "Phrases",
-              "label": { "key": "Plugin.Snippet.Setting.Phrases", "defaultValue": "Phrases" },
+              "label": {
+                "key": "Plugin.Snippet.Setting.Phrases",
+                "defaultValue": "Phrases"
+              },
               "type": "array",
               "defaultValue": [],
               "schema": {
                 "properties": [
-                  { "key": "trigger", "type": "string" },
-                  { "key": "content", "type": "string", "uiHint": "textarea" }
+                  {
+                    "key": "trigger",
+                    "type": "string"
+                  },
+                  {
+                    "key": "content",
+                    "type": "string",
+                    "uiHint": "textarea"
+                  }
                 ]
               }
             }
           ],
-          "entries": [
-            {
-              "id": "snippet",
-              "name": { "key": "Plugin.Snippet.Name", "defaultValue": "Snippet" },
-              "entry": "backend/index.mjs",
-              "capabilities": ["configuration.readOwn"],
-              "search": { "global": true }
-            }
-          ]
+          "name": {
+            "key": "Plugin.Snippet.Name",
+            "defaultValue": "Snippet"
+          },
+          "entry": "backend/index.mjs",
+          "capabilities": [
+            "configuration.readOwn"
+          ],
+          "search": {
+            "global": true
+          }
         }
         """);
 
@@ -524,15 +518,16 @@ public class NodePluginCatalogTest
     {
         WriteBackendOnlyPlugin("""
         {
-          "id": "bad-config",
+          "id": "main",
           "version": "0.1.0",
           "protocolVersion": "3.0",
           "configuration": [
-            { "key": "Items", "type": "array" }
+            {
+              "key": "Items",
+              "type": "array"
+            }
           ],
-          "entries": [
-            { "id": "main", "entry": "backend/index.mjs" }
-          ]
+          "entry": "backend/index.mjs"
         }
         """);
 

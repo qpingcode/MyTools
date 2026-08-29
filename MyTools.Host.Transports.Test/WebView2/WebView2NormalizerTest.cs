@@ -12,7 +12,7 @@ namespace MyTools.Host.Transports.Test.WebView2;
 public class WebView2NormalizerTest
 {
     private static readonly EndpointBinding Binding =
-        new(PluginId: "settings", EntryId: "main", SessionId: "s1", EndpointId: "web-1");
+        new(PluginId: "settings", SessionId: "s1", EndpointId: "web-1");
 
     private static JsonNode Payload => JsonNode.Parse("""{"x":1}""")!;
 
@@ -26,7 +26,6 @@ public class WebView2NormalizerTest
             Version = ProtocolVersion.Current, Id = "m1", TraceId = "t1",
             SessionId = "DECLARED-BY-PAGE",     // page tries to set its own session
             PluginId = "evil",                   // page tries to impersonate another plugin
-            EntryId = "wrong",
             EndpointId = "forged",
             Kind = MessageKind.Request, Route = "plugin.call.save", TimeoutMs = 1000,
             Payload = Payload
@@ -36,7 +35,6 @@ public class WebView2NormalizerTest
 
         Assert.That(result.Envelope!.SessionId, Is.EqualTo("s1"));
         Assert.That(result.Envelope!.PluginId, Is.EqualTo("settings"));
-        Assert.That(result.Envelope!.EntryId, Is.EqualTo("main"));
         Assert.That(result.Envelope!.EndpointId, Is.EqualTo("web-1"));
     }
 
@@ -48,7 +46,7 @@ public class WebView2NormalizerTest
         var env = new Envelope
         {
             Version = ProtocolVersion.Current, Id = "m", TraceId = "t",
-            SessionId = "x", PluginId = "y", EntryId = "z", EndpointId = "w",
+            SessionId = "x", PluginId = "y", EndpointId = "w",
             Kind = MessageKind.Request, Route = "plugin.call.save", TimeoutMs = 1000,
             Payload = Payload
         };
@@ -71,7 +69,7 @@ public class WebView2NormalizerTest
         var env = new Envelope
         {
             Version = ProtocolVersion.Current, Id = "m", TraceId = "t", SessionId = "s1",
-            PluginId = "settings", EntryId = "main", EndpointId = "web-1",
+            PluginId = "settings", EndpointId = "web-1",
             Kind = MessageKind.Request, Route = "host.call.configuration.write", TimeoutMs = 1000,
             Payload = Payload
         };
@@ -92,7 +90,7 @@ public class WebView2NormalizerTest
         var env = new Envelope
         {
             Version = ProtocolVersion.Current, Id = "m", TraceId = "t", SessionId = "s1",
-            PluginId = "settings", EntryId = "main", EndpointId = "web-1",
+            PluginId = "settings", EndpointId = "web-1",
             Kind = kind, Route = route, TimeoutMs = 1000, Payload = Payload
         };
 
@@ -110,7 +108,7 @@ public class WebView2NormalizerTest
         var env = new Envelope
         {
             Version = ProtocolVersion.Current, Id = "m", TraceId = "t", SessionId = "s1",
-            PluginId = "settings", EntryId = "main", EndpointId = "web-1",
+            PluginId = "settings", EndpointId = "web-1",
             Kind = MessageKind.Request, Route = "plugin.call.save", TimeoutMs = 1000,
             Payload = JsonNode.Parse($"{{\"big\":\"{big}\"}}")
         };
@@ -129,7 +127,7 @@ public class WebView2NormalizerTest
         var env = new Envelope
         {
             Version = ProtocolVersion.Current, Id = "m", TraceId = "t", SessionId = "s1",
-            PluginId = "settings", EntryId = "main", EndpointId = "web-1",
+            PluginId = "settings", EndpointId = "web-1",
             Kind = MessageKind.Request, Route = "plugin.call.save", TimeoutMs = 1000,
             Payload = JsonNode.Parse("{\"x\":\"" + new string('y', 500) + "\"}")
         };
@@ -148,7 +146,7 @@ public class WebView2NormalizerTest
         var env = new Envelope
         {
             Version = ProtocolVersion.Current, Id = "m", TraceId = "t", SessionId = "s1",
-            PluginId = "settings", EntryId = "main", EndpointId = "web-1",
+            PluginId = "settings", EndpointId = "web-1",
             Kind = MessageKind.Request, Route = "plugin.call.save", TimeoutMs = 1000,
             Payload = Payload
         };

@@ -1,0 +1,88 @@
+{
+  "id": "smart-open",
+  "name": {
+    "key": "Plugin.OpenPath.Name",
+    "defaultValue": "Smart Open"
+  },
+  "version": "0.1.0",
+  "protocolVersion": "3.0",
+  "icon": "mdi-folder-open-outline",
+  "i18n": {
+    "defaultLocale": "en-US",
+    "catalog": "i18n/catalog.en-US.json",
+    "localesPath": "i18n/locales",
+    "supportedLocales": [
+      "en-US",
+      "zh-CN"
+    ]
+  },
+  "configuration": [
+    {
+      "key": "RiderInstallPath",
+      "label": {
+        "key": "Plugin.OpenPath.Setting.Rider.Title",
+        "defaultValue": "Rider install path"
+      },
+      "description": {
+        "key": "Plugin.OpenPath.Setting.Rider.Description",
+        "defaultValue": "Rider.exe file path or Rider install directory"
+      },
+      "type": "path",
+      "defaultValue": "",
+      "uiHint": "fileOrDirectory"
+    },
+    {
+      "key": "VsCodeInstallPath",
+      "label": {
+        "key": "Plugin.OpenPath.Setting.VsCode.Title",
+        "defaultValue": "VSCode install path"
+      },
+      "description": {
+        "key": "Plugin.OpenPath.Setting.VsCode.Description",
+        "defaultValue": "Code.exe file path or VSCode install directory"
+      },
+      "type": "path",
+      "defaultValue": "",
+      "uiHint": "fileOrDirectory"
+    },
+    {
+      "key": "VisualStudioInstallPath",
+      "label": {
+        "key": "Plugin.OpenPath.Setting.VisualStudio.Title",
+        "defaultValue": "Visual Studio install path"
+      },
+      "description": {
+        "key": "Plugin.OpenPath.Setting.VisualStudio.Description",
+        "defaultValue": "devenv.exe file path or Visual Studio install directory"
+      },
+      "type": "path",
+      "defaultValue": "",
+      "uiHint": "fileOrDirectory"
+    },
+    {
+      "key": "IntelliJInstallPath",
+      "label": {
+        "key": "Plugin.OpenPath.Setting.IntelliJ.Title",
+        "defaultValue": "IntelliJ install path"
+      },
+      "description": {
+        "key": "Plugin.OpenPath.Setting.IntelliJ.Description",
+        "defaultValue": "idea64.exe file path or IntelliJ install directory"
+      },
+      "type": "path",
+      "defaultValue": "",
+      "uiHint": "fileOrDirectory"
+    }
+  ],
+  "entry": "backend/index.mjs",
+  "capabilities": [
+    "configuration.readOwn"
+  ],
+  "alias": [],
+  "search": {
+    "global": true
+  },
+  "detail": {
+    "type": "list"
+  }
+}

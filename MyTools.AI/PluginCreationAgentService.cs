@@ -518,26 +518,20 @@ public sealed class PluginCreationAgentService : IDisposable
                 throw new InvalidOperationException("plugin.json i18n is required.");
             RequireString(i18n, "catalog");
             RequireString(i18n, "localesPath");
-            if (!root.TryGetProperty("entries", out var entries) || entries.ValueKind != JsonValueKind.Array || entries.GetArrayLength() == 0)
-                throw new InvalidOperationException("plugin.json must contain at least one entry.");
+            RequireString(root, "entry");
+            if (!root.TryGetProperty("name", out var pluginName) || pluginName.ValueKind != JsonValueKind.Object)
+                throw new InvalidOperationException("plugin.json requires a localized name.");
+            RequireString(pluginName, "key");
+            RequireString(pluginName, "defaultValue");
+            if (!root.TryGetProperty("capabilities", out var capabilities) || capabilities.ValueKind != JsonValueKind.Array)
+                throw new InvalidOperationException("plugin.json requires a capabilities array.");
 
             var aliases = new List<string>();
             var hotKeys = new List<string>();
-            foreach (var entry in entries.EnumerateArray())
-            {
-                RequireString(entry, "id");
-                RequireString(entry, "entry");
-                if (!entry.TryGetProperty("name", out var entryName) || entryName.ValueKind != JsonValueKind.Object)
-                    throw new InvalidOperationException("Every entry requires a localized name.");
-                RequireString(entryName, "key");
-                RequireString(entryName, "defaultValue");
-                if (!entry.TryGetProperty("capabilities", out var capabilities) || capabilities.ValueKind != JsonValueKind.Array)
-                    throw new InvalidOperationException("Every entry requires a capabilities array.");
-                if (entry.TryGetProperty("alias", out var alias) && alias.ValueKind == JsonValueKind.Array)
-                    aliases.AddRange(alias.EnumerateArray().Select(item => item.GetString()).OfType<string>());
-                if (entry.TryGetProperty("hotKey", out var hotKey) && hotKey.ValueKind == JsonValueKind.String)
-                    hotKeys.Add(hotKey.GetString()!);
-            }
+            if (root.TryGetProperty("alias", out var alias) && alias.ValueKind == JsonValueKind.Array)
+                aliases.AddRange(alias.EnumerateArray().Select(item => item.GetString()).OfType<string>());
+            if (root.TryGetProperty("hotKey", out var hotKey) && hotKey.ValueKind == JsonValueKind.String)
+                hotKeys.Add(hotKey.GetString()!);
 
             var catalog = ResolveWithin(pluginRoot, RequireString(i18n, "catalog"));
             var locales = ResolveWithin(pluginRoot, RequireString(i18n, "localesPath"));

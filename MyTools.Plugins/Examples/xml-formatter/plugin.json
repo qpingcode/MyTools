@@ -1,5 +1,9 @@
 {
   "id": "xml-formatter",
+  "name": {
+    "key": "Plugin.XmlFormatter.Name",
+    "defaultValue": "XML Formatter"
+  },
   "version": "0.0.4",
   "protocolVersion": "3.0",
   "icon": "mdi-xml",
@@ -7,23 +11,21 @@
     "defaultLocale": "en-US",
     "catalog": "i18n/catalog.en-US.json",
     "localesPath": "i18n/locales",
-    "supportedLocales": ["en-US", "zh-CN"]
+    "supportedLocales": [
+      "en-US",
+      "zh-CN"
+    ]
   },
-  "entries": [
-    {
-      "id": "xml-formatter",
-      "name": {
-        "key": "Plugin.XmlFormatter.Name",
-        "defaultValue": "XML Formatter"
-      },
-      "entry": "backend/index.mjs",
-      "capabilities": [],
-      "alias": ["xml"],
-      "search": { "global": false },
-      "detail": {
-        "type": "web",
-        "entry": "web/index.html"
-      }
-    }
-  ]
+  "entry": "backend/index.mjs",
+  "capabilities": [],
+  "alias": [
+    "xml"
+  ],
+  "search": {
+    "global": false
+  },
+  "detail": {
+    "type": "web",
+    "entry": "web/index.html"
+  }
 }

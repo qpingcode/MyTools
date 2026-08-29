@@ -37,9 +37,6 @@ public sealed class HandshakePayload
     /// <summary>Bound plugin package id returned to Node on success (for SDK identity stamping).</summary>
     public string? PluginId { get; init; }
 
-    /// <summary>Bound entry id returned to Node on success.</summary>
-    public string? EntryId { get; init; }
-
     /// <summary>Bound session id returned to Node on success.</summary>
     public string? SessionId { get; init; }
 
@@ -73,14 +70,12 @@ public sealed class HandshakePayload
     public static HandshakePayload BuildSuccessResponse(
         ProtocolVersion negotiated,
         string pluginId,
-        string entryId,
         string sessionId,
         string endpointId)
         => new()
         {
             NegotiatedVersion = negotiated,
             PluginId = pluginId,
-            EntryId = entryId,
             SessionId = sessionId,
             EndpointId = endpointId,
         };

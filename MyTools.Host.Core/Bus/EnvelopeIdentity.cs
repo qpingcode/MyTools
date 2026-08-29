@@ -5,7 +5,7 @@ namespace MyTools.Host.Core.Bus;
 
 /// <summary>
 /// Stamps transport-bound identity onto an inbound envelope. The bus never trusts peer-declared
-/// pluginId/entryId/sessionId/endpointId (design §统一消息协议).
+/// pluginId/sessionId/endpointId (design §统一消息协议).
 /// </summary>
 public static class EnvelopeIdentity
 {
@@ -13,7 +13,6 @@ public static class EnvelopeIdentity
         => env with
         {
             PluginId = source.PluginId,
-            EntryId = source.EntryId,
             SessionId = source.SessionId,
             EndpointId = source.EndpointLabel,
         };

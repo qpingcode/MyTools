@@ -12,16 +12,16 @@ namespace MyTools.Host.Core.Test.Bus;
 [TestFixture]
 public class MessageBusRoutingTest
 {
-    private static EndpointId NodeEp(string plugin, string entry, string session)
-        => new(plugin, entry, session, "node-main", IsNode: true);
+    private static EndpointId NodeEp(string plugin, string session)
+        => new(plugin, session, "node-main", IsNode: true);
 
-    private static EndpointId WebEp(string plugin, string entry, string session, string ep)
-        => new(plugin, entry, session, ep, IsNode: false);
+    private static EndpointId WebEp(string plugin, string session, string ep)
+        => new(plugin, session, ep, IsNode: false);
 
     private static Envelope Request(EndpointId from, string route, string id) => new()
     {
         Version = ProtocolVersion.Current, Id = id, TraceId = id, SessionId = from.SessionId,
-        PluginId = from.PluginId, EntryId = from.EntryId, EndpointId = from.EndpointLabel,
+        PluginId = from.PluginId, EndpointId = from.EndpointLabel,
         Kind = MessageKind.Request, Route = route, TimeoutMs = 5000
     };
 
@@ -29,7 +29,7 @@ public class MessageBusRoutingTest
     {
         Version = ProtocolVersion.Current, Id = "resp-" + corrId, CorrelationId = corrId,
         TraceId = corrId, SessionId = from.SessionId, PluginId = from.PluginId,
-        EntryId = from.EntryId, EndpointId = from.EndpointLabel,
+        EndpointId = from.EndpointLabel,
         Kind = MessageKind.Response, Route = "plugin.call.save"
     };
 
@@ -39,8 +39,8 @@ public class MessageBusRoutingTest
         var bus = new MessageBus();
         var webT = new InMemoryTransport();
         var nodeT = new InMemoryTransport();
-        var webEp = WebEp("settings", "main", "s1", "web-1");
-        var nodeEp = NodeEp("settings", "main", "s1");
+        var webEp = WebEp("settings", "s1", "web-1");
+        var nodeEp = NodeEp("settings", "s1");
         bus.RegisterEndpoint(webEp, webT);
         bus.RegisterEndpoint(nodeEp, nodeT);
 
@@ -57,8 +57,8 @@ public class MessageBusRoutingTest
         var bus = new MessageBus();
         var webT = new InMemoryTransport();
         var nodeT = new InMemoryTransport();
-        var webEp = WebEp("settings", "main", "s1", "web-1");
-        var nodeEp = NodeEp("settings", "main", "s1");
+        var webEp = WebEp("settings", "s1", "web-1");
+        var nodeEp = NodeEp("settings", "s1");
         bus.RegisterEndpoint(webEp, webT);
         bus.RegisterEndpoint(nodeEp, nodeT);
 
@@ -76,8 +76,8 @@ public class MessageBusRoutingTest
         var bus = new MessageBus();
         var webT = new InMemoryTransport();
         var nodeT = new InMemoryTransport();
-        var webEp = WebEp("settings", "main", "s1", "web-1");
-        var nodeEp = NodeEp("settings", "main", "s1");
+        var webEp = WebEp("settings", "s1", "web-1");
+        var nodeEp = NodeEp("settings", "s1");
         bus.RegisterEndpoint(webEp, webT);
         bus.RegisterEndpoint(nodeEp, nodeT);
 
@@ -92,7 +92,7 @@ public class MessageBusRoutingTest
     {
         var bus = new MessageBus();
         var webT = new InMemoryTransport();
-        var webEp = WebEp("settings", "main", "s1", "web-1");
+        var webEp = WebEp("settings", "s1", "web-1");
         bus.RegisterEndpoint(webEp, webT);
 
         webT.Deliver(Request(webEp, "plugin.call.save", "req-1"));

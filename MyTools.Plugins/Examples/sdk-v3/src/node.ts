@@ -153,7 +153,6 @@ export class Plugin {
       traceId: crypto.randomUUID().replace(/-/g, "").slice(0, 32),
       sessionId: "",
       pluginId: "",
-      entryId: "",
       endpointId: EndpointIds.NodeMain,
       kind: MessageKind.Event,
       route,

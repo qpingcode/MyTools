@@ -25,7 +25,6 @@ public static class EnvelopeValidator
         if (string.IsNullOrEmpty(env.TraceId)) return EnvelopeValidationResult.Fail("traceId");
         if (string.IsNullOrEmpty(env.SessionId)) return EnvelopeValidationResult.Fail("sessionId");
         if (string.IsNullOrEmpty(env.PluginId)) return EnvelopeValidationResult.Fail("pluginId");
-        if (string.IsNullOrEmpty(env.EntryId)) return EnvelopeValidationResult.Fail("entryId");
         if (string.IsNullOrEmpty(env.EndpointId)) return EnvelopeValidationResult.Fail("endpointId");
         if (string.IsNullOrEmpty(env.Route)) return EnvelopeValidationResult.Fail("route");
 

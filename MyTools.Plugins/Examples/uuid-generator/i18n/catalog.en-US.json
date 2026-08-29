@@ -4,7 +4,7 @@
   "pluginId": "uuid-generator",
   "sourceLocale": "en-US",
   "entries": [
-    { "key": "Plugin.UuidGenerator.Name", "defaultValue": "UUID Generator", "placeholders": [], "references": [{ "filePath": "plugin.json", "symbol": "entries.name" }], "existingTranslations": { "zh-CN": "UUID 生成器" } },
+    { "key": "Plugin.UuidGenerator.Name", "defaultValue": "UUID Generator", "placeholders": [], "references": [{ "filePath": "plugin.json", "symbol": "name" }], "existingTranslations": { "zh-CN": "UUID 生成器" } },
     { "key": "Plugin.UuidGenerator.Action.Copy", "defaultValue": "Copy", "placeholders": [], "references": [{ "filePath": "src/backend/index.mts", "symbol": "actions" }], "existingTranslations": { "zh-CN": "复制" } },
     { "key": "Plugin.UuidGenerator.Action.CopyDescription", "defaultValue": "Copy the selected UUID", "placeholders": [], "references": [{ "filePath": "src/backend/index.mts", "symbol": "actions" }], "existingTranslations": { "zh-CN": "复制选中的 UUID" } },
     { "key": "Plugin.UuidGenerator.Action.ToggleFormat", "defaultValue": "Switch format", "placeholders": [], "references": [{ "filePath": "src/backend/index.mts", "symbol": "actions" }], "existingTranslations": { "zh-CN": "切换格式" } },

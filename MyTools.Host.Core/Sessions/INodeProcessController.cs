@@ -6,7 +6,7 @@ using MyTools.Host.Core.Transports;
 namespace MyTools.Host.Core.Sessions;
 
 /// <summary>
-/// Controls the lifecycle of the Node child process for one entry: spawn it with the bootstrap
+/// Controls the lifecycle of the Node child process for one plugin: spawn it with the bootstrap
 /// token on stdin, expose its transport once the named pipe is connected, and report lifecycle
 /// outcomes. The real implementation (in MyTools.Host.Transports) spawns `node`; tests use a fake.
 /// </summary>
@@ -21,7 +21,6 @@ public interface INodeProcessController
     Task StartAsync(
         string pipeName,
         string pluginId,
-        string entryId,
         Func<ProcessIdentity, string> issueToken,
         CancellationToken cancellationToken);
 

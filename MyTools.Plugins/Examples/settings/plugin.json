@@ -1,5 +1,9 @@
 {
   "id": "settings",
+  "name": {
+    "key": "Plugin.Settings.Name",
+    "defaultValue": "Settings"
+  },
   "version": "0.0.9",
   "protocolVersion": "3.0",
   "icon": "mdi-cog-outline",
@@ -7,41 +11,37 @@
     "defaultLocale": "en-US",
     "catalog": "i18n/catalog.en-US.json",
     "localesPath": "i18n/locales",
-    "supportedLocales": ["en-US", "zh-CN"]
+    "supportedLocales": [
+      "en-US",
+      "zh-CN"
+    ]
   },
-  "entries": [
-    {
-      "id": "main",
-      "name": {
-        "key": "Plugin.Settings.Name",
-        "defaultValue": "Settings"
-      },
-      "entry": "backend/index.mjs",
-      "capabilities": [
-        "configuration.read",
-        "configuration.write",
-        "keymap.read",
-        "keymap.write",
-        "keymap.validate",
-        "hotkeys.read",
-        "hotkeys.write",
-        "hotkeys.validate",
-        "gestures.read",
-        "gestures.write",
-        "gestures.suspend",
-        "gestures.resume",
-        "action.capture",
-        "path.pick",
-        "path.validate",
-        "development.refresh",
-        "restart"
-      ],
-      "alias": ["settings"],
-      "hotKey": "Alt+S",
-      "detail": {
-        "type": "web",
-        "entry": "web/index.html"
-      }
-    }
-  ]
+  "entry": "backend/index.mjs",
+  "capabilities": [
+    "configuration.read",
+    "configuration.write",
+    "keymap.read",
+    "keymap.write",
+    "keymap.validate",
+    "hotkeys.read",
+    "hotkeys.write",
+    "hotkeys.validate",
+    "gestures.read",
+    "gestures.write",
+    "gestures.suspend",
+    "gestures.resume",
+    "action.capture",
+    "path.pick",
+    "path.validate",
+    "development.refresh",
+    "restart"
+  ],
+  "alias": [
+    "settings"
+  ],
+  "hotKey": "Alt+S",
+  "detail": {
+    "type": "web",
+    "entry": "web/index.html"
+  }
 }

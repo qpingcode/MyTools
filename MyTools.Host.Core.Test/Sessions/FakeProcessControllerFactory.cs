@@ -24,7 +24,6 @@ internal sealed class FakeProcessController : INodeProcessController
     public Task StartAsync(
         string pipeName,
         string pluginId,
-        string entryId,
         Func<ProcessIdentity, string> issueToken,
         CancellationToken cancellationToken)
     {
@@ -33,8 +32,7 @@ internal sealed class FakeProcessController : INodeProcessController
         ObservedIdentity = new ProcessIdentity(
             Pid: 4242,
             CreationTime: new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-            PluginId: pluginId,
-            EntryId: entryId);
+            PluginId: pluginId);
         var token = issueToken(ObservedIdentity);
 
         var payload = HandshakePayload.BuildNamedPipeRequest(PipeHandshake.HostSupportedVersions, token);
@@ -45,7 +43,6 @@ internal sealed class FakeProcessController : INodeProcessController
             TraceId = Guid.NewGuid().ToString("N"),
             SessionId = "",
             PluginId = pluginId,
-            EntryId = entryId,
             EndpointId = "node-main",
             Kind = MessageKind.Request,
             Route = "bus.handshake",

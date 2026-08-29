@@ -40,7 +40,6 @@ public sealed class NodeProcessController : INodeProcessController
     public async Task StartAsync(
         string pipeName,
         string pluginId,
-        string entryId,
         Func<ProcessIdentity, string> issueToken,
         CancellationToken cancellationToken)
     {
@@ -50,7 +49,6 @@ public sealed class NodeProcessController : INodeProcessController
 
         _job = new ProcessTreeJob();
         var pluginDataDir = Path.Combine(_pluginsDataRoot, SanitizePathSegment(pluginId));
-        Directory.CreateDirectory(pluginDataDir);
 
         var psi = new ProcessStartInfo
         {
@@ -99,8 +97,7 @@ public sealed class NodeProcessController : INodeProcessController
         ObservedIdentity = new ProcessIdentity(
             Pid: _process.Id,
             CreationTime: _process.StartTime.ToUniversalTime(),
-            PluginId: pluginId,
-            EntryId: entryId);
+            PluginId: pluginId);
         var bootstrapToken = issueToken(ObservedIdentity);
 
         await _process.StandardInput.WriteLineAsync($"{pipePath}\t{bootstrapToken}");

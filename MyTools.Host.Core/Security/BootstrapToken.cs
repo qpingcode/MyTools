@@ -6,13 +6,12 @@ namespace MyTools.Host.Core.Security;
 
 /// <summary>
 /// Identity of the Node process the host expects to connect. Combines the PID, the process
-/// creation time (defends against PID reuse) and the plugin/entry the connection must claim.
+/// creation time (defends against PID reuse) and the plugin the connection must claim.
 /// </summary>
 public sealed record ProcessIdentity(
     int Pid,
     DateTime CreationTime,
-    string PluginId,
-    string EntryId);
+    string PluginId);
 
 /// <summary>
 /// A short-lived one-shot bootstrap token. Per the design: the host generates it, passes it to the
@@ -23,7 +22,6 @@ public sealed record BootstrapToken
 {
     public string Value { get; init; } = "";
     public string PluginId { get; init; } = "";
-    public string EntryId { get; init; } = "";
     public int ExpectedPid { get; init; }
     public DateTime ExpectedCreationTime { get; init; }
     public DateTime IssuedAt { get; init; }
@@ -41,7 +39,7 @@ public readonly record struct TokenValidation(bool IsValid, string? Reason)
 /// Issues and validates one-shot bootstrap tokens. The host issues a token (remembering its secret
 /// value + bound identity) and hands the value to the Node via stdin; the Node presents that value
 /// during handshake. A token is accepted only when the value matches a known unexpired, unconsumed
-/// token whose PID + creation time + plugin/entry match the presenting process.
+/// token whose PID + creation time + plugin match the presenting process.
 /// </summary>
 public sealed class BootstrapTokenValidator
 {
@@ -60,7 +58,6 @@ public sealed class BootstrapTokenValidator
         {
             Value = RandomNumberGenerator.GetBytes(32).ToHexString(),
             PluginId = identity.PluginId,
-            EntryId = identity.EntryId,
             ExpectedPid = identity.Pid,
             ExpectedCreationTime = identity.CreationTime,
             IssuedAt = now,
@@ -99,9 +96,9 @@ public sealed class BootstrapTokenValidator
         {
             return TokenValidation.Fail("process creation time mismatch (possible PID reuse)");
         }
-        if (token.PluginId != observed.PluginId || token.EntryId != observed.EntryId)
+        if (token.PluginId != observed.PluginId)
         {
-            return TokenValidation.Fail("plugin/entry identity mismatch");
+            return TokenValidation.Fail("plugin identity mismatch");
         }
 
         // one-shot: consume on success. TryRemove loses to a concurrent consumer.

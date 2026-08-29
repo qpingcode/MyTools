@@ -5,10 +5,10 @@ using MyTools.Protocol.Errors;
 namespace MyTools.Host.Core.Capabilities;
 
 /// <summary>
-/// Declared capabilities for a plugin entry (Phase-1: declaration = grant). The manifest reflects
+/// Declared capabilities for a plugin (Phase-1: declaration = grant). The manifest reflects
 /// the true capability surface; undeclared calls are rejected even though plugins are trusted.
 /// </summary>
-public sealed record PluginManifest(string PluginId, string EntryId, IReadOnlyList<string> Capabilities);
+public sealed record PluginManifest(string PluginId, IReadOnlyList<string> Capabilities);
 
 public readonly record struct CapabilityDecision(bool IsAllowed, BusError? Error)
 {
@@ -17,7 +17,7 @@ public readonly record struct CapabilityDecision(bool IsAllowed, BusError? Error
 }
 
 /// <summary>One audited capability invocation (who, what route, result).</summary>
-public sealed record CapabilityAuditEntry(string PluginId, string EntryId, string Route, bool Allowed);
+public sealed record CapabilityAuditEntry(string PluginId, string Route, bool Allowed);
 
 /// <summary>
 /// Phase-1 capability gateway skeleton. Architecture position and per-call validation match the
@@ -33,24 +33,21 @@ public sealed class CapabilityGateway
     public IReadOnlyList<CapabilityAuditEntry> AuditEntries => _audit.ToArray();
 
     public void RegisterManifest(PluginManifest manifest)
-        => _manifests[Key(manifest.PluginId, manifest.EntryId)] = manifest;
+        => _manifests[manifest.PluginId] = manifest;
 
-    public void UnregisterManifest(string pluginId, string entryId)
-        => _manifests.TryRemove(Key(pluginId, entryId), out _);
+    public void UnregisterManifest(string pluginId)
+        => _manifests.TryRemove(pluginId, out _);
 
-    public CapabilityDecision Authorize(string pluginId, string entryId, string capabilityRoute)
+    public CapabilityDecision Authorize(string pluginId, string capabilityRoute)
     {
-        var key = Key(pluginId, entryId);
-        var allowed = _manifests.TryGetValue(key, out var manifest)
+        var allowed = _manifests.TryGetValue(pluginId, out var manifest)
                       && manifest.Capabilities.Contains(capabilityRoute);
 
-        _audit.Enqueue(new CapabilityAuditEntry(pluginId, entryId, capabilityRoute, allowed));
+        _audit.Enqueue(new CapabilityAuditEntry(pluginId, capabilityRoute, allowed));
 
         return allowed
             ? CapabilityDecision.Allow()
             : CapabilityDecision.Deny(BusError.For(ErrorCode.CapabilityNotDeclared,
-                $"capability '{capabilityRoute}' is not declared by {pluginId}/{entryId}"));
+                $"capability '{capabilityRoute}' is not declared by {pluginId}"));
     }
-
-    private static string Key(string pluginId, string entryId) => $"{pluginId}\u001f{entryId}";
 }

@@ -13,7 +13,7 @@ public class InMemoryTransportTest
     private static Envelope Sample(string id, string route) => new()
     {
         Version = ProtocolVersion.Current, Id = id, TraceId = "t", SessionId = "s",
-        PluginId = "p", EntryId = "e", EndpointId = "end",
+        PluginId = "p", EndpointId = "end",
         Kind = MessageKind.Request, Route = route, TimeoutMs = 1000
     };
 

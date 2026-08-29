@@ -24,14 +24,15 @@ namespace MyTools.Host.Core.Test.E2E;
 [TestFixture]
 public class EndToEndScenariosTest
 {
-    private static EndpointId Node(string p, string e, string s) => new(p, e, s, "node-main", IsNode: true);
-    private static EndpointId Web(string p, string e, string s, string ep = "web-1")
-        => new(p, e, s, ep, IsNode: false);
+    private static EndpointId Node(string pluginId, string sessionId)
+        => new(pluginId, sessionId, "node-main", IsNode: true);
+    private static EndpointId Web(string pluginId, string sessionId, string endpointId = "web-1")
+        => new(pluginId, sessionId, endpointId, IsNode: false);
 
     private static Envelope Req(EndpointId from, string route, string id) => new()
     {
         Version = ProtocolVersion.Current, Id = id, TraceId = id, SessionId = from.SessionId,
-        PluginId = from.PluginId, EntryId = from.EntryId, EndpointId = from.EndpointLabel,
+        PluginId = from.PluginId, EndpointId = from.EndpointLabel,
         Kind = MessageKind.Request, Route = route, TimeoutMs = 5000
     };
 
@@ -41,11 +42,11 @@ public class EndToEndScenariosTest
         var bus = new MessageBus();
         var webT = new InMemoryTransport();
         var nodeT = new InMemoryTransport();
-        bus.RegisterEndpoint(Web("settings", "main", "s1"), webT);
-        bus.RegisterEndpoint(Node("settings", "main", "s1"), nodeT);
+        bus.RegisterEndpoint(Web("settings", "s1"), webT);
+        bus.RegisterEndpoint(Node("settings", "s1"), nodeT);
 
-        await bus.RouteRequestAsync(Req(Web("settings", "main", "s1"), "plugin.call.save", "r1"),
-            Web("settings", "main", "s1"));
+        await bus.RouteRequestAsync(Req(Web("settings", "s1"), "plugin.call.save", "r1"),
+            Web("settings", "s1"));
 
         Assert.That(nodeT.Sent, Has.Count.EqualTo(1));
         var receivedReq = nodeT.Sent.ToArray()[0];
@@ -53,7 +54,7 @@ public class EndToEndScenariosTest
         nodeT.Deliver(new Envelope
         {
             Version = ProtocolVersion.Current, Id = "resp-1", CorrelationId = receivedReq.Id,
-            TraceId = receivedReq.TraceId, SessionId = "s1", PluginId = "settings", EntryId = "main",
+            TraceId = receivedReq.TraceId, SessionId = "s1", PluginId = "settings",
             EndpointId = "node-main", Kind = MessageKind.Response, Route = "plugin.call.save"
         });
 
@@ -66,16 +67,16 @@ public class EndToEndScenariosTest
     {
         var webNew = new InMemoryTransport();
         var bus = new MessageBus();
-        bus.RegisterEndpoint(Web("settings", "main", "s2"), webNew);
+        bus.RegisterEndpoint(Web("settings", "s2"), webNew);
 
         var oldSessionBus = new MessageBus();
-        var nodeOld = Node("settings", "main", "s1");
+        var nodeOld = Node("settings", "s1");
         var oldNodeT = new InMemoryTransport();
         oldSessionBus.RegisterEndpoint(nodeOld, oldNodeT);
         oldNodeT.Deliver(new Envelope
         {
             Version = ProtocolVersion.Current, Id = "late", CorrelationId = "never-issued",
-            TraceId = "t", SessionId = "s1", PluginId = "settings", EntryId = "main",
+            TraceId = "t", SessionId = "s1", PluginId = "settings",
             EndpointId = "node-main", Kind = MessageKind.Response, Route = "plugin.call.save"
         });
 
@@ -86,9 +87,9 @@ public class EndToEndScenariosTest
     public void CapabilityGateway_UndeclaredCapability_ShouldBeDenied()
     {
         var gw = new CapabilityGateway();
-        gw.RegisterManifest(new PluginManifest("settings", "main", ["configuration.write"]));
+        gw.RegisterManifest(new PluginManifest("settings", ["configuration.write"]));
 
-        var decision = gw.Authorize("settings", "main", "clipboard.read");
+        var decision = gw.Authorize("settings", "clipboard.read");
 
         Assert.That(decision.IsAllowed, Is.False);
         Assert.That(decision.Error!.Code, Is.EqualTo(ErrorCode.CapabilityNotDeclared));
@@ -100,9 +101,9 @@ public class EndToEndScenariosTest
         var bus = new MessageBus(pendingLimit: 2);
         var webT = new InMemoryTransport();
         var nodeT = new InMemoryTransport();
-        var web = Web("settings", "main", "s1");
+        var web = Web("settings", "s1");
         bus.RegisterEndpoint(web, webT);
-        bus.RegisterEndpoint(Node("settings", "main", "s1"), nodeT);
+        bus.RegisterEndpoint(Node("settings", "s1"), nodeT);
 
         await bus.RouteRequestAsync(Req(web, "plugin.call.a", "a"), web);
         await bus.RouteRequestAsync(Req(web, "plugin.call.b", "b"), web);
@@ -120,8 +121,8 @@ public class EndToEndScenariosTest
         var bus = new MessageBus();
         var webT = new InMemoryTransport();
         var nodeT = new InMemoryTransport();
-        bus.RegisterEndpoint(Web("settings", "main", "s1"), webT);
-        bus.RegisterEndpoint(Node("settings", "main", "s1"), nodeT);
+        bus.RegisterEndpoint(Web("settings", "s1"), webT);
+        bus.RegisterEndpoint(Node("settings", "s1"), nodeT);
 
         // Page forges another plugin's identity — bus must stamp the transport binding.
         webT.Deliver(new Envelope
@@ -131,7 +132,6 @@ public class EndToEndScenariosTest
             TraceId = "forged-1",
             SessionId = "OTHER-SESSION",
             PluginId = "evil",
-            EntryId = "hack",
             EndpointId = "forged-ep",
             Kind = MessageKind.Request,
             Route = "plugin.call.refresh",
@@ -141,7 +141,6 @@ public class EndToEndScenariosTest
         Assert.That(await WaitForAsync(() => nodeT.Sent.Count >= 1), Is.True);
         var delivered = nodeT.Sent.ToArray()[0];
         Assert.That(delivered.PluginId, Is.EqualTo("settings"));
-        Assert.That(delivered.EntryId, Is.EqualTo("main"));
         Assert.That(delivered.SessionId, Is.EqualTo("s1"));
         Assert.That(delivered.EndpointId, Is.EqualTo("web-1"));
     }
@@ -154,10 +153,10 @@ public class EndToEndScenariosTest
         var webB = new InMemoryTransport();
         var nodeA = new InMemoryTransport();
         var nodeB = new InMemoryTransport();
-        bus.RegisterEndpoint(Web("a", "main", "s1"), webA);
-        bus.RegisterEndpoint(Node("a", "main", "s1"), nodeA);
-        bus.RegisterEndpoint(Web("b", "main", "s1", "web-1"), webB);
-        bus.RegisterEndpoint(Node("b", "main", "s1"), nodeB);
+        bus.RegisterEndpoint(Web("a", "s1"), webA);
+        bus.RegisterEndpoint(Node("a", "s1"), nodeA);
+        bus.RegisterEndpoint(Web("b", "s1", "web-1"), webB);
+        bus.RegisterEndpoint(Node("b", "s1"), nodeB);
 
         nodeA.Deliver(new Envelope
         {
@@ -166,7 +165,6 @@ public class EndToEndScenariosTest
             TraceId = "ev1",
             SessionId = "s1",
             PluginId = "a",
-            EntryId = "main",
             EndpointId = "node-main",
             Kind = MessageKind.Event,
             Route = "plugin.event.tick",
@@ -192,11 +190,12 @@ public class EndToEndScenariosTest
         var session = await mgr.StartSessionAsync(new PluginManifestV3
         {
             Id = "settings", ProtocolVersion = "3.0",
-            Entries = [new() { Id = "main", Entry = "index.mjs", Capabilities = [] }],
-        }, "main", "node");
+            Entry = "index.mjs",
+            Capabilities = [],
+        }, "node");
 
         var hostT = new InMemoryTransport();
-        var hostEp = Web("settings", "main", session.SessionId, "host");
+        var hostEp = Web("settings", session.SessionId, "host");
         bus.RegisterEndpoint(hostEp, hostT);
         await bus.RouteRequestAsync(Req(hostEp, "plugin.call.search", "pending-x"), hostEp);
 
@@ -216,8 +215,8 @@ public class EndToEndScenariosTest
         var bus = new MessageBus(eventQueueCapacity: 2);
         var webT = new SlowTransport(delayMs: 40);
         var nodeT = new InMemoryTransport();
-        bus.RegisterEndpoint(Web("settings", "main", "s1"), webT);
-        bus.RegisterEndpoint(Node("settings", "main", "s1"), nodeT);
+        bus.RegisterEndpoint(Web("settings", "s1"), webT);
+        bus.RegisterEndpoint(Node("settings", "s1"), nodeT);
 
         for (var i = 0; i < 8; i++)
         {
@@ -228,7 +227,6 @@ public class EndToEndScenariosTest
                 TraceId = $"e{i}",
                 SessionId = "s1",
                 PluginId = "settings",
-                EntryId = "main",
                 EndpointId = "node-main",
                 Kind = MessageKind.Event,
                 Route = "plugin.event.n",

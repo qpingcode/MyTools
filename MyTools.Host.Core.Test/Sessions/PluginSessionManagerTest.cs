@@ -15,11 +15,12 @@ namespace MyTools.Host.Core.Test.Sessions;
 [TestFixture]
 public class PluginSessionManagerTest
 {
-    private static PluginManifestV3 Manifest(string pluginId, string entryId, string nodeEntry = "index.mjs")
+    private static PluginManifestV3 Manifest(string pluginId, string nodeEntry = "index.mjs")
         => new()
         {
             Id = pluginId, ProtocolVersion = "3.0",
-            Entries = [new() { Id = entryId, Entry = nodeEntry, Capabilities = [] }]
+            Entry = nodeEntry,
+            Capabilities = []
         };
 
     private static RestartPolicy FastRestartPolicy(int maxRestarts) => new(
@@ -34,13 +35,12 @@ public class PluginSessionManagerTest
     {
         var mgr = new PluginSessionManager(new MessageBus(), new CapabilityGateway(),
             new FakeProcessControllerFactory());
-        var manifest = Manifest("settings", "main");
+        var manifest = Manifest("settings");
 
-        var session = await mgr.StartSessionAsync(manifest, "main", nodeExePath: "node");
+        var session = await mgr.StartSessionAsync(manifest, nodeExePath: "node");
 
         Assert.That(session.State, Is.EqualTo(SessionState.Ready));
         Assert.That(session.PluginId, Is.EqualTo("settings"));
-        Assert.That(session.EntryId, Is.EqualTo("main"));
         Assert.That(session.SessionId, Is.Not.Null.And.Not.Empty);
     }
 
@@ -50,8 +50,8 @@ public class PluginSessionManagerTest
         var mgr = new PluginSessionManager(new MessageBus(), new CapabilityGateway(),
             new FakeProcessControllerFactory());
 
-        var s1 = await mgr.StartSessionAsync(Manifest("settings", "main"), "main", "node");
-        var s2 = await mgr.StartSessionAsync(Manifest("hello-search", "hello"), "hello", "node");
+        var s1 = await mgr.StartSessionAsync(Manifest("settings"), "node");
+        var s2 = await mgr.StartSessionAsync(Manifest("hello-search"), "node");
 
         Assert.That(s2.SessionId, Is.Not.EqualTo(s1.SessionId));
     }
@@ -62,8 +62,8 @@ public class PluginSessionManagerTest
         var mgr = new PluginSessionManager(new MessageBus(), new CapabilityGateway(),
             new FakeProcessControllerFactory());
 
-        var started = await mgr.StartSessionAsync(Manifest("settings", "main"), "main", "node");
-        var found = mgr.TryGetSession("settings", "main", started.SessionId, out var retrieved);
+        var started = await mgr.StartSessionAsync(Manifest("settings"), "node");
+        var found = mgr.TryGetSession("settings", started.SessionId, out var retrieved);
 
         Assert.That(found, Is.True);
         Assert.That(retrieved!.SessionId, Is.EqualTo(started.SessionId));
@@ -75,7 +75,7 @@ public class PluginSessionManagerTest
         var mgr = new PluginSessionManager(new MessageBus(), new CapabilityGateway(),
             new FakeProcessControllerFactory());
 
-        var found = mgr.TryGetSession("nope", "main", "never", out var retrieved);
+        var found = mgr.TryGetSession("nope", "never", out var retrieved);
 
         Assert.That(found, Is.False);
         Assert.That(retrieved, Is.Null);
@@ -86,12 +86,12 @@ public class PluginSessionManagerTest
     {
         var mgr = new PluginSessionManager(new MessageBus(), new CapabilityGateway(),
             new FakeProcessControllerFactory());
-        var session = await mgr.StartSessionAsync(Manifest("settings", "main"), "main", "node");
+        var session = await mgr.StartSessionAsync(Manifest("settings"), "node");
 
-        await mgr.StopSessionAsync("settings", "main", session.SessionId);
+        await mgr.StopSessionAsync("settings", session.SessionId);
 
         Assert.That(session.State, Is.EqualTo(SessionState.Stopped));
-        Assert.That(mgr.TryGetSession("settings", "main", session.SessionId, out _), Is.False);
+        Assert.That(mgr.TryGetSession("settings", session.SessionId, out _), Is.False);
     }
 
     [Test]
@@ -104,7 +104,7 @@ public class PluginSessionManagerTest
             restartPolicyFactory: () => FastRestartPolicy(maxRestarts: 5));
         mgr.SessionReplaced += (_, e) => replaced.TrySetResult(e);
 
-        var session = await mgr.StartSessionAsync(Manifest("settings", "main"), "main", "node");
+        var session = await mgr.StartSessionAsync(Manifest("settings"), "node");
         var oldId = session.SessionId;
 
         ((InMemoryTransport)session.Controller!.Transport!).Disconnect();
@@ -113,7 +113,7 @@ public class PluginSessionManagerTest
         Assert.That(args.Previous.SessionId, Is.EqualTo(oldId));
         Assert.That(args.Current.SessionId, Is.Not.EqualTo(oldId));
         Assert.That(args.Current.State, Is.EqualTo(SessionState.Ready));
-        Assert.That(mgr.TryGetCurrentSession("settings", "main", out var current), Is.True);
+        Assert.That(mgr.TryGetCurrentSession("settings", out var current), Is.True);
         Assert.That(current!.SessionId, Is.EqualTo(args.Current.SessionId));
     }
 
@@ -123,12 +123,12 @@ public class PluginSessionManagerTest
         var mgr = new PluginSessionManager(new MessageBus(), new CapabilityGateway(),
             new FakeProcessControllerFactory(),
             restartPolicyFactory: () => FastRestartPolicy(maxRestarts: 0));
-        var session = await mgr.StartSessionAsync(Manifest("settings", "main"), "main", "node");
+        var session = await mgr.StartSessionAsync(Manifest("settings"), "node");
 
         ((InMemoryTransport)session.Controller!.Transport!).Disconnect();
 
         Assert.That(await WaitForAsync(() => session.State == SessionState.Stopped), Is.True);
-        Assert.That(mgr.TryGetCurrentSession("settings", "main", out _), Is.False);
+        Assert.That(mgr.TryGetCurrentSession("settings", out _), Is.False);
     }
 
     [Test]
@@ -141,10 +141,10 @@ public class PluginSessionManagerTest
             restartPolicyFactory: () => FastRestartPolicy(maxRestarts: 5));
         mgr.SessionReplaced += (_, e) => replaced.TrySetResult(e);
 
-        var session = await mgr.StartSessionAsync(Manifest("settings", "main"), "main", "node");
+        var session = await mgr.StartSessionAsync(Manifest("settings"), "node");
         var oldId = session.SessionId;
 
-        await mgr.NotifyPeerDeadAsync("settings", "main");
+        await mgr.NotifyPeerDeadAsync("settings");
 
         var args = await replaced.Task.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.That(args.Previous.SessionId, Is.EqualTo(oldId));
@@ -158,10 +158,10 @@ public class PluginSessionManagerTest
         var mgr = new PluginSessionManager(bus, new CapabilityGateway(),
             new FakeProcessControllerFactory(),
             restartPolicyFactory: () => FastRestartPolicy(maxRestarts: 0));
-        var session = await mgr.StartSessionAsync(Manifest("settings", "main"), "main", "node");
+        var session = await mgr.StartSessionAsync(Manifest("settings"), "node");
 
         var hostT = new InMemoryTransport();
-        var hostEp = new EndpointId("settings", "main", session.SessionId, "host", IsNode: false);
+        var hostEp = new EndpointId("settings", session.SessionId, "host", IsNode: false);
         bus.RegisterEndpoint(hostEp, hostT);
         await bus.RouteRequestAsync(new Envelope
         {
@@ -170,7 +170,6 @@ public class PluginSessionManagerTest
             TraceId = "pending-1",
             SessionId = session.SessionId,
             PluginId = "settings",
-            EntryId = "main",
             EndpointId = "host",
             Kind = MessageKind.Request,
             Route = "plugin.call.search",

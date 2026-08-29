@@ -8,8 +8,8 @@ export const DATA_DIR =
 const PLUGINS_DATA_DIR = normalizeText(process.env.MYTOOLS_PLUGINS_DATA_DIR);
 const LEGACY_DATA_DIR = PLUGINS_DATA_DIR ? path.join(PLUGINS_DATA_DIR, "deepseek-translator") : "";
 
-// The plugin id was renamed to "translator". The host creates the new directory before Node
-// starts, so migrate when it is still empty rather than checking only for directory existence.
+// The plugin id was renamed to "translator". Migrate only when legacy data actually exists;
+// otherwise leave the new per-plugin directory uncreated until the first write.
 if (LEGACY_DATA_DIR && path.resolve(LEGACY_DATA_DIR) !== path.resolve(DATA_DIR)) {
   try {
     const targetIsEmpty = !fs.existsSync(DATA_DIR) || fs.readdirSync(DATA_DIR).length === 0;

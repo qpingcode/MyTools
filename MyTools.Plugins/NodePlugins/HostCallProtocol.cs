@@ -9,7 +9,6 @@ public sealed record HostCallRequest(
     string Method,
     JsonElement Params,
     string PluginId = "",
-    string EntryId = "",
     string SessionId = "");
 
 // ── getConfiguration 响应 DTO ──

@@ -62,7 +62,6 @@ public static class PipeHandshake
         var successPayload = HandshakePayload.BuildSuccessResponse(
             negotiated.Negotiated!.Value,
             expectedIdentity.PluginId,
-            expectedIdentity.EntryId,
             sessionId,
             endpointId);
         var reply = new Envelope
@@ -73,7 +72,6 @@ public static class PipeHandshake
             TraceId = request.TraceId,
             SessionId = sessionId,
             PluginId = expectedIdentity.PluginId,
-            EntryId = expectedIdentity.EntryId,
             EndpointId = EndpointIds.Host,
             Kind = MessageKind.Response,
             Route = Routes.Bus.Handshake,
@@ -128,7 +126,6 @@ public static class PipeHandshake
             TraceId = request.TraceId,
             SessionId = request.SessionId,
             PluginId = request.PluginId,
-            EntryId = request.EntryId,
             EndpointId = EndpointIds.Host,
             Kind = MessageKind.Response,
             Route = Routes.Bus.Handshake,

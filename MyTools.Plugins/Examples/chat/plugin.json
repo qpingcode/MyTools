@@ -1,5 +1,9 @@
 {
   "id": "chat",
+  "name": {
+    "key": "Plugin.Chat.Name",
+    "defaultValue": "Chat"
+  },
   "version": "0.1.0",
   "protocolVersion": "3.0",
   "icon": "mdi-chat-processing-outline",
@@ -7,32 +11,28 @@
     "defaultLocale": "en-US",
     "catalog": "i18n/catalog.en-US.json",
     "localesPath": "i18n/locales",
-    "supportedLocales": ["en-US", "zh-CN"]
+    "supportedLocales": [
+      "en-US",
+      "zh-CN"
+    ]
   },
-  "entries": [
-    {
-      "id": "chat",
-      "name": {
-        "key": "Plugin.Chat.Name",
-        "defaultValue": "Chat"
-      },
-      "entry": "backend/index.mjs",
-      "capabilities": [
-        "ai.chat.status",
-        "ai.chat.send",
-        "ai.chat.state",
-        "ai.chat.cancel",
-        "ai.chat.clear"
-      ],
-      "alias": ["chat"],
-      "hotKey": "Alt+V",
-      "search": {
-        "global": false
-      },
-      "detail": {
-        "type": "web",
-        "entry": "web/index.html"
-      }
-    }
-  ]
+  "entry": "backend/index.mjs",
+  "capabilities": [
+    "ai.chat.status",
+    "ai.chat.send",
+    "ai.chat.state",
+    "ai.chat.cancel",
+    "ai.chat.clear"
+  ],
+  "alias": [
+    "chat"
+  ],
+  "hotKey": "Alt+V",
+  "search": {
+    "global": false
+  },
+  "detail": {
+    "type": "web",
+    "entry": "web/index.html"
+  }
 }

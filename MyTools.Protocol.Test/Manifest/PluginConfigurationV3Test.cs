@@ -12,43 +12,52 @@ public class PluginConfigurationV3Test
     public void Deserialize_ShouldReadArraySettingSchema()
     {
         const string json = """
+        {
+          "id": "snippet",
+          "version": "0.1.0",
+          "protocolVersion": "3.0",
+          "icon": "mdi-message-text-outline",
+          "configuration": [
             {
-              "id": "snippet",
-              "version": "0.1.0",
-              "protocolVersion": "3.0",
-              "icon": "mdi-message-text-outline",
-              "configuration": [
-                {
-                  "key": "Phrases",
-                  "label": { "key": "Plugin.Snippet.Setting.Phrases", "defaultValue": "Phrases" },
-                  "type": "array",
-                  "defaultValue": [],
-                  "uiHint": "table",
-                  "schema": {
-                    "properties": [
-                      {
-                        "key": "trigger",
-                        "type": "string",
-                        "label": { "key": "Plugin.Snippet.Column.Trigger", "defaultValue": "Trigger" }
-                      },
-                      {
-                        "key": "timestamp",
-                        "type": "hidden",
-                        "defaultValue": "${DateTime.Now}"
-                      },
-                      {
-                        "key": "content",
-                        "type": "string",
-                        "uiHint": "textarea",
-                        "label": { "key": "Plugin.Snippet.Column.Content", "defaultValue": "Phrase" }
-                      }
-                    ]
+              "key": "Phrases",
+              "label": {
+                "key": "Plugin.Snippet.Setting.Phrases",
+                "defaultValue": "Phrases"
+              },
+              "type": "array",
+              "defaultValue": [],
+              "uiHint": "table",
+              "schema": {
+                "properties": [
+                  {
+                    "key": "trigger",
+                    "type": "string",
+                    "label": {
+                      "key": "Plugin.Snippet.Column.Trigger",
+                      "defaultValue": "Trigger"
+                    }
+                  },
+                  {
+                    "key": "timestamp",
+                    "type": "hidden",
+                    "defaultValue": "${DateTime.Now}"
+                  },
+                  {
+                    "key": "content",
+                    "type": "string",
+                    "uiHint": "textarea",
+                    "label": {
+                      "key": "Plugin.Snippet.Column.Content",
+                      "defaultValue": "Phrase"
+                    }
                   }
-                }
-              ],
-              "entries": [{ "id": "snippet", "entry": "backend/index.mjs" }]
+                ]
+              }
             }
-            """;
+          ],
+          "entry": "backend/index.mjs"
+        }
+        """;
 
         var m = JsonSerializer.Deserialize<PluginManifestV3>(json, ProtocolJsonOptions.Default)!;
 
@@ -69,37 +78,43 @@ public class PluginConfigurationV3Test
     public void Deserialize_ShouldReadSchemaPropertyVisibility()
     {
         const string json = """
+        {
+          "id": "command-runner",
+          "version": "0.1.0",
+          "protocolVersion": "3.0",
+          "configuration": [
             {
-              "id": "command-runner",
-              "version": "0.1.0",
-              "protocolVersion": "3.0",
-              "configuration": [
-                {
-                  "key": "Commands",
-                  "type": "array",
-                  "schema": {
-                    "properties": [
-                      { "key": "name", "type": "string" },
-                      { "key": "isBashScript", "type": "bool" },
-                      {
-                        "key": "command",
-                        "type": "string",
-                        "table": false,
-                        "visibility": "${isBashScript == false}"
-                      },
-                      {
-                        "key": "scripts",
-                        "type": "string",
-                        "table": false,
-                        "visibility": "${isBashScript == true}"
-                      }
-                    ]
+              "key": "Commands",
+              "type": "array",
+              "schema": {
+                "properties": [
+                  {
+                    "key": "name",
+                    "type": "string"
+                  },
+                  {
+                    "key": "isBashScript",
+                    "type": "bool"
+                  },
+                  {
+                    "key": "command",
+                    "type": "string",
+                    "table": false,
+                    "visibility": "${isBashScript == false}"
+                  },
+                  {
+                    "key": "scripts",
+                    "type": "string",
+                    "table": false,
+                    "visibility": "${isBashScript == true}"
                   }
-                }
-              ],
-              "entries": [{ "id": "command-runner", "entry": "backend/index.mjs" }]
+                ]
+              }
             }
-            """;
+          ],
+          "entry": "backend/index.mjs"
+        }
+        """;
 
         var m = JsonSerializer.Deserialize<PluginManifestV3>(json, ProtocolJsonOptions.Default)!;
         var schema = m.Configuration[0].Schema!;
@@ -117,21 +132,25 @@ public class PluginConfigurationV3Test
     public void Deserialize_ShouldReadVisibilityCondition()
     {
         const string json = """
+        {
+          "id": "main",
+          "version": "0.1.0",
+          "protocolVersion": "3.0",
+          "configuration": [
             {
-              "id": "browser-search",
-              "version": "0.1.0",
-              "protocolVersion": "3.0",
-              "configuration": [
-                { "key": "ChromeEnabled", "type": "bool", "defaultValue": true },
-                {
-                  "key": "ChromeProfile",
-                  "type": "string",
-                  "visibility": "${ChromeEnabled == true}"
-                }
-              ],
-              "entries": [{ "id": "main", "entry": "backend/index.mjs" }]
+              "key": "ChromeEnabled",
+              "type": "bool",
+              "defaultValue": true
+            },
+            {
+              "key": "ChromeProfile",
+              "type": "string",
+              "visibility": "${ChromeEnabled == true}"
             }
-            """;
+          ],
+          "entry": "backend/index.mjs"
+        }
+        """;
 
         var m = JsonSerializer.Deserialize<PluginManifestV3>(json, ProtocolJsonOptions.Default)!;
 
@@ -143,25 +162,38 @@ public class PluginConfigurationV3Test
     public void Deserialize_ShouldReadHeadingWithoutKey()
     {
         const string json = """
+        {
+          "id": "command-runner",
+          "version": "0.1.0",
+          "protocolVersion": "3.0",
+          "configuration": [
             {
-              "id": "command-runner",
-              "version": "0.1.0",
-              "protocolVersion": "3.0",
-              "configuration": [
-                {
-                  "label": { "key": "Plugin.CommandRunner.Name", "defaultValue": "Custom Commands" },
-                  "description": { "key": "d", "defaultValue": "Configure commands." },
-                  "type": "h1"
-                },
-                {
-                  "key": "Commands",
-                  "type": "array",
-                  "schema": { "properties": [{ "key": "name", "type": "string" }] }
-                }
-              ],
-              "entries": [{ "id": "command-runner", "entry": "backend/index.mjs" }]
+              "label": {
+                "key": "Plugin.CommandRunner.Name",
+                "defaultValue": "Custom Commands"
+              },
+              "description": {
+                "key": "d",
+                "defaultValue": "Configure commands."
+              },
+              "type": "h1"
+            },
+            {
+              "key": "Commands",
+              "type": "array",
+              "schema": {
+                "properties": [
+                  {
+                    "key": "name",
+                    "type": "string"
+                  }
+                ]
+              }
             }
-            """;
+          ],
+          "entry": "backend/index.mjs"
+        }
+        """;
 
         var m = JsonSerializer.Deserialize<PluginManifestV3>(json, ProtocolJsonOptions.Default)!;
 
@@ -178,7 +210,7 @@ public class PluginConfigurationV3Test
         {
             Id = "p",
             ProtocolVersion = "3.0",
-            Entries = [new() { Id = "main", Entry = "index.mjs" }],
+            Entry = "index.mjs",
             Configuration =
             [
                 new()
@@ -205,7 +237,7 @@ public class PluginConfigurationV3Test
         {
             Id = "p",
             ProtocolVersion = "3.0",
-            Entries = [new() { Id = "main", Entry = "index.mjs" }],
+            Entry = "index.mjs",
             Configuration =
             [
                 new() { Type = "bool" }
@@ -225,7 +257,7 @@ public class PluginConfigurationV3Test
         {
             Id = "p",
             ProtocolVersion = "3.0",
-            Entries = [new() { Id = "main", Entry = "index.mjs" }],
+            Entry = "index.mjs",
             Configuration =
             [
                 new() { Key = "Items", Type = "array" }
@@ -246,7 +278,7 @@ public class PluginConfigurationV3Test
         {
             Id = "p",
             ProtocolVersion = "3.0",
-            Entries = [new() { Id = "main", Entry = "index.mjs" }],
+            Entry = "index.mjs",
             Configuration =
             [
                 new() { Key = "Name", Type = "string" },
@@ -267,7 +299,7 @@ public class PluginConfigurationV3Test
         {
             Id = "p",
             ProtocolVersion = "3.0",
-            Entries = [new() { Id = "main", Entry = "index.mjs" }],
+            Entry = "index.mjs",
             Configuration =
             [
                 new() { Key = "Name", Type = "object" }
@@ -302,7 +334,7 @@ public class PluginConfigurationV3Test
         {
             Id = "p",
             ProtocolVersion = "3.0",
-            Entries = [new() { Id = "main", Entry = "index.mjs" }],
+            Entry = "index.mjs",
             Configuration =
             [
                 new() { Key = "InstallPath", Type = "path", UiHint = "directory" }

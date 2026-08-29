@@ -131,7 +131,7 @@ Created / Starting / Handshaking / Ready / Restarting
 
 ## 统一消息协议
 
-所有 transport 使用同一 envelope。**已有 envelope 字段的名称、类型和语义在第一期冻结**，任何阶段不得删除、改名或变更语义；新增 envelope 字段仅限可选、有默认行为的字段，且必须伴随次版本递增经握手协商，旧端按"忽略未知可选字段"规则兼容：
+所有 transport 使用同一 envelope。插件模型限定为单入口，因此身份只包含插件、会话与 endpoint；新增 envelope 字段仅限可选、有默认行为的字段，且必须经握手协商，旧端按"忽略未知可选字段"规则兼容：
 
 ```json
 {
@@ -141,7 +141,6 @@ Created / Starting / Handshaking / Ready / Restarting
   "traceId": "01J...",
   "sessionId": "01J...",
   "pluginId": "settings",
-  "entryId": "main",
   "endpointId": "node-main",
   "kind": "request",
   "route": "plugin.call.saveConfiguration",
@@ -157,9 +156,8 @@ Created / Starting / Handshaking / Ready / Restarting
 - `id`：本消息的全局唯一 ID
 - `correlationId`：响应指向原请求 ID；其他消息为 `null`（二期的 `bus.cancel` 复用此字段）
 - `traceId`：根请求 ID；嵌套调用沿用同一 trace，独立事件使用自身 ID
-- `sessionId`：本次 entry 运行的会话身份
+- `sessionId`：本次插件运行的会话身份
 - `pluginId`：插件包身份
-- `entryId`：插件包内的 entry 身份
 - `endpointId`：会话内连接身份
 - `kind`：`request`、`response` 或 `event`
 - `route`：受约束的路由名
@@ -167,7 +165,7 @@ Created / Starting / Handshaking / Ready / Restarting
 - `payload`：路由对应的结构化数据
 - `error`：失败响应的标准错误对象，其他消息为 `null`
 
-除握手前的 `bus.handshake` 外，宿主不信任入站 envelope 声明的 `pluginId`、`entryId`、`sessionId` 或 `endpointId`。transport 必须用已认证 endpoint 的绑定值生成规范化消息后再交给总线。会话不匹配的消息直接丢弃并记录诊断，不能参与响应关联或路由。入站 `timeoutMs` 由宿主钳制到路由配置的上限，缺失或非法时使用路由默认值；格式非法的 `traceId` 由宿主重新生成。
+除握手前的 `bus.handshake` 外，宿主不信任入站 envelope 声明的 `pluginId`、`sessionId` 或 `endpointId`。transport 必须用已认证 endpoint 的绑定值生成规范化消息后再交给总线。会话不匹配的消息直接丢弃并记录诊断，不能参与响应关联或路由。入站 `timeoutMs` 由宿主钳制到路由配置的上限，缺失或非法时使用路由默认值；格式非法的 `traceId` 由宿主重新生成。
 
 第一期超时为**每跳独立超时**：每条链路（宿主等待 Node、Node 等待宿主 capability）使用各自路由配置的超时，超时返回 `RequestTimeout`。跨跳的端到端预算扣减与传播见二期设计。超时后下游工作的结果未知，调用方不得自动重试；需要更强保证的路由必须单独定义幂等键或结果查询。
 
@@ -197,7 +195,7 @@ Created / Starting / Handshaking / Ready / Restarting
 
 协议类型和校验只覆盖 envelope、`bus.*`、`host.call.*`、`host.event.*` 和标准错误对象。`plugin.call.*` 与 `plugin.event.*` 的 payload 对总线不透明：宿主只校验 envelope 结构、路由名合法性和大小上限，不校验插件业务 payload。插件业务 Schema 属于插件内部实现——这些路由的两端都是同一插件自己的代码；插件可自带校验库获得端到端类型安全，SDK 提供校验挂接点但不强制。
 
-消息总线按 `pluginId + entryId + sessionId + route` 隔离。禁止跨插件路由。响应只返回发起请求的 endpoint。
+消息总线按 `pluginId + sessionId + route` 隔离。禁止跨插件路由。响应只返回发起请求的 endpoint。
 
 **事件采用会话内广播，第一期没有订阅机制**：`plugin.event.*` 分发给同一会话的所有 WebView endpoint；`host.event.*` 分发给目标会话的所有 endpoint。页面对不关心的事件直接忽略。事件量增长到需要过滤时，再按二期设计追加 `bus.subscribe`，对广播语义向后兼容。
 

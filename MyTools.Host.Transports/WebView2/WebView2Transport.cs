@@ -183,7 +183,6 @@ public sealed class WebView2Transport : IMessageTransport
         var successPayload = HandshakePayload.BuildSuccessResponse(
             version,
             _binding.PluginId,
-            _binding.EntryId,
             _binding.SessionId,
             _binding.EndpointId);
         reply = new Envelope
@@ -194,7 +193,6 @@ public sealed class WebView2Transport : IMessageTransport
             TraceId = request.TraceId,
             SessionId = _binding.SessionId,
             PluginId = _binding.PluginId,
-            EntryId = _binding.EntryId,
             EndpointId = _binding.EndpointId,
             Kind = MessageKind.Response,
             Route = Routes.Bus.Handshake,
@@ -232,7 +230,6 @@ public sealed class WebView2Transport : IMessageTransport
         TraceId = request.TraceId,
         SessionId = _binding.SessionId,
         PluginId = _binding.PluginId,
-        EntryId = _binding.EntryId,
         EndpointId = _binding.EndpointId,
         Kind = MessageKind.Response,
         Route = request.Route,

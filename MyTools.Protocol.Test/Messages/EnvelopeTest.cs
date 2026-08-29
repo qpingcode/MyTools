@@ -18,7 +18,6 @@ public class EnvelopeTest
         TraceId = "trace1",
         SessionId = "sess1",
         PluginId = "settings",
-        EntryId = "main",
         EndpointId = "webview-1",
         Kind = MessageKind.Request,
         Route = "plugin.call.saveConfiguration",
@@ -39,7 +38,7 @@ public class EnvelopeTest
         Assert.That(json, Does.Contain("\"traceId\":\"trace1\""));
         Assert.That(json, Does.Contain("\"sessionId\":\"sess1\""));
         Assert.That(json, Does.Contain("\"pluginId\":\"settings\""));
-        Assert.That(json, Does.Contain("\"entryId\":\"main\""));
+        Assert.That(json, Does.Not.Contain("\"entryId\""));
         Assert.That(json, Does.Contain("\"endpointId\":\"webview-1\""));
         Assert.That(json, Does.Contain("\"kind\":\"request\""));
         Assert.That(json, Does.Contain("\"route\":\"plugin.call.saveConfiguration\""));
@@ -62,7 +61,6 @@ public class EnvelopeTest
         Assert.That(back.TraceId, Is.EqualTo("trace1"));
         Assert.That(back.SessionId, Is.EqualTo("sess1"));
         Assert.That(back.PluginId, Is.EqualTo("settings"));
-        Assert.That(back.EntryId, Is.EqualTo("main"));
         Assert.That(back.EndpointId, Is.EqualTo("webview-1"));
         Assert.That(back.Kind, Is.EqualTo(MessageKind.Request));
         Assert.That(back.Route, Is.EqualTo("plugin.call.saveConfiguration"));
@@ -83,7 +81,6 @@ public class EnvelopeTest
             TraceId = "trace1",
             SessionId = "sess1",
             PluginId = "settings",
-            EntryId = "main",
             EndpointId = "node-main",
             Kind = MessageKind.Response,
             Route = "plugin.call.saveConfiguration",
@@ -110,7 +107,6 @@ public class EnvelopeTest
             TraceId = "trace1",
             SessionId = "sess1",
             PluginId = "settings",
-            EntryId = "main",
             EndpointId = "node-main",
             Kind = MessageKind.Response,
             Route = "plugin.call.saveConfiguration",

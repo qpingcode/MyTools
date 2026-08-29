@@ -1,5 +1,9 @@
 {
   "id": "uuid-generator",
+  "name": {
+    "key": "Plugin.UuidGenerator.Name",
+    "defaultValue": "UUID Generator"
+  },
   "version": "0.1.0",
   "protocolVersion": "3.0",
   "icon": "mdi-identifier",
@@ -7,20 +11,20 @@
     "defaultLocale": "en-US",
     "catalog": "i18n/catalog.en-US.json",
     "localesPath": "i18n/locales",
-    "supportedLocales": ["en-US", "zh-CN"]
+    "supportedLocales": [
+      "en-US",
+      "zh-CN"
+    ]
   },
-  "entries": [
-    {
-      "id": "uuid-generator",
-      "name": {
-        "key": "Plugin.UuidGenerator.Name",
-        "defaultValue": "UUID Generator"
-      },
-      "entry": "backend/index.mjs",
-      "capabilities": [],
-      "alias": ["guid"],
-      "search": { "global": false },
-      "detail": { "type": "list" }
-    }
-  ]
+  "entry": "backend/index.mjs",
+  "capabilities": [],
+  "alias": [
+    "guid"
+  ],
+  "search": {
+    "global": false
+  },
+  "detail": {
+    "type": "list"
+  }
 }

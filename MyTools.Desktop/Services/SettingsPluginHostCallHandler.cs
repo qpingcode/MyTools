@@ -696,10 +696,21 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     private HotKeyInspection InspectHotKey(string? hotKey, CheckHotKeyRequest request)
     {
         var nodePlugins = pluginLoader.LoadedPlugins.OfType<NodePlugin>().ToList();
-        var pluginHotKeys = nodePlugins.ToDictionary(
-            p => p.PluginId,
-            p => (string?)(pluginOverrideProvider.GetHotKey(p.PluginId) ?? p.HotKey));
-        var pluginNames = nodePlugins.ToDictionary(p => p.PluginId, p => p.GetDisplayName());
+        var pluginHotKeys = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+        var pluginNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var plugin in nodePlugins)
+        {
+            // A malformed or transient development-plugin catalog must not crash the capture window.
+            // Keep the first loaded plugin, matching the order used elsewhere by the plugin loader.
+            if (!pluginHotKeys.TryAdd(
+                    plugin.PluginId,
+                    pluginOverrideProvider.GetHotKey(plugin.PluginId) ?? plugin.HotKey))
+            {
+                continue;
+            }
+
+            pluginNames.Add(plugin.PluginId, plugin.GetDisplayName());
+        }
 
         AddClipboardHotKeyForInspection(pluginHotKeys, pluginNames,
             "ClipBoard.HotKey",

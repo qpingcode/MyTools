@@ -17,7 +17,7 @@ namespace MyTools.Host.Core.Test.Sessions;
 public class PipeHandshakeTest
 {
     private static readonly ProcessIdentity Identity =
-        new(99, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc), "settings", "main");
+        new(99, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc), "settings");
 
     [Test]
     public async Task CompleteAsHost_ValidToken_ShouldReplyWithBoundIdentity()
@@ -41,7 +41,6 @@ public class PipeHandshakeTest
         Assert.That(reply.Error, Is.Null);
         var body = reply.Payload!.Deserialize<HandshakePayload>(ProtocolJsonOptions.Default)!;
         Assert.That(body.PluginId, Is.EqualTo("settings"));
-        Assert.That(body.EntryId, Is.EqualTo("main"));
         Assert.That(body.SessionId, Is.EqualTo("sess-1"));
         Assert.That(body.EndpointId, Is.EqualTo("node-main"));
     }
@@ -97,7 +96,6 @@ public class PipeHandshakeTest
         TraceId = "hs-1",
         SessionId = "",
         PluginId = "settings",
-        EntryId = "main",
         EndpointId = "node-main",
         Kind = MessageKind.Request,
         Route = "bus.handshake",

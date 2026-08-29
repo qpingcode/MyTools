@@ -120,81 +120,71 @@ public sealed class NodePluginCatalog
                 logger.LogWarning("Skipping node plugin manifest with invalid i18n paths: {ManifestPath}", manifestPath);
                 return [];
             }
-            var manifests = new List<NodePluginManifest>();
-            foreach (var entryModel in fileModel.Entries!)
+            var entryFullPath = ResolveFileUnderPluginRoot(fullPluginDirectory, fileModel.Entry!);
+            if (entryFullPath == null)
             {
-                if (!IsValidEntry(entryModel))
+                logger.LogWarning("Skipping node plugin manifest with invalid backend entry: {ManifestPath}", manifestPath);
+                return [];
+            }
+
+            var detailResult = PluginDetailResolver.TryResolve(
+                fileModel.Detail?.Type,
+                fileModel.Detail?.Entry,
+                fileModel.Id!,
+                out var resolvedDetail);
+            if (!detailResult.IsValid)
+            {
+                logger.LogWarning(
+                    "Skipping node plugin manifest with invalid detail: {ManifestPath}. {Reason}",
+                    manifestPath,
+                    detailResult.Error?.Message);
+                return [];
+            }
+
+            string? detailEntry = null;
+            string? detailEntryFullPath = null;
+            if (resolvedDetail.IsWeb)
+            {
+                detailEntry = resolvedDetail.Entry;
+                detailEntryFullPath = ResolveFileUnderPluginRoot(fullPluginDirectory, resolvedDetail.Entry!);
+                if (detailEntryFullPath == null)
                 {
-                    logger.LogWarning("Skipping node plugin manifest with invalid entry: {ManifestPath}", manifestPath);
+                    logger.LogWarning("Skipping node plugin manifest with invalid detail entry: {ManifestPath}", manifestPath);
                     return [];
                 }
+            }
 
-                var entryFullPath = ResolveFileUnderPluginRoot(fullPluginDirectory, entryModel.Entry!);
-                if (entryFullPath == null)
+            return
+            [
+                new NodePluginManifest
                 {
-                    logger.LogWarning("Skipping node plugin manifest with invalid backend entry: {ManifestPath}", manifestPath);
-                    return [];
-                }
-
-                var detailResult = PluginDetailResolver.TryResolve(
-                    entryModel.Detail?.Type,
-                    entryModel.Detail?.Entry,
-                    entryModel.Id!,
-                    out var resolvedDetail);
-                if (!detailResult.IsValid)
-                {
-                    logger.LogWarning(
-                        "Skipping node plugin manifest with invalid detail: {ManifestPath}. {Reason}",
-                        manifestPath,
-                        detailResult.Error?.Message);
-                    return [];
-                }
-
-                string? detailEntry = null;
-                string? detailEntryFullPath = null;
-                if (resolvedDetail.IsWeb)
-                {
-                    detailEntry = resolvedDetail.Entry;
-                    detailEntryFullPath = ResolveFileUnderPluginRoot(fullPluginDirectory, resolvedDetail.Entry!);
-                    if (detailEntryFullPath == null)
-                    {
-                        logger.LogWarning("Skipping node plugin manifest with invalid detail entry: {ManifestPath}", manifestPath);
-                        return [];
-                    }
-                }
-
-                manifests.Add(new NodePluginManifest
-                {
-                    Id = $"{fileModel.Id!}:{entryModel.Id!}",
+                    Id = fileModel.Id!,
                     ParentId = fileModel.Id!,
-                    EntryId = entryModel.Id!,
-                    NameMessage = entryModel.Name != null
-                        ? new LocalizedMessage(entryModel.Name.Key ?? "", entryModel.Name.DefaultValue ?? "")
+                    NameMessage = fileModel.Name != null
+                        ? new LocalizedMessage(fileModel.Name.Key ?? "", fileModel.Name.DefaultValue ?? "")
                         : null,
                     DescriptionMessage = fileModel.Description != null
                         ? new LocalizedMessage(fileModel.Description.Key ?? "", fileModel.Description.DefaultValue ?? "")
                         : null,
                     Version = fileModel.Version!,
-                    Entry = entryModel.Entry!,
+                    Entry = fileModel.Entry!,
                     ProtocolVersion = fileModel.ProtocolVersion!,
                     PluginDirectory = fullPluginDirectory,
                     EntryFullPath = entryFullPath,
                     DetailEntry = detailEntry,
                     DetailEntryFullPath = detailEntryFullPath,
-                    Keywords = entryModel.Alias ?? [],
-                    SearchGlobal = ResolveSearchGlobal(entryModel.Search),
-                    HotKey = entryModel.HotKey,
-                    Capabilities = entryModel.Capabilities ?? [],
+                    Keywords = fileModel.Alias ?? [],
+                    SearchGlobal = ResolveSearchGlobal(fileModel.Search),
+                    HotKey = fileModel.HotKey,
+                    Capabilities = fileModel.Capabilities ?? [],
                     Configuration = fileModel.Configuration ?? [],
                     Icon = fileModel.Icon,
                     DefaultLocale = fileModel.I18n?.DefaultLocale ?? "en-US",
                     CatalogFullPath = catalogFullPath,
                     LocalesDirectoryFullPath = localesDirectoryFullPath,
                     SupportedLocales = fileModel.I18n?.SupportedLocales ?? []
-                });
-            }
-
-            return manifests;
+                }
+            ];
         }
         catch (Exception ex)
         {
@@ -240,7 +230,7 @@ public sealed class NodePluginCatalog
         return !string.IsNullOrWhiteSpace(fileModel.Id)
             && !string.IsNullOrWhiteSpace(fileModel.Version)
             && fileModel.ProtocolVersion == ProtocolVersion.CurrentWire
-            && fileModel.Entries is { Count: > 0 }
+            && !string.IsNullOrWhiteSpace(fileModel.Entry)
             && (fileModel.I18n == null
                 || (!string.IsNullOrWhiteSpace(fileModel.I18n.DefaultLocale)
                     && !string.IsNullOrWhiteSpace(fileModel.I18n.Catalog)
@@ -250,12 +240,6 @@ public sealed class NodePluginCatalog
     /// <summary>Omitted <c>search.global</c> defaults to false (opt-in).</summary>
     private static bool ResolveSearchGlobal(SearchManifestFile? search) => search?.Global ?? false;
 
-    private static bool IsValidEntry(EntryManifestFile entryModel)
-    {
-        return !string.IsNullOrWhiteSpace(entryModel.Id)
-            && !string.IsNullOrWhiteSpace(entryModel.Entry);
-    }
-
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
@@ -264,25 +248,19 @@ public sealed class NodePluginCatalog
     private sealed class NodePluginManifestFile
     {
         public string? Id { get; init; }
+        public LocalizedNameDto? Name { get; init; }
         public string? Version { get; init; }
         public string? ProtocolVersion { get; init; }
-        public List<EntryManifestFile>? Entries { get; init; }
-        public I18nManifestFile? I18n { get; init; }
-        public string? Icon { get; init; }
-        public LocalizedNameDto? Description { get; init; }
-        public List<PluginConfigurationSettingV3>? Configuration { get; init; }
-    }
-
-    private sealed class EntryManifestFile
-    {
-        public string? Id { get; init; }
-        public LocalizedNameDto? Name { get; init; }
         public string? Entry { get; init; }
         public List<string>? Alias { get; init; }
         public SearchManifestFile? Search { get; init; }
         public string? HotKey { get; init; }
         public List<string>? Capabilities { get; init; }
         public DetailManifestFile? Detail { get; init; }
+        public I18nManifestFile? I18n { get; init; }
+        public string? Icon { get; init; }
+        public LocalizedNameDto? Description { get; init; }
+        public List<PluginConfigurationSettingV3>? Configuration { get; init; }
     }
 
     private sealed class SearchManifestFile
@@ -291,7 +269,7 @@ public sealed class NodePluginCatalog
     }
 
     /// <summary>
-    /// plugin.json 中 entry.name 的反序列化 DTO。
+    /// plugin.json 中 name 的反序列化 DTO。
     /// 使用独立 DTO 避免 LocalizedMessage 多构造函数导致的 JSON 反序列化歧义。
     /// </summary>
     private sealed class LocalizedNameDto
