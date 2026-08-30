@@ -125,8 +125,8 @@ public sealed class PluginCreationAgentServiceTest
             Assert.That(files.Any(path => path.Contains($"{Path.DirectorySeparatorChar}sdk-v3{Path.DirectorySeparatorChar}")), Is.False);
             Assert.That(files.Any(path => Path.GetFileName(path).Equals("package-lock.json", StringComparison.OrdinalIgnoreCase)), Is.False);
             Assert.That(pluginSdkVersions, Is.Not.Empty);
-            Assert.That(pluginSdkVersions, Has.All.EqualTo("0.7.0"));
-            Assert.That(packageTemplate, Does.Contain("\"@qping/plugin-bus\": \"0.7.0\""));
+            Assert.That(pluginSdkVersions, Has.All.EqualTo("0.8.0"));
+            Assert.That(packageTemplate, Does.Contain("\"@qping/plugin-bus\": \"0.8.0\""));
         });
     }
 

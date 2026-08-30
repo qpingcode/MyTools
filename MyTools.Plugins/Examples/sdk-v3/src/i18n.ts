@@ -43,9 +43,8 @@ class MyToolsI18n {
     void this.#instance.init({
       lng: this.#locale,
       fallbackLng: this.#fallbackLocale,
-      initImmediate: false,
+      initAsync: false,
       debug: false,
-      showSupportNotice: false,
       keySeparator: false,
       nsSeparator: false,
       interpolation: { escapeValue: false },

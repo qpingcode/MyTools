@@ -12,7 +12,7 @@
     "test": "npm run build && node build-test.mjs && node --test test/codec.test.mjs"
   },
   "dependencies": {
-    "@qping/plugin-bus": "0.7.0"
+    "@qping/plugin-bus": "0.8.0"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",

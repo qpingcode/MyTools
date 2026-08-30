@@ -1,6 +1,6 @@
 {
   "name": "@qping/plugin-bus",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "v3 message-bus runtime for MyTools plugins (named-pipe transport).",
   "type": "module",
   "files": [
@@ -46,7 +46,7 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "i18next": "^25.3.2"
+    "i18next": "^26.4.0"
   },
   "scripts": {
     "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
