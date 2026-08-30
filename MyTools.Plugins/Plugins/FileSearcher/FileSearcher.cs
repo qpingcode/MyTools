@@ -41,6 +41,7 @@ public sealed class FileSearcher : PluginBase, IDisposable
     private readonly object watcherLock = new();
     private readonly SemaphoreSlim configurationLock = new(1, 1);
     private readonly CancellationTokenSource disposeCancellation = new();
+    private readonly CancellationToken disposeToken;
     private readonly Dictionary<string, FileSystemWatcher> watchers = new(PathComparer);
     private readonly Dictionary<string, CancellationTokenSource> pendingReindexes = new(PathComparer);
     private HashSet<string> configuredDirectories = new(PathComparer);
@@ -57,6 +58,7 @@ public sealed class FileSearcher : PluginBase, IDisposable
     {
         this.logger = logger;
         this.cache = cache;
+        disposeToken = disposeCancellation.Token;
     }
 
     public override PluginId PluginId => new("file-searcher");
@@ -158,7 +160,7 @@ public sealed class FileSearcher : PluginBase, IDisposable
 
     private async Task ApplyConfiguredDirectoriesAsync(IReadOnlySet<string> desiredDirectories, long revision)
     {
-        await configurationLock.WaitAsync(disposeCancellation.Token);
+        await configurationLock.WaitAsync(disposeToken);
         try
         {
             if (revision != Interlocked.Read(ref configurationRevision) || disposed) return;
@@ -354,7 +356,6 @@ public sealed class FileSearcher : PluginBase, IDisposable
             if (pendingReindexes.Remove(rootDirectory, out var pending))
             {
                 pending.Cancel();
-                pending.Dispose();
             }
         }
     }
@@ -368,17 +369,17 @@ public sealed class FileSearcher : PluginBase, IDisposable
             if (pendingReindexes.Remove(rootDirectory, out var previous))
             {
                 previous.Cancel();
-                previous.Dispose();
             }
-            pending = CancellationTokenSource.CreateLinkedTokenSource(disposeCancellation.Token);
+            pending = CancellationTokenSource.CreateLinkedTokenSource(disposeToken);
             pendingReindexes[rootDirectory] = pending;
         }
+        var pendingToken = pending.Token;
 
         _ = Task.Run(async () =>
         {
             try
             {
-                await Task.Delay(WatchDebounce, pending.Token);
+                await Task.Delay(WatchDebounce, pendingToken);
                 lock (watcherLock)
                 {
                     if (disposed || !configuredDirectories.Contains(rootDirectory)) return;
@@ -408,8 +409,8 @@ public sealed class FileSearcher : PluginBase, IDisposable
                     if (pendingReindexes.TryGetValue(rootDirectory, out var current) && ReferenceEquals(current, pending))
                     {
                         pendingReindexes.Remove(rootDirectory);
-                        pending.Dispose();
                     }
+                    pending.Dispose();
                 }
             }
         });
@@ -565,7 +566,6 @@ public sealed class FileSearcher : PluginBase, IDisposable
             foreach (var pending in pendingReindexes.Values)
             {
                 pending.Cancel();
-                pending.Dispose();
             }
             pendingReindexes.Clear();
             configuredDirectories.Clear();
