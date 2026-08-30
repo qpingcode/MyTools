@@ -395,8 +395,8 @@ jobs:
           $skillRoot = Join-Path $publishRoot 'skills\create-plugin'
           $requiredSkillFiles = @(
               (Join-Path $skillRoot 'SKILL.md'),
-              (Join-Path $skillRoot 'references\Examples\calculator\plugin.json'),
-              (Join-Path $skillRoot 'references\Examples\calculator\src\backend\index.mts'),
+              (Join-Path $skillRoot 'references\Examples\plugin-search\plugin.json'),
+              (Join-Path $skillRoot 'references\Examples\plugin-search\src\backend\index.mts'),
               (Join-Path $skillRoot 'references\Examples\create-plugin\src\templates\common\package.json.mustache'),
               (Join-Path $skillRoot 'references\Examples\create-plugin\src\templates\common\build-plugin.mjs.mustache')
           )
