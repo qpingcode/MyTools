@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "workspaces": [
-    "sdk-v3",
     "chat",
     "translator",
     "formatter",
+    "encoder-decoder",
     "settings",
     "calculator",
     "uuid-generator",
@@ -21,7 +21,10 @@
   ],
   "scripts": {
     "clean": "npm run clean --workspaces --if-present",
-    "build": "npm run build -w @qping/plugin-bus && npm run build -w mytools-plugin-chat && npm run build -w mytools-plugin-translator && npm run build -w mytools-plugin-formatter && npm run build -w mytools-plugin-settings && npm run build -w mytools-plugin-calculator && npm run build -w mytools-plugin-uuid-generator && npm run build -w mytools-plugin-process-killer && npm run build -w mytools-plugin-scripts-runner && npm run build -w mytools-plugin-smart-open && npm run build -w mytools-plugin-quick-text && npm run build -w mytools-plugin-search-engine && npm run build -w mytools-plugin-plugin-search && npm run build -w mytools-plugin-bookmark-and-history && npm run build -w mytools-plugin-create-plugin",
-    "check": "npm run check -w @qping/plugin-bus && npm run check -w mytools-plugin-chat && npm run check -w mytools-plugin-translator && npm run check -w mytools-plugin-formatter && npm run check -w mytools-plugin-settings && npm run check -w mytools-plugin-calculator && npm run check -w mytools-plugin-uuid-generator && npm run check -w mytools-plugin-process-killer && npm run check -w mytools-plugin-scripts-runner && npm run check -w mytools-plugin-smart-open && npm run check -w mytools-plugin-quick-text && npm run check -w mytools-plugin-search-engine && npm run check -w mytools-plugin-plugin-search && npm run check -w mytools-plugin-bookmark-and-history && npm run check -w mytools-plugin-create-plugin"
+    "build": "npm run build -w mytools-plugin-chat && npm run build -w mytools-plugin-translator && npm run build -w mytools-plugin-formatter && npm run build -w mytools-plugin-encoder-decoder && npm run build -w mytools-plugin-settings && npm run build -w mytools-plugin-calculator && npm run build -w mytools-plugin-uuid-generator && npm run build -w mytools-plugin-process-killer && npm run build -w mytools-plugin-scripts-runner && npm run build -w mytools-plugin-smart-open && npm run build -w mytools-plugin-quick-text && npm run build -w mytools-plugin-search-engine && npm run build -w mytools-plugin-plugin-search && npm run build -w mytools-plugin-bookmark-and-history && npm run build -w mytools-plugin-create-plugin",
+    "check": "npm run check -w mytools-plugin-chat && npm run check -w mytools-plugin-translator && npm run check -w mytools-plugin-formatter && npm run check -w mytools-plugin-encoder-decoder && npm run check -w mytools-plugin-settings && npm run check -w mytools-plugin-calculator && npm run check -w mytools-plugin-uuid-generator && npm run check -w mytools-plugin-process-killer && npm run check -w mytools-plugin-scripts-runner && npm run check -w mytools-plugin-smart-open && npm run check -w mytools-plugin-quick-text && npm run check -w mytools-plugin-search-engine && npm run check -w mytools-plugin-plugin-search && npm run check -w mytools-plugin-bookmark-and-history && npm run check -w mytools-plugin-create-plugin"
+  },
+  "optionalDependencies": {
+    "@typescript/typescript-win32-x64": "^7.0.2"
   }
 }

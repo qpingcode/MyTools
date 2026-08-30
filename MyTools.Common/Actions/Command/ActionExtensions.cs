@@ -23,4 +23,10 @@ public static class ActionExtensions
     {
         return new ActionWithHotkey(action, Hotkey.None);
     }
+
+    /// <summary>固定显示在 action bar 上，不收进溢出的 Actions 菜单。</summary>
+    public static IActionWithHotkey WithPinned(this IActionWithHotkey action, bool pinned = true)
+    {
+        return new ActionWithHotkey(action, action.Hotkey, pinned);
+    }
 }

@@ -4,13 +4,16 @@ public class ActionWithHotkey : IActionWithHotkey
 {
     private readonly IAction inner;
 
-    public ActionWithHotkey(IAction action, Hotkey hotkey)
+    public ActionWithHotkey(IAction action, Hotkey hotkey, bool pinned = false)
     {
         inner = action;
         Hotkey = hotkey;
+        Pinned = pinned;
     }
 
     public Hotkey Hotkey { get; }
+
+    public bool Pinned { get; }
 
     public string Name => inner.Name;
 

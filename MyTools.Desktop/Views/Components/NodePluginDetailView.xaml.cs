@@ -77,6 +77,8 @@ public partial class NodePluginDetailView : UserControl
         {
             _sessionManager.SessionReplaced -= OnSessionReplaced;
             _sessionManager.SessionReplaced += OnSessionReplaced;
+            _sessionManager.SessionUnavailable -= OnSessionUnavailable;
+            _sessionManager.SessionUnavailable += OnSessionUnavailable;
         }
         NavigateIfNeeded();
     }
@@ -91,6 +93,7 @@ public partial class NodePluginDetailView : UserControl
         if (_sessionManager is not null)
         {
             _sessionManager.SessionReplaced -= OnSessionReplaced;
+            _sessionManager.SessionUnavailable -= OnSessionUnavailable;
         }
     }
 
@@ -160,7 +163,18 @@ public partial class NodePluginDetailView : UserControl
             PluginBrowser.NavigationCompleted -= PluginBrowserOnNavigationCompleted;
             PluginBrowser.NavigationCompleted += PluginBrowserOnNavigationCompleted;
 
-            await AttachWebTransportAsync();
+            try
+            {
+                await AttachWebTransportAsync();
+            }
+            catch (Exception ex)
+            {
+                StaticLogger.LogError(ex,
+                    "Node backend unavailable while opening detail view plugin={Plugin}",
+                    viewModel?.CurrentContext?.PluginId);
+                await ShowBackendErrorAsync(ex);
+                return;
+            }
 
             var themedPath = ResolveThemedEntryPath(entryPath);
             PluginBrowser.Source = BuildPluginEntryUri(themedPath);
@@ -308,6 +322,7 @@ public partial class NodePluginDetailView : UserControl
         TearDownWebTransport();
 
         await plugin.EnsureV3SessionAsync();
+        await plugin.InitializeAsync();
         var sessionId = plugin.BusSessionId
             ?? throw new InvalidOperationException("v3 session did not start");
 
@@ -446,6 +461,8 @@ public partial class NodePluginDetailView : UserControl
             : "The plugin page did not complete protocol handshake.";
         HandshakeErrorTitle.Text = title;
         HandshakeErrorDetail.Text = localizationService.GetCaption(detailKey, detailDefault);
+        BackendErrorDetails.Text = "";
+        BackendErrorDetails.Visibility = Visibility.Collapsed;
         HandshakeErrorOverlay.Visibility = Visibility.Visible;
         // WebView2 is an HWND interop surface and paints over WPF siblings; hide it
         // so the overlay is actually visible.
@@ -457,6 +474,35 @@ public partial class NodePluginDetailView : UserControl
         _handshakeFailed = false;
         HandshakeErrorOverlay.Visibility = Visibility.Collapsed;
         PluginBrowser.Visibility = Visibility.Visible;
+    }
+
+    private async Task ShowBackendErrorAsync(Exception exception)
+    {
+        // stderr delivery and the Process.Exited callback can trail the pipe disconnect slightly.
+        var plugin = viewModel?.CurrentContext?.Plugin;
+        await Task.Delay(100).ConfigureAwait(false);
+        await Dispatcher.InvokeAsync(() =>
+            ShowBackendError(plugin?.BackendFailureDetails, exception.Message));
+    }
+
+    private void ShowBackendError(string? backendDetails, string? fallbackDetail = null)
+    {
+        _handshakeFailed = true;
+        CancelHandshakeTimeout();
+        HandshakeErrorTitle.Text = localizationService.GetCaption(
+            "PluginPage.BackendStopped",
+            "Plugin backend stopped");
+        HandshakeErrorDetail.Text = localizationService.GetCaption(
+            "PluginPage.BackendStoppedDetail",
+            "The plugin's Node process is unavailable. Backend diagnostics are shown below.");
+        BackendErrorDetails.Text = string.IsNullOrWhiteSpace(backendDetails)
+            ? fallbackDetail ?? localizationService.GetCaption(
+                "PluginPage.BackendNoDetails",
+                "No backend diagnostics were captured.")
+            : backendDetails;
+        BackendErrorDetails.Visibility = Visibility.Visible;
+        HandshakeErrorOverlay.Visibility = Visibility.Visible;
+        PluginBrowser.Visibility = Visibility.Collapsed;
     }
 
     private void TearDownWebTransport()
@@ -497,6 +543,27 @@ public partial class NodePluginDetailView : UserControl
             TearDownWebTransport();
             loadedEntryPath = null;
             NavigateIfNeeded();
+        });
+    }
+
+    private void OnSessionUnavailable(object? sender, PluginSessionUnavailableEventArgs e)
+    {
+        var plugin = viewModel?.CurrentContext?.Plugin;
+        if (plugin is null || e.PluginId != plugin.ParentId) return;
+
+        StaticLogger.LogWarning(
+            "Node backend unavailable for active detail view plugin={Plugin} session={Session}",
+            e.PluginId, e.SessionId);
+        _ = ShowDisconnectedBackendErrorAsync(plugin, e.FailureDetails);
+    }
+
+    private async Task ShowDisconnectedBackendErrorAsync(NodePlugin plugin, string? failureDetails)
+    {
+        await Task.Delay(100).ConfigureAwait(false);
+        await Dispatcher.InvokeAsync(() =>
+        {
+            TearDownWebTransport();
+            ShowBackendError(failureDetails ?? plugin.BackendFailureDetails);
         });
     }
 
@@ -551,7 +618,7 @@ public partial class NodePluginDetailView : UserControl
                     translationRevision = BuildTranslationRevision(e.CurrentLocale, messages),
                     messages
                 });
-            _ = context.Plugin.InitializeAsync();
+            ReinitializePlugin(context.Plugin);
         });
     }
 
@@ -582,8 +649,27 @@ public partial class NodePluginDetailView : UserControl
                     theme = e.CurrentTheme.ToWireString(),
                     themeTokens = WebThemeTokens.For(e.CurrentTheme)
                 });
-            _ = viewModel.CurrentContext.Plugin.InitializeAsync();
+            ReinitializePlugin(viewModel.CurrentContext.Plugin);
         });
+    }
+
+    private void ReinitializePlugin(NodePlugin plugin)
+    {
+        _ = ReinitializePluginAsync(plugin);
+    }
+
+    private async Task ReinitializePluginAsync(NodePlugin plugin)
+    {
+        try
+        {
+            await plugin.InitializeAsync();
+        }
+        catch (Exception ex)
+        {
+            StaticLogger.LogError(ex,
+                "Node backend reinitialization failed plugin={Plugin}", plugin.ParentId);
+            await ShowBackendErrorAsync(ex);
+        }
     }
 
     private static string BuildTranslationRevision(string locale, IReadOnlyDictionary<string, string> messages)

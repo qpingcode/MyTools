@@ -22,6 +22,14 @@ public sealed class PluginSessionReplacedEventArgs : EventArgs
     public required PluginSession Current { get; init; }
 }
 
+/// <summary>Raised as soon as a ready Node session disconnects, before any restart attempt.</summary>
+public sealed class PluginSessionUnavailableEventArgs : EventArgs
+{
+    public required string PluginId { get; init; }
+    public required string SessionId { get; init; }
+    public string? FailureDetails { get; init; }
+}
+
 /// <summary>
 /// Creates, finds, stops and recovers plugin sessions. Each plugin owns a
 /// <see cref="SessionActor"/> and <see cref="RestartPolicy"/>. On Node disconnect or peer-dead,
@@ -64,13 +72,16 @@ public sealed class PluginSessionManager
             baseDelay: TimeSpan.FromMilliseconds(200),
             maxDelay: TimeSpan.FromSeconds(5),
             window: TimeSpan.FromMinutes(5),
-            maxRestartsPerWindow: 5,
+            maxRestartsPerWindow: 2,
             jitter: 0.2));
         _logger = logger ?? NullLogger.Instance;
     }
 
     /// <summary>Fired after a successful automatic restart replaces the live plugin session.</summary>
     public event EventHandler<PluginSessionReplacedEventArgs>? SessionReplaced;
+
+    /// <summary>Fired when a Node backend disconnects so active detail views can report the failure.</summary>
+    public event EventHandler<PluginSessionUnavailableEventArgs>? SessionUnavailable;
 
     public async Task<PluginSession> StartSessionAsync(PluginManifestV3 manifest,
         string nodeExePath, CancellationToken cancellationToken = default)
@@ -189,6 +200,13 @@ public sealed class PluginSessionManager
             _logger.LogWarning(
                 "Session disconnect plugin={PluginId} session={SessionId} willRestart={WillRestart}",
                 session.PluginId, session.SessionId, shouldRestart);
+
+            SessionUnavailable?.Invoke(this, new PluginSessionUnavailableEventArgs
+            {
+                PluginId = session.PluginId,
+                SessionId = session.SessionId,
+                FailureDetails = session.Controller?.FailureDetails,
+            });
         });
 
         if (session.State is not SessionState.Restarting && !shouldRestart)

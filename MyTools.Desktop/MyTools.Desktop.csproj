@@ -55,7 +55,7 @@
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </Content>
       <Content Include="..\MyTools.Plugins\Examples\**\*"
-               Exclude="..\MyTools.Plugins\Examples\**\node_modules\**;..\MyTools.Plugins\Examples\**\dist\**;..\MyTools.Plugins\Examples\package-lock.json">
+               Exclude="..\MyTools.Plugins\Examples\**\node_modules\**;..\MyTools.Plugins\Examples\**\dist\**;..\MyTools.Plugins\Examples\package-lock.json;..\MyTools.Plugins\Examples\sdk-v3\**">
         <Link>skills\create-plugin\references\Examples\%(RecursiveDir)%(Filename)%(Extension)</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>

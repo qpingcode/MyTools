@@ -11,7 +11,7 @@
     "test": "npm run build && node --test test/calculator.test.mjs"
   },
   "dependencies": {
-    "@qping/plugin-bus": "0.4.0"
+    "@qping/plugin-bus": "0.7.0"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",

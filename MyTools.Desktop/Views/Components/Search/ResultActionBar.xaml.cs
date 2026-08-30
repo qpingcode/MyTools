@@ -19,10 +19,10 @@ public partial class ResultActionBar : UserControl
             typeof(ResultActionBar),
             new PropertyMetadata(null, OnActionsChanged));
 
-    public static readonly DependencyProperty DefaultActionProperty =
+    public static readonly DependencyProperty PrimaryActionsProperty =
         DependencyProperty.Register(
-            nameof(DefaultAction),
-            typeof(IActionWithHotkey),
+            nameof(PrimaryActions),
+            typeof(IList),
             typeof(ResultActionBar));
 
     public static readonly DependencyProperty OverflowActionsProperty =
@@ -42,6 +42,7 @@ public partial class ResultActionBar : UserControl
     public ResultActionBar()
     {
         InitializeComponent();
+        PrimaryActions = Array.Empty<IActionWithHotkey>();
         OverflowActions = Array.Empty<IActionWithHotkey>();
         OverflowMenu.PreviewKeyDown += OverflowMenu_OnPreviewKeyDown;
         OverflowMenu.PreviewKeyUp += OverflowMenu_OnPreviewKeyUp;
@@ -55,10 +56,10 @@ public partial class ResultActionBar : UserControl
         set => SetValue(ActionsProperty, value);
     }
 
-    public IActionWithHotkey? DefaultAction
+    public IList PrimaryActions
     {
-        get => (IActionWithHotkey?)GetValue(DefaultActionProperty);
-        set => SetValue(DefaultActionProperty, value);
+        get => (IList)GetValue(PrimaryActionsProperty);
+        set => SetValue(PrimaryActionsProperty, value);
     }
 
     public IList OverflowActions
@@ -154,7 +155,7 @@ public partial class ResultActionBar : UserControl
     {
         var actions = Actions?.OfType<IActionWithHotkey>();
         var (primary, overflow) = ResultActionBarSplit.Split(actions);
-        DefaultAction = primary;
+        PrimaryActions = primary.ToList();
         var overflowList = overflow.ToList();
         OverflowActions = overflowList;
         HasOverflow = overflowList.Count > 0;

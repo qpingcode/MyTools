@@ -144,6 +144,8 @@ export type ActionDefinition<TItem = any> = {
   title: LocalizedText;
   description?: LocalizedText;
   hotkey?: Hotkey;
+  /** Keep this action visible in the host action bar instead of the overflow menu. */
+  pinned?: boolean;
   execute: (context: ActionContext<TItem>) => ActionOutcome | void | Promise<ActionOutcome | void>;
 };
 
@@ -153,6 +155,7 @@ export type ActionManifestEntry = {
   title: LocalizedText;
   description?: LocalizedText;
   hotkey?: Hotkey;
+  pinned?: boolean;
 };
 
 export function toActionManifest(definition: ActionDefinition): ActionManifestEntry {
@@ -162,5 +165,6 @@ export function toActionManifest(definition: ActionDefinition): ActionManifestEn
   };
   if (definition.description) entry.description = definition.description;
   if (definition.hotkey) entry.hotkey = definition.hotkey;
+  if (definition.pinned) entry.pinned = true;
   return entry;
 }

@@ -7,8 +7,17 @@ description: Develop a MyTools Node plugin (backend + optional WebView2 detail p
 
 MyTools Node 插件 = 独立 Node 进程里的后端 + 可选的 WebView2 HTML 详情页。不写 `detail` 时宿主用 `search` 结果走原生列表。通信走 v3 消息总线（Named Pipe + WebView2 postMessage），协议版本 **3.0**。
 
-随 MyTools 安装的参考包位于 [`references/Examples/`](references/Examples/)；它是当前版本的权威源码参考，不依赖用户安装目录之外的仓库。常用入口：[`calculator`](references/Examples/calculator/)（简单标准插件）、[`json-formatter`](references/Examples/json-formatter/) / [`xml-formatter`](references/Examples/xml-formatter/)（页面自包含）、[`settings`](references/Examples/settings/)（`hostCall`）、[`quick-text`](references/Examples/quick-text/) / [`scripts-runner`](references/Examples/scripts-runner/)（`plugin.json` configuration + `configuration.readOwn`）、[`chat`](references/Examples/chat/)、[`translator`](references/Examples/translator/)。SDK 源码在 [`sdk-v3`](references/Examples/sdk-v3/)（包名 `@qping/plugin-bus`）。创建或编辑前只读取与需求最相关的最小参考集合。
+随 MyTools 安装的参考包位于 [`references/Examples/`](references/Examples/)；
+它是当前版本的权威源码参考，不依赖用户安装目录之外的仓库。
+常用入口：
+- [`calculator`](references/Examples/calculator/)（简单标准插件）
+- [`formatter`](references/Examples/formatter/)（页面自包含）
+- [`settings`](references/Examples/settings/)（`hostCall`）
+- [`quick-text`](references/Examples/quick-text/) / [`scripts-runner`](references/Examples/scripts-runner/)（`plugin.json` configuration + `configuration.readOwn`）
+- [`chat`](references/Examples/chat/)
+- [`translator`](references/Examples/translator/)。
 
+创建或编辑前只读取与需求最相关的最小参考集合。
 创建模式下选择唯一的插件 ID 和名称，从完整目录结构开始生成。编辑模式下，先读取 Host 提供的
 `selectedPlugin`（ID、名称、类型和源码目录）并检查现有文件，只能修改该插件目录；保持插件 ID，
 保留与用户需求无关的行为和配置。无论创建还是编辑，完成前都要重新检查 manifest、i18n、图标、
@@ -40,7 +49,7 @@ my-plugin/
 
 ## 2. SDK：`@qping/plugin-bus`
 
-参考包中的示例在源码仓库里通过 workspace 引用 `sdk-v3`；AI 创建到用户 coding 目录的插件必须使用已发布的 `@qping/plugin-bus` 版本。`package.json`：
+所有示例和 AI 创建到用户 coding 目录的插件都必须从 npmjs 安装已发布的 `@qping/plugin-bus`，不得使用仓库中的 `sdk-v3` workspace、`file:` 路径或其他本地 SDK 引用。`package.json`：
 
 ```json
 {
@@ -55,7 +64,7 @@ my-plugin/
     "check": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@qping/plugin-bus": "0.4.0"
+    "@qping/plugin-bus": "0.7.0"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
@@ -146,6 +155,7 @@ SDK 把方法映射到 v3 路由：`initialize` → `plugin.call.initialize`，`
 - `detail` 可选。省略（或 `"detail": { "type": "list" }`）时宿主用 `search` 的结果走原生列表：关键词路由停留在列表，热键打开搜索主窗口并锁定该插件。
 - 需要自定义页面时再写 `"detail": { "type": "web", "entry": "web/index.html" }`。`hotKey`、`alias`、`search` 可选。
 - action 不写在 manifest。详情页默认使用本插件通过 `plugin.actions()` 注册的全部 action；列表 item 用 action id 子集引用。
+- 宿主 action bar 默认只露出一项（Enter，或没有 Enter 时的第一项），其余收进 **Actions**。需要同时露出多项时，在对应 action 上写 `pinned: true`。C# 侧可用 `WithPinned()`。
 - `search.global`：出现在**无关键词**的全局搜索结果中。省略或 `false` 时不参与全局搜索（opt-in，避免设置类插件污染每次搜索）。用户可在设置 → 插件列表的 **全局结果** 中覆盖此项。
 - 有非空 `alias` 就会注册 `alias + 查询串` 的插件级搜索；没有 alias 则只能靠全局搜索或热键进入。只有全局、没有别名时必须设 `"search": { "global": true }`。
 - 没有顶层 `runtime`；
@@ -206,6 +216,7 @@ plugin
 - outcome 最多选择一个 `target`：`{ kind: "host", action }`、`{ kind: "web", payload }` 或 `{ kind: "detail", page?, title?, initialState? }`。三种 target 互斥；`host` target 可配 `after: "keep" | "close" | "refresh"`，`web` / `detail` target 只能保持当前界面。`message` 可独立附加。不要使用旧的顶层 `host` / `web` / `detail` / `close` / `refresh` 字段。
 - `HostActionRequest` 是按 `action.kind` 判别的联合，参数跟着动作走；不要再在 item 上放万能 `path` / `args` / `copyText`。
 - `hotkey` 是 `{ key: Key.*, modifiers?: Modifiers.* }`，不是字符串。修饰键用 `|` 组合；省略时当前 action 子集的第一项默认 Enter，其余只可点击。
+- `pinned: true` 把该 action 固定显示在宿主 action bar 上，而不是收进 **Actions**。省略则走默认：只露出 Enter（或第一项）。
 
 若目标路径要在按下 Enter 之后才算出来（剪贴板、找 `.sln` 等），**不要在 Node 里 `spawn`/`exec`**。插件 Job 开了 kill-on-close，MyTools 退出会把子进程一起杀掉。插件算完后返回 `host` target，由宿主执行：
 
@@ -353,7 +364,7 @@ HTML：`data-i18n="[attr]key" data-i18n-default-value="english text"`。`[attr]`
 
 禁止：动态拼接 key、省略 `defaultValue`、用英文当 key。
 
-`i18n/locales/en-US.json` 扁平 `key → 文本`；`zh-CN.json` 可选人工翻译。`i18n/catalog.en-US.json` 是提取产物，每条至少有 `key/defaultValue/placeholders/references/sourceHash`（可从现有插件 catalog 复制后改）。`sourceHash` 是 `defaultValue` 的 sha256。
+`i18n/locales/en-US.json` 扁平 `key → 文本`；`zh-CN.json` 可选人工翻译。`i18n/catalog.en-US.json` 是提取产物，每条至少有 `key/defaultValue/placeholders/references`（可从现有插件 catalog 复制后改）。
 
 解析：人工翻译 > locales JSON > 英文 defaultValue > key。占位符翻译前后必须一致。缺失语言由宿主兜底。
 

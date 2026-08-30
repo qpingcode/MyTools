@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-i18n="[text]Plugin.EncoderDecoder.Name" data-i18n-default-value="Encoder / Decoder"></title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="page">
+    <div class="toolbar">
+      <label class="toolbar-field">
+        <span>
+          <span data-i18n="[text]Plugin.EncoderDecoder.Field.Algorithm" data-i18n-default-value="Algorithm">Algorithm</span>
+          <kbd data-action-hotkey="cycle-algorithm"></kbd>
+        </span>
+        <select id="algorithmSelect" aria-label="Algorithm" data-i18n="[aria-label]Plugin.EncoderDecoder.Field.Algorithm" data-i18n-default-value="Algorithm"></select>
+      </label>
+      <button id="encodeButton" class="toolbar-button primary" type="button">
+        <span data-action-name="encode">Encode</span><kbd data-action-hotkey="encode"></kbd>
+      </button>
+      <button id="decodeButton" class="toolbar-button" type="button">
+        <span data-action-name="decode">Decode</span><kbd data-action-hotkey="decode"></kbd>
+      </button>
+      <span class="toolbar-spacer"></span>
+      <button id="swapButton" class="toolbar-button" type="button">
+        <span data-action-name="swap">Swap</span><kbd data-action-hotkey="swap"></kbd>
+      </button>
+      <button id="copyButton" class="toolbar-button" type="button">
+        <span data-action-name="copy">Copy result</span><kbd data-action-hotkey="copy"></kbd>
+      </button>
+      <button id="clearButton" class="toolbar-button" type="button">
+        <span data-action-name="clear">Clear</span><kbd data-action-hotkey="clear"></kbd>
+      </button>
+    </div>
+
+    <div class="workspace">
+      <section class="panel">
+        <div class="label-row">
+          <label class="label" for="inputText" data-i18n="[text]Plugin.EncoderDecoder.Field.Input" data-i18n-default-value="Input">Input</label>
+        </div>
+        <textarea id="inputText" spellcheck="false" autofocus></textarea>
+      </section>
+      <section class="panel">
+        <div class="label-row">
+          <span class="label" data-i18n="[text]Plugin.EncoderDecoder.Field.Output" data-i18n-default-value="Output">Output</span>
+          <span id="binaryBadge" class="badge hidden" data-i18n="[text]Plugin.EncoderDecoder.Status.Binary" data-i18n-default-value="Binary · shown as Hex">Binary · shown as Hex</span>
+          <div id="hashFormatGroup" class="format-group hidden" role="group" aria-label="Output format" data-i18n="[aria-label]Plugin.EncoderDecoder.Field.OutputFormat" data-i18n-default-value="Output format">
+            <button type="button" data-format="hex-lower">Hex</button>
+            <button type="button" data-format="hex-upper">HEX</button>
+            <button type="button" data-format="base64">Base64</button>
+          </div>
+        </div>
+        <textarea id="outputText" spellcheck="false" readonly></textarea>
+      </section>
+    </div>
+    <div id="textMessage" class="message hidden" role="alert"></div>
+  </main>
+  <script src="main.js"></script>
+</body>
+</html>

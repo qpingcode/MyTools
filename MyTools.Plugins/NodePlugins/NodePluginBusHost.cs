@@ -65,6 +65,8 @@ internal sealed class NodePluginBusHost : INodePluginHost
 
     public string? SessionId => _session?.SessionId;
 
+    public string? FailureDetails => _session?.Controller?.FailureDetails;
+
     public NodePluginBusHost(NodePluginManifest manifest, PluginSessionManager sessionManager,
         MessageBus bus, ILogger<NodePluginBusHost> logger, IIdGenerator? ids = null)
     {

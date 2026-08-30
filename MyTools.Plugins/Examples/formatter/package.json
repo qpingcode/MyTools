@@ -24,7 +24,7 @@
     "@codemirror/view": "^6.38.2",
     "@lezer/highlight": "^1.2.3",
     "@prettier/plugin-xml": "^3.4.2",
-    "@qping/plugin-bus": "0.4.0",
+    "@qping/plugin-bus": "0.7.0",
     "codemirror": "^6.0.2",
     "prettier": "^3.6.2"
   },

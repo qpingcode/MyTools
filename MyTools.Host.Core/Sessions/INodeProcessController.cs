@@ -30,6 +30,12 @@ public interface INodeProcessController
     /// <summary>Observed process identity after start; null before StartAsync completes.</summary>
     ProcessIdentity? ObservedIdentity { get; }
 
+    /// <summary>
+    /// Recent process diagnostics captured from stdout/stderr plus the exit code. Implementations
+    /// that do not own a real process may leave this null.
+    /// </summary>
+    string? FailureDetails => null;
+
     /// <summary>Terminates the process tree (the whole Job Object).</summary>
     Task StopAsync();
 }

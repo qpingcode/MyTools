@@ -27,6 +27,11 @@ public sealed class NodePluginManifest
     /// <summary>Absolute web detail path, or null when this entry uses the native list UI.</summary>
     public string? DetailEntryFullPath { get; init; }
     public bool HasWebDetail => !string.IsNullOrWhiteSpace(DetailEntryFullPath);
+    /// <summary>
+    /// Action ids that stay visible in the host action bar instead of the overflow menu.
+    /// Empty means the existing single-default behavior.
+    /// </summary>
+    public IReadOnlyList<string> PinnedActions { get; init; } = [];
     /// <summary>Show the host status bar in a standalone PluginWindow. Defaults to true.</summary>
     public bool ShowStatusBarInPluginWindow { get; init; } = true;
     public IReadOnlyList<string> Keywords { get; init; } = [];

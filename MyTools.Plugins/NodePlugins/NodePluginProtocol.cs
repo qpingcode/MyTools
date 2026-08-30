@@ -48,6 +48,9 @@ internal sealed class NodePluginActionDefinitionDto
 
     /// <summary>显式快捷键。为空时，当前 action 子集的第一项使用 Enter。</summary>
     public NodePluginHotkeyDto? Hotkey { get; init; }
+
+    /// <summary>为 true 时固定显示在宿主 action bar，而不是收进溢出菜单。</summary>
+    public bool Pinned { get; init; }
 }
 
 internal sealed class NodePluginHotkeyDto

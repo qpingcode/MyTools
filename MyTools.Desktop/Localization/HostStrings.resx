@@ -191,6 +191,9 @@
   <data name="PluginPage.HandshakeFailed" xml:space="preserve"><value>Plugin page could not connect</value></data>
   <data name="PluginPage.HandshakeTimeout" xml:space="preserve"><value>The plugin page did not complete protocol handshake.</value></data>
   <data name="PluginPage.ProtocolMismatch" xml:space="preserve"><value>This plugin is not compatible with the current MyTools version.</value></data>
+  <data name="PluginPage.BackendStopped" xml:space="preserve"><value>Plugin backend stopped</value></data>
+  <data name="PluginPage.BackendStoppedDetail" xml:space="preserve"><value>The plugin's Node process is unavailable. Backend diagnostics are shown below.</value></data>
+  <data name="PluginPage.BackendNoDetails" xml:space="preserve"><value>No backend diagnostics were captured.</value></data>
   <data name="InputActionCapture.Title" xml:space="preserve"><value>Set shortcut</value></data>
   <data name="InputActionCapture.TitleHotkey" xml:space="preserve"><value>Set shortcut</value></data>
   <data name="InputActionCapture.TitleAction" xml:space="preserve"><value>Choose action</value></data>

@@ -118,6 +118,26 @@ public class PluginSessionManagerTest
     }
 
     [Test]
+    public async Task Disconnect_ShouldRaiseSessionUnavailableWithBackendDiagnostics()
+    {
+        var unavailable = new TaskCompletionSource<PluginSessionUnavailableEventArgs>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var factory = new FakeProcessControllerFactory();
+        var mgr = new PluginSessionManager(new MessageBus(), new CapabilityGateway(), factory,
+            restartPolicyFactory: () => FastRestartPolicy(maxRestarts: 0));
+        mgr.SessionUnavailable += (_, e) => unavailable.TrySetResult(e);
+
+        var session = await mgr.StartSessionAsync(Manifest("settings"), "node");
+        ((FakeProcessController)session.Controller!).FailureDetails = "[stderr] backend exploded";
+        ((InMemoryTransport)session.Controller.Transport!).Disconnect();
+
+        var args = await unavailable.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.That(args.PluginId, Is.EqualTo("settings"));
+        Assert.That(args.SessionId, Is.EqualTo(session.SessionId));
+        Assert.That(args.FailureDetails, Is.EqualTo("[stderr] backend exploded"));
+    }
+
+    [Test]
     public async Task Disconnect_WhenRestartBudgetExhausted_ShouldStop()
     {
         var mgr = new PluginSessionManager(new MessageBus(), new CapabilityGateway(),

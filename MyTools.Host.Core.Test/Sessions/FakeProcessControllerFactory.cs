@@ -20,6 +20,7 @@ internal sealed class FakeProcessController : INodeProcessController
 {
     public IMessageTransport? Transport { get; private set; }
     public ProcessIdentity? ObservedIdentity { get; private set; }
+    public string? FailureDetails { get; set; }
 
     public Task StartAsync(
         string pipeName,

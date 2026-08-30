@@ -1,0 +1,24 @@
+{
+  "name": "mytools-plugin-encoder-decoder",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Text encoding, decoding, and hashing tools for MyTools.",
+  "type": "commonjs",
+  "scripts": {
+    "clean": "rimraf dist test/dist",
+    "build": "npm run check && node build-plugin.mjs",
+    "watch": "node build-plugin.mjs --watch",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node build-test.mjs && node --test test/codec.test.mjs"
+  },
+  "dependencies": {
+    "@qping/plugin-bus": "0.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "esbuild": "^0.25.8",
+    "esbuild-plugin-copy": "^2.1.1",
+    "rimraf": "^6.0.1",
+    "typescript": "^7.0.2"
+  }
+}

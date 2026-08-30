@@ -33,6 +33,9 @@ internal interface INodePluginHost
     /// <summary>Current bus session id.</summary>
     string? SessionId { get; }
 
+    /// <summary>Recent diagnostics from the Node backend process, when available.</summary>
+    string? FailureDetails { get; }
+
     Task DisposeAsync();
     void Dispose();
 }

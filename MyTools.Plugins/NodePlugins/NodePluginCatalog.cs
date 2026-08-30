@@ -173,6 +173,7 @@ public sealed class NodePluginCatalog
                     EntryFullPath = entryFullPath,
                     DetailEntry = detailEntry,
                     DetailEntryFullPath = detailEntryFullPath,
+                    PinnedActions = fileModel.Detail?.PinnedActions ?? [],
                     ShowStatusBarInPluginWindow = fileModel.Window?.ShowStatusBar ?? true,
                     Keywords = fileModel.Alias ?? [],
                     SearchGlobal = ResolveSearchGlobal(fileModel.Search),
@@ -289,6 +290,7 @@ public sealed class NodePluginCatalog
     {
         public string Type { get; init; } = PluginDetailTypes.Web;
         public string? Entry { get; init; }
+        public List<string>? PinnedActions { get; init; }
     }
 
     private sealed class I18nManifestFile

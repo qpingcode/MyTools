@@ -19,9 +19,13 @@ namespace MyTools.Host.Transports.Process;
 /// </summary>
 public sealed class NodeProcessController : INodeProcessController
 {
+    private const int MaxDiagnosticLines = 40;
+    private const int MaxDiagnosticCharacters = 12_000;
     private readonly string _nodeExePath;
     private readonly string _nodeEntryFullPath;
     private readonly string _pluginsDataRoot;
+    private readonly object _diagnosticsGate = new();
+    private readonly Queue<string> _diagnosticLines = new();
     private System.Diagnostics.Process? _process;
     private ProcessTreeJob? _job;
     private NamedPipeTransport? _transport;
@@ -37,12 +41,28 @@ public sealed class NodeProcessController : INodeProcessController
 
     public ProcessIdentity? ObservedIdentity { get; private set; }
 
+    public string? FailureDetails
+    {
+        get
+        {
+            lock (_diagnosticsGate)
+            {
+                return _diagnosticLines.Count == 0 ? null : string.Join(Environment.NewLine, _diagnosticLines);
+            }
+        }
+    }
+
     public async Task StartAsync(
         string pipeName,
         string pluginId,
         Func<ProcessIdentity, string> issueToken,
         CancellationToken cancellationToken)
     {
+        lock (_diagnosticsGate)
+        {
+            _diagnosticLines.Clear();
+        }
+
         var pipePath = @"\\.\pipe\" + pipeName;
         _transport = new NamedPipeTransport(pipeName, isServer: true);
         var connectTask = _transport.ConnectAsync(cancellationToken);
@@ -70,6 +90,20 @@ public sealed class NodeProcessController : INodeProcessController
         _process = System.Diagnostics.Process.Start(psi)
             ?? throw new System.Exception($"failed to start node: {_nodeExePath}");
 
+        var startedProcess = _process;
+        startedProcess.EnableRaisingEvents = true;
+        startedProcess.Exited += (_, _) =>
+        {
+            try
+            {
+                AppendDiagnostic("process", $"Node process exited with code {startedProcess.ExitCode}.");
+            }
+            catch
+            {
+                AppendDiagnostic("process", "Node process exited.");
+            }
+        };
+
         _job.Assign(_process);
 
         // Capture stderr/stdout for debugging. CRITICAL: both stdout and stderr must be drained
@@ -78,12 +112,18 @@ public sealed class NodeProcessController : INodeProcessController
         _process.ErrorDataReceived += (sender, e) =>
         {
             if (!string.IsNullOrEmpty(e.Data))
+            {
+                AppendDiagnostic("stderr", e.Data);
                 System.Console.Error.WriteLine($"[node-stderr] {e.Data}");
+            }
         };
         _process.OutputDataReceived += (sender, e) =>
         {
             if (!string.IsNullOrEmpty(e.Data))
+            {
+                AppendDiagnostic("stdout", e.Data);
                 System.Console.Out.WriteLine($"[node-stdout] {e.Data}");
+            }
         };
         _process.BeginErrorReadLine();
         _process.BeginOutputReadLine();
@@ -138,6 +178,25 @@ public sealed class NodeProcessController : INodeProcessController
         }
 
         return sanitized;
+    }
+
+    private void AppendDiagnostic(string source, string message)
+    {
+        var line = $"[{source}] {message}";
+        if (line.Length > MaxDiagnosticCharacters)
+        {
+            line = line[..MaxDiagnosticCharacters];
+        }
+
+        lock (_diagnosticsGate)
+        {
+            _diagnosticLines.Enqueue(line);
+            while (_diagnosticLines.Count > MaxDiagnosticLines
+                   || _diagnosticLines.Sum(item => item.Length + Environment.NewLine.Length) > MaxDiagnosticCharacters)
+            {
+                _diagnosticLines.Dequeue();
+            }
+        }
     }
 
     internal static void PrependNodeDirectoryToPath(ProcessStartInfo psi, string nodeExePath)

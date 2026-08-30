@@ -1,0 +1,269 @@
+{
+  "schemaVersion": 1,
+  "scope": "plugin:encoder-decoder",
+  "pluginId": "encoder-decoder",
+  "sourceLocale": "en-US",
+  "generatedAt": "2026-08-30T00:00:00.000Z",
+  "entries": [
+    {
+      "key": "Plugin.EncoderDecoder.Name",
+      "defaultValue": "Encoder / Decoder",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "4f831c73bf4b03595788c887e169c9890826ed65b3b2fba65faab1a67466d4f9",
+      "existingTranslations": {
+        "zh-CN": "编码/解码"
+      }
+    },
+    {
+      "key": "Plugin.EncoderDecoder.Action.Encode",
+      "defaultValue": "Encode",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "23389a1f5476e4b0f4abbbe4bdae100f8eb4afe0e1ba2696a910c075cf017441",
+      "existingTranslations": {
+        "zh-CN": "编码"
+      }
+    },
+    {
+      "key": "Plugin.EncoderDecoder.Action.Decode",
+      "defaultValue": "Decode",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "1ae3fcff1a58694ed37d127f994d077e4d0a13673427eafeb66b55ad1534a5ce",
+      "existingTranslations": {
+        "zh-CN": "解码"
+      }
+    },
+    {
+      "key": "Plugin.EncoderDecoder.Action.Swap",
+      "defaultValue": "Swap",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "6ec282d40a8a71fedd600a3e89828653228d1b3b02a7561a7fca118503847ebc",
+      "existingTranslations": {
+        "zh-CN": "交换"
+      }
+    },
+    {
+      "key": "Plugin.EncoderDecoder.Action.Copy",
+      "defaultValue": "Copy result",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "c467973d015e9cb72b4e3a39d8b304099974fe9b6cb67f3f6f66a328069179a6",
+      "existingTranslations": {
+        "zh-CN": "复制结果"
+      }
+    },
+    {
+      "key": "Plugin.EncoderDecoder.Action.CopyDescription",
+      "defaultValue": "Copy the current result to the clipboard",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "cc66e740969c6379cf1c1b2ea7464bfdfb25a3683fd36e52764e01adbc47bc5b",
+      "existingTranslations": {
+        "zh-CN": "将当前结果复制到剪贴板"
+      }
+    },
+    {
+      "key": "Plugin.EncoderDecoder.Action.Clear",
+      "defaultValue": "Clear",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "83b12c2216efb4fdc924e1deb5182e905e4926ed0c1c324d467107f46d5a26a9",
+      "existingTranslations": {
+        "zh-CN": "清空"
+      }
+    },
+    {
+      "key": "Plugin.EncoderDecoder.Action.CycleAlgorithm",
+      "defaultValue": "Switch algorithm",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "5bdd2ae88e4810d7fb3a5f842f6ad39271a23dbcba4b1f98f66a323069e1fa52",
+      "existingTranslations": {
+        "zh-CN": "切换算法"
+      }
+    },
+    {
+      "key": "Plugin.EncoderDecoder.Field.Algorithm",
+      "defaultValue": "Algorithm",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "d704d8af25bed5a588eaf0997d1fee9364b498c095ef3dedb7c14bd0c00b6ca4",
+      "existingTranslations": {
+        "zh-CN": "算法"
+      }
+    },
+    {
+      "key": "Plugin.EncoderDecoder.Field.OutputFormat",
+      "defaultValue": "Output format",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "93c53d3745136c4e4e142811cdff560c8dfb4b9c4c875b7a8687dda559f688e1",
+      "existingTranslations": {
+        "zh-CN": "输出格式"
+      }
+    },
+    {
+      "key": "Plugin.EncoderDecoder.Field.Input",
+      "defaultValue": "Input",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "36ecb4f8669133ce744c21982ba4abe2ecd7086e1dc2226ccd6f266f3a5005f8",
+      "existingTranslations": {
+        "zh-CN": "输入"
+      }
+    },
+    {
+      "key": "Plugin.EncoderDecoder.Field.Output",
+      "defaultValue": "Output",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "b2439bcb8dee14b685f137f294b0e0cb62f5aadf45143ce01d79777d435a93b4",
+      "existingTranslations": {
+        "zh-CN": "输出"
+      }
+    },
+    {
+      "key": "Plugin.EncoderDecoder.Status.Binary",
+      "defaultValue": "Binary · shown as Hex",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "94bcc3ee6936c6857a7965172a9cab84e92b10c13c65422029479c7a97b74bf4",
+      "existingTranslations": {
+        "zh-CN": "二进制数据 · 以 Hex 显示"
+      }
+    },
+    {
+      "key": "Plugin.EncoderDecoder.Algorithm.Url",
+      "defaultValue": "URL Component",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "e2eb732affbe0bd7a771a1cd19323fda8b691d5d42e258888c5f511f8b3d4f9b",
+      "existingTranslations": {
+        "zh-CN": "URL 组件"
+      }
+    },
+    {
+      "key": "Plugin.EncoderDecoder.AlgorithmGroup.Encoding",
+      "defaultValue": "Encoding",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "4d25a47625ceaa596a02112e807209e5248a4a3bc61cd07d9191a9547a182550",
+      "existingTranslations": {
+        "zh-CN": "编码"
+      }
+    },
+    {
+      "key": "Plugin.EncoderDecoder.AlgorithmGroup.Hash",
+      "defaultValue": "Hash",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "a91069147f9bd9245cdacaef8ead4c3578ed44f179d7eb6bd4690e62ba4658f2",
+      "existingTranslations": {
+        "zh-CN": "哈希"
+      }
+    },
+    {
+      "key": "Plugin.EncoderDecoder.Format.Hex",
+      "defaultValue": "Hex",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "69493e6f1a6957cad7e3ece5267a57e8a8ed035b5ea5fd7e360ce9eb2405c30b",
+      "existingTranslations": {
+        "zh-CN": "Hex"
+      }
+    },
+    {
+      "key": "Plugin.EncoderDecoder.Format.HexUpperShort",
+      "defaultValue": "HEX",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "4d4a964e0320d8e1d1da38ca6c2de6744039cc15310221f51af08a40313b8b2a",
+      "existingTranslations": {
+        "zh-CN": "HEX"
+      }
+    },
+    {
+      "key": "Plugin.EncoderDecoder.Error.Base64Characters",
+      "defaultValue": "The Base64 input contains invalid characters.",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "6402f978e2dc00a7b173b5944cab0fcf37535ad7ecc818b84a928b199a2e85de",
+      "existingTranslations": {
+        "zh-CN": "Base64 输入包含非法字符。"
+      }
+    },
+    {
+      "key": "Plugin.EncoderDecoder.Error.Base64Padding",
+      "defaultValue": "The Base64 input has invalid padding.",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "752f447720b5843df47ee8fcea32b0605e2d87edc544d0653d9ab791b9134047",
+      "existingTranslations": {
+        "zh-CN": "Base64 输入的填充无效。"
+      }
+    },
+    {
+      "key": "Plugin.EncoderDecoder.Error.Base64Length",
+      "defaultValue": "The Base64 input has an invalid length.",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "6e4d5b60d6058f115a2aeed5383bfa9b9623daf333b0c0d686ab61ca064da5e7",
+      "existingTranslations": {
+        "zh-CN": "Base64 输入的长度无效。"
+      }
+    },
+    {
+      "key": "Plugin.EncoderDecoder.Error.Url",
+      "defaultValue": "The URL-encoded input is invalid.",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "077d23949f71543dbf9f963e68f2839178283c3b3aaf21fb804615c19a364a8e",
+      "existingTranslations": {
+        "zh-CN": "URL 编码输入无效。"
+      }
+    },
+    {
+      "key": "Plugin.EncoderDecoder.Error.HexLength",
+      "defaultValue": "Hex input must contain an even number of digits.",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "c7f42bc0f2877e3d4869355e792ee2ca991877662ac47fe05b46dee9f575ace1",
+      "existingTranslations": {
+        "zh-CN": "Hex 输入必须包含偶数个数字。"
+      }
+    },
+    {
+      "key": "Plugin.EncoderDecoder.Error.HexCharacters",
+      "defaultValue": "Hex input contains invalid characters.",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "de74a96ca1bc0001178597c1661deb7ebefa4387bfdb70dded10fa39810cf2a5",
+      "existingTranslations": {
+        "zh-CN": "Hex 输入包含非法字符。"
+      }
+    },
+    {
+      "key": "Plugin.EncoderDecoder.Error.HashDecode",
+      "defaultValue": "Hash algorithms can only encode.",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "9aded3135bf81505b1ed2aa90c1d04a446d5026cc47ea1829939ce7fcbf2bcd3",
+      "existingTranslations": {
+        "zh-CN": "哈希算法只支持编码。"
+      }
+    },
+    {
+      "key": "Plugin.EncoderDecoder.Error.Conversion",
+      "defaultValue": "Unable to convert the input.",
+      "placeholders": [],
+      "references": [],
+      "sourceHash": "064a11a3cc716d82e93918c79b388ef1b443af681a4c6fa18ac5f9ee0a29085b",
+      "existingTranslations": {
+        "zh-CN": "无法转换输入内容。"
+      }
+    }
+  ]
+}

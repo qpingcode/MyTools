@@ -108,6 +108,9 @@ public sealed class NodePlugin : IPlugin, IDisposable
     /// <summary>Bus session id after the Node process has been started.</summary>
     public string? BusSessionId => processHost.SessionId;
 
+    /// <summary>Recent stderr/stdout and exit information from the Node backend.</summary>
+    public string? BackendFailureDetails => processHost.FailureDetails;
+
     /// <summary>Ensures the Node session is Ready (starts pipe/handshake if needed).</summary>
     public Task EnsureV3SessionAsync(CancellationToken cancellationToken = default)
     {
@@ -408,13 +411,17 @@ public sealed class NodePlugin : IPlugin, IDisposable
 
         var selectedList = selected.ToList();
         var hotkeys = ResolveHotkeys(selectedList);
+        var pinnedIds = new HashSet<string>(manifest.PinnedActions, StringComparer.Ordinal);
         return selectedList.Select((definition, index) =>
         {
             var title = ResolveText(definition.Title, definition.Id);
             var description = ResolveText(definition.Description, string.Empty);
-            return (IActionWithHotkey)new NodePluginInvokeAction(
+            var action = (IActionWithHotkey)new NodePluginInvokeAction(
                     this, definition.Id, title, description, forwardToWeb)
                 .WithHotkey(hotkeys[index]);
+            return definition.Pinned || pinnedIds.Contains(definition.Id)
+                ? action.WithPinned()
+                : action;
         }).ToList();
     }
 

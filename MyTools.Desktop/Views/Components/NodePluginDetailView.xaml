@@ -28,6 +28,21 @@
                            TextWrapping="Wrap"
                            Opacity="0.7"
                            Foreground="{DynamicResource TextPrimaryBrush}" />
+                <TextBox x:Name="BackendErrorDetails"
+                         Margin="0,14,0,0"
+                         MaxHeight="220"
+                         Padding="10"
+                         IsReadOnly="True"
+                         TextWrapping="Wrap"
+                         AcceptsReturn="True"
+                         VerticalScrollBarVisibility="Auto"
+                         HorizontalScrollBarVisibility="Disabled"
+                         FontFamily="Cascadia Mono, Consolas"
+                         FontSize="12"
+                         Background="{DynamicResource SurfaceAltBrush}"
+                         Foreground="{DynamicResource TextPrimaryBrush}"
+                         BorderBrush="{DynamicResource BorderBrush}"
+                         Visibility="Collapsed" />
             </StackPanel>
         </Border>
     </Grid>

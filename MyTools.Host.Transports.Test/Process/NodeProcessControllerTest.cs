@@ -43,6 +43,20 @@ public class NodeProcessControllerTest
         return null!;
     }
 
+    private static string SdkV3CrashEntryPath()
+    {
+        var dir = TestContext.CurrentContext.TestDirectory;
+        for (var i = 0; i < 6 && dir is not null; i++)
+        {
+            var candidate = System.IO.Path.Combine(dir, "MyTools.Plugins", "Examples", "sdk-v3",
+                "test-fixture-crash-entry.mjs");
+            if (System.IO.File.Exists(candidate)) return candidate;
+            dir = System.IO.Directory.GetParent(dir)?.FullName;
+        }
+        Assert.Fail("sdk-v3 test-fixture-crash-entry.mjs not found");
+        return null!;
+    }
+
     [Test]
     public async Task Start_SpawnsNode_Handshakes_RoundTripsBusPing()
     {
@@ -105,6 +119,41 @@ public class NodeProcessControllerTest
     {
         var controller = new NodeProcessController("node", "placeholder.mjs", TestPluginsDataRoot());
         Assert.That(controller.Transport, Is.Null);
+    }
+
+    [Test]
+    public async Task Crash_AfterHandshake_CapturesStderrAndExitCode()
+    {
+        var controller = new NodeProcessController("node", SdkV3CrashEntryPath(), TestPluginsDataRoot());
+        var tokens = new BootstrapTokenValidator();
+        var disconnected = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        await controller.StartAsync(
+            $"mytools-it-{System.Guid.NewGuid():N}",
+            "crash-fixture",
+            identity => tokens.Issue(identity, TimeSpan.FromSeconds(30)).Value,
+            default);
+        controller.Transport!.Disconnected += () => disconnected.TrySetResult();
+
+        await PipeHandshake.CompleteAsHostAsync(
+            controller.Transport,
+            tokens,
+            controller.ObservedIdentity!,
+            "sess-crash",
+            "node-main",
+            new GuidIdGenerator(),
+            TimeSpan.FromSeconds(10),
+            default);
+
+        await disconnected.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        for (var i = 0; i < 100 && controller.FailureDetails?.Contains("code 23") != true; i++)
+        {
+            await Task.Delay(20);
+        }
+
+        Assert.That(controller.FailureDetails, Does.Contain("[stderr] fixture backend crashed"));
+        Assert.That(controller.FailureDetails, Does.Contain("Node process exited with code 23"));
+        await controller.StopAsync();
     }
 
     private static string TestPluginsDataRoot()

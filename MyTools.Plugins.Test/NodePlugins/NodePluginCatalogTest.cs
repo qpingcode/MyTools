@@ -87,6 +87,35 @@ public class NodePluginCatalogTest
         Assert.That(plugins[0].CatalogFullPath, Is.EqualTo(Path.Combine(pluginPath, "i18n", "catalog.en-US.json")));
         Assert.That(plugins[0].LocalesDirectoryFullPath, Is.EqualTo(Path.Combine(pluginPath, "i18n", "locales")));
         Assert.That(plugins[0].SupportedLocales, Is.EquivalentTo(new[] { "en-US", "zh-CN" }));
+        Assert.That(plugins[0].PinnedActions, Is.Empty);
+    }
+
+    [Test]
+    public void Reload_ShouldReadPinnedActionsFromDetail()
+    {
+        var pluginPath = Path.Combine(rootPath, "codec");
+        Directory.CreateDirectory(Path.Combine(pluginPath, "backend"));
+        Directory.CreateDirectory(Path.Combine(pluginPath, "web"));
+        File.WriteAllText(Path.Combine(pluginPath, "plugin.json"), """
+        {
+          "id": "codec",
+          "version": "0.1.0",
+          "protocolVersion": "3.0",
+          "entry": "backend/index.mjs",
+          "detail": {
+            "type": "web",
+            "entry": "web/index.html",
+            "pinnedActions": ["encode", "decode"]
+          }
+        }
+        """);
+        File.WriteAllText(Path.Combine(pluginPath, "backend", "index.mjs"), "console.log('ok');");
+        File.WriteAllText(Path.Combine(pluginPath, "web", "index.html"), "<html></html>");
+
+        var plugins = new NodePluginCatalog(rootPath, NullLogger<NodePluginCatalog>.Instance).Reload();
+
+        Assert.That(plugins, Has.Count.EqualTo(1));
+        Assert.That(plugins[0].PinnedActions, Is.EqualTo(new[] { "encode", "decode" }));
     }
 
     [Test]
