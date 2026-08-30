@@ -6,7 +6,7 @@ namespace MyTools.Desktop.Services;
 public sealed class PluginCreationProxyProvider(IConfigurationRegistry registry)
     : IPluginCreationProxyProvider
 {
-    internal const string ProxySettingPath = "General.UpdateProxyUrl";
+    internal const string ProxySettingPath = GeneralSettings.UpdateProxyUrl;
 
     public PluginCreationProxySettings GetProxySettings()
     {

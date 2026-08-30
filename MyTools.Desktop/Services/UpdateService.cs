@@ -35,9 +35,6 @@ public sealed class UpdateService(
     public const string DefaultUpdateUrl = "https://github.com/qpingcode/MyTools/releases";
     public const string DefaultChannel = "stable";
     public const string BetaChannel = "beta";
-    private const string UpdateUrlSettingPath = "General.UpdateUrl";
-    private const string UpdateChannelSettingPath = "General.UpdateChannel";
-    private const string UpdateProxyUrlSettingPath = "General.UpdateProxyUrl";
     private static readonly HashSet<string> SupportedProxySchemes = new(StringComparer.OrdinalIgnoreCase)
     {
         Uri.UriSchemeHttp,
@@ -74,7 +71,7 @@ public sealed class UpdateService(
             pendingUpdateManager = null;
             pendingUpdate = null;
 
-            var updateUrl = GetStringSetting(UpdateUrlSettingPath);
+            var updateUrl = GetStringSetting(GeneralSettings.UpdateUrl);
             if (string.IsNullOrWhiteSpace(updateUrl))
             {
                 return new UpdateCheckResult(UpdateCheckStatus.NotConfigured);
@@ -85,14 +82,14 @@ public sealed class UpdateService(
                 return new UpdateCheckResult(UpdateCheckStatus.NotInstalled);
             }
 
-            var channel = ResolveChannel(GetStringSetting(UpdateChannelSettingPath));
+            var channel = ResolveChannel(GetStringSetting(GeneralSettings.UpdateChannel));
             var includePrereleases = IncludeGitHubPrereleases(channel);
             var options = new UpdateOptions
             {
                 ExplicitChannel = channel,
                 AllowVersionDowngrade = true
             };
-            var proxyUri = ParseProxyUri(GetStringSetting(UpdateProxyUrlSettingPath));
+            var proxyUri = ParseProxyUri(GetStringSetting(GeneralSettings.UpdateProxyUrl));
             var updateManager = CreateUpdateManager(updateUrl, options, proxyUri, includePrereleases);
             if (!updateManager.IsInstalled)
             {

@@ -119,7 +119,7 @@ public class ConfigurationSettingValuesTest
         var applied = ConfigurationSettingValues.ApplyOwnedValues(
             registry,
             new PluginId("search-engine"),
-            document.RootElement);
+            document.RootElement.Deserialize<Dictionary<string, JsonElement>>()!);
 
         Assert.That(applied, Is.EqualTo(1));
         Assert.That(((JsonElement)searchEngine.CurrentValue!).GetArrayLength(), Is.EqualTo(1));

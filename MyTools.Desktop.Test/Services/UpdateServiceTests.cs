@@ -191,9 +191,9 @@ public class UpdateServiceTests
     public async Task CheckForUpdatesAsync_WhenRunningOutsideVelopack_ReturnsNotInstalled()
     {
         var registry = new Mock<IConfigurationRegistry>();
-        registry.Setup(x => x.FindSetting("General.UpdateUrl"))
+        registry.Setup(x => x.FindSetting(GeneralSettings.UpdateUrl))
             .Returns(CreateStringSetting(TestContext.CurrentContext.WorkDirectory));
-        registry.Setup(x => x.FindSetting("General.UpdateChannel"))
+        registry.Setup(x => x.FindSetting(GeneralSettings.UpdateChannel))
             .Returns(CreateStringSetting("stable"));
         var service = CreateService(registry);
 

@@ -85,9 +85,9 @@ public class ConfigurationRegistryTest
 
         Assert.Multiple(() =>
         {
-            Assert.That(setting.Key, Is.EqualTo("General.Language"));
-            Assert.That(setting.StorageKey, Is.EqualTo("General.Language"));
-            Assert.That(registry.FindSetting("general.language"), Is.SameAs(setting));
+            Assert.That(setting.Key, Is.EqualTo(GeneralSettings.LanguagePath));
+            Assert.That(setting.StorageKey, Is.EqualTo(GeneralSettings.LanguagePath));
+            Assert.That(registry.FindSetting(GeneralSettings.LanguagePath), Is.SameAs(setting));
         });
     }
 }

@@ -2,6 +2,7 @@ using System.Reflection;
 using Moq;
 using MyTools.Common.Config.Interfaces;
 using MyTools.Common.Config.Models;
+using MyTools.Desktop.Services;
 using MyTools.Desktop.ViewModels;
 using NUnit.Framework;
 
@@ -93,7 +94,7 @@ public class SearchDebouncerTests
     {
         var registry = new Mock<IConfigurationRegistry>();
         registry
-            .Setup(candidate => candidate.FindSetting("General.SearchDelay"))
+            .Setup(candidate => candidate.FindSetting(GeneralSettings.SearchDelay))
             .Returns(setting);
 
         return new SearchDebouncer(

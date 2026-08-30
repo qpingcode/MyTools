@@ -40,13 +40,13 @@ public class CompositeConfigurationStorageTest
     public void Store_HostSetting_StaysInSettingsJson()
     {
         using var storage = CreateStorage();
-        storage.Store("General.Theme", "dark");
+        storage.Store(GeneralSettings.ThemePath, "dark");
 
         Assert.Multiple(() =>
         {
-            Assert.That(storage.Retrieve("General.Theme"), Is.EqualTo("dark"));
+            Assert.That(storage.Retrieve(GeneralSettings.ThemePath), Is.EqualTo("dark"));
             Assert.That(File.Exists(hostPath), Is.True);
-            Assert.That(File.ReadAllText(hostPath), Does.Contain("General.Theme"));
+            Assert.That(File.ReadAllText(hostPath), Does.Contain(GeneralSettings.ThemePath));
             Assert.That(Directory.Exists(pluginsDataRoot), Is.False);
         });
     }
@@ -73,18 +73,18 @@ public class CompositeConfigurationStorageTest
     public void Store_DoesNotLeavePluginKeysInHostFile()
     {
         using var storage = CreateStorage();
-        storage.Store("General.Language", "en-US");
+        storage.Store(GeneralSettings.LanguagePath, "en-US");
         storage.Store("Engines", """[{"name":"Google"}]""", SearchEngine);
 
         Assert.That(File.ReadAllText(hostPath), Does.Not.Contain("search-engine"));
-        Assert.That(File.ReadAllText(hostPath), Does.Contain("General.Language"));
+        Assert.That(File.ReadAllText(hostPath), Does.Contain(GeneralSettings.LanguagePath));
     }
 
     [Test]
     public void Retrieve_MigratesLegacyPluginKeysOutOfHostSettings()
     {
         WriteHostSettings(
-            ("General.Theme", "light"),
+            (GeneralSettings.ThemePath, "light"),
             ("quick-text.Phrases", "legacy-phrases"),
             ("ClipBoard.HotKey", "Ctrl+Shift+V"));
 
@@ -92,10 +92,10 @@ public class CompositeConfigurationStorageTest
 
         Assert.Multiple(() =>
         {
-            Assert.That(storage.Retrieve("General.Theme"), Is.EqualTo("light"));
+            Assert.That(storage.Retrieve(GeneralSettings.ThemePath), Is.EqualTo("light"));
             Assert.That(storage.Retrieve("Phrases", QuickText), Is.EqualTo("legacy-phrases"));
             Assert.That(storage.Retrieve("HotKey", Clipboard), Is.EqualTo("Ctrl+Shift+V"));
-            Assert.That(File.ReadAllText(hostPath), Does.Contain("General.Theme"));
+            Assert.That(File.ReadAllText(hostPath), Does.Contain(GeneralSettings.ThemePath));
             Assert.That(File.ReadAllText(hostPath), Does.Not.Contain("quick-text"));
             Assert.That(File.ReadAllText(hostPath), Does.Not.Contain("clipboard"));
             Assert.That(File.Exists(ConfigPath.PluginSettingsPath(pluginsDataRoot, QuickText.Value)), Is.True);
@@ -107,7 +107,7 @@ public class CompositeConfigurationStorageTest
     public void Retrieve_HostSetting_DoesNotCreatePluginData()
     {
         WriteHostSettings(
-            ("General.Theme", "light"),
+            (GeneralSettings.ThemePath, "light"),
             ("UI.FontSize", "141"));
 
         using var storage = CreateStorage();
@@ -142,13 +142,13 @@ public class CompositeConfigurationStorageTest
     public void GetAllNames_IsScopedByPluginId()
     {
         using var storage = CreateStorage();
-        storage.Store("General.Theme", "dark");
+        storage.Store(GeneralSettings.ThemePath, "dark");
         storage.Store("Phrases", "[]", QuickText);
         storage.Store("Gestures.EnableGesture", "true");
 
         Assert.Multiple(() =>
         {
-            Assert.That(storage.GetAllNames(), Is.EquivalentTo(new[] { "General.Theme", "Gestures.EnableGesture" }));
+            Assert.That(storage.GetAllNames(), Is.EquivalentTo(new[] { GeneralSettings.ThemePath, "Gestures.EnableGesture" }));
             Assert.That(storage.GetAllNames(QuickText), Is.EquivalentTo(new[] { "Phrases" }));
         });
     }
@@ -157,7 +157,7 @@ public class CompositeConfigurationStorageTest
     public void Delete_RemovesPluginSettingWithoutTouchingHost()
     {
         using var storage = CreateStorage();
-        storage.Store("General.Theme", "dark");
+        storage.Store(GeneralSettings.ThemePath, "dark");
         storage.Store("Phrases", "[]", QuickText);
 
         storage.Delete("Phrases", QuickText);
@@ -165,7 +165,7 @@ public class CompositeConfigurationStorageTest
         Assert.Multiple(() =>
         {
             Assert.That(storage.Exists("Phrases", QuickText), Is.False);
-            Assert.That(storage.Exists("General.Theme"), Is.True);
+            Assert.That(storage.Exists(GeneralSettings.ThemePath), Is.True);
         });
     }
 

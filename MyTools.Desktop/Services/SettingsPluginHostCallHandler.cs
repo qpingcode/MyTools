@@ -256,13 +256,15 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
             throw new InvalidOperationException("configuration.writeOwn requires a plugin id.");
         }
 
-        if (!payload.TryGetProperty("values", out var values) || values.ValueKind != JsonValueKind.Object)
+        // The plugin configuration items come from the runtime schema, and neither the key nor value types are known to the host at compile time, so they cannot be converted into a fixed business class.
+        var request = payload.Deserialize<OwnConfigurationSaveRequest>(JsonCamelCaseOptions);
+        if (request?.Values == null)
         {
             throw new InvalidOperationException("configuration.writeOwn requires a values object.");
         }
 
         var pluginId = new PluginId(pluginIdString);
-        ConfigurationSettingValues.ApplyOwnedValues(registry, pluginId, values);
+        ConfigurationSettingValues.ApplyOwnedValues(registry, pluginId, request.Values);
         registry.SaveChanges();
         return JsonSerializer.SerializeToElement(new { success = true }, JsonCamelCaseOptions);
     }
@@ -288,8 +290,8 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     {
         var request = payload.Deserialize<SaveConfigurationRequest>(JsonCamelCaseOptions) ?? new SaveConfigurationRequest();
 
-        // 记录 Language 保存前的值，用于判断是否真的变化（而非仅被前端回写）。
-        var languageSetting = registry.FindSetting("General.Language");
+        // Record the value of Language before saving, to determine if it actually changed (rather than merely being written back by the frontend with the same value).
+        var languageSetting = registry.FindSetting(GeneralSettings.LanguagePath);
         var previousLanguage = languageSetting?.GetValue<string>();
 
         foreach (var change in request.Changes)
@@ -315,10 +317,10 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         registry.SaveChanges();
         pluginLoader.LoadedPlugins.OfType<ClipBoardPlugin>().FirstOrDefault()?.ApplyRetentionSettings();
 
-        // 热应用 Theme / LogLevel / AutoStart：这些操作会触发 ThemeChanged 等事件，
-        // 事件订阅者（如 App.OnThemeChanged → UpdateNotifyIconMenu）访问 WPF 控件，
-        // 必须在 UI 线程执行。hostCall 回调在 Node stdout 读取线程上，需要切线程。
-        var autoStartSetting = registry.FindSetting("General.AutoStart");
+        // Hot App Theme / LogLevel / AutoStart: These operations trigger events such as ThemeChanged.
+        // Event subscribers (e.g., App.OnThemeChanged → UpdateNotifyIconMenu) access WPF controls and must execute on the UI thread.
+        // The hostCall callback runs on the Node stdout reading thread, so a thread switch is required.
+        var autoStartSetting = registry.FindSetting(GeneralSettings.AutoStart);
         var autoStartValue = autoStartSetting?.CurrentValue is bool b ? b : (bool?)null;
 
         System.Windows.Application.Current.Dispatcher.Invoke(() =>
@@ -338,7 +340,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
             ApplyClipboardHotKeyFromSettings();
         });
 
-        // 语言需要重启：只有值真正变化（而非仅被前端回写相同的值）时才提示。
+        // The language needs to be restarted: prompt only when the value actually changes (rather than merely being written back by the frontend with the same value).
         var requiresRestart = false;
         var currentLanguage = languageSetting?.GetValue<string>();
         if (!string.Equals(previousLanguage, currentLanguage, StringComparison.OrdinalIgnoreCase)
@@ -347,7 +349,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
             requiresRestart = languageService.SetLanguageForNextStartup(currentLanguage);
         }
 
-        // 其他标记了 RequiresRestart 的 setting 变化也需要提示重启
+        // Other settings marked with RequiresRestart also need to prompt for a restart
         if (!requiresRestart)
         {
             foreach (var change in request.Changes)
@@ -376,7 +378,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         var request = payload.Deserialize<GesturesSaveRequest>(JsonCamelCaseOptions);
         var gestures = request?.Gestures ?? new List<GestureConfig>();
 
-        // 为缺少 Id 的手势生成一个
+        // Generate an Id for gestures that are missing one
         foreach (var g in gestures)
         {
             if (string.IsNullOrEmpty(g.Id))
@@ -387,8 +389,8 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
 
         gestureConfigProvider.Save(gestures);
 
-        // 热应用：在手势检测线程上重新注册。GestureRegistry 的字典操作和
-        // StartListening 是线程安全的（检测线程只读字典），可以在任意线程写入。
+        // Hot apply: re-register on the gesture detection thread. Dictionary operations and
+        // StartListening in GestureRegistry are thread-safe (the detection thread only reads the dictionary), so writes can be done on any thread.
         gestureRegistry.ReloadFromConfigs(gestures, mouseHelper);
 
         return JsonSerializer.SerializeToElement(new { success = true }, JsonCamelCaseOptions);
@@ -433,6 +435,8 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     private JsonElement SaveKeymap(JsonElement payload)
     {
         var request = payload.Deserialize<KeymapSaveRequest>(JsonCamelCaseOptions);
+        var requestedOverrideKeys = request?.Overrides.Keys
+            .ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
         var merged = pluginOverrideProvider.GetAll()
             .ToDictionary(kv => kv.Key, kv => CloneOverride(kv.Value), StringComparer.OrdinalIgnoreCase);
 
@@ -455,10 +459,26 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         System.Windows.Application.Current.Dispatcher.Invoke(() =>
         {
             var nodePlugins = pluginLoader.LoadedPlugins.OfType<NodePlugin>().ToList();
+            var previouslyEnabled = nodePlugins.ToDictionary(
+                plugin => plugin.OverrideKey,
+                plugin => plugin.IsEnabled,
+                StringComparer.OrdinalIgnoreCase);
 
             pluginKeymapService.ApplyOverrides(nodePlugins);
-            pluginHotKeyService.ReRegisterAll(nodePlugins, OpenPluginDetail);
-            pluginKeymapService.ReRegisterKeywords(pluginLoader.LoadedPlugins);
+
+            var enabledChanged = nodePlugins
+                .Where(plugin => previouslyEnabled.GetValueOrDefault(plugin.OverrideKey) != plugin.IsEnabled)
+                .ToList();
+            if (enabledChanged.Count > 0)
+            {
+                pluginHotKeyService.ReRegisterPlugins(enabledChanged, OpenPluginDetail);
+            }
+
+            var keywordAffectedKeys = requestedOverrideKeys
+                .Concat(enabledChanged.Select(plugin => plugin.OverrideKey))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            pluginKeymapService.ReRegisterKeywords(
+                nodePlugins.Where(plugin => keywordAffectedKeys.Contains(plugin.OverrideKey)));
             searcher.InvalidateHomePageCache();
         });
 
@@ -586,6 +606,8 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     private JsonElement SaveHotKeys(JsonElement payload)
     {
         var request = payload.Deserialize<HotKeysSaveRequest>(JsonCamelCaseOptions);
+        var requestedHotKeyOverrideKeys = request?.HotKeys?.Keys
+            .ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
         var merged = pluginOverrideProvider.GetAll()
             .ToDictionary(kv => kv.Key, kv => CloneOverride(kv.Value), StringComparer.OrdinalIgnoreCase);
 
@@ -603,7 +625,9 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         System.Windows.Application.Current.Dispatcher.Invoke(() =>
         {
             var nodePlugins = pluginLoader.LoadedPlugins.OfType<NodePlugin>().ToList();
-            pluginHotKeyService.ReRegisterAll(nodePlugins, OpenPluginDetail);
+            pluginHotKeyService.ReRegisterPlugins(
+                nodePlugins.Where(plugin => requestedHotKeyOverrideKeys.Contains(plugin.OverrideKey)),
+                OpenPluginDetail);
         });
 
         return JsonSerializer.SerializeToElement(new { success = true }, JsonCamelCaseOptions);
@@ -912,6 +936,11 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
 }
 
 // ── Keymap DTO ──
+
+public sealed class OwnConfigurationSaveRequest
+{
+    public Dictionary<string, JsonElement>? Values { get; init; }
+}
 
 public sealed class KeymapDto
 {

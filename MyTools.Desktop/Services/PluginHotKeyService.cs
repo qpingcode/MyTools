@@ -70,6 +70,24 @@ public sealed class PluginHotKeyService
         RegisterAll(nodePlugins, openDetail);
     }
 
+    public void ReRegisterPlugins(IEnumerable<NodePlugin> nodePlugins, Action<NodePlugin> openDetail)
+    {
+        var plugins = nodePlugins.ToList();
+        var affectedIds = plugins.Select(plugin => plugin.PluginId).ToHashSet();
+
+        foreach (var pluginId in affectedIds)
+        {
+            if (!hotKeyIds.Remove(pluginId, out var hotKeyId))
+            {
+                continue;
+            }
+
+            hotKeyManager.UnregisterHotKey(hotKeyId);
+        }
+
+        RegisterAll(plugins, openDetail);
+    }
+
     public void ReRegisterPlugin(
         string parentPluginId,
         IEnumerable<NodePlugin> nodePlugins,

@@ -1,10 +1,10 @@
 using MyTools.Common.Config.Interfaces;
+using MyTools.Desktop.Services;
 
 namespace MyTools.Desktop.ViewModels;
 
 internal sealed class SearchDebouncer : IDisposable
 {
-    private const string SearchDelaySettingPath = "General.SearchDelay";
     private const double DefaultDelayMilliseconds = 250;
     private const double MaximumTimerDelayMilliseconds = uint.MaxValue - 1d;
     private readonly IConfigurationRegistry configurationRegistry;
@@ -53,7 +53,7 @@ internal sealed class SearchDebouncer : IDisposable
     private TimeSpan GetConfiguredDelay()
     {
         var configuredDelay = configurationRegistry
-            .FindSetting(SearchDelaySettingPath)?
+            .FindSetting(GeneralSettings.SearchDelay)?
             .GetValue<double>() ?? DefaultDelayMilliseconds;
 
         if (!double.IsFinite(configuredDelay)

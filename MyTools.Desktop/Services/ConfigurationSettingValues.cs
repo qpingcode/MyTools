@@ -104,24 +104,22 @@ public static class ConfigurationSettingValues
         return Convert(setting, stringValue);
     }
 
-    public static int ApplyOwnedValues(IConfigurationRegistry registry, PluginId pluginId, JsonElement values)
+    public static int ApplyOwnedValues(
+        IConfigurationRegistry registry,
+        PluginId pluginId,
+        IReadOnlyDictionary<string, JsonElement> values)
     {
-        if (values.ValueKind != JsonValueKind.Object)
-        {
-            return 0;
-        }
-
         var applied = 0;
-        foreach (var property in values.EnumerateObject())
+        foreach (var (name, value) in values)
         {
-            var key = pluginId + "." + property.Name;
+            var key = pluginId + "." + name;
             var setting = registry.FindSetting(key);
             if (setting == null || setting.IsDisplayOnly || !Owns(pluginId, setting))
             {
                 continue;
             }
 
-            setting.CurrentValue = ConvertOwnedJson(setting, property.Value);
+            setting.CurrentValue = ConvertOwnedJson(setting, value);
             applied++;
         }
 

@@ -10,7 +10,6 @@ namespace MyTools.Desktop.Services;
 /// </summary>
 public sealed class LogLevelService
 {
-    public const string LogLevelSettingPath = "General.LogLevel";
     private const LogEventLevel DefaultLevel = LogEventLevel.Debug;
 
     /// <summary>
@@ -34,7 +33,7 @@ public sealed class LogLevelService
     /// </summary>
     public void ApplyFromSettings(IConfigurationRegistry registry)
     {
-        var stored = registry.FindSetting(LogLevelSettingPath)?.GetValue<string>();
+        var stored = registry.FindSetting(GeneralSettings.LogLevelPath)?.GetValue<string>();
         LevelSwitch.MinimumLevel = TryParseLevel(stored, out var parsed) ? parsed : DefaultLevel;
     }
 
