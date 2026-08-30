@@ -17,11 +17,13 @@ await build({
 });
 
 await build({
-  entryPoints: ["src/web/main.ts"],
+  entryPoints: {
+    main: "src/web/main.ts",
+    "formatter.worker": "src/web/formatter.worker.ts",
+  },
   bundle: true,
   format: "iife",
   target: "es2024",
-  outbase: "src/web",
   outdir: "dist/web",
   plugins: [
     copy({

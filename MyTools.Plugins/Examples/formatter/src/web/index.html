@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-i18n="[text]Plugin.Formatter.Name" data-i18n-default-value="Formatter"></title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="page">
+    <div class="toolbar">
+      <label class="toolbar-field">
+        <span data-i18n="[text]Plugin.Formatter.Detail.InputType" data-i18n-default-value="Input type">Input type</span>
+        <select id="typeSelect">
+          <option value="auto" data-i18n="[text]Plugin.Formatter.Detail.Auto" data-i18n-default-value="Auto">Auto</option>
+          <option value="javascript">JavaScript</option>
+          <option value="typescript">TypeScript</option>
+          <option value="html">HTML</option>
+          <option value="css">CSS</option>
+          <option value="json">JSON</option>
+          <option value="yaml">YAML</option>
+          <option value="xml">XML</option>
+        </select>
+      </label>
+      <button id="formatButton" class="toolbar-button primary" type="button">
+        <span data-action-name="format">Format</span><kbd data-action-hotkey="format"></kbd>
+      </button>
+      <button id="copyButton" class="toolbar-button" type="button">
+        <span data-action-name="copy">Copy</span><kbd data-action-hotkey="copy"></kbd>
+      </button>
+      <button id="clearButton" class="toolbar-button" type="button">
+        <span data-action-name="clear">Clear</span><kbd data-action-hotkey="clear"></kbd>
+      </button>
+      <span class="toolbar-spacer"></span>
+      <button id="collapseAllButton" class="toolbar-button" type="button">
+        <span data-action-name="collapse-all">Collapse All</span><kbd data-action-hotkey="collapse-all"></kbd>
+      </button>
+      <button id="expandAllButton" class="toolbar-button" type="button">
+        <span data-action-name="expand-all">Expand All</span><kbd data-action-hotkey="expand-all"></kbd>
+      </button>
+    </div>
+
+    <section class="editor-shell" aria-label="Formatter editor">
+      <div id="editor"></div>
+    </section>
+    <div id="message" class="message hidden" role="alert"></div>
+  </main>
+  <script src="main.js"></script>
+</body>
+</html>

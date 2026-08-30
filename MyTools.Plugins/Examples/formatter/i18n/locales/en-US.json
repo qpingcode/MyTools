@@ -1,0 +1,18 @@
+{
+  "Plugin.Formatter.Name": "Formatter",
+  "Plugin.Formatter.Result.Title": "Formatter",
+  "Plugin.Formatter.Result.Subtitle": "Format JavaScript, TypeScript, HTML, CSS, JSON, YAML, and XML",
+  "Plugin.Formatter.Action.Open.Title": "Open Formatter",
+  "Plugin.Formatter.Action.Open.Description": "Open the multi-language formatter",
+  "Plugin.Formatter.Action.Open.Success": "Opened formatter",
+  "Plugin.Formatter.Detail.InputType": "Input type",
+  "Plugin.Formatter.Detail.Auto": "Auto",
+  "Plugin.Formatter.Action.Format": "Format",
+  "Plugin.Formatter.Action.Copy": "Copy",
+  "Plugin.Formatter.Action.CopyDescription": "Copy the current content to the clipboard",
+  "Plugin.Formatter.Action.Clear": "Clear",
+  "Plugin.Formatter.Action.CollapseAll": "Collapse All",
+  "Plugin.Formatter.Action.ExpandAll": "Expand All",
+  "Plugin.Formatter.Error.UnknownLanguage": "Could not detect the input type. Select a language and try again.",
+  "Plugin.Formatter.Error.FormatFailed": "Unable to format {{language}}: {{message}}"
+}

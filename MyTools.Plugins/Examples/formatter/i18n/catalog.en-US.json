@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "scope": "plugin:formatter",
+  "pluginId": "formatter",
+  "sourceLocale": "en-US",
+  "generatedAt": "2026-08-30T00:00:00.000Z",
+  "entries": [
+    { "key": "Plugin.Formatter.Name", "defaultValue": "Formatter", "placeholders": [], "references": [], "existingTranslations": { "zh-CN": "代码格式化" } },
+    { "key": "Plugin.Formatter.Result.Title", "defaultValue": "Formatter", "placeholders": [], "references": [], "existingTranslations": { "zh-CN": "代码格式化" } },
+    { "key": "Plugin.Formatter.Result.Subtitle", "defaultValue": "Format JavaScript, TypeScript, HTML, CSS, JSON, YAML, and XML", "placeholders": [], "references": [], "existingTranslations": { "zh-CN": "格式化 JavaScript、TypeScript、HTML、CSS、JSON、YAML 和 XML" } },
+    { "key": "Plugin.Formatter.Action.Open.Title", "defaultValue": "Open Formatter", "placeholders": [], "references": [], "existingTranslations": { "zh-CN": "打开格式化工具" } },
+    { "key": "Plugin.Formatter.Action.Open.Description", "defaultValue": "Open the multi-language formatter", "placeholders": [], "references": [], "existingTranslations": { "zh-CN": "打开多语言格式化工具" } },
+    { "key": "Plugin.Formatter.Action.Open.Success", "defaultValue": "Opened formatter", "placeholders": [], "references": [], "existingTranslations": { "zh-CN": "已打开格式化工具" } },
+    { "key": "Plugin.Formatter.Detail.InputType", "defaultValue": "Input type", "placeholders": [], "references": [], "existingTranslations": { "zh-CN": "输入类型" } },
+    { "key": "Plugin.Formatter.Detail.Auto", "defaultValue": "Auto", "placeholders": [], "references": [], "existingTranslations": { "zh-CN": "自动" } },
+    { "key": "Plugin.Formatter.Action.Format", "defaultValue": "Format", "placeholders": [], "references": [], "existingTranslations": { "zh-CN": "格式化" } },
+    { "key": "Plugin.Formatter.Action.Copy", "defaultValue": "Copy", "placeholders": [], "references": [], "existingTranslations": { "zh-CN": "复制" } },
+    { "key": "Plugin.Formatter.Action.CopyDescription", "defaultValue": "Copy the current content to the clipboard", "placeholders": [], "references": [], "existingTranslations": { "zh-CN": "将当前内容复制到剪贴板" } },
+    { "key": "Plugin.Formatter.Action.Clear", "defaultValue": "Clear", "placeholders": [], "references": [], "existingTranslations": { "zh-CN": "清空" } },
+    { "key": "Plugin.Formatter.Action.CollapseAll", "defaultValue": "Collapse All", "placeholders": [], "references": [], "existingTranslations": { "zh-CN": "全部折叠" } },
+    { "key": "Plugin.Formatter.Action.ExpandAll", "defaultValue": "Expand All", "placeholders": [], "references": [], "existingTranslations": { "zh-CN": "全部展开" } },
+    { "key": "Plugin.Formatter.Error.UnknownLanguage", "defaultValue": "Could not detect the input type. Select a language and try again.", "placeholders": [], "references": [], "existingTranslations": { "zh-CN": "无法识别输入类型，请选择语言后重试。" } },
+    { "key": "Plugin.Formatter.Error.FormatFailed", "defaultValue": "Unable to format {{language}}: {{message}}", "placeholders": ["language", "message"], "references": [], "existingTranslations": { "zh-CN": "无法格式化 {{language}}：{{message}}" } }
+  ]
+}

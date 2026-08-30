@@ -1,0 +1,18 @@
+{
+  "Plugin.Formatter.Name": "代码格式化",
+  "Plugin.Formatter.Result.Title": "代码格式化",
+  "Plugin.Formatter.Result.Subtitle": "格式化 JavaScript、TypeScript、HTML、CSS、JSON、YAML 和 XML",
+  "Plugin.Formatter.Action.Open.Title": "打开格式化工具",
+  "Plugin.Formatter.Action.Open.Description": "打开多语言格式化工具",
+  "Plugin.Formatter.Action.Open.Success": "已打开格式化工具",
+  "Plugin.Formatter.Detail.InputType": "输入类型",
+  "Plugin.Formatter.Detail.Auto": "自动",
+  "Plugin.Formatter.Action.Format": "格式化",
+  "Plugin.Formatter.Action.Copy": "复制",
+  "Plugin.Formatter.Action.CopyDescription": "将当前内容复制到剪贴板",
+  "Plugin.Formatter.Action.Clear": "清空",
+  "Plugin.Formatter.Action.CollapseAll": "全部折叠",
+  "Plugin.Formatter.Action.ExpandAll": "全部展开",
+  "Plugin.Formatter.Error.UnknownLanguage": "无法识别输入类型，请选择语言后重试。",
+  "Plugin.Formatter.Error.FormatFailed": "无法格式化 {{language}}：{{message}}"
+}

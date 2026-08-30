@@ -45,11 +45,11 @@ public class HotKeyInspectorTests
     {
         var result = HotKeyInspector.Inspect("Alt+S", new HotKeyInspectionRequest
         {
-            ExcludePluginId = "json-formatter:json-formatter",
+            ExcludePluginId = "formatter:formatter",
             PluginHotKeys = new Dictionary<string, string?>
             {
                 ["settings:main"] = "Alt+S",
-                ["json-formatter:json-formatter"] = "Alt+S"
+                ["formatter:formatter"] = "Alt+S"
             },
             PluginNames = new Dictionary<string, string>
             {

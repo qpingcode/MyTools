@@ -4,10 +4,9 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "moduleDetection": "legacy",
-    "lib": ["ES2024", "DOM"],
+    "lib": ["ES2024", "DOM", "WebWorker"],
     "types": ["node"],
-    "strict": false,
-    "noImplicitAny": true,
+    "strict": true,
     "noEmitOnError": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
@@ -15,10 +14,8 @@
     "outDir": "dist"
   },
   "include": [
-    "src/web/**/*.ts",
-    "src/backend/**/*.mts"
+    "src/**/*.ts",
+    "src/**/*.mts"
   ],
-  "exclude": [
-    "dist"
-  ]
+  "exclude": ["dist"]
 }

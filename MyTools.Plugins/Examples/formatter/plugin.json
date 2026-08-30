@@ -1,0 +1,27 @@
+{
+  "id": "formatter",
+  "name": {
+    "key": "Plugin.Formatter.Name",
+    "defaultValue": "Formatter"
+  },
+  "version": "0.1.0",
+  "protocolVersion": "3.0",
+  "icon": "mdi-code-braces",
+  "i18n": {
+    "defaultLocale": "en-US",
+    "catalog": "i18n/catalog.en-US.json",
+    "localesPath": "i18n/locales",
+    "supportedLocales": ["en-US", "zh-CN"]
+  },
+  "entry": "backend/index.mjs",
+  "capabilities": [],
+  "alias": [
+    "format", "formatter", "json", "xml", "javascript", "js",
+    "typescript", "ts", "html", "css", "yaml", "yml"
+  ],
+  "search": { "global": false },
+  "detail": {
+    "type": "web",
+    "entry": "web/index.html"
+  }
+}
