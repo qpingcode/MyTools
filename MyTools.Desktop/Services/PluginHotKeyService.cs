@@ -62,9 +62,10 @@ public sealed class PluginHotKeyService
 
     public void ReRegisterAll(IEnumerable<NodePlugin> nodePlugins, Action<NodePlugin> openDetail)
     {
-        foreach (var id in hotKeyIds.Values)
+        foreach (var (pluginId, hotKeyId) in hotKeyIds)
         {
-            hotKeyManager.UnregisterHotKey(id);
+            hotKeyManager.UnregisterHotKey(hotKeyId);
+            logger.LogInformation("Unregistered hotkey for plugin {PluginId}.", pluginId);
         }
         hotKeyIds.Clear();
         RegisterAll(nodePlugins, openDetail);
@@ -83,6 +84,7 @@ public sealed class PluginHotKeyService
             }
 
             hotKeyManager.UnregisterHotKey(hotKeyId);
+            logger.LogInformation("Unregistered hotkey for plugin {PluginId}.", pluginId);
         }
 
         RegisterAll(plugins, openDetail);
@@ -100,6 +102,7 @@ public sealed class PluginHotKeyService
         {
             hotKeyManager.UnregisterHotKey(hotKeyIds[pluginId]);
             hotKeyIds.Remove(pluginId);
+            logger.LogInformation("Unregistered hotkey for plugin {PluginId}.", pluginId);
         }
 
         RegisterAll(nodePlugins, openDetail);
