@@ -19,5 +19,22 @@
   "Plugin.Store.Select.Title": "Choose a plugin",
   "Plugin.Store.Select.Description": "Select a plugin from the list to view details and install it.",
   "Plugin.Store.Install": "Install",
-  "Plugin.Store.Installed": "Plugin installed."
+  "Plugin.Store.Installed": "Plugin installed.",
+  "Plugin.Store.Update": "Update",
+  "Plugin.Store.Updated": "Plugin updated.",
+  "Plugin.Store.InstalledBadge": "Installed",
+  "Plugin.Store.InstalledVersion": "Installed v{{version}}",
+  "Plugin.Store.Filter.All": "All",
+  "Plugin.Store.Filter.Installed": "Installed",
+  "Plugin.Store.Filter.Available": "Available",
+  "Plugin.Store.EmptyInstalled": "No installed plugins",
+  "Plugin.Store.EmptyAvailable": "All listed plugins are already installed",
+  "Plugin.Store.Overview": "Overview",
+  "Plugin.Store.Changelog": "Change Log",
+  "Plugin.Store.NoChangelog": "No changelog has been published yet.",
+  "Plugin.Store.Uninstall": "Uninstall",
+  "Plugin.Store.Uninstall.Title": "Uninstall plugin",
+  "Plugin.Store.Uninstall.Confirm": "Uninstall {{name}}? This deletes the plugin files and its local data.",
+  "Plugin.Store.Uninstall.Cancel": "Cancel",
+  "Plugin.Store.Uninstalled": "Plugin uninstalled."
 }

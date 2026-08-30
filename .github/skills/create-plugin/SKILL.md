@@ -325,7 +325,7 @@ return {
 | `account.logout` | 退出 Hub。 | 无参数 |
 | `account.externalLogin` | 用系统浏览器完成 Google 或微软账号登录。 | `{ provider: "google" \| "microsoft" }` |
 | `marketplace.search` | 搜索 Hub 插件市场。未登录可用。 | `{ query? }`；返回 `{ items, total }` |
-| `marketplace.get` | 读取插件详情（含 README）。未登录可用。 | `{ pluginId }` |
+| `marketplace.get` | 读取插件详情（含 README）。未登录可用。 | `{ pluginId, locale? }` |
 | `marketplace.install` | 下载并安装插件到本机 plugins 目录。未登录可用。 | `{ pluginId, version? }` |
 | `marketplace.publish` | 构建开发插件并发布到 Hub。必须登录；版本必须高于已发布版本。 | `{ pluginId }` |
 | `sync.pull` | 从 Hub 拉取配置快照并写入本地。必须登录。 | 无参数 |

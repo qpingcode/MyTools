@@ -162,13 +162,19 @@
     },
     {
       "key": "Plugin.CreatePlugin.PublishHub.Description",
-      "defaultValue": "Metadata is read from plugin.json. After editing the file, leave either field to validate again.",
+      "defaultValue": "Edit the plugin ID and version. Changes are saved to plugin.json and checked against the store.",
       "placeholders": [],
       "references": null
     },
     {
       "key": "Plugin.CreatePlugin.PublishHub.Version",
       "defaultValue": "Version",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.PublishHub.Version.Invalid",
+      "defaultValue": "Enter a valid version, for example 1.0.0.",
       "placeholders": [],
       "references": null
     },
@@ -192,7 +198,7 @@
     },
     {
       "key": "Plugin.CreatePlugin.PublishHub.Invalid",
-      "defaultValue": "Fix plugin.json and validate again.",
+      "defaultValue": "Fix the plugin ID or version and validate again.",
       "placeholders": [],
       "references": null
     },

@@ -17,7 +17,8 @@
   "capabilities": [
     "marketplace.search",
     "marketplace.get",
-    "marketplace.install"
+    "marketplace.install",
+    "marketplace.uninstall"
   ],
   "alias": ["store"],
   "search": { "global": true },

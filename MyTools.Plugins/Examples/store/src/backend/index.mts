@@ -21,7 +21,7 @@ plugin
     if (!query && params.mode !== "plugin") {
       return { items: [] };
     }
-    const result = await plugin.hostCall("marketplace.search", { query }) as { items?: PluginSummary[] };
+    const result = await plugin.hostCall("marketplace.search", { query, locale: params.locale }) as { items?: PluginSummary[] };
     const items = (result.items || []).slice(0, 8).map((item) => ({
       id: `store:${item.id}`,
       title: item.name || item.id || "",
@@ -48,10 +48,12 @@ plugin
       },
     }),
   }])
-  .handle("searchPlugins", async (payload: { query?: string }) =>
-    plugin.hostCall("marketplace.search", { query: payload?.query ?? "" }))
-  .handle("getPlugin", async (payload: { pluginId: string }) =>
+  .handle("searchPlugins", async (payload: { query?: string; locale?: string }) =>
+    plugin.hostCall("marketplace.search", { query: payload?.query ?? "", locale: payload?.locale }))
+  .handle("getPlugin", async (payload: { pluginId: string; locale?: string }) =>
     plugin.hostCall("marketplace.get", payload))
   .handle("installPlugin", async (payload: { pluginId: string; version?: string }) =>
     plugin.hostCall("marketplace.install", payload, 180_000))
+  .handle("uninstallPlugin", async (payload: { pluginId: string }) =>
+    plugin.hostCall("marketplace.uninstall", payload, 60_000))
   .start();

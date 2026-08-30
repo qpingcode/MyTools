@@ -4,7 +4,7 @@ using MyTools.Plugins.NodePlugins;
 
 namespace MyTools.Plugins;
 
-public class PluginLoader(ILogger<PluginLoader> logger, IKeywordRegistry keywordRegistry, IGlobalSearchRegistry globalSearchRegistry, IActionRegistry actionRegistry, IEnumerable<IPlugin> plugins, Searcher searcher, NodePluginCatalog nodePluginCatalog, NodePluginFactory nodePluginFactory) : IDisposable
+public class PluginLoader(ILogger<PluginLoader> logger, IKeywordRegistry keywordRegistry, IGlobalSearchRegistry globalSearchRegistry, IActionRegistry actionRegistry, IPluginHotKeyRegistry pluginHotKeyRegistry, IEnumerable<IPlugin> plugins, Searcher searcher, NodePluginCatalog nodePluginCatalog, NodePluginFactory nodePluginFactory) : IDisposable
 {
     private readonly List<IPlugin> dynamicPlugins = [];
     private bool actionsRegistered;
@@ -44,17 +44,17 @@ public class PluginLoader(ILogger<PluginLoader> logger, IKeywordRegistry keyword
         return GetAllPlugins().ToList();
     }
 
-    public async Task<IReadOnlyList<NodePlugin>> ReloadPluginAsync(string parentPluginId)
+    public async Task<IReadOnlyList<NodePlugin>> ReloadPluginAsync(string pluginId)
     {
         ObjectDisposedException.ThrowIf(disposed, this);
-        ArgumentException.ThrowIfNullOrWhiteSpace(parentPluginId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
 
         var replacements = nodePluginFactory.CreatePlugins(
             nodePluginCatalog.Plugins.Where(manifest =>
-                string.Equals(manifest.ParentId, parentPluginId, StringComparison.OrdinalIgnoreCase)));
+                string.Equals(manifest.Id, pluginId, StringComparison.OrdinalIgnoreCase)));
         var replaced = dynamicPlugins
             .OfType<NodePlugin>()
-            .Where(plugin => string.Equals(plugin.ParentId, parentPluginId, StringComparison.OrdinalIgnoreCase))
+            .Where(plugin => string.Equals(plugin.PluginId.Value, pluginId, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         foreach (var plugin in replaced)
@@ -71,6 +71,29 @@ public class PluginLoader(ILogger<PluginLoader> logger, IKeywordRegistry keyword
         _ = Task.Run(() => InitializeAsync(replacements));
 
         return replacements;
+    }
+
+    public async Task UnloadPluginAsync(string pluginId)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
+
+        pluginHotKeyRegistry.UnregisterPlugin(pluginId);
+
+        var replaced = dynamicPlugins
+            .OfType<NodePlugin>()
+            .Where(plugin => string.Equals(plugin.PluginId.Value, pluginId, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        foreach (var plugin in replaced)
+        {
+            keywordRegistry.UnregisterPlugin(plugin);
+            globalSearchRegistry.UnregisterPlugin(plugin);
+            dynamicPlugins.Remove(plugin);
+        }
+
+        await DisposePluginsAsync(replaced);
+        searcher.InvalidateHomePageCache();
     }
 
     private async Task InitializeAsync(IEnumerable<IPlugin>? pluginsToInitialize = null)

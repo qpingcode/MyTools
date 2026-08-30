@@ -3,5 +3,272 @@
   "scope": "plugin:store",
   "pluginId": "store",
   "sourceLocale": "en-US",
-  "entries": []
+  "entries": [
+    {
+      "key": "Plugin.Store.Name",
+      "defaultValue": "Plugin Store",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "插件市场" }
+    },
+    {
+      "key": "Plugin.Store.Tagline",
+      "defaultValue": "Discover tools made for MyTools",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "发现为 MyTools 打造的实用工具" }
+    },
+    {
+      "key": "Plugin.Store.Explore",
+      "defaultValue": "Explore",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "探索插件" }
+    },
+    {
+      "key": "Plugin.Store.Action.Open",
+      "defaultValue": "Open Store",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "打开市场" }
+    },
+    {
+      "key": "Plugin.Store.Result.Subtitle",
+      "defaultValue": "{{owner}} · v{{version}} · {{downloads}} downloads",
+      "placeholders": ["owner", "version", "downloads"],
+      "references": [],
+      "existingTranslations": { "zh-CN": "{{owner}} · v{{version}} · {{downloads}} 次下载" }
+    },
+    {
+      "key": "Plugin.Store.Search",
+      "defaultValue": "Search plugins",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "搜索插件" }
+    },
+    {
+      "key": "Plugin.Store.SearchAction",
+      "defaultValue": "Search",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "搜索" }
+    },
+    {
+      "key": "Plugin.Store.Empty",
+      "defaultValue": "No plugins found",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "没有找到插件" }
+    },
+    {
+      "key": "Plugin.Store.Version",
+      "defaultValue": "Version",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "版本" }
+    },
+    {
+      "key": "Plugin.Store.Downloads",
+      "defaultValue": "Downloads",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "下载量" }
+    },
+    {
+      "key": "Plugin.Store.Owner",
+      "defaultValue": "Publisher",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "发布者" }
+    },
+    {
+      "key": "Plugin.Store.Created",
+      "defaultValue": "Created",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "创建时间" }
+    },
+    {
+      "key": "Plugin.Store.Updated",
+      "defaultValue": "Updated",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "更新时间" }
+    },
+    {
+      "key": "Plugin.Store.Protocol",
+      "defaultValue": "Protocol",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "协议版本" }
+    },
+    {
+      "key": "Plugin.Store.VerifiedListing",
+      "defaultValue": "MyTools plugin",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "MyTools 插件" }
+    },
+    {
+      "key": "Plugin.Store.About",
+      "defaultValue": "About this plugin",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "关于此插件" }
+    },
+    {
+      "key": "Plugin.Store.NoDescription",
+      "defaultValue": "The publisher has not added a description yet.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "发布者还没有添加插件说明。" }
+    },
+    {
+      "key": "Plugin.Store.Select.Title",
+      "defaultValue": "Choose a plugin",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "选择一个插件" }
+    },
+    {
+      "key": "Plugin.Store.Select.Description",
+      "defaultValue": "Select a plugin from the list to view details and install it.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "从左侧列表选择插件，查看详情并安装。" }
+    },
+    {
+      "key": "Plugin.Store.Install",
+      "defaultValue": "Install",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "安装" }
+    },
+    {
+      "key": "Plugin.Store.Installed",
+      "defaultValue": "Plugin installed.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "插件已安装。" }
+    },
+    {
+      "key": "Plugin.Store.Update",
+      "defaultValue": "Update",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "更新" }
+    },
+    {
+      "key": "Plugin.Store.Updated",
+      "defaultValue": "Plugin updated.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "插件已更新。" }
+    },
+    {
+      "key": "Plugin.Store.InstalledBadge",
+      "defaultValue": "Installed",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "已安装" }
+    },
+    {
+      "key": "Plugin.Store.InstalledVersion",
+      "defaultValue": "Installed v{{version}}",
+      "placeholders": ["version"],
+      "references": [],
+      "existingTranslations": { "zh-CN": "已安装 v{{version}}" }
+    },
+    {
+      "key": "Plugin.Store.Filter.All",
+      "defaultValue": "All",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "全部" }
+    },
+    {
+      "key": "Plugin.Store.Filter.Installed",
+      "defaultValue": "Installed",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "已安装" }
+    },
+    {
+      "key": "Plugin.Store.Filter.Available",
+      "defaultValue": "Available",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "未安装" }
+    },
+    {
+      "key": "Plugin.Store.EmptyInstalled",
+      "defaultValue": "No installed plugins",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "没有已安装的插件" }
+    },
+    {
+      "key": "Plugin.Store.EmptyAvailable",
+      "defaultValue": "All listed plugins are already installed",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "列表中的插件都已安装" }
+    },
+    {
+      "key": "Plugin.Store.Overview",
+      "defaultValue": "Overview",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "概述" }
+    },
+    {
+      "key": "Plugin.Store.Changelog",
+      "defaultValue": "Change Log",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "更新日志" }
+    },
+    {
+      "key": "Plugin.Store.NoChangelog",
+      "defaultValue": "No changelog has been published yet.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "还没有发布更新日志。" }
+    },
+    {
+      "key": "Plugin.Store.Uninstall",
+      "defaultValue": "Uninstall",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "卸载" }
+    },
+    {
+      "key": "Plugin.Store.Uninstall.Title",
+      "defaultValue": "Uninstall plugin",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "卸载插件" }
+    },
+    {
+      "key": "Plugin.Store.Uninstall.Confirm",
+      "defaultValue": "Uninstall {{name}}? This deletes the plugin files and its local data.",
+      "placeholders": ["name"],
+      "references": [],
+      "existingTranslations": { "zh-CN": "确定卸载 {{name}}？将删除插件文件及其本地数据。" }
+    },
+    {
+      "key": "Plugin.Store.Uninstall.Cancel",
+      "defaultValue": "Cancel",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "取消" }
+    },
+    {
+      "key": "Plugin.Store.Uninstalled",
+      "defaultValue": "Plugin uninstalled.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": { "zh-CN": "插件已卸载。" }
+    }
+  ]
 }

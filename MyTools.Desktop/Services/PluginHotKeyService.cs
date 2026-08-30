@@ -1,12 +1,13 @@
 using System.Windows.Input;
 using Microsoft.Extensions.Logging;
+using MyTools.Common;
 using MyTools.Common.Plugins;
 using MyTools.Desktop.Models;
 using MyTools.Plugins.NodePlugins;
 
 namespace MyTools.Desktop.Services;
 
-public sealed class PluginHotKeyService
+public sealed class PluginHotKeyService : IPluginHotKeyRegistry
 {
     private readonly HotKeyManager hotKeyManager;
     private readonly PluginOverrideProvider overrideProvider;
@@ -90,26 +91,26 @@ public sealed class PluginHotKeyService
         RegisterAll(plugins, openDetail);
     }
 
+    public void UnregisterPlugin(string pluginId)
+    {
+        var id = new PluginId(pluginId);
+        if (!hotKeyIds.Remove(id, out var hotKeyId))
+        {
+            return;
+        }
+
+        hotKeyManager.UnregisterHotKey(hotKeyId);
+        logger.LogInformation("Unregistered hotkey for plugin {PluginId}.", id);
+    }
+
     public void ReRegisterPlugin(
-        string parentPluginId,
+        string pluginId,
         IEnumerable<NodePlugin> nodePlugins,
         Action<NodePlugin> openDetail)
     {
-        var affectedIds = hotKeyIds.Keys
-            .Where(pluginId => IsEntryOf(pluginId, parentPluginId))
-            .ToList();
-        foreach (var pluginId in affectedIds)
-        {
-            hotKeyManager.UnregisterHotKey(hotKeyIds[pluginId]);
-            hotKeyIds.Remove(pluginId);
-            logger.LogInformation("Unregistered hotkey for plugin {PluginId}.", pluginId);
-        }
-
+        UnregisterPlugin(pluginId);
         RegisterAll(nodePlugins, openDetail);
     }
-
-    private static bool IsEntryOf(PluginId pluginId, string parentPluginId) =>
-        pluginId.Value.StartsWith(parentPluginId + ":", StringComparison.OrdinalIgnoreCase);
 
     public List<PluginOverrideConflict> Validate(
         IReadOnlyDictionary<string, string?> pendingHotKeys,

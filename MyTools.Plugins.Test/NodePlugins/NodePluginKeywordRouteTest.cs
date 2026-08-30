@@ -6,6 +6,7 @@ using MyTools.Host.Core.Sessions;
 using MyTools.Host.Core.Transports;
 using MyTools.Plugins.NodePlugins;
 using NUnit.Framework;
+using System.Text.Json;
 
 namespace MyTools.Plugins.Test.NodePlugins;
 
@@ -94,6 +95,18 @@ public class NodePluginKeywordRouteTest
     }
 
     [Test]
+    public void CreateDetailContextWithState_ShouldKeepCallerState()
+    {
+        using var plugin = CreatePlugin();
+        using var document = JsonDocument.Parse("""{"pluginId":"chat"}""");
+
+        var context = plugin.CreateDetailContextWithState(document.RootElement);
+
+        Assert.That(context, Is.Not.Null);
+        Assert.That(context!.InitialState.GetProperty("pluginId").GetString(), Is.EqualTo("chat"));
+    }
+
+    [Test]
     public void CreateActionDetailContext_ShouldNotUseManifestDetailWhenOutcomeOmitsDetail()
     {
         using var plugin = CreatePlugin();
@@ -127,7 +140,6 @@ public class NodePluginKeywordRouteTest
         var manifest = new NodePluginManifest
         {
             Id = "deepseek-translator",
-            ParentId = "deepseek-translator",
             NameMessage = new LocalizedMessage("DeepSeek key", "DeepSeek Translator"),
             Version = "0.1.0",
             Runtime = "node",

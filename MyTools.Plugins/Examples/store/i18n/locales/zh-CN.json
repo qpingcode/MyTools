@@ -19,5 +19,22 @@
   "Plugin.Store.Select.Title": "选择一个插件",
   "Plugin.Store.Select.Description": "从左侧列表选择插件，查看详情并安装。",
   "Plugin.Store.Install": "安装",
-  "Plugin.Store.Installed": "插件已安装。"
+  "Plugin.Store.Installed": "插件已安装。",
+  "Plugin.Store.Update": "更新",
+  "Plugin.Store.Updated": "插件已更新。",
+  "Plugin.Store.InstalledBadge": "已安装",
+  "Plugin.Store.InstalledVersion": "已安装 v{{version}}",
+  "Plugin.Store.Filter.All": "全部",
+  "Plugin.Store.Filter.Installed": "已安装",
+  "Plugin.Store.Filter.Available": "未安装",
+  "Plugin.Store.EmptyInstalled": "没有已安装的插件",
+  "Plugin.Store.EmptyAvailable": "列表中的插件都已安装",
+  "Plugin.Store.Overview": "概述",
+  "Plugin.Store.Changelog": "更新日志",
+  "Plugin.Store.NoChangelog": "还没有发布更新日志。",
+  "Plugin.Store.Uninstall": "卸载",
+  "Plugin.Store.Uninstall.Title": "卸载插件",
+  "Plugin.Store.Uninstall.Confirm": "确定卸载 {{name}}？将删除插件文件及其本地数据。",
+  "Plugin.Store.Uninstall.Cancel": "取消",
+  "Plugin.Store.Uninstalled": "插件已卸载。"
 }

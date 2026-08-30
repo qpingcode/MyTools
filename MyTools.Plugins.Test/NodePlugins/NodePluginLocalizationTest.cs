@@ -74,8 +74,7 @@ public class NodePluginLocalizationTest
 
     private NodePluginManifest CreateManifest(string catalogPath) => new()
     {
-        Id = "example:main",
-        ParentId = "example",
+        Id = "example",
         NameMessage = new LocalizedMessage("Example key", "Example"),
         DefaultLocale = "en-US",
         CatalogFullPath = catalogPath,

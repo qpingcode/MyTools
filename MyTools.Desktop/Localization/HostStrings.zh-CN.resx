@@ -220,4 +220,5 @@
   <data name="Search.Actions.Overflow" xml:space="preserve"><value>操作</value></data>
   <data name="Plugin.ClipBoard.Empty.Title" xml:space="preserve"><value>剪贴板历史为空</value></data>
   <data name="Plugin.ClipBoard.Empty.Description" xml:space="preserve"><value>复制一些文本、图片或文件后，它们会出现在这里。</value></data>
+  <data name="Protocol.InstallFailed" xml:space="preserve"><value>无法安装插件：{{message}}</value></data>
 </root>

@@ -58,10 +58,58 @@
     <section id="step3" class="wizard-step centered" hidden><div class="success">✓</div><h2 data-i18n="[text]Plugin.CreatePlugin.Success.Title" data-i18n-default-value="Your plugin is ready"></h2><p data-i18n="[text]Plugin.CreatePlugin.Success.Description" data-i18n-default-value="Start in VS Code, browse the files yourself, or continue here and ask AI to shape the plugin with you."></p><dl class="plugin-details"><div><dt data-i18n="[text]Plugin.CreatePlugin.Form.Name" data-i18n-default-value="Name"></dt><dd id="detailName"></dd></div><div><dt data-i18n="[text]Plugin.CreatePlugin.Form.Id" data-i18n-default-value="Plugin ID"></dt><dd id="detailId"></dd></div><div><dt data-i18n="[text]Plugin.CreatePlugin.Form.Type" data-i18n-default-value="Type"></dt><dd id="detailType"></dd></div></dl><code id="sourcePath"></code><div class="completion-actions"><button id="openFolder" class="secondary" data-i18n="[text]Plugin.CreatePlugin.Action.OpenFolder" data-i18n-default-value="Open folder"></button><button id="openCode" class="secondary" data-i18n="[text]Plugin.CreatePlugin.Action.OpenCode" data-i18n-default-value="Open in VS Code"></button><button id="backToCreate" data-i18n="[text]Plugin.CreatePlugin.Action.ContinueAi" data-i18n-default-value="Continue with AI"></button></div></section>
   </section></div>
 
-  <div id="publishModal" class="modal-backdrop" hidden><section class="modal publish-modal" role="dialog" aria-modal="true" aria-labelledby="publishModalTitle">
-    <header class="modal-header"><div><span class="eyebrow" data-i18n="[text]Plugin.CreatePlugin.PublishHub.Eyebrow" data-i18n-default-value="MYTOOLS STORE"></span><h2 id="publishModalTitle" data-i18n="[text]Plugin.CreatePlugin.PublishHub.Title" data-i18n-default-value="Publish plugin"></h2></div><button id="closePublishModal" class="icon-button" aria-label="Close">×</button></header>
-    <p data-i18n="[text]Plugin.CreatePlugin.PublishHub.Description" data-i18n-default-value="Metadata is read from plugin.json. After editing the file, leave either field to validate again."></p><div class="form-grid publish-fields"><label class="form-field"><span data-i18n="[text]Plugin.CreatePlugin.Form.Id" data-i18n-default-value="Plugin ID"></span><input id="publishPluginId" readonly></label><label class="form-field"><span data-i18n="[text]Plugin.CreatePlugin.PublishHub.Version" data-i18n-default-value="Version"></span><input id="publishVersion" readonly></label></div><div id="publishValidation" class="validation-status checking" role="status"></div><footer><button id="cancelPublish" class="secondary" data-i18n="[text]Plugin.CreatePlugin.Action.Cancel" data-i18n-default-value="Cancel"></button><button id="confirmPublish" disabled data-i18n="[text]Plugin.CreatePlugin.Action.PublishHub" data-i18n-default-value="Publish to Store"></button></footer>
-  </section></div>
+  <div id="publishModal" class="modal-backdrop" hidden>
+    <section class="dialog-card publish-dialog" role="dialog" aria-modal="true" aria-labelledby="publishModalTitle">
+      <header class="dialog-header">
+        <span class="dialog-header-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M5 20h14v-2H5v2zm7-18-5.5 5.5 1.42 1.42L11 6.84V16h2V6.84l3.08 3.08 1.42-1.42z"/></svg>
+        </span>
+        <div class="dialog-heading">
+          <div id="publishModalTitle" class="dialog-title" data-i18n="[text]Plugin.CreatePlugin.PublishHub.Title" data-i18n-default-value="Publish plugin"></div>
+          <div id="publishModalContext" class="dialog-context"></div>
+        </div>
+        <button id="closePublishModal" class="dialog-close" type="button" aria-label="Close">×</button>
+      </header>
+      <div class="dialog-body">
+        <p class="dialog-lead" data-i18n="[text]Plugin.CreatePlugin.PublishHub.Description" data-i18n-default-value="Edit the plugin ID and version. Changes are saved to plugin.json and checked against the store."></p>
+        <div class="dialog-field">
+          <label class="dialog-label" for="publishPluginId" data-i18n="[text]Plugin.CreatePlugin.Form.Id" data-i18n-default-value="Plugin ID"></label>
+          <div class="dialog-control">
+            <div id="publishPluginIdWrap" class="field-input-wrap">
+              <input id="publishPluginId" autocomplete="off" spellcheck="false">
+              <span class="field-suffix" aria-hidden="true">
+                <span id="publishPluginIdCheck" class="field-check" hidden>
+                  <svg viewBox="0 0 16 16" width="14" height="14"><path fill="currentColor" d="M6.4 11.2 3.2 8l1.12-1.12L6.4 8.96l5.28-5.28L12.8 4.8z"/></svg>
+                </span>
+                <span id="publishPluginIdSpinner" class="field-spinner" hidden></span>
+              </span>
+            </div>
+            <small id="publishPluginIdError" class="field-error" hidden></small>
+          </div>
+        </div>
+        <div class="dialog-field">
+          <label class="dialog-label" for="publishVersion" data-i18n="[text]Plugin.CreatePlugin.PublishHub.Version" data-i18n-default-value="Version"></label>
+          <div class="dialog-control">
+            <div id="publishVersionWrap" class="field-input-wrap">
+              <input id="publishVersion" autocomplete="off" spellcheck="false">
+              <span class="field-suffix" aria-hidden="true">
+                <span id="publishVersionCheck" class="field-check" hidden>
+                  <svg viewBox="0 0 16 16" width="14" height="14"><path fill="currentColor" d="M6.4 11.2 3.2 8l1.12-1.12L6.4 8.96l5.28-5.28L12.8 4.8z"/></svg>
+                </span>
+                <span id="publishVersionSpinner" class="field-spinner" hidden></span>
+              </span>
+            </div>
+            <small id="publishVersionError" class="field-error" hidden></small>
+          </div>
+        </div>
+        <div id="publishValidation" class="dialog-status" role="status"></div>
+      </div>
+      <footer class="dialog-toolbar">
+        <button id="cancelPublish" class="secondary" type="button" data-i18n="[text]Plugin.CreatePlugin.Action.Cancel" data-i18n-default-value="Cancel"></button>
+        <button id="confirmPublish" type="button" disabled data-i18n="[text]Plugin.CreatePlugin.Action.PublishHub" data-i18n-default-value="Publish to Store"></button>
+      </footer>
+    </section>
+  </div>
   <div id="toast"></div>
 </main>
 <script src="./main.js"></script>

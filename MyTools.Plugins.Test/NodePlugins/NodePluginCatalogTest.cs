@@ -75,7 +75,6 @@ public class NodePluginCatalogTest
 
         Assert.That(plugins, Has.Count.EqualTo(1));
         Assert.That(plugins[0].Id, Is.EqualTo("hello"));
-        Assert.That(plugins[0].ParentId, Is.EqualTo("hello"));
         Assert.That(plugins[0].HotKey, Is.EqualTo("Alt+C"));
         Assert.That(plugins[0].Keywords, Is.EquivalentTo(new[] { "hello" }));
         Assert.That(plugins[0].SearchGlobal, Is.False);

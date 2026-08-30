@@ -21,7 +21,6 @@ public sealed class NodePluginManifest
     public string ProtocolVersion { get; init; } = string.Empty;
     public string PluginDirectory { get; init; } = string.Empty;
     public string EntryFullPath { get; init; } = string.Empty;
-    public string ParentId { get; init; } = string.Empty;
     /// <summary>Relative web detail path when <c>detail.type</c> is <c>web</c>; otherwise null (native list).</summary>
     public string? DetailEntry { get; init; }
     /// <summary>Absolute web detail path, or null when this entry uses the native list UI.</summary>

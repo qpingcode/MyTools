@@ -28,7 +28,6 @@ public class NodePluginBusHostTest
     private static NodePluginManifest Manifest() => new()
     {
         Id = "settings",
-        ParentId = "settings",
         NameMessage = new MyTools.Common.Localization.LocalizedMessage("Plugin.Settings.Name", "Settings"),
         Version = "0.0.6",
         Runtime = "node",
@@ -212,7 +211,6 @@ public class NodePluginBusHostTest
         var m = new NodePluginManifest
         {
             Id = "settings",
-            ParentId = "settings",
             NameMessage = new MyTools.Common.Localization.LocalizedMessage("Plugin.Settings.Name", "Settings"),
             Version = "0.0.6",
             Runtime = "node",

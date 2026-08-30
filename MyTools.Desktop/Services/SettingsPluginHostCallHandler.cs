@@ -566,7 +566,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
 
             if (plugin is NodePlugin nodePlugin &&
                 !string.IsNullOrWhiteSpace(callerPluginId) &&
-                string.Equals(nodePlugin.ParentId, callerPluginId, StringComparison.OrdinalIgnoreCase))
+                string.Equals(nodePlugin.PluginId.Value, callerPluginId, StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }

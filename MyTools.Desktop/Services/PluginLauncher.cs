@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Text.Json;
 using MyTools.Common.Plugins;
 using MyTools.Desktop.Utils;
 using MyTools.Plugins;
@@ -37,19 +38,32 @@ public sealed class PluginLauncher : IPluginLauncher
         return InvokeOnUi(() => OpenCore(plugin));
     }
 
+    public PluginLaunchKind OpenStoreListing(string marketplacePluginId)
+    {
+        return InvokeOnUi(() =>
+        {
+            if (FindPlugin("store") is not NodePlugin store)
+            {
+                return PluginLaunchKind.NotFound;
+            }
+
+            var state = JsonSerializer.SerializeToElement(new { pluginId = marketplacePluginId });
+            var context = store.CreateDetailContextWithState(state);
+            if (context == null)
+            {
+                return OpenCore(store);
+            }
+
+            pluginWindowManager.ShowOrFocus(store, context, replaceContext: true);
+            return PluginLaunchKind.PluginWindow;
+        });
+    }
+
     private IPlugin? FindPlugin(string pluginId)
     {
         foreach (var plugin in pluginLoader.LoadedPlugins)
         {
             if (plugin.PluginId == new PluginId(pluginId))
-            {
-                return plugin;
-            }
-        }
-
-        foreach (var plugin in pluginLoader.LoadedPlugins.OfType<NodePlugin>())
-        {
-            if (string.Equals(plugin.ParentId, pluginId, StringComparison.OrdinalIgnoreCase))
             {
                 return plugin;
             }

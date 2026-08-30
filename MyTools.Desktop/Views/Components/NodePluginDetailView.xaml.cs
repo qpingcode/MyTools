@@ -328,7 +328,7 @@ public partial class NodePluginDetailView : UserControl
 
         var endpointLabel = $"web-{_ids.NewId()[..8]}";
         var binding = new EndpointBinding(
-            plugin.ParentId, sessionId, endpointLabel);
+            plugin.PluginId.Value, sessionId, endpointLabel);
 
         _webChannel = new CoreWebView2MessageChannel(PluginBrowser.CoreWebView2);
         _webTransport = new WebView2Transport(
@@ -532,7 +532,7 @@ public partial class NodePluginDetailView : UserControl
     {
         var plugin = viewModel?.CurrentContext?.Plugin;
         if (plugin is null) return;
-        if (e.PluginId != plugin.ParentId) return;
+        if (e.PluginId != plugin.PluginId.Value) return;
 
         StaticLogger.LogWarning(
             "Node session replaced for detail view {Plugin}; reloading page",
@@ -549,7 +549,7 @@ public partial class NodePluginDetailView : UserControl
     private void OnSessionUnavailable(object? sender, PluginSessionUnavailableEventArgs e)
     {
         var plugin = viewModel?.CurrentContext?.Plugin;
-        if (plugin is null || e.PluginId != plugin.ParentId) return;
+        if (plugin is null || e.PluginId != plugin.PluginId.Value) return;
 
         StaticLogger.LogWarning(
             "Node backend unavailable for active detail view plugin={Plugin} session={Session}",
@@ -667,7 +667,7 @@ public partial class NodePluginDetailView : UserControl
         catch (Exception ex)
         {
             StaticLogger.LogError(ex,
-                "Node backend reinitialization failed plugin={Plugin}", plugin.ParentId);
+                "Node backend reinitialization failed plugin={Plugin}", plugin.PluginId);
             await ShowBackendErrorAsync(ex);
         }
     }

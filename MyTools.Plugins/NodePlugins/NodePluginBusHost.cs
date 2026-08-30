@@ -76,7 +76,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
         _logger = logger;
         _ids = ids ?? new GuidIdGenerator();
         _sessionManager.SessionReplaced += OnSessionReplaced;
-        _logger.LogInformation("NodePluginBusHost created for plugin={PluginId}", manifest.ParentId);
+        _logger.LogInformation("NodePluginBusHost created for plugin={PluginId}", manifest.Id);
     }
 
     public event EventHandler<NodePluginEventReceivedEventArgs>? EventReceived;
@@ -102,11 +102,11 @@ internal sealed class NodePluginBusHost : INodePluginHost
 
             var v3 = ToV3Manifest();
             _session = await _sessionManager.StartSessionAsync(v3, NodeExePath, cancellationToken);
-            _nodeEndpoint = new EndpointId(_manifest.ParentId, _session.SessionId,
+            _nodeEndpoint = new EndpointId(_manifest.Id, _session.SessionId,
                 EndpointIds.NodeMain, IsNode: true);
             BindHostEndpoint();
 
-            _bus.RegisterHostCallHandler(_manifest.ParentId, InvokeHostCallAsync);
+            _bus.RegisterHostCallHandler(_manifest.Id, InvokeHostCallAsync);
 
             _heartbeatCts = new CancellationTokenSource();
             _ = RunHeartbeatAsync(_heartbeatCts.Token);
@@ -121,7 +121,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
 
     private void OnSessionReplaced(object? sender, PluginSessionReplacedEventArgs e)
     {
-        if (e.PluginId != _manifest.ParentId) return;
+        if (e.PluginId != _manifest.Id) return;
 
         _logger.LogWarning("Session replaced for {PluginId}: {Old} -> {New}",
             e.PluginId, e.Previous.SessionId, e.Current.SessionId);
@@ -130,7 +130,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
         UnbindHostEndpoint();
 
         _session = e.Current;
-        _nodeEndpoint = new EndpointId(_manifest.ParentId, _session.SessionId,
+        _nodeEndpoint = new EndpointId(_manifest.Id, _session.SessionId,
             EndpointIds.NodeMain, IsNode: true);
         BindHostEndpoint();
     }
@@ -140,7 +140,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
         if (_session is null) return;
         _hostTransport = new HostEndpointTransport();
         _hostTransport.Delivered += OnHostDelivery;
-        _hostEndpoint = new EndpointId(_manifest.ParentId, _session.SessionId,
+        _hostEndpoint = new EndpointId(_manifest.Id, _session.SessionId,
             EndpointIds.Host, IsNode: false);
         _bus.RegisterEndpoint(_hostEndpoint, _hostTransport);
     }
@@ -203,7 +203,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
                 Id = pingId,
                 TraceId = pingId,
                 SessionId = session.SessionId,
-                PluginId = _manifest.ParentId,
+                PluginId = _manifest.Id,
                 EndpointId = EndpointIds.Host,
                 Kind = MessageKind.Request,
                 Route = Routes.Bus.Ping,
@@ -238,8 +238,8 @@ internal sealed class NodePluginBusHost : INodePluginHost
                 {
                     _logger.LogWarning(
                         "Node heartbeat dead for {PluginId} after {N} timeouts; requesting restart",
-                        _manifest.ParentId, HeartbeatDeadAfter);
-                    await _sessionManager.NotifyPeerDeadAsync(_manifest.ParentId);
+                        _manifest.Id, HeartbeatDeadAfter);
+                    await _sessionManager.NotifyPeerDeadAsync(_manifest.Id);
                 }
             }
             catch (OperationCanceledException)
@@ -279,7 +279,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
         return await HostCallHandler(new HostCallRequest(
             method,
             parameters,
-            _manifest.ParentId,
+            _manifest.Id,
             _session?.SessionId ?? ""), cancellationToken);
     }
 
@@ -350,11 +350,11 @@ internal sealed class NodePluginBusHost : INodePluginHost
 
             FailLocalPending(ErrorCode.TransportDisconnected, "bus host disposed");
             UnbindHostEndpoint();
-            _bus.UnregisterHostCallHandler(_manifest.ParentId);
+            _bus.UnregisterHostCallHandler(_manifest.Id);
 
             if (_session is not null)
             {
-                await _sessionManager.StopSessionAsync(_manifest.ParentId, _session.SessionId);
+                await _sessionManager.StopSessionAsync(_manifest.Id, _session.SessionId);
             }
         }
         finally
@@ -397,7 +397,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
             Id = id,
             TraceId = id,
             SessionId = _session.SessionId,
-            PluginId = _manifest.ParentId,
+            PluginId = _manifest.Id,
             EndpointId = EndpointIds.Host,
             Kind = MessageKind.Request,
             Route = route,
@@ -481,7 +481,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
     {
         return new PluginManifestV3
         {
-            Id = _manifest.ParentId,
+            Id = _manifest.Id,
             Version = _manifest.Version,
             ProtocolVersion = ProtocolVersion.CurrentWire,
             Entry = _manifest.EntryFullPath,

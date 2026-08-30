@@ -57,6 +57,11 @@ export function readThemeOverrides(): GlobalThemeOverrides {
         Button: {
             fontSizeSmall: "13px",
             fontWeight: "500",
+            textColorPrimary: cssVar("--mt-accent-foreground", "#FFFFFF"),
+            textColorHoverPrimary: cssVar("--mt-accent-foreground", "#FFFFFF"),
+            textColorPressedPrimary: cssVar("--mt-accent-foreground", "#FFFFFF"),
+            textColorFocusPrimary: cssVar("--mt-accent-foreground", "#FFFFFF"),
+            textColorDisabledPrimary: cssVar("--mt-accent-foreground", "#FFFFFF"),
         },
         Switch: {
             railColor: cssVar("--mt-surface-alt", "#333333"),
@@ -70,6 +75,12 @@ export function readThemeOverrides(): GlobalThemeOverrides {
             color: cssVar("--mt-surface", "#292929"),
             borderColor: border,
             borderRadius: "12px",
+        },
+        Tabs: {
+            tabTextColorLine: cssVar("--mt-text-tertiary", "#898f9c"),
+            tabTextColorActiveLine: cssVar("--mt-accent", "#9AABFF"),
+            tabTextColorHoverLine: cssVar("--mt-accent-hover", "#C5CEFF"),
+            barColor: accent,
         },
     };
 }

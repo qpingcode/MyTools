@@ -936,63 +936,229 @@ $("selectedPublish").addEventListener("click", () => {
   if (window.confirm(question)) void runSelectedPluginOperation(
     "selectedPublish", "publishPlugin", "Plugin.CreatePlugin.Publish.Success", "Plugin installed in MyTools and reloaded.");
 });
+const PLUGIN_ID_PATTERN = /^[a-z0-9](?:[a-z0-9.-]{0,62}[a-z0-9])?$/;
+const SEMVER_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
+
+type PublishFieldId = "publishPluginId" | "publishVersion";
+type PublishValidateSource = PublishFieldId | "all";
+
 let publishValidationTurn = 0;
+let publishHydrated = false;
+let publishIdDirty = false;
+let publishVersionDirty = false;
+let publishValidateTimer = 0;
+let lastValidatedKey = "";
+let inFlightKey = "";
 
 function closePublishModal() {
   publishValidationTurn++;
+  window.clearTimeout(publishValidateTimer);
+  inFlightKey = "";
   $("publishModal").hidden = true;
 }
 
-async function validateHubPublish() {
-  if (!currentPlugin) return;
-  const pluginId = currentPlugin.pluginId;
-  const turn = ++publishValidationTurn;
+function readPublishFields() {
+  return {
+    pluginId: ($<HTMLInputElement>("publishPluginId").value || "").trim().toLowerCase(),
+    version: ($<HTMLInputElement>("publishVersion").value || "").trim()
+  };
+}
+
+function publishFieldsKey() {
+  const { pluginId, version } = readPublishFields();
+  return `${pluginId}\0${version}`;
+}
+
+function setPublishChecking(ids: PublishFieldId[], checking: boolean) {
+  for (const id of ids) {
+    const wrap = $(`${id}Wrap`);
+    wrap.classList.toggle("checking", checking);
+    $(`${id}Spinner`).hidden = !checking;
+    if (checking) $(`${id}Check`).hidden = true;
+    $<HTMLInputElement>(id).setAttribute("aria-busy", String(checking));
+  }
+}
+
+function setPublishField(id: PublishFieldId, state: "idle" | "valid" | "invalid", message = "") {
+  const wrap = $(`${id}Wrap`);
+  const error = $(`${id}Error`);
+  wrap.classList.remove("checking");
+  wrap.classList.toggle("valid", state === "valid");
+  wrap.classList.toggle("invalid", state === "invalid");
+  $(`${id}Spinner`).hidden = true;
+  $(`${id}Check`).hidden = state !== "valid";
+  error.hidden = state !== "invalid" || !message;
+  error.textContent = state === "invalid" ? message : "";
+  const input = $<HTMLInputElement>(id);
+  input.setAttribute("aria-invalid", String(state === "invalid"));
+  input.setAttribute("aria-busy", "false");
+}
+
+function resetPublishFields() {
+  lastValidatedKey = "";
+  inFlightKey = "";
+  setPublishField("publishPluginId", "idle");
+  setPublishField("publishVersion", "idle");
+  const status = $("publishValidation");
+  status.className = "dialog-status";
+  status.textContent = "";
+}
+
+function applyPublishValidation(result: HubPublishValidation) {
   const status = $("publishValidation");
   const publish = $<HTMLButtonElement>("confirmPublish");
+  if (result.isValid) {
+    setPublishField("publishPluginId", "valid");
+    setPublishField("publishVersion", "valid");
+    status.className = "dialog-status valid";
+    status.textContent = result.publishedVersion
+      ? t("Plugin.CreatePlugin.PublishHub.Valid.Update", "Ready to publish. Current store version: {{version}}.").replace("{{version}}", result.publishedVersion)
+      : t("Plugin.CreatePlugin.PublishHub.Valid.New", "This plugin ID is available and ready to publish.");
+    publish.disabled = false;
+    return;
+  }
+
   publish.disabled = true;
-  status.className = "validation-status checking";
-  status.textContent = t("Plugin.CreatePlugin.PublishHub.Checking", "Checking plugin ID and version...");
+  const message = result.message || t("Plugin.CreatePlugin.PublishHub.Invalid", "Fix the plugin ID or version and validate again.");
+  if (result.conflict === "pluginId") {
+    setPublishField("publishPluginId", "invalid", message);
+    setPublishField("publishVersion", SEMVER_PATTERN.test(readPublishFields().version) ? "valid" : "idle");
+    status.className = "dialog-status";
+    status.textContent = "";
+    return;
+  }
+  if (result.conflict === "version") {
+    setPublishField("publishVersion", "invalid", message);
+    setPublishField("publishPluginId", PLUGIN_ID_PATTERN.test(readPublishFields().pluginId) ? "valid" : "idle");
+    status.className = "dialog-status";
+    status.textContent = "";
+    return;
+  }
+
+  setPublishField("publishPluginId", "idle");
+  setPublishField("publishVersion", "idle");
+  status.className = "dialog-status invalid";
+  status.textContent = message;
+}
+
+async function validateHubPublish(source: PublishValidateSource = "all") {
+  if (!currentPlugin) return;
+  const { pluginId, version } = readPublishFields();
+  const key = publishFieldsKey();
+  const checkingIds: PublishFieldId[] = source === "all" ? ["publishPluginId", "publishVersion"] : [source];
+  const status = $("publishValidation");
+  const publish = $<HTMLButtonElement>("confirmPublish");
+
+  let localInvalid = false;
+  if (pluginId && !PLUGIN_ID_PATTERN.test(pluginId)) {
+    setPublishField("publishPluginId", "invalid", t("Plugin.CreatePlugin.Validation.InvalidId", "The plugin ID format is invalid"));
+    localInvalid = true;
+  }
+  if (publishHydrated || publishVersionDirty) {
+    if (!SEMVER_PATTERN.test(version)) {
+      setPublishField("publishVersion", "invalid", t("Plugin.CreatePlugin.PublishHub.Version.Invalid", "Enter a valid version, for example 1.0.0."));
+      localInvalid = true;
+    }
+  }
+  if (localInvalid) {
+    publish.disabled = true;
+    lastValidatedKey = key;
+    inFlightKey = "";
+    setPublishChecking(checkingIds, false);
+    return;
+  }
+
+  if (publishHydrated && (key === lastValidatedKey || key === inFlightKey)) return;
+
+  const turn = ++publishValidationTurn;
+  inFlightKey = key;
+  publish.disabled = true;
+  setPublishChecking(checkingIds, true);
   try {
-    const result = await bus.call<HubPublishValidation>("validateHubPublish", { pluginId }, 30_000);
-    if (turn !== publishValidationTurn || currentPlugin?.pluginId !== pluginId) return;
-    $<HTMLInputElement>("publishPluginId").value = result.pluginId;
-    $<HTMLInputElement>("publishVersion").value = result.version;
-    status.className = `validation-status ${result.isValid ? "valid" : "invalid"}`;
-    status.textContent = result.isValid
-      ? result.publishedVersion
-        ? t("Plugin.CreatePlugin.PublishHub.Valid.Update", "Ready to publish. Current store version: {{version}}.").replace("{{version}}", result.publishedVersion)
-        : t("Plugin.CreatePlugin.PublishHub.Valid.New", "This plugin ID is available and ready to publish.")
-      : result.message || t("Plugin.CreatePlugin.PublishHub.Invalid", "Fix plugin.json and validate again.");
-    publish.disabled = !result.isValid;
+    const payload: { pluginId: string; version?: string } = { pluginId: currentPlugin.pluginId };
+    if (publishVersionDirty) payload.version = version;
+    const result = await bus.call<HubPublishValidation>("validateHubPublish", payload, 30_000);
+    if (turn !== publishValidationTurn || currentPlugin?.pluginId !== payload.pluginId) return;
+    if (!publishHydrated) {
+      if (!publishIdDirty) $<HTMLInputElement>("publishPluginId").value = result.pluginId;
+      if (!publishVersionDirty) $<HTMLInputElement>("publishVersion").value = result.version;
+      publishHydrated = true;
+    }
+    lastValidatedKey = publishFieldsKey();
+    inFlightKey = "";
+    applyPublishValidation(result);
   } catch (error) {
     if (turn !== publishValidationTurn) return;
-    status.className = "validation-status invalid";
+    inFlightKey = "";
+    setPublishChecking(["publishPluginId", "publishVersion"], false);
+    setPublishField("publishPluginId", "idle");
+    setPublishField("publishVersion", "idle");
+    status.className = "dialog-status invalid";
     status.textContent = error instanceof Error ? error.message : String(error);
   }
+}
+
+function scheduleValidateHubPublish(source: PublishValidateSource) {
+  window.clearTimeout(publishValidateTimer);
+  publishValidateTimer = window.setTimeout(() => void validateHubPublish(source), 400);
 }
 
 $("selectedPublishHub").addEventListener("click", () => {
   closeMenus();
   if (!currentPlugin) return;
+  publishHydrated = false;
+  publishIdDirty = false;
+  publishVersionDirty = false;
+  resetPublishFields();
+  $("publishModalContext").textContent = currentPlugin.name;
   $<HTMLInputElement>("publishPluginId").value = currentPlugin.pluginId;
   $<HTMLInputElement>("publishVersion").value = "";
   $("publishModal").hidden = false;
-  void validateHubPublish();
+  $<HTMLInputElement>("publishPluginId").focus();
+  void validateHubPublish("all");
 });
 $("closePublishModal").addEventListener("click", closePublishModal);
 $("cancelPublish").addEventListener("click", closePublishModal);
-$<HTMLInputElement>("publishPluginId").addEventListener("blur", () => void validateHubPublish());
-$<HTMLInputElement>("publishVersion").addEventListener("blur", () => void validateHubPublish());
+$("publishModal").addEventListener("click", event => {
+  if (event.target === $("publishModal")) closePublishModal();
+});
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && !$("publishModal").hidden) closePublishModal();
+});
+$<HTMLInputElement>("publishPluginId").addEventListener("input", () => {
+  publishIdDirty = true;
+  lastValidatedKey = "";
+  scheduleValidateHubPublish("publishPluginId");
+});
+$<HTMLInputElement>("publishVersion").addEventListener("input", () => {
+  publishVersionDirty = true;
+  lastValidatedKey = "";
+  scheduleValidateHubPublish("publishVersion");
+});
+$<HTMLInputElement>("publishPluginId").addEventListener("blur", () => {
+  const input = $<HTMLInputElement>("publishPluginId");
+  input.value = input.value.trim().toLowerCase();
+  window.clearTimeout(publishValidateTimer);
+  void validateHubPublish("publishPluginId");
+});
+$<HTMLInputElement>("publishVersion").addEventListener("blur", () => {
+  window.clearTimeout(publishValidateTimer);
+  void validateHubPublish("publishVersion");
+});
 $("confirmPublish").addEventListener("click", async () => {
   if (!currentPlugin) return;
   const button = $<HTMLButtonElement>("confirmPublish");
+  const { version } = readPublishFields();
   button.disabled = true;
   try {
-    await bus.call("publishToHub", { pluginId: currentPlugin.pluginId }, 180_000);
+    await bus.call("publishToHub", {
+      pluginId: currentPlugin.pluginId,
+      version
+    }, 180_000);
     closePublishModal();
     toast(t("Plugin.CreatePlugin.PublishHub.Success", "Plugin published to the store."));
   } catch (error) {
-    $("publishValidation").className = "validation-status invalid";
+    $("publishValidation").className = "dialog-status invalid";
     $("publishValidation").textContent = error instanceof Error ? error.message : String(error);
     await validateHubPublish();
   }

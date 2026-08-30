@@ -65,7 +65,7 @@ public sealed class NodePluginCatalog
                     continue;
                 }
 
-                manifests.RemoveAll(item => string.Equals(item.ParentId, registration.PluginId, StringComparison.OrdinalIgnoreCase));
+                manifests.RemoveAll(item => string.Equals(item.Id, registration.PluginId, StringComparison.OrdinalIgnoreCase));
                 manifests.AddRange(ReadManifests(distDirectory, manifestPath));
                 developmentIds.Add(registration.PluginId);
             }
@@ -81,11 +81,8 @@ public sealed class NodePluginCatalog
         return Plugins;
     }
 
-    public bool IsDevelopmentPlugin(string pluginId)
-    {
-        var parentId = pluginId.Split(':', 2)[0];
-        return DevelopmentPluginIds.Contains(parentId);
-    }
+    public bool IsDevelopmentPlugin(string pluginId) =>
+        DevelopmentPluginIds.Contains(pluginId);
 
     private IReadOnlyList<NodePluginManifest> ReadManifests(string pluginDirectory, string manifestPath)
     {
@@ -159,7 +156,6 @@ public sealed class NodePluginCatalog
                 new NodePluginManifest
                 {
                     Id = fileModel.Id!,
-                    ParentId = fileModel.Id!,
                     NameMessage = fileModel.Name != null
                         ? new LocalizedMessage(fileModel.Name.Key ?? "", fileModel.Name.DefaultValue ?? "")
                         : null,

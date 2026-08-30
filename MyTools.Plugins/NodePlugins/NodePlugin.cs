@@ -118,12 +118,6 @@ public sealed class NodePlugin : IPlugin, IDisposable
         return busHost.StartAsync(busHost.NodeExePath, cancellationToken);
     }
 
-    /// <summary>
-    /// 插件所属的根 ID（不含 entry 后缀）。例如 PluginId 为 "settings:main"，
-    /// ParentId 为 "settings"。用于匹配同一插件的所有 entry。
-    /// </summary>
-    public string ParentId => manifest.ParentId;
-
     public List<IActionWithHotkey> Actions { get; } = [];
 
     public bool IsEnabled { get; set; } = true;
@@ -227,7 +221,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
     {
         PluginConfigurationRegistrar.Register(
             configurationRegistry,
-            ParentId,
+            PluginId.Value,
             GetDisplayName(),
             "",
             manifest.Configuration,
@@ -297,6 +291,25 @@ public sealed class NodePlugin : IPlugin, IDisposable
                 Page = manifest.DetailEntry ?? string.Empty,
                 Title = Name,
                 InitialState = CloneJson(BuildKeywordRouteState(string.Empty))
+            });
+    }
+
+    public NodePluginDetailContext? CreateDetailContextWithState(JsonElement initialState)
+    {
+        if (!manifest.HasWebDetail)
+        {
+            return null;
+        }
+
+        return CreateDetailContext(
+            itemId: $"{manifest.Id}:protocol-route",
+            searchText: string.IsNullOrWhiteSpace(PrimaryKeyword) ? string.Empty : $"{PrimaryKeyword} ",
+            query: string.Empty,
+            detail: new NodePluginDetailViewDto
+            {
+                Page = manifest.DetailEntry ?? string.Empty,
+                Title = Name,
+                InitialState = CloneJson(initialState)
             });
     }
 

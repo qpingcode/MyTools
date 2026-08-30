@@ -45,11 +45,11 @@ public class AppBootstrapperConfigurationReloadTest
     }
 
     private static NodePluginManifest Manifest(
-        string parentId,
+        string pluginId,
         params PluginConfigurationSettingV3[] configuration) =>
         new()
         {
-            ParentId = parentId,
+            Id = pluginId,
             Configuration = configuration
         };
 }

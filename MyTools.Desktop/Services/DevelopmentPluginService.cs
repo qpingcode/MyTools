@@ -136,7 +136,7 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
     {
         var registrations = DevelopmentPluginRegistrationStore.Load();
         var existingPlugins = builtInPlugins.Select(plugin => (plugin.PluginId.Value, plugin.Name))
-            .Concat(nodePluginCatalog.Plugins.Select(plugin => (plugin.ParentId, plugin.Name)))
+            .Concat(nodePluginCatalog.Plugins.Select(plugin => (plugin.Id, plugin.Name)))
             .Concat(registrations.Select(plugin => (plugin.PluginId, plugin.Name)));
         return ValidateAgainstExisting(name, pluginId, existingPlugins);
     }
@@ -144,7 +144,7 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
     public IReadOnlyList<(string Id, string Name)> GetKnownPlugins()
     {
         return builtInPlugins.Select(plugin => (Id: plugin.PluginId.Value, plugin.Name))
-            .Concat(nodePluginCatalog.Plugins.Select(plugin => (Id: plugin.ParentId, plugin.Name)))
+            .Concat(nodePluginCatalog.Plugins.Select(plugin => (Id: plugin.Id, plugin.Name)))
             .Concat(DevelopmentPluginRegistrationStore.Load().Select(plugin => (Id: plugin.PluginId, plugin.Name)))
             .DistinctBy(plugin => plugin.Id, StringComparer.OrdinalIgnoreCase)
             .ToArray();
@@ -358,7 +358,7 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
     {
         var registration = GetAiEditableRegistration(pluginId);
         var npmCommand = ResolveNpmOrThrow();
-        ValidateDevelopmentPackage(registration.SourcePath, requireDependencies: true);
+        ValidateDevelopmentPackage(registration.SourcePath, requireDependencies: true, requireWatch: true);
 
         var buildError = await RunNpmCommandAsync(
             npmCommand, registration.SourcePath, "run build", TimeSpan.FromMinutes(2), cancellationToken);
@@ -416,8 +416,8 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
         var distPath = Path.GetFullPath(registration.DistPath);
         using (var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(distPath, "plugin.json"))))
         {
-            var manifestId = document.RootElement.TryGetProperty("id", out var id) ? id.GetString() : null;
-            if (!string.Equals(manifestId, registration.PluginId, StringComparison.OrdinalIgnoreCase))
+            var id = document.RootElement.TryGetProperty("id", out var value) ? value.GetString() : null;
+            if (!string.Equals(id, registration.PluginId, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("The built plugin manifest ID does not match the selected plugin.");
         }
 
@@ -430,7 +430,7 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
     {
         var registration = GetAiEditableRegistration(pluginId);
         var npmCommand = ResolveNpmOrThrow();
-        ValidateDevelopmentPackage(registration.SourcePath, requireDependencies: true);
+        ValidateDevelopmentPackage(registration.SourcePath, requireDependencies: true, requireWatch: false);
         var buildError = await RunNpmCommandAsync(
             npmCommand, registration.SourcePath, "run build", TimeSpan.FromMinutes(2), cancellationToken);
         if (buildError is not null)
@@ -483,6 +483,38 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
         return await Task.FromResult(targetPath);
     }
 
+    public async Task UninstallInstalledPluginAsync(string pluginId, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var normalizedId = pluginId.Trim().ToLowerInvariant();
+        if (!ValidPluginId.IsMatch(normalizedId))
+        {
+            throw new InvalidOperationException("Invalid plugin ID.");
+        }
+
+        if (string.Equals(normalizedId, "store", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("The Plugin Store cannot be uninstalled from here.");
+        }
+
+        var targetPath = ResolveFormalPluginPath(normalizedId);
+        if (!Directory.Exists(targetPath))
+        {
+            throw new InvalidOperationException("That plugin is not installed.");
+        }
+
+        EnsureMatchingInstalledPlugin(targetPath, normalizedId);
+        try
+        {
+            await DeleteDirectoryAsync(targetPath, cancellationToken);
+            await DeleteDirectoryAsync(ConfigPath.PluginDataDirectory(normalizedId), cancellationToken);
+        }
+        finally
+        {
+            ReloadRequested?.Invoke(this, new DevelopmentPluginReloadRequestedEventArgs(normalizedId));
+        }
+    }
+
     private static string ResolveNpmOrThrow()
     {
         return ResolveSystemNpm() ?? NodeRuntimeLocator.FindBundledNpm()
@@ -490,7 +522,10 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
                 "No complete system Node/npm installation or MyTools bundled development runtime was found. Repair or reinstall MyTools, then retry.");
     }
 
-    internal static void ValidateDevelopmentPackage(string sourcePath, bool requireDependencies)
+    internal static void ValidateDevelopmentPackage(
+        string sourcePath,
+        bool requireDependencies,
+        bool requireWatch = true)
     {
         var packagePath = Path.Combine(sourcePath, "package.json");
         if (!File.Exists(packagePath)) throw new InvalidOperationException("package.json was not found.");
@@ -499,13 +534,19 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
             || scripts.ValueKind != JsonValueKind.Object
             || !scripts.TryGetProperty("build", out var build)
             || build.ValueKind != JsonValueKind.String
-            || string.IsNullOrWhiteSpace(build.GetString())
-            || !scripts.TryGetProperty("watch", out var watch)
-            || watch.ValueKind != JsonValueKind.String
-            || string.IsNullOrWhiteSpace(watch.GetString()))
+            || string.IsNullOrWhiteSpace(build.GetString()))
         {
-            throw new InvalidOperationException("package.json must define both build and watch scripts.");
+            throw new InvalidOperationException("package.json must define a build script.");
         }
+
+        if (requireWatch
+            && (!scripts.TryGetProperty("watch", out var watch)
+                || watch.ValueKind != JsonValueKind.String
+                || string.IsNullOrWhiteSpace(watch.GetString())))
+        {
+            throw new InvalidOperationException("package.json must define a watch script.");
+        }
+
         if (requireDependencies && !Directory.Exists(Path.Combine(sourcePath, "node_modules")))
             throw new InvalidOperationException("Dependencies are not installed. Run npm install in the plugin directory, then try again.");
     }
@@ -629,6 +670,28 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
         if (!target.StartsWith(root, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("The formal plugin directory is outside the MyTools plugins root.");
         return target;
+    }
+
+    private static async Task DeleteDirectoryAsync(string path, CancellationToken cancellationToken)
+    {
+        if (!Directory.Exists(path))
+        {
+            return;
+        }
+
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                Directory.Delete(path, recursive: true);
+                return;
+            }
+            catch (Exception ex) when (attempt < 4 && (ex is IOException or UnauthorizedAccessException))
+            {
+                await Task.Delay(150, cancellationToken);
+            }
+        }
     }
 
     private static void EnsureMatchingInstalledPlugin(string targetPath, string pluginId)

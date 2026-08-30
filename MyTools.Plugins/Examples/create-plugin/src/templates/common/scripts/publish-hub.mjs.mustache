@@ -33,9 +33,15 @@ if (process.platform === "win32") {
 } else {
   execSync(`zip -r "${zipPath}" .`, { cwd: dist, stdio: "inherit" });
 }
-const readme = path.join(root, "README.md");
-if (fs.existsSync(readme) && process.platform === "win32") {
-  execSync(`tar -a -r -f "${zipPath}" -C "${root}" README.md`, { stdio: "inherit" });
+const readmes = fs.readdirSync(root).filter((name) => /^(README|CHANGELOG).*\.md$/i.test(name));
+if (readmes.length !== 0) {
+  if (process.platform === "win32") {
+    for (const name of readmes) {
+      execSync(`tar -a -r -f "${zipPath}" -C "${root}" "${name}"`, { stdio: "inherit" });
+    }
+  } else {
+    execSync(`zip -g "${zipPath}" ${readmes.map((name) => JSON.stringify(name)).join(" ")}`, { cwd: root, stdio: "inherit" });
+  }
 }
 
 const zip = fs.readFileSync(zipPath);

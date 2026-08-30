@@ -26,12 +26,14 @@ public sealed class PluginWindowManager
     /// <summary>
     /// 打开或聚焦指定插件的独立窗口。
     /// </summary>
-    public void ShowOrFocus(NodePlugin plugin, NodePluginDetailContext? context)
+    public void ShowOrFocus(NodePlugin plugin, NodePluginDetailContext? context, bool replaceContext = false)
     {
         if (windows.TryGetValue(plugin.PluginId, out var existing))
         {
-            // A repeated plugin hotkey means "return to the existing window". Reapplying the
-            // empty hotkey context would send initialize again and discard the page's live state.
+            if (replaceContext)
+            {
+                existing.SetPlugin(plugin, context);
+            }
             _ = existing.ActivatePluginAsync();
             return;
         }
@@ -63,27 +65,22 @@ public sealed class PluginWindowManager
         }
     }
 
-    public void RefreshOpenPlugin(string parentPluginId, IEnumerable<NodePlugin> plugins)
+    public void RefreshOpenPlugin(string pluginId, IEnumerable<NodePlugin> plugins)
     {
-        var current = plugins.ToDictionary(plugin => plugin.PluginId);
-        foreach (var (pluginId, window) in windows.ToList())
+        var id = new PluginId(pluginId);
+        if (!windows.TryGetValue(id, out var window))
         {
-            if (!IsEntryOf(pluginId, parentPluginId))
-            {
-                continue;
-            }
-
-            if (!current.TryGetValue(pluginId, out var plugin))
-            {
-                window.Close();
-                continue;
-            }
-
-            window.SetPlugin(plugin, plugin.CreateHotKeyDetailContext());
-            _ = window.ActivatePluginAsync();
+            return;
         }
-    }
 
-    private static bool IsEntryOf(PluginId pluginId, string parentPluginId) =>
-        pluginId.Value.StartsWith(parentPluginId + ":", StringComparison.OrdinalIgnoreCase);
+        var plugin = plugins.FirstOrDefault(item => item.PluginId.Equals(id));
+        if (plugin is null)
+        {
+            window.Close();
+            return;
+        }
+
+        window.SetPlugin(plugin, plugin.CreateHotKeyDetailContext());
+        _ = window.ActivatePluginAsync();
+    }
 }

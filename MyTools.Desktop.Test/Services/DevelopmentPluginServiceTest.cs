@@ -302,18 +302,37 @@ public class DevelopmentPluginServiceTest
         }
     }
 
-    [TestCase("{ \"scripts\": { \"build\": \"node build.mjs\" } }", true, "build and watch")]
-    [TestCase("{ \"scripts\": { \"build\": \"node build.mjs\", \"watch\": \"node build.mjs --watch\" } }", false, "Dependencies are not installed")]
+    [Test]
+    public void ValidateDevelopmentPackage_AcceptsBuildOnlyWhenWatchIsNotRequired()
+    {
+        var directory = CreatePackageDirectory("""
+            { "scripts": { "build": "node build.mjs" } }
+            """, withNodeModules: true);
+        try
+        {
+            Assert.DoesNotThrow(() =>
+                DevelopmentPluginService.ValidateDevelopmentPackage(directory, requireDependencies: true, requireWatch: false));
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [TestCase("{ \"scripts\": { \"build\": \"node build.mjs\" } }", true, true, "watch script")]
+    [TestCase("{ \"scripts\": { \"watch\": \"node build.mjs --watch\" } }", true, true, "build script")]
+    [TestCase("{ \"scripts\": { \"build\": \"node build.mjs\", \"watch\": \"node build.mjs --watch\" } }", false, true, "Dependencies are not installed")]
     public void ValidateDevelopmentPackage_ReportsActionableErrors(
         string packageJson,
         bool withNodeModules,
+        bool requireWatch,
         string expectedMessage)
     {
         var directory = CreatePackageDirectory(packageJson, withNodeModules);
         try
         {
             var exception = Assert.Throws<InvalidOperationException>(() =>
-                DevelopmentPluginService.ValidateDevelopmentPackage(directory, true));
+                DevelopmentPluginService.ValidateDevelopmentPackage(directory, true, requireWatch));
             Assert.That(exception!.Message, Does.Contain(expectedMessage));
         }
         finally

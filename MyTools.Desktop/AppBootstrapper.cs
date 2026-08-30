@@ -136,7 +136,7 @@ public class AppBootstrapper : IDisposable
         _ = dispatcher.InvokeAsync(() => _ = ReloadNodePluginsAsync(e.PluginId));
     }
 
-    private async Task ReloadNodePluginsAsync(string? parentPluginId)
+    private async Task ReloadNodePluginsAsync(string? pluginId)
     {
         await nodePluginReloadLock.WaitAsync();
         try
@@ -144,7 +144,7 @@ public class AppBootstrapper : IDisposable
             var previousConfigurations = CaptureNodePluginConfigurations(nodePluginCatalog.Plugins);
             nodePluginCatalog.Reload();
             var currentConfigurations = CaptureNodePluginConfigurations(nodePluginCatalog.Plugins);
-            if (string.IsNullOrWhiteSpace(parentPluginId))
+            if (string.IsNullOrWhiteSpace(pluginId))
             {
                 var nodePlugins = (await pluginLoader.InitPluginsAsync()).OfType<NodePlugin>().ToList();
                 RefreshNodePluginSettings(
@@ -159,25 +159,25 @@ public class AppBootstrapper : IDisposable
                 return;
             }
 
-            var replacements = (await pluginLoader.ReloadPluginAsync(parentPluginId)).ToList();
+            var replacements = (await pluginLoader.ReloadPluginAsync(pluginId)).ToList();
             var configurationChanged = ConfigurationChanged(
-                parentPluginId, previousConfigurations, currentConfigurations);
+                pluginId, previousConfigurations, currentConfigurations);
             if (configurationChanged)
             {
-                RefreshNodePluginSettings([parentPluginId], replacements);
+                RefreshNodePluginSettings([pluginId], replacements);
             }
             RegisterNodePluginHostCallHandlers(replacements);
             pluginKeymapService.ApplyOverrides(replacements);
             pluginKeymapService.ReRegisterKeywords(replacements);
-            pluginHotKeyService.ReRegisterPlugin(parentPluginId, replacements, OpenNodePluginDetail);
-            pluginWindowManager.RefreshOpenPlugin(parentPluginId, replacements);
+            pluginHotKeyService.ReRegisterPlugin(pluginId, replacements, OpenNodePluginDetail);
+            pluginWindowManager.RefreshOpenPlugin(pluginId, replacements);
             if (configurationChanged)
             {
                 RefreshOpenSettingsPlugin();
             }
             logger.LogInformation(
-                "Reloaded development plugin {PluginId} with {Count} entries.",
-                parentPluginId, replacements.Count);
+                "Reloaded development plugin {PluginId}.",
+                pluginId);
         }
         catch (Exception ex)
         {
@@ -312,7 +312,7 @@ public class AppBootstrapper : IDisposable
     /// </summary>
     public void OpenSettings()
     {
-        var settingsPlugin = pluginLoader.LoadedPlugins.OfType<NodePlugin>().FirstOrDefault(p => p.ParentId == "settings");
+        var settingsPlugin = pluginLoader.LoadedPlugins.OfType<NodePlugin>().FirstOrDefault(p => p.PluginId.Equals(new PluginId("settings")));
         if (settingsPlugin != null)
         {
             OpenNodePluginDetail(settingsPlugin);
@@ -359,7 +359,7 @@ public class AppBootstrapper : IDisposable
         {
             registry.RemoveCategory(pluginId);
         }
-        foreach (var plugin in currentPlugins.Where(plugin => ids.Contains(plugin.ParentId)))
+        foreach (var plugin in currentPlugins.Where(plugin => ids.Contains(plugin.PluginId.Value)))
         {
             plugin.RegisterSettings(registry);
         }
@@ -378,7 +378,7 @@ public class AppBootstrapper : IDisposable
     {
         var settingsPlugins = pluginLoader.LoadedPlugins
             .OfType<NodePlugin>()
-            .Where(plugin => string.Equals(plugin.ParentId, "settings", StringComparison.OrdinalIgnoreCase))
+            .Where(plugin => plugin.PluginId.Equals(new PluginId("settings")))
             .ToList();
         pluginWindowManager.RefreshOpenPlugin("settings", settingsPlugins);
     }
@@ -386,7 +386,7 @@ public class AppBootstrapper : IDisposable
     internal static IReadOnlyDictionary<string, string> CaptureNodePluginConfigurations(
         IEnumerable<NodePluginManifest> manifests) =>
         manifests
-            .GroupBy(manifest => manifest.ParentId, StringComparer.OrdinalIgnoreCase)
+            .GroupBy(manifest => manifest.Id, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(
                 group => group.Key,
                 group => JsonSerializer.Serialize(group.First().Configuration),

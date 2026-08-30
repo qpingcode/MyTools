@@ -139,12 +139,14 @@ public static class DesktopServiceCollectionExtensions
         serviceCollection.AddSingleton<HubMarketplaceService>();
         serviceCollection.AddSingleton<HubSyncService>();
         serviceCollection.AddSingleton<HubPluginHostCallHandler>();
+        serviceCollection.AddSingleton<ProtocolActivationService>();
         serviceCollection.AddSingleton<IPluginHostCapabilityHandler>(sp =>
             sp.GetRequiredService<HubPluginHostCallHandler>());
         serviceCollection.AddSingleton<InputActionCaptureService>();
         serviceCollection.AddSingleton<PluginOverrideProvider>();
         serviceCollection.AddSingleton<GestureConfigProvider>();
         serviceCollection.AddSingleton<PluginHotKeyService>();
+        serviceCollection.AddSingleton<IPluginHotKeyRegistry>(sp => sp.GetRequiredService<PluginHotKeyService>());
         serviceCollection.AddSingleton<PluginKeymapService>();
         serviceCollection.AddSingleton<HotKeyManager>();
         serviceCollection.AddSingleton<HotKeyMessageHandler>();

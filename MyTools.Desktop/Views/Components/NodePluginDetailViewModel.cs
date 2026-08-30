@@ -39,13 +39,13 @@ public partial class NodePluginDetailViewModel : ObservableObject, ISwitchableVi
         {
             CurrentContext.Plugin.ActionsChanged -= OnActionsChanged;
         }
+        CurrentQuery = context?.Query ?? string.Empty;
+        CurrentStateJson = context == null ? "{}" : context.InitialState.GetRawText();
         CurrentContext = context;
         if (context?.Plugin != null)
         {
             context.Plugin.ActionsChanged += OnActionsChanged;
         }
-        CurrentQuery = context?.Query ?? string.Empty;
-        CurrentStateJson = context == null ? "{}" : context.InitialState.GetRawText();
         detailActions = BuildDetailActions(context);
         callback.OnUpdateSelectedActions(detailActions.Count == 0 ? null : detailActions);
         callback.OnUpdateStatusBar(UpdateStatus.Success, string.Empty);

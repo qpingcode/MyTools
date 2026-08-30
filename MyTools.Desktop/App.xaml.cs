@@ -39,6 +39,7 @@ public partial class App
         ownsMutex = createdNew;
         if (!createdNew)
         {
+            ProtocolActivationService.TrySendToRunningInstance(e.Args);
             Console.WriteLine("Another instance is running, shutting down.");
             Current.Shutdown();
             return;
@@ -59,7 +60,11 @@ public partial class App
         globalExceptionHandler.Register();
 
         appBootstrapper = serviceProvider.GetRequiredService<AppBootstrapper>();
+        var protocolActivation = serviceProvider.GetRequiredService<ProtocolActivationService>();
+        protocolActivation.RegisterUriScheme();
+        protocolActivation.StartListening();
         appBootstrapper.Init();
+        protocolActivation.HandleStartup(e.Args);
 
         InitializeNotifyIcon();
 

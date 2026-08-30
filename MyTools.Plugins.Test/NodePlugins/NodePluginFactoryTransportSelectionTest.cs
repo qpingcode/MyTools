@@ -14,7 +14,7 @@ public class NodePluginFactoryTransportSelectionTest
 {
     private static NodePluginManifest Manifest() => new()
     {
-        Id = "p", ParentId = "p", ProtocolVersion = "3.0",
+        Id = "p", ProtocolVersion = "3.0",
         Entry = "index.mjs", PluginDirectory = "C:/p", EntryFullPath = "C:/p/index.mjs",
     };
 
