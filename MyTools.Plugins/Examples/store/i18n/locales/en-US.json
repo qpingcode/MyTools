@@ -1,0 +1,15 @@
+{
+  "Plugin.Store.Name": "Plugin Store",
+  "Plugin.Store.Action.Open": "Open Store",
+  "Plugin.Store.Result.Subtitle": "{{owner}} · v{{version}} · {{downloads}} downloads",
+  "Plugin.Store.Search": "Search plugins",
+  "Plugin.Store.SearchAction": "Search",
+  "Plugin.Store.Empty": "No plugins found",
+  "Plugin.Store.Version": "Version",
+  "Plugin.Store.Downloads": "Downloads",
+  "Plugin.Store.Owner": "Publisher",
+  "Plugin.Store.Created": "Created",
+  "Plugin.Store.Updated": "Updated",
+  "Plugin.Store.Install": "Install",
+  "Plugin.Store.Installed": "Plugin installed."
+}

@@ -556,6 +556,14 @@ $("selectedPublish").addEventListener("click", () => {
   if (window.confirm(question)) void runSelectedPluginOperation(
     "selectedPublish", "publishPlugin", "Plugin.CreatePlugin.Publish.Success", "Plugin installed in MyTools and reloaded.");
 });
+$("selectedPublishHub").addEventListener("click", () => {
+  if (!currentPlugin) return;
+  const question = t(
+    "Plugin.CreatePlugin.PublishHub.Confirm",
+    "Build and publish {{name}} to the MyTools plugin store? The version must be higher than any previous release.").replace("{{name}}", currentPlugin.name);
+  if (window.confirm(question)) void runSelectedPluginOperation(
+    "selectedPublishHub", "publishToHub", "Plugin.CreatePlugin.PublishHub.Success", "Plugin published to the store.");
+});
 
 window.addEventListener("focus", () => void loadPlugins());
 document.addEventListener("visibilitychange", () => { if (!document.hidden) void loadPlugins(); });

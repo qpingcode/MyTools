@@ -122,6 +122,32 @@ public sealed class CompositeConfigurationStorage : IConfigurationStorage, IDisp
         return hostStorage.GetAllNames();
     }
 
+    public void ReloadFromDisk()
+    {
+        if (hostStorage is JsonConfigurationStorage jsonHost)
+        {
+            jsonHost.ReloadFromDisk();
+        }
+        else
+        {
+            hostStorage.Initialize();
+        }
+
+        lock (lockObject)
+        {
+            foreach (var pluginStorage in pluginStorages.Values)
+            {
+                pluginStorage.ReloadFromDisk();
+            }
+
+            ScanPluginSettingsFiles();
+            foreach (var pluginStorage in pluginStorages.Values)
+            {
+                pluginStorage.ReloadFromDisk();
+            }
+        }
+    }
+
     public void Dispose()
     {
         if (disposed)

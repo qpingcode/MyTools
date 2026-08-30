@@ -106,5 +106,14 @@
   "Plugin.Settings.PleaseInput": "Please input",
   "Plugin.Settings.Keymap.Development": "Developing",
   "Plugin.Settings.Keymap.RefreshDevelopment": "Refresh all development plugins",
-  "Plugin.Settings.Keymap.DevelopmentRefreshed": "Development plugins refreshed"
+  "Plugin.Settings.Keymap.DevelopmentRefreshed": "Development plugins refreshed",
+  "Plugin.Settings.Account.Login": "Sign in",
+  "Plugin.Settings.Account.Logout": "Sign out",
+  "Plugin.Settings.Account.Register": "Register",
+  "Plugin.Settings.Account.Username": "Username",
+  "Plugin.Settings.Account.Password": "Password",
+  "Plugin.Settings.Account.Google": "Continue with Google",
+  "Plugin.Settings.Account.Microsoft": "Continue with Microsoft",
+  "Plugin.Settings.Account.Or": "or",
+  "Plugin.Settings.Account.SignedIn": "Signed in."
 }

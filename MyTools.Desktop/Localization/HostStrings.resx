@@ -71,6 +71,8 @@
   <data name="Configuration.General.SearchDelay.Description" xml:space="preserve"><value>Search debounce delay in milliseconds</value></data>
   <data name="Configuration.General.UpdateUrl.Title" xml:space="preserve"><value>Update URL</value></data>
   <data name="Configuration.General.UpdateUrl.Description" xml:space="preserve"><value>HTTPS or local path containing Velopack releases</value></data>
+  <data name="Configuration.General.HubUrl.Title" xml:space="preserve"><value>MyTools Hub URL</value></data>
+  <data name="Configuration.General.HubUrl.Description" xml:space="preserve"><value>Public MyTools Hub used for sign-in, the plugin store, and settings sync</value></data>
   <data name="Configuration.General.UpdateChannel.Title" xml:space="preserve"><value>Update channel</value></data>
   <data name="Configuration.General.UpdateChannel.Description" xml:space="preserve"><value>Choose between stable releases and beta previews</value></data>
   <data name="Configuration.General.UpdateProxyUrl.Title" xml:space="preserve"><value>Network proxy</value></data>

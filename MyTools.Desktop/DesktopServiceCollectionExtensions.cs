@@ -134,6 +134,13 @@ public static class DesktopServiceCollectionExtensions
         serviceCollection.AddSingleton<IPluginHostCapabilityHandler>(sp =>
             sp.GetRequiredService<ChatPluginHostCallHandler>());
         serviceCollection.AddSingleton<NodePluginHostCallRouter>();
+        serviceCollection.AddSingleton<HubApiClient>();
+        serviceCollection.AddSingleton<HubAccountService>();
+        serviceCollection.AddSingleton<HubMarketplaceService>();
+        serviceCollection.AddSingleton<HubSyncService>();
+        serviceCollection.AddSingleton<HubPluginHostCallHandler>();
+        serviceCollection.AddSingleton<IPluginHostCapabilityHandler>(sp =>
+            sp.GetRequiredService<HubPluginHostCallHandler>());
         serviceCollection.AddSingleton<InputActionCaptureService>();
         serviceCollection.AddSingleton<PluginOverrideProvider>();
         serviceCollection.AddSingleton<GestureConfigProvider>();

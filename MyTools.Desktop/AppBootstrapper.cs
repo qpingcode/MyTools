@@ -43,6 +43,8 @@ public class AppBootstrapper : IDisposable
     private readonly DevelopmentPluginService developmentPluginService;
     private readonly PluginWindowManager pluginWindowManager;
     private readonly IKeyboardHelper keyboardHelper;
+    private readonly HubSyncService hubSyncService;
+    private readonly HubApiClient hubApiClient;
     private readonly SemaphoreSlim nodePluginReloadLock = new(1, 1);
 
     public AppBootstrapper(
@@ -64,7 +66,9 @@ public class AppBootstrapper : IDisposable
         IThemeService themeService,
         DevelopmentPluginService developmentPluginService,
         PluginWindowManager pluginWindowManager,
-        IKeyboardHelper keyboardHelper)
+        IKeyboardHelper keyboardHelper,
+        HubSyncService hubSyncService,
+        HubApiClient hubApiClient)
     {
         this.nativeMessageWindowHost = nativeMessageWindowHost;
         this.gestureRegistry = gestureRegistry;
@@ -85,6 +89,8 @@ public class AppBootstrapper : IDisposable
         this.developmentPluginService = developmentPluginService;
         this.pluginWindowManager = pluginWindowManager;
         this.keyboardHelper = keyboardHelper;
+        this.hubSyncService = hubSyncService;
+        this.hubApiClient = hubApiClient;
     }
 
     public void Init()
@@ -493,6 +499,11 @@ public class AppBootstrapper : IDisposable
                 localization.GetCaption("Configuration.General.UpdateUrl.Title", "Update URL"),
                 localization.GetCaption("Configuration.General.UpdateUrl.Description", "HTTPS or local path containing Velopack releases"), UpdateService.DefaultUpdateUrl);
             
+            registry.AddSetting(generalCategory, "HubUrl",
+                localization.GetCaption("Configuration.General.HubUrl.Title", "MyTools Hub URL"),
+                localization.GetCaption("Configuration.General.HubUrl.Description", "Public MyTools Hub used for sign-in, the plugin store, and settings sync"),
+                GeneralSettings.DefaultHubUrl);
+            
             registry.AddSetting(generalCategory, "UpdateChannel",
                 localization.GetCaption("Configuration.General.UpdateChannel.Title", "Update channel"),
                 localization.GetCaption("Configuration.General.UpdateChannel.Description", "Choose between stable releases and beta previews"),
@@ -543,6 +554,10 @@ public class AppBootstrapper : IDisposable
             // Load configuration from file if exists
             registry.Reload();
        
+            if (hubApiClient.IsSignedIn)
+            {
+                _ = hubSyncService.PullAsync(CancellationToken.None);
+            }
         }
         catch (Exception ex)
         {

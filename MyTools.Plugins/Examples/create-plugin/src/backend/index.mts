@@ -54,6 +54,8 @@ plugin
   .handle("getPluginWatchLogs", async (payload: { pluginId: string; count?: number }) => plugin.hostCall("development.watch.logs", payload))
   .handle("getMyToolsLogs", async (payload: { count?: number }) => plugin.hostCall("development.logs", payload))
   .handle("publishPlugin", async (payload: { pluginId: string }) => plugin.hostCall("development.publish", payload, 180_000))
+  .handle("publishToHub", async (payload: { pluginId: string }) => plugin.hostCall("marketplace.publish", payload, 180_000))
+  .handle("getAccountStatus", async () => plugin.hostCall("account.status"))
   .handle("getAiStatus", async () => plugin.hostCall("development.ai.status"))
   .handle("chatWithAi", async (payload: { sessionId?: string; message: string; selectedPluginId?: string }) =>
     plugin.hostCall("development.ai.chat", payload, AI_CHAT_HOST_TIMEOUT_MS))

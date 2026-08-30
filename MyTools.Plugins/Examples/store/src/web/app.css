@@ -1,0 +1,39 @@
+body {
+    margin: 0;
+    background: var(--mt-surface-bg, #1e1e1e);
+    color: var(--mt-text, #e0e0e0);
+    font-family: inherit;
+}
+.store {
+    height: 100vh;
+    display: grid;
+    grid-template-columns: 280px 1fr;
+}
+.list, .detail {
+    min-height: 0;
+    overflow: auto;
+    padding: 16px;
+}
+.list {
+    border-right: 1px solid var(--mt-border, #404040);
+}
+.item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    padding: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    font: inherit;
+}
+.item.active, .item:hover {
+    background: var(--mt-surface-hover, #3a3a3a);
+}
+.muted { color: var(--mt-text-muted, #aaa); font-size: 12px; }
+.readme { line-height: 1.55; }
+.readme pre { overflow: auto; padding: 10px; background: var(--mt-surface, #292929); border-radius: 8px; }
+.search { margin-bottom: 12px; }
+.meta { display: grid; gap: 6px; margin: 12px 0; }

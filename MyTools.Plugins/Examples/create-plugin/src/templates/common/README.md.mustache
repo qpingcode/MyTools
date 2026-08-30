@@ -1,0 +1,21 @@
+# {{name}}
+
+MyTools plugin `{{pluginId}}`.
+
+## Develop
+
+```bash
+npm install
+npm run watch
+```
+
+## Publish to MyTools Hub
+
+Bump `version` in `plugin.json` (must be higher than any previously published version), then:
+
+```bash
+npm run build
+npm run publish:hub
+```
+
+Requires a signed-in MyTools Hub session (`%AppData%/MyTools.Desktop/HubSession.json`) or `MYTOOLS_HUB_TOKEN` / `MYTOOLS_HUB_URL`.

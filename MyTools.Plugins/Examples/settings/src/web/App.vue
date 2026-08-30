@@ -23,6 +23,12 @@ const { message } = createDiscreteApi(["message"]);
 const searchText = ref("");
 const searchTimer = ref<ReturnType<typeof setTimeout> | null>(null);
 const currentTheme = ref(bus.theme.current);
+const account = ref<{ signedIn: boolean; username?: string; google?: boolean; microsoft?: boolean }>({ signedIn: false });
+const loginOpen = ref(false);
+const registerMode = ref(false);
+const loginUsername = ref("");
+const loginPassword = ref("");
+const loginBusy = ref(false);
 
 const labels = computed(() => ({
     searchPlaceholder: t("Plugin.Settings.Search.Placeholder", "Search settings..."),
@@ -32,6 +38,14 @@ const labels = computed(() => ({
     cancel: t("Plugin.Settings.Cancel", "Cancel"),
     restart: t("Plugin.Settings.Restart", "Restart"),
     capturing: capturingHint(),
+    login: t("Plugin.Settings.Account.Login", "Sign in"),
+    logout: t("Plugin.Settings.Account.Logout", "Sign out"),
+    register: t("Plugin.Settings.Account.Register", "Register"),
+    username: t("Plugin.Settings.Account.Username", "Username"),
+    password: t("Plugin.Settings.Account.Password", "Password"),
+    google: t("Plugin.Settings.Account.Google", "Continue with Google"),
+    microsoft: t("Plugin.Settings.Account.Microsoft", "Continue with Microsoft"),
+    or: t("Plugin.Settings.Account.Or", "or"),
 }));
 
 const themeOverrides = computed(() => {
@@ -74,6 +88,7 @@ bus.on(HostEvents.Initialize, async () => {
     store.localeTick += 1;
     currentTheme.value = bus.theme.current;
     await loadConfiguration();
+    await refreshAccount();
 });
 
 bus.on(HostEvents.LanguageChanged, async () => {
@@ -88,7 +103,53 @@ bus.on(HostEvents.ThemeChanged, (payload: { theme?: string }) => {
 
 onMounted(() => {
     currentTheme.value = bus.theme.current;
+    void refreshAccount();
 });
+
+async function refreshAccount(): Promise<void> {
+    try {
+        account.value = await bus.call("getAccountStatus");
+    } catch {
+        account.value = { signedIn: false };
+    }
+}
+
+async function submitAccount(): Promise<void> {
+    loginBusy.value = true;
+    try {
+        const callName = registerMode.value ? "register" : "login";
+        account.value = await bus.call(callName, {
+            username: loginUsername.value,
+            password: loginPassword.value,
+        });
+        loginOpen.value = false;
+        loginPassword.value = "";
+        await loadConfiguration();
+        message.success(t("Plugin.Settings.Account.SignedIn", "Signed in."));
+    } catch (error) {
+        message.error(error instanceof Error ? error.message : String(error));
+    } finally {
+        loginBusy.value = false;
+    }
+}
+
+async function logout(): Promise<void> {
+    account.value = await bus.call("logout");
+}
+
+async function externalLogin(provider: string): Promise<void> {
+    loginBusy.value = true;
+    try {
+        account.value = await bus.call("externalLogin", { provider }, 180_000);
+        loginOpen.value = false;
+        await loadConfiguration();
+        message.success(t("Plugin.Settings.Account.SignedIn", "Signed in."));
+    } catch (error) {
+        message.error(error instanceof Error ? error.message : String(error));
+    } finally {
+        loginBusy.value = false;
+    }
+}
 </script>
 
 <template>
@@ -130,6 +191,17 @@ onMounted(() => {
                             {{ labels.noResults }}
                         </div>
                     </div>
+                    <div class="sidebar-account">
+                        <button v-if="!account.signedIn" type="button" class="account-login" @click="loginOpen = true; registerMode = false">
+                            {{ labels.login }}
+                        </button>
+                        <div v-else class="account-user">
+                            <span class="account-name" :title="account.username">{{ account.username }}</span>
+                            <button type="button" class="account-logout" :title="labels.logout" @click="logout">
+                                <i class="mdi mdi-logout-variant"></i>
+                            </button>
+                        </div>
+                    </div>
                 </nav>
                 <section class="content-panel">
                     <div class="settings-scroll">
@@ -162,6 +234,32 @@ onMounted(() => {
                 <n-card class="capture-card" role="dialog" aria-modal="true">
                     <div class="capture-text">{{ labels.capturing }}</div>
                     <n-spin size="small" />
+                </n-card>
+            </n-modal>
+            <n-modal v-model:show="loginOpen">
+                <n-card class="dialog-card" role="dialog" aria-modal="true">
+                    <h2 class="dialog-text">{{ registerMode ? labels.register : labels.login }}</h2>
+                    <div class="login-form">
+                        <n-input v-model:value="loginUsername" :placeholder="labels.username" />
+                        <n-input v-model:value="loginPassword" type="password" show-password-on="click" :placeholder="labels.password" />
+                    </div>
+                    <div class="dialog-actions">
+                        <n-button size="small" @click="registerMode = !registerMode">
+                            {{ registerMode ? labels.login : labels.register }}
+                        </n-button>
+                        <n-button size="small" type="primary" :loading="loginBusy" @click="submitAccount">
+                            {{ registerMode ? labels.register : labels.login }}
+                        </n-button>
+                    </div>
+                    <div v-if="account.google || account.microsoft" class="login-oauth">
+                        <div class="empty">{{ labels.or }}</div>
+                        <n-button v-if="account.google" size="small" block :disabled="loginBusy" @click="externalLogin('google')">
+                            {{ labels.google }}
+                        </n-button>
+                        <n-button v-if="account.microsoft" size="small" block :disabled="loginBusy" @click="externalLogin('microsoft')">
+                            {{ labels.microsoft }}
+                        </n-button>
+                    </div>
                 </n-card>
             </n-modal>
         </div>
@@ -211,7 +309,67 @@ onMounted(() => {
     min-height: 0;
     overflow-y: scroll;
     scrollbar-gutter: stable;
-    padding: 4px 10px 16px;
+    padding: 4px 10px 8px;
+}
+
+.sidebar-account {
+    flex: 0 0 auto;
+    padding: 10px 12px 12px;
+    border-top: 1px solid var(--mt-border, #404040);
+}
+
+.account-login,
+.account-user {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 8px;
+}
+
+.account-login {
+    border: 0;
+    background: transparent;
+    color: var(--mt-text, #fff);
+    text-align: left;
+    border-radius: 10px;
+    padding: 8px 10px;
+    cursor: pointer;
+    font: inherit;
+}
+
+.account-login:hover {
+    background: var(--mt-surface-hover, #3a3a3a);
+}
+
+.account-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+}
+
+.account-logout {
+    flex: 0 0 auto;
+    border: 0;
+    background: transparent;
+    color: var(--mt-text-muted, #c4c9d4);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+}
+
+.account-logout:hover {
+    background: var(--mt-surface-hover, #3a3a3a);
+    color: var(--mt-text, #fff);
+}
+
+.login-form,
+.login-oauth {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 12px;
 }
 
 .nav-group {

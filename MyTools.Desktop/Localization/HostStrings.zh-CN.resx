@@ -71,6 +71,8 @@
   <data name="Configuration.General.SearchDelay.Description" xml:space="preserve"><value>搜索防抖延迟时间（毫秒）</value></data>
   <data name="Configuration.General.UpdateUrl.Title" xml:space="preserve"><value>更新地址</value></data>
   <data name="Configuration.General.UpdateUrl.Description" xml:space="preserve"><value>包含 Velopack 发布内容的 HTTPS 地址或本地路径</value></data>
+  <data name="Configuration.General.HubUrl.Title" xml:space="preserve"><value>MyTools Hub 地址</value></data>
+  <data name="Configuration.General.HubUrl.Description" xml:space="preserve"><value>用于登录、插件市场和配置同步的公共服务地址</value></data>
   <data name="Configuration.General.UpdateChannel.Title" xml:space="preserve"><value>更新通道</value></data>
   <data name="Configuration.General.UpdateChannel.Description" xml:space="preserve"><value>选择稳定版或测试版更新</value></data>
   <data name="Configuration.General.UpdateProxyUrl.Title" xml:space="preserve"><value>网络代理</value></data>

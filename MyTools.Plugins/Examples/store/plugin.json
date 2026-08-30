@@ -1,0 +1,25 @@
+{
+  "id": "store",
+  "name": {
+    "key": "Plugin.Store.Name",
+    "defaultValue": "Plugin Store"
+  },
+  "version": "0.1.0",
+  "protocolVersion": "3.0",
+  "icon": "mdi-store-outline",
+  "i18n": {
+    "defaultLocale": "en-US",
+    "catalog": "i18n/catalog.en-US.json",
+    "localesPath": "i18n/locales",
+    "supportedLocales": ["en-US", "zh-CN"]
+  },
+  "entry": "backend/index.mjs",
+  "capabilities": [
+    "marketplace.search",
+    "marketplace.get",
+    "marketplace.install"
+  ],
+  "alias": ["store"],
+  "search": { "global": true },
+  "detail": { "type": "web", "entry": "web/index.html" }
+}

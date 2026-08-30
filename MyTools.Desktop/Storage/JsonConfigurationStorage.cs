@@ -207,9 +207,14 @@ public class JsonConfigurationStorage : IConfigurationStorage, IDisposable
         }
     }
     
-    /// <summary>
-    /// 释放资源
-    /// </summary>
+    public void ReloadFromDisk()
+    {
+        lock (_lockObject)
+        {
+            LoadSettings();
+        }
+    }
+
     public void Dispose()
     {
         Dispose(true);

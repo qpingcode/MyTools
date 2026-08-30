@@ -4,7 +4,7 @@
     "key": "Plugin.Settings.Name",
     "defaultValue": "Settings"
   },
-  "version": "0.0.10",
+  "version": "0.0.11",
   "protocolVersion": "3.0",
   "icon": "mdi-cog-outline",
   "i18n": {
@@ -34,7 +34,12 @@
     "path.pick",
     "path.validate",
     "development.refresh",
-    "restart"
+    "restart",
+    "account.status",
+    "account.login",
+    "account.register",
+    "account.logout",
+    "account.externalLogin"
   ],
   "alias": [
     "settings"

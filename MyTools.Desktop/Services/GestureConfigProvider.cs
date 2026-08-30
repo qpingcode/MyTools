@@ -39,6 +39,8 @@ public sealed class GestureConfigProvider
         Persist();
     }
 
+    public void Reload() => Load();
+
     private void Load()
     {
         try

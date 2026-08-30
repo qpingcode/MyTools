@@ -6,7 +6,8 @@
   "scripts": {
     "build": "node build-plugin.mjs",
     "watch": "node build-plugin.mjs --watch",
-    "check": "tsc -p tsconfig.json --noEmit"
+    "check": "tsc -p tsconfig.json --noEmit",
+    "publish:hub": "node scripts/publish-hub.mjs"
   },
   "dependencies": {
     "@qping/plugin-bus": "0.8.0"

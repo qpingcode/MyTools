@@ -403,35 +403,50 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
     {
         var registration = GetAiEditableRegistration(pluginId);
         StopWatchProcess(registration.PluginId);
-        var npmCommand = ResolveNpmOrThrow();
-        ValidateDevelopmentPackage(registration.SourcePath, requireDependencies: true);
-
-        var buildError = await RunNpmCommandAsync(
-            npmCommand, registration.SourcePath, "run build", TimeSpan.FromMinutes(2), cancellationToken);
-        if (buildError is not null)
-            throw new InvalidOperationException($"Plugin build failed; it was not installed.{Environment.NewLine}{buildError}");
-
+        await BuildDevelopmentPluginAsync(registration.PluginId, cancellationToken);
         var distPath = Path.GetFullPath(registration.DistPath);
-        var manifestPath = Path.Combine(distPath, "plugin.json");
-        if (!File.Exists(manifestPath))
-            throw new InvalidOperationException("The build completed without producing dist/plugin.json.");
-        using (var document = JsonDocument.Parse(File.ReadAllText(manifestPath)))
+        using (var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(distPath, "plugin.json"))))
         {
             var manifestId = document.RootElement.TryGetProperty("id", out var id) ? id.GetString() : null;
             if (!string.Equals(manifestId, registration.PluginId, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("The built plugin manifest ID does not match the selected plugin.");
         }
 
+        var targetPath = await InstallFromDirectoryAsync(registration.PluginId, distPath, cancellationToken);
+        DevelopmentPluginSession.Deactivate(registration.PluginId);
+        return new DevelopmentPluginOperationResult(true, targetPath);
+    }
+
+    public async Task BuildDevelopmentPluginAsync(string pluginId, CancellationToken cancellationToken)
+    {
+        var registration = GetAiEditableRegistration(pluginId);
+        var npmCommand = ResolveNpmOrThrow();
+        ValidateDevelopmentPackage(registration.SourcePath, requireDependencies: true);
+        var buildError = await RunNpmCommandAsync(
+            npmCommand, registration.SourcePath, "run build", TimeSpan.FromMinutes(2), cancellationToken);
+        if (buildError is not null)
+            throw new InvalidOperationException($"Plugin build failed.{Environment.NewLine}{buildError}");
+        var manifestPath = Path.Combine(Path.GetFullPath(registration.DistPath), "plugin.json");
+        if (!File.Exists(manifestPath))
+            throw new InvalidOperationException("The build completed without producing dist/plugin.json.");
+    }
+
+    public async Task<string> InstallFromDirectoryAsync(
+        string pluginId,
+        string sourceDirectory,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
         Directory.CreateDirectory(PluginsRoot);
-        var targetPath = ResolveFormalPluginPath(registration.PluginId);
-        var stagingPath = Path.Combine(PluginsRoot, $".{registration.PluginId}.install-{Guid.NewGuid():N}");
-        var backupPath = Path.Combine(PluginsRoot, $".{registration.PluginId}.backup-{Guid.NewGuid():N}");
+        var targetPath = ResolveFormalPluginPath(pluginId);
+        var stagingPath = Path.Combine(PluginsRoot, $".{pluginId}.install-{Guid.NewGuid():N}");
+        var backupPath = Path.Combine(PluginsRoot, $".{pluginId}.backup-{Guid.NewGuid():N}");
         try
         {
-            CopyDirectory(distPath, stagingPath);
+            CopyDirectory(sourceDirectory, stagingPath);
             if (Directory.Exists(targetPath))
             {
-                EnsureMatchingInstalledPlugin(targetPath, registration.PluginId);
+                EnsureMatchingInstalledPlugin(targetPath, pluginId);
                 Directory.Move(targetPath, backupPath);
             }
             try
@@ -455,9 +470,8 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
             if (Directory.Exists(stagingPath)) Directory.Delete(stagingPath, true);
         }
 
-        DevelopmentPluginSession.Deactivate(registration.PluginId);
-        ReloadRequested?.Invoke(this, new DevelopmentPluginReloadRequestedEventArgs(registration.PluginId));
-        return new DevelopmentPluginOperationResult(true, targetPath);
+        ReloadRequested?.Invoke(this, new DevelopmentPluginReloadRequestedEventArgs(pluginId));
+        return await Task.FromResult(targetPath);
     }
 
     private static string ResolveNpmOrThrow()

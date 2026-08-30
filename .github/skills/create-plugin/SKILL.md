@@ -274,6 +274,17 @@ return {
 | `location.city` | 获取宿主按公网 IP 推断的城市级近似位置；不会返回 IP、经纬度或邮编，VPN/代理可能导致城市偏差。 | 无参数；返回 `{ available, city, region, country, countryCode, approximate, source, error? }`。 |
 | `restart` | 重启 MyTools Desktop。 | 无参数；返回空对象后执行重启。 |
 | `plugins.list` | 列出当前已启用的插件（名称、Alias、热键）。调用方自己的插件会被排除。 | 无参数；返回 `{ plugins: [{ pluginId, name, aliases, hotKey }] }`。 |
+| `account.status` | 读取 MyTools Hub 登录状态和可用的第三方登录。 | 无参数；返回 `{ signedIn, username, hubUrl, google, microsoft }`。 |
+| `account.login` | 使用用户名密码登录 Hub，并拉取云端配置。 | `{ username, password }` |
+| `account.register` | 注册 Hub 账号并登录。 | `{ username, password }` |
+| `account.logout` | 退出 Hub。 | 无参数 |
+| `account.externalLogin` | 用系统浏览器完成 Google 或微软账号登录。 | `{ provider: "google" \| "microsoft" }` |
+| `marketplace.search` | 搜索 Hub 插件市场。未登录可用。 | `{ query? }`；返回 `{ items, total }` |
+| `marketplace.get` | 读取插件详情（含 README）。未登录可用。 | `{ pluginId }` |
+| `marketplace.install` | 下载并安装插件到本机 plugins 目录。未登录可用。 | `{ pluginId, version? }` |
+| `marketplace.publish` | 构建开发插件并发布到 Hub。必须登录；版本必须高于已发布版本。 | `{ pluginId }` |
+| `sync.pull` | 从 Hub 拉取配置快照并写入本地。必须登录。 | 无参数 |
+| `sync.push` | 把本地 Settings/Gestures/PluginOverrides/插件 settings 推到 Hub。必须登录。 | 无参数 |
 
 上述表格是当前安装版本的 capability 契约。Host 会按插件 manifest 做声明校验和调用审计；不要依赖未列出的内部类名或源码路径。
 
@@ -399,6 +410,6 @@ button {
 
 esbuild 新版 watch 必须使用 `const ctx = await context(options); await ctx.watch();`，`watch()` **不接收任何参数**。需要监听构建结束时，在 options 中加入自定义插件并使用 `build.onEnd(result => ...)`。禁止生成 `ctx.watch({ onRebuild })`、`onRebuild` 或旧版 `build({ watch: ... })` 写法；这些 API 与当前 esbuild 不兼容。
 
-`package.json` 必须同时提供 `build`、`watch`、`check` 脚本；`watch` 应调用支持持续构建的 `node build-plugin.mjs --watch`。Create Plugin Host 会在 AI 创建完成后执行 `npm install`，随后在可见终端中执行 `npm run watch`，因此缺少 `scripts.watch` 的插件视为未完成。
+`package.json` 必须同时提供 `build`、`watch`、`check` 脚本；`watch` 应调用支持持续构建的 `node build-plugin.mjs --watch`。Create Plugin Host 会在 AI 创建完成后执行 `npm install`，随后在可见终端中执行 `npm run watch`，因此缺少 `scripts.watch` 的插件视为未完成。发布到插件市场时使用 `npm run publish:hub`（模板已包含 `scripts/publish-hub.mjs`）。Hub 会拒绝不高于已发布版本的 SemVer。
 
 构建：`npm run build`（先 `tsc --noEmit`，再打包到 `dist/`）。安装指向 `dist/`。参考包仅用于读取，不在安装目录内执行 workspace 构建。

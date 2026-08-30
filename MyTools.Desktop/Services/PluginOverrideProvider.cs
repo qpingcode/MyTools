@@ -73,6 +73,8 @@ public sealed class PluginOverrideProvider
             : null;
     }
 
+    public void Reload() => Load();
+
     private void Load()
     {
         try

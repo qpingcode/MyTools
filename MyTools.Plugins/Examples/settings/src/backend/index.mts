@@ -80,4 +80,9 @@ plugin
   .handle("refreshDevelopmentPlugins", async () => {
     return await plugin.hostCall("development.refresh");
   })
+  .handle("getAccountStatus", async () => plugin.hostCall("account.status"))
+  .handle("login", async (payload: { username: string; password: string }) => plugin.hostCall("account.login", payload))
+  .handle("register", async (payload: { username: string; password: string }) => plugin.hostCall("account.register", payload))
+  .handle("logout", async () => plugin.hostCall("account.logout"))
+  .handle("externalLogin", async (payload: { provider: string }) => plugin.hostCall("account.externalLogin", payload, 180_000))
   .start();

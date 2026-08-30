@@ -1,0 +1,61 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { execFileSync } from "node:child_process";
+
+const root = process.cwd();
+const dist = path.join(root, "dist");
+const manifestPath = path.join(dist, "plugin.json");
+if (!fs.existsSync(manifestPath)) {
+  execFileSync(process.execPath, [path.join(root, "build-plugin.mjs")], { stdio: "inherit" });
+}
+if (!fs.existsSync(manifestPath)) {
+  throw new Error("dist/plugin.json was not found. Run npm run build first.");
+}
+
+const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+const sessionPath = path.join(process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming"), "MyTools.Desktop", "HubSession.json");
+let hubUrl = process.env.MYTOOLS_HUB_URL || "http://127.0.0.1:5088";
+let token = process.env.MYTOOLS_HUB_TOKEN || "";
+if (fs.existsSync(sessionPath)) {
+  const session = JSON.parse(fs.readFileSync(sessionPath, "utf8"));
+  hubUrl = process.env.MYTOOLS_HUB_URL || session.hubUrl || hubUrl;
+  token = token || session.accessToken || "";
+}
+if (!token) {
+  throw new Error("Sign in to MyTools Hub in Settings, or set MYTOOLS_HUB_TOKEN.");
+}
+
+const zipPath = path.join(os.tmpdir(), `mytools-hub-${manifest.id}-${Date.now()}.zip`);
+const { execSync } = await import("node:child_process");
+if (process.platform === "win32") {
+  execSync(`tar -a -c -f "${zipPath}" -C "${dist}" *`, { stdio: "inherit" });
+} else {
+  execSync(`zip -r "${zipPath}" .`, { cwd: dist, stdio: "inherit" });
+}
+const readme = path.join(root, "README.md");
+if (fs.existsSync(readme) && process.platform === "win32") {
+  execSync(`tar -a -r -f "${zipPath}" -C "${root}" README.md`, { stdio: "inherit" });
+}
+
+const zip = fs.readFileSync(zipPath);
+const boundary = "----MyToolsHub" + Date.now();
+const prefix = Buffer.from(
+  `--${boundary}\r\nContent-Disposition: form-data; name="package"; filename="${manifest.id}.zip"\r\nContent-Type: application/zip\r\n\r\n`
+);
+const suffix = Buffer.from(`\r\n--${boundary}--\r\n`);
+const body = Buffer.concat([prefix, zip, suffix]);
+const response = await fetch(`${hubUrl.replace(/\/$/, "")}/api/plugins`, {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": `multipart/form-data; boundary=${boundary}`
+  },
+  body
+});
+const text = await response.text();
+if (!response.ok) {
+  throw new Error(text || `Publish failed (${response.status})`);
+}
+console.log(`Published ${manifest.id}@${manifest.version}`);
+console.log(text);

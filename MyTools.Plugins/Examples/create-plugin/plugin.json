@@ -4,7 +4,7 @@
     "key": "Plugin.CreatePlugin.Name",
     "defaultValue": "Create Plugin"
   },
-  "version": "0.1.0",
+  "version": "0.1.1",
   "protocolVersion": "3.0",
   "icon": "mdi-puzzle-plus-outline",
   "i18n": {
@@ -30,6 +30,8 @@
     "development.watch.logs",
     "development.logs",
     "development.publish",
+    "marketplace.publish",
+    "account.status",
     "development.ai.status",
     "development.ai.chat",
     "development.ai.progress",
