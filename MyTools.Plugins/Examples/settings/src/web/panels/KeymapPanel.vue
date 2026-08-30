@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, nextTick, ref } from "vue";
 import HighlightText from "../components/HighlightText.vue";
-import HotKeyRecorder from "../components/HotKeyRecorder.vue";
 import TableToolbar from "../components/TableToolbar.vue";
+import { captureInputAction } from "../capture-input-action";
 import { t } from "../i18n";
 import { loadPluginOverrides, markKeymapDirty, showToast, store } from "../store";
 import { bus } from "../bus";
@@ -10,6 +10,8 @@ import type { KeymapPlugin } from "../types";
 
 const plugins = computed(() => store.keymapPlugins || []);
 const tableQuery = ref("");
+const editingAliasKey = ref<string | null>(null);
+const aliasInputRef = ref<{ focus: () => void } | null>(null);
 
 const filteredPlugins = computed(() => {
     const query = tableQuery.value.trim().toLowerCase();
@@ -62,12 +64,31 @@ function onKeywords(plugin: KeymapPlugin, value: string): void {
     markKeymapDirty(plugin.overrideKey, { keywords });
 }
 
+async function startAliasEdit(plugin: KeymapPlugin): Promise<void> {
+    editingAliasKey.value = plugin.overrideKey;
+    await nextTick();
+    aliasInputRef.value?.focus();
+}
+
+function stopAliasEdit(): void {
+    editingAliasKey.value = null;
+}
+
 function searchHotKey(): string | undefined {
     return store.dirtySettings.get("General.SearchHotKey");
 }
 
-function onPluginHotKeyChange(plugin: KeymapPlugin, value: string | null): void {
-    markKeymapDirty(plugin.overrideKey, { hotKey: value ?? "" });
+async function editPluginHotKey(plugin: KeymapPlugin): Promise<void> {
+    const result = await captureInputAction({
+        showKeyboard: true,
+        showMouse: false,
+        value: { kind: "hotkey", hotKey: hotKeyOf(plugin) || null },
+        defaultHotKey: "",
+        excludePluginId: plugin.overrideKey,
+        currentSearchHotKey: searchHotKey(),
+    });
+    if (!result) return;
+    markKeymapDirty(plugin.overrideKey, { hotKey: result.hotKey ?? "" });
 }
 
 function hasDuplicateId(plugin: KeymapPlugin): boolean {
@@ -135,22 +156,47 @@ async function refreshDevelopmentPlugins(): Promise<void> {
                     </div>
                 </div>
                 <div class="col-hotkey">
-                    <HotKeyRecorder
-                        :model-value="hotKeyOf(plugin)"
-                        default-hot-key=""
-                        :exclude-plugin-id="plugin.overrideKey"
-                        :current-search-hot-key="searchHotKey()"
-                        @update:model-value="onPluginHotKeyChange(plugin, $event)"
-                    />
+                    <button
+                        type="button"
+                        class="flat-display"
+                        :class="{ empty: !hotKeyOf(plugin) }"
+                        :title="hotKeyOf(plugin) || t('Plugin.Settings.Keymap.NoHotkey', 'None')"
+                        @click="editPluginHotKey(plugin)"
+                    >
+                        <HighlightText
+                            :text="hotKeyOf(plugin) || t('Plugin.Settings.Keymap.NoHotkey', 'None')"
+                            :query="highlightQuery"
+                        />
+                    </button>
                 </div>
                 <div class="col-keywords">
                     <n-input
+                        v-if="editingAliasKey === plugin.overrideKey"
+                        ref="aliasInputRef"
                         :value="keywordsOf(plugin)"
                         :placeholder="t('Plugin.Settings.Keymap.KeywordsPlaceholder', 'e.g. git, repo')"
                         :title="t('Plugin.Settings.Keymap.KeywordsPlaceholder', 'e.g. git, repo')"
                         size="small"
                         @update:value="onKeywords(plugin, String($event || ''))"
+                        @blur="stopAliasEdit"
+                        @keydown.enter.prevent="stopAliasEdit"
+                        @keydown.esc.prevent="stopAliasEdit"
                     />
+                    <button
+                        v-else
+                        type="button"
+                        class="flat-display"
+                        :class="{ empty: !keywordsOf(plugin) }"
+                        :title="keywordsOf(plugin) || t('Plugin.Settings.Keymap.KeywordsPlaceholder', 'e.g. git, repo')"
+                        @click="startAliasEdit(plugin)"
+                    >
+                        <HighlightText
+                            v-if="keywordsOf(plugin)"
+                            :text="keywordsOf(plugin)"
+                            :query="highlightQuery"
+                        />
+                        <span v-else>{{ t("Plugin.Settings.Keymap.KeywordsPlaceholder", "e.g. git, repo") }}</span>
+                    </button>
                 </div>
                 <div class="col-global">
                     <n-checkbox
@@ -181,7 +227,8 @@ async function refreshDevelopmentPlugins(): Promise<void> {
 }
 
 .keymap-panel {
-    min-width: 0;
+    width: max-content;
+    max-width: 100%;
 }
 .plugin-toolbar { display: flex; align-items: center; gap: 8px; }
 .plugin-toolbar > :first-child { flex: 1; }
@@ -224,13 +271,14 @@ async function refreshDevelopmentPlugins(): Promise<void> {
 }
 
 .col-hotkey {
-    width: 150px;
-    flex: 0 0 150px;
+    width: 120px;
+    flex: 0 0 120px;
+    min-width: 0;
 }
 
 .col-keywords {
-    width: 130px;
-    flex: 1 1 130px;
+    width: 120px;
+    flex: 0 0 120px;
     min-width: 0;
 }
 
@@ -254,5 +302,30 @@ async function refreshDevelopmentPlugins(): Promise<void> {
     color: #f44336;
     font-size: 12px;
     padding: 0 4px 10px;
+}
+
+.flat-display {
+    width: 100%;
+    min-width: 0;
+    padding: 6px 8px;
+    overflow: hidden;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--mt-text, #fff);
+    font: inherit;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.flat-display:hover {
+    background: var(--mt-surface-hover, #3a3a3a);
+}
+
+.flat-display.empty {
+    font-style: italic;
+    opacity: 0.6;
 }
 </style>
