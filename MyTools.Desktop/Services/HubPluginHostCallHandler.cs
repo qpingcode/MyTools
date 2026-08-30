@@ -17,7 +17,7 @@ public sealed class HubPluginHostCallHandler(
     public IReadOnlyCollection<string> Capabilities { get; } =
     [
         "account.status", "account.login", "account.register", "account.logout", "account.externalLogin",
-        "marketplace.search", "marketplace.get", "marketplace.install", "marketplace.publish",
+        "marketplace.search", "marketplace.get", "marketplace.install", "marketplace.publish.validate", "marketplace.publish",
         "sync.pull", "sync.push"
     ];
 
@@ -33,6 +33,7 @@ public sealed class HubPluginHostCallHandler(
             "marketplace.search" => Json(await marketplace.SearchAsync(TryReadString(request.Params, "query"), cancellationToken)),
             "marketplace.get" => Json(await marketplace.GetAsync(ReadString(request.Params, "pluginId"), cancellationToken)),
             "marketplace.install" => Json(await marketplace.InstallAsync(ReadString(request.Params, "pluginId"), TryReadString(request.Params, "version"), cancellationToken)),
+            "marketplace.publish.validate" => Json(await marketplace.ValidateDevelopmentPublishAsync(ReadString(request.Params, "pluginId"), cancellationToken)),
             "marketplace.publish" => Json(await marketplace.PublishDevelopmentAsync(ReadString(request.Params, "pluginId"), cancellationToken)),
             "sync.pull" => Json(await sync.PullAsync(cancellationToken)),
             "sync.push" => Json(await sync.PushAsync(cancellationToken)),

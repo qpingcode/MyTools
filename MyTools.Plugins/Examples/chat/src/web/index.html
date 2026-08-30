@@ -33,9 +33,13 @@
                                   data-i18n="[placeholder]Plugin.Chat.Detail.InputPlaceholder"
                                   data-i18n-default-value="Type a message"></textarea>
                         <button id="sendButton" class="send-button" type="button"
-                                data-i18n="[text]Plugin.Chat.Detail.Send" data-i18n-default-value="Send"></button>
-                        <button id="stopButton" class="stop-button" type="button" hidden
-                                data-i18n="[text]Plugin.Chat.Detail.Stop" data-i18n-default-value="Stop"></button>
+                                data-i18n="[title]Plugin.Chat.Detail.Send" data-i18n-default-value="Send"
+                                aria-label="Send">
+                            <svg class="send-arrow" viewBox="0 0 12 12" aria-hidden="true">
+                                <path d="M6 9V3.5M3.5 6 6 3.5 8.5 6"></path>
+                            </svg>
+                            <span class="stop-square" aria-hidden="true"></span>
+                        </button>
                     </div>
                     <div class="model-row">
                         <label for="modelSelect" data-i18n="[text]Plugin.Chat.Detail.Model" data-i18n-default-value="Model"></label>

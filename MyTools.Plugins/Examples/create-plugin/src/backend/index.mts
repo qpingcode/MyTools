@@ -50,10 +50,12 @@ plugin
   .handle("openFolder", async (payload: { sourcePath: string }) => plugin.hostCall("development.openFolder", payload))
   .handle("openCode", async (payload: { sourcePath: string }) => plugin.hostCall("development.openCode", payload))
   .handle("startDebug", async (payload: { pluginId: string }) => plugin.hostCall("development.startDebug", payload, 180_000))
+  .handle("stopDebug", async (payload: { pluginId: string }) => plugin.hostCall("development.stopDebug", payload))
   .handle("startPluginWatch", async (payload: { pluginId: string }) => plugin.hostCall("development.watch.start", payload, 180_000))
   .handle("getPluginWatchLogs", async (payload: { pluginId: string; count?: number }) => plugin.hostCall("development.watch.logs", payload))
   .handle("getMyToolsLogs", async (payload: { count?: number }) => plugin.hostCall("development.logs", payload))
   .handle("publishPlugin", async (payload: { pluginId: string }) => plugin.hostCall("development.publish", payload, 180_000))
+  .handle("validateHubPublish", async (payload: { pluginId: string }) => plugin.hostCall("marketplace.publish.validate", payload))
   .handle("publishToHub", async (payload: { pluginId: string }) => plugin.hostCall("marketplace.publish", payload, 180_000))
   .handle("getAccountStatus", async () => plugin.hostCall("account.status"))
   .handle("getAiStatus", async () => plugin.hostCall("development.ai.status"))
@@ -61,6 +63,6 @@ plugin
     plugin.hostCall("development.ai.chat", payload, AI_CHAT_HOST_TIMEOUT_MS))
   .handle("getAiProgress", async (payload: { sessionId: string; afterSequence: number }) =>
     plugin.hostCall("development.ai.progress", payload, 20_000))
-  .handle("clearAiConversation", async (payload: { sessionId?: string }) =>
-    plugin.hostCall("development.ai.clear", payload))
+  .handle("cancelAiCreation", async (payload: { sessionId: string }) =>
+    plugin.hostCall("development.ai.cancel", payload))
   .start();

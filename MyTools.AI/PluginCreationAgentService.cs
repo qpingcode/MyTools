@@ -22,6 +22,7 @@ public sealed class PluginCreationAgentService : IDisposable
 {
     public const string ApiKeyEnvironmentVariable = "DEEPSEEK_API_KEY";
     private const int MaxHistoryMessages = 24;
+    private const int MaxConversations = 30;
     private static readonly Regex ValidPluginId = new(
         "^[a-z0-9](?:[a-z0-9.-]{0,62}[a-z0-9])?$", RegexOptions.Compiled);
     private static readonly Regex ValidSessionId = new("^[a-zA-Z0-9_-]{1,64}$", RegexOptions.Compiled);
@@ -72,7 +73,7 @@ public sealed class PluginCreationAgentService : IDisposable
             ? Guid.NewGuid().ToString("N")
             : request.SessionId.Trim();
         if (!ValidSessionId.IsMatch(sessionId)) throw new InvalidOperationException("Invalid AI session ID.");
-        var conversation = conversations.GetOrAdd(sessionId, _ => new Conversation());
+        var conversation = GetConversation(sessionId);
         await conversation.Gate.WaitAsync(cancellationToken);
         NetworkRoute? networkRoute = null;
         try
@@ -105,6 +106,10 @@ public sealed class PluginCreationAgentService : IDisposable
             conversation.Report("responseComplete", null);
             return new PluginCreationChatResponse(sessionId, reply, run.CreatedPlugin);
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             networkRoute ??= new NetworkRoute(null, "proxy configuration resolution failed", UseSystemProxy: false);
@@ -129,14 +134,6 @@ public sealed class PluginCreationAgentService : IDisposable
         }
     }
 
-    public void ClearConversation(string? sessionId)
-    {
-        if (!string.IsNullOrWhiteSpace(sessionId) && conversations.TryRemove(sessionId, out var conversation))
-        {
-            conversation.Dispose();
-        }
-    }
-
     public void MarkPluginRegistered(string pluginId, string name)
     {
         existingPlugins[pluginId] = new ExistingPlugin(pluginId, name);
@@ -158,8 +155,32 @@ public sealed class PluginCreationAgentService : IDisposable
         CancellationToken cancellationToken = default)
     {
         if (!ValidSessionId.IsMatch(sessionId)) throw new InvalidOperationException("Invalid AI session ID.");
-        var conversation = conversations.GetOrAdd(sessionId, _ => new Conversation());
+        var conversation = GetConversation(sessionId);
         return new AiProgressBatch(await conversation.WaitForProgressAsync(afterSequence, cancellationToken));
+    }
+
+    private Conversation GetConversation(string sessionId)
+    {
+        var conversation = conversations.GetOrAdd(sessionId, _ => new Conversation());
+        conversation.Touch();
+        TrimConversations(sessionId);
+        return conversation;
+    }
+
+    private void TrimConversations(string currentSessionId)
+    {
+        var excess = conversations.Count - MaxConversations;
+        if (excess <= 0) return;
+        var candidates = conversations
+            .Where(item => !item.Key.Equals(currentSessionId, StringComparison.Ordinal)
+                && !item.Value.IsBusy)
+            .OrderBy(item => item.Value.LastAccessedTicks)
+            .Take(excess)
+            .ToArray();
+        foreach (var candidate in candidates)
+        {
+            conversations.TryRemove(candidate.Key, out _);
+        }
     }
 
     private ChatClientAgent CreateAgent(ToolRunState run, string model, HttpClient httpClient)
@@ -234,12 +255,16 @@ public sealed class PluginCreationAgentService : IDisposable
 
             {{operationInstructions}}
 
-            Before writing, call get_mytools_context and inspect the selected plugin (when present) plus the smallest relevant
+            Your first phase is requirements confirmation. Before calling any file-writing, completion, registration, or other
+            mutating tool, decide whether the request is sufficient to determine the plugin's purpose, core interaction, required
+            data or Host capabilities, and material constraints. If a material implementation decision remains unresolved, return
+            the skill's fenced mytools-interaction response and end the turn without writing files. Do not ask about minor details
+            that have a safe, reasonable default. Once requirements are sufficient, call get_mytools_context and inspect the selected plugin (when present) plus the smallest relevant
             example plugins under referenceRoot. The bundled references are authoritative and available even when the user
             has no MyTools source checkout. Generate or preserve every required source, manifest, package, build,
             i18n and icon-related field described by the skill. Do not run shell commands. When editing a selected development
             plugin, you may start its singleton watch and inspect watch/MyTools logs to diagnose build or runtime failures. When all files are ready, call
-            complete_plugin exactly once. If the request is materially ambiguous, ask a concise question instead of guessing.
+            complete_plugin exactly once.
             After completion, summarize what was created. The Host will run npm install and open npm run watch after
             registration, so do not ask the user to run those commands unless the Host reports a setup failure.
 
@@ -296,11 +321,17 @@ public sealed class PluginCreationAgentService : IDisposable
         private readonly List<AiProgressEvent> progress = [];
         private TaskCompletionSource<bool> progressChanged = NewProgressSignal();
         private long nextSequence;
+        private long lastAccessedTicks = DateTime.UtcNow.Ticks;
         public List<ChatMessage> Messages { get; } = [];
         public SemaphoreSlim Gate { get; } = new(1, 1);
+        public bool IsBusy => Gate.CurrentCount == 0;
+        public long LastAccessedTicks => Interlocked.Read(ref lastAccessedTicks);
+
+        public void Touch() => Interlocked.Exchange(ref lastAccessedTicks, DateTime.UtcNow.Ticks);
 
         public void Report(string kind, string? detail)
         {
+            Touch();
             TaskCompletionSource<bool> signal;
             lock (progressSync)
             {
@@ -317,6 +348,7 @@ public sealed class PluginCreationAgentService : IDisposable
             long afterSequence,
             CancellationToken cancellationToken)
         {
+            Touch();
             Task waitTask;
             lock (progressSync)
             {

@@ -12,15 +12,36 @@ type PluginRegistration = {
   aliases?: string[];
   hotKeys?: string[];
   testSteps?: string[];
+  isDebugging?: boolean;
 };
 type PluginDetails = PluginRegistration & Partial<Job>;
 type PluginValidation = { isValid: boolean; conflict?: "id" | "name" };
+type HubPublishValidation = {
+  isValid: boolean;
+  pluginId: string;
+  version: string;
+  publishedVersion?: string;
+  conflict?: "manifest" | "pluginId" | "version" | "account";
+  message?: string;
+};
 type AiStatus = { available: boolean; provider: string; model: string; requiredEnvironmentVariable: string; unavailableReason?: string };
 type AiProgressEvent = { sequence: number; kind: string; detail?: string };
 type AiProgressBatch = { events: AiProgressEvent[] };
 type PluginSetupResult = { installed: boolean; watchStarted: boolean; error?: string };
-type AiChatResponse = { sessionId: string; reply: string; createdPlugin?: PluginRegistration & { isUpdate?: boolean }; setup?: PluginSetupResult };
+type AiChatResponse = { sessionId: string; reply: string; createdPlugin?: PluginRegistration & { isUpdate?: boolean }; setup?: PluginSetupResult; stopped?: boolean };
+type InteractionQuestion = {
+  id: string;
+  prompt: string;
+  options: string[];
+  multiple: boolean;
+  allowText: boolean;
+  textPlaceholder: string;
+};
+type InteractionSpec = { id: string; title: string; questions: InteractionQuestion[] };
+type InteractionAnswer = { questionId: string; prompt: string; values: string[]; text: string };
 const AI_CHAT_TIMEOUT_MS = 21 * 60_000;
+const INTERACTION_PATTERN = /```mytools-interaction\s*\r?\n([\s\S]*?)\r?\n```/i;
+const newAiSessionId = () => crypto.randomUUID().replaceAll("-", "");
 
 const bus = createWebBusClient();
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -40,25 +61,76 @@ let activeReadGroup: {
   count: number;
 } | null = null;
 let accumulatedCreationMs = 0;
+let isAiWorking = false;
+let aiStopRequested = false;
 let formErrorKey = "";
 let formErrorDefault = "";
 
 function t(key: string, defaultValue: string) { return bus.i18n.t(key, { defaultValue }); }
 
+function limitedText(value: unknown, maxLength: number) {
+  return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
+}
+
+function stableInteractionId(value: string) {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index++) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `interaction_${(hash >>> 0).toString(16)}`;
+}
+
+function structuredId(value: unknown, fallback: string) {
+  const candidate = limitedText(value, 64);
+  return /^[a-zA-Z0-9_.-]{1,64}$/.test(candidate) ? candidate : fallback;
+}
+
+function parseInteraction(markdown: string): { markdown: string; interaction: InteractionSpec | null } {
+  const match = INTERACTION_PATTERN.exec(markdown);
+  if (!match) return { markdown, interaction: null };
+  try {
+    const raw = JSON.parse(match[1]) as Record<string, unknown>;
+    if (raw.version !== undefined && raw.version !== 1) return { markdown, interaction: null };
+    if (!Array.isArray(raw.questions) || raw.questions.length === 0 || raw.questions.length > 12) {
+      return { markdown, interaction: null };
+    }
+    const questions = raw.questions.map((value, index): InteractionQuestion | null => {
+      if (!value || typeof value !== "object") return null;
+      const question = value as Record<string, unknown>;
+      const prompt = limitedText(question.prompt, 500);
+      const options = Array.isArray(question.options)
+        ? question.options.map(option => limitedText(option, 120)).filter(Boolean).slice(0, 12)
+        : [];
+      const allowText = question.allowText === true;
+      if (!prompt || (options.length === 0 && !allowText)) return null;
+      return {
+        id: structuredId(question.id, `question_${index + 1}`),
+        prompt,
+        options,
+        multiple: question.multiple === true,
+        allowText,
+        textPlaceholder: limitedText(question.textPlaceholder, 120)
+      };
+    });
+    if (questions.some(question => question === null)) return { markdown, interaction: null };
+    return {
+      markdown: markdown.replace(match[0], "").trimEnd(),
+      interaction: {
+        id: structuredId(raw.id, stableInteractionId(match[1])),
+        title: limitedText(raw.title, 160),
+        questions: questions as InteractionQuestion[]
+      }
+    };
+  } catch {
+    return { markdown, interaction: null };
+  }
+}
+
 function setFormError(key = "", defaultValue = "") {
   formErrorKey = key;
   formErrorDefault = defaultValue;
   $("formError").textContent = key ? t(key, defaultValue) : "";
-}
-
-function selectMode(mode: "automatic" | "manual") {
-  const automatic = mode === "automatic";
-  $("automaticPanel").hidden = !automatic;
-  $("manualPanel").hidden = automatic;
-  $("automaticMode").classList.toggle("active", automatic);
-  $("manualMode").classList.toggle("active", !automatic);
-  $("automaticMode").setAttribute("aria-selected", String(automatic));
-  $("manualMode").setAttribute("aria-selected", String(!automatic));
 }
 
 function showStep(step: number) {
@@ -77,19 +149,15 @@ function toast(message: string, error = false) {
   window.setTimeout(() => element.className = "", 3000);
 }
 
+function scrollChatToBottom() {
+  const history = $("chatHistory");
+  history.scrollTop = history.scrollHeight;
+}
+
 function pluginTypeLabel(pluginType: PluginRegistration["pluginType"]) {
   return pluginType === "custom-ui"
     ? t("Plugin.CreatePlugin.Form.Type.Custom", "Custom UI plugin")
     : t("Plugin.CreatePlugin.Form.Type.Standard", "Standard results plugin");
-}
-
-function defaultTestSteps() {
-  return [
-    t("Plugin.CreatePlugin.Next.OpenTerminal", "Open a terminal in the plugin directory"),
-    t("Plugin.CreatePlugin.Next.Install.Command", "Run npm install"),
-    t("Plugin.CreatePlugin.Next.Watch.Command", "Run npm run watch"),
-    t("Plugin.CreatePlugin.Next.Test", "Test the alias or hotkey in MyTools")
-  ];
 }
 
 function updateAiTarget() {
@@ -103,14 +171,16 @@ function updateAiTarget() {
   prompt.placeholder = currentPlugin
     ? t("Plugin.CreatePlugin.Ai.Placeholder.Edit", "Describe what you want to change in the selected plugin...")
     : t("Plugin.CreatePlugin.Ai.Placeholder", "Describe the plugin you want to create...");
-  $<HTMLButtonElement>("sendPrompt").textContent = currentPlugin
+  const sendButton = $<HTMLButtonElement>("sendPrompt");
+  const sendLabel = currentPlugin
     ? t("Plugin.CreatePlugin.Ai.Send.Edit", "Edit with AI")
     : t("Plugin.CreatePlugin.Ai.Send", "Create with AI");
+  sendButton.title = sendLabel;
+  sendButton.setAttribute("aria-label", sendLabel);
 }
 
 function resetAiSessionForTargetChange() {
-  const previousSessionId = aiSessionId;
-  aiSessionId = "";
+  aiSessionId = newAiSessionId();
   progressTurn++;
   progressSequence = 0;
   liveReply = null;
@@ -118,13 +188,13 @@ function resetAiSessionForTargetChange() {
   streamedReplyReceived = false;
   activeReadGroup = null;
   accumulatedCreationMs = 0;
-  if (previousSessionId) void bus.call("clearAiConversation", { sessionId: previousSessionId });
 }
 
 function clearSelectedPlugin(resetSession = false) {
   if (resetSession) resetAiSessionForTargetChange();
   currentPlugin = null;
-  $("selectedPlugin").hidden = true;
+  $("pluginTools").hidden = true;
+  closeMenus();
   document.querySelectorAll(".plugin-item.selected").forEach(item => item.classList.remove("selected"));
   updateAiTarget();
 }
@@ -132,21 +202,21 @@ function clearSelectedPlugin(resetSession = false) {
 function selectPlugin(plugin: PluginDetails, resetSession = false) {
   if (resetSession) resetAiSessionForTargetChange();
   currentPlugin = plugin;
-  $("selectedPlugin").hidden = false;
-  $("selectedName").textContent = `${plugin.name} · ${plugin.pluginId}`;
-  $("selectedPath").textContent = plugin.sourcePath;
-  $("selectedAlias").textContent = plugin.aliases?.join(", ") || t("Plugin.CreatePlugin.List.None", "None");
-  $("selectedHotKey").textContent = plugin.hotKeys?.join(", ") || t("Plugin.CreatePlugin.List.None", "None");
-  const steps = $("selectedTestSteps");
-  steps.replaceChildren();
-  for (const text of plugin.testSteps?.length ? plugin.testSteps : defaultTestSteps()) {
-    const item = document.createElement("li");
-    item.textContent = text;
-    steps.append(item);
-  }
+  $("pluginTools").hidden = false;
   document.querySelectorAll(".plugin-item").forEach(item =>
     item.classList.toggle("selected", item.getAttribute("data-plugin-id") === plugin.pluginId));
+  updateDebugAction();
   updateAiTarget();
+}
+
+function updateDebugAction() {
+  const debugging = currentPlugin?.isDebugging === true;
+  const button = $("selectedStartDebug");
+  button.classList.toggle("debug-stop", debugging);
+  $("debugMenuIcon").textContent = debugging ? "■" : "▶";
+  $("debugMenuLabel").textContent = debugging
+    ? t("Plugin.CreatePlugin.Action.StopDebug", "Stop debugging")
+    : t("Plugin.CreatePlugin.Action.StartDebug", "Start debugging");
 }
 
 function showPluginDetails(plugin: PluginDetails, resetSession = false) {
@@ -155,7 +225,7 @@ function showPluginDetails(plugin: PluginDetails, resetSession = false) {
   $("detailId").textContent = plugin.pluginId;
   $("detailType").textContent = pluginTypeLabel(plugin.pluginType);
   $("sourcePath").textContent = plugin.sourcePath;
-  if (!$("manualPanel").hidden) showStep(3);
+  showStep(3);
 }
 
 function renderPluginList() {
@@ -172,39 +242,14 @@ function renderPluginList() {
     item.setAttribute("data-plugin-id", plugin.pluginId);
     item.title = plugin.sourcePath;
     const name = document.createElement("strong"); name.textContent = plugin.name;
-    const id = document.createElement("small"); id.textContent = plugin.pluginId;
-    const route = document.createElement("span");
-    route.className = "route";
-    route.textContent = [...(plugin.aliases ?? []), ...(plugin.hotKeys ?? [])].join(" · ") || "—";
-    item.append(name, id, route);
+    const id = document.createElement("small"); id.textContent = `id: ${plugin.pluginId}`;
+    item.append(name, id);
     item.addEventListener("click", () => {
-      if ($<HTMLButtonElement>("sendPrompt").disabled) return;
+      if (isAiWorking) return;
       if (currentPlugin?.pluginId === plugin.pluginId) clearSelectedPlugin(true);
       else showPluginDetails(plugin, true);
     });
-    const deleteButton = document.createElement("button");
-    deleteButton.type = "button";
-    deleteButton.className = "icon-delete-btn";
-    deleteButton.title = t("Plugin.CreatePlugin.Action.Delete", "Delete plugin");
-    deleteButton.setAttribute("aria-label", deleteButton.title);
-    deleteButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-2 6h10l-1 11H8L7 9Zm3 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z"/></svg>';
-    deleteButton.addEventListener("click", async () => {
-      if ($<HTMLButtonElement>("sendPrompt").disabled) return;
-      const question = t("Plugin.CreatePlugin.Delete.Confirm", "Delete {{name}} and its entire plugin folder? This cannot be undone.")
-        .replace("{{name}}", plugin.name);
-      if (!window.confirm(question)) return;
-      deleteButton.disabled = true;
-      try {
-        await bus.call("deleteDevelopmentPlugin", { pluginId: plugin.pluginId }, 30_000);
-        if (currentPlugin?.pluginId === plugin.pluginId) clearSelectedPlugin(true);
-        await loadPlugins();
-        toast(t("Plugin.CreatePlugin.Delete.Success", "Plugin deleted."));
-      } catch (error) {
-        deleteButton.disabled = false;
-        toast(error instanceof Error ? error.message : String(error), true);
-      }
-    });
-    row.append(item, deleteButton);
+    row.append(item);
     list.append(row);
   }
   if (currentPlugin) {
@@ -224,16 +269,25 @@ async function loadPlugins() {
 
 function addChatMessage(role: "user" | "assistant", message: string) {
   $("chatEmpty").hidden = true;
+  if (role === "user") {
+    $("chatHistory").querySelectorAll<HTMLElement>(".interaction-card:not(.submitted)").forEach(card => {
+      card.classList.add("submitted");
+      card.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLButtonElement>("input, textarea, button")
+        .forEach(control => { control.disabled = true; });
+    });
+  }
   const item = document.createElement("div");
   item.className = `chat-message ${role}`;
   const label = document.createElement("b");
   label.textContent = role === "user" ? t("Plugin.CreatePlugin.Ai.You", "You") : t("Plugin.CreatePlugin.Ai.Assistant", "MyTools AI");
   const content = document.createElement("div");
   content.className = "message-content";
-  if (role === "assistant") renderMarkdown(content, message); else content.textContent = message;
+  const parsed = role === "assistant" ? parseInteraction(message) : null;
+  if (parsed) renderMarkdown(content, parsed.markdown); else content.textContent = message;
   item.append(label, content);
+  if (parsed?.interaction) item.append(createInteraction(parsed.interaction));
   $("chatHistory").append(item);
-  item.scrollIntoView({ block: "end" });
+  scrollChatToBottom();
 }
 
 function renderMarkdown(element: HTMLElement, markdown: string) {
@@ -263,7 +317,7 @@ function addElapsedTime(elapsedMs: number, isUpdate: boolean) {
   item.className = "elapsed-event";
   item.textContent = `◷ ${template.replace("{{minutes}}", String(minutes)).replace("{{seconds}}", String(seconds))}`;
   $("chatHistory").append(item);
-  item.scrollIntoView({ block: "end" });
+  scrollChatToBottom();
 }
 
 const progressLabels: Record<string, [string, string]> = {
@@ -285,6 +339,7 @@ const progressLabels: Record<string, [string, string]> = {
   startingWatch: ["Plugin.CreatePlugin.Ai.Progress.StartingWatch", "Opening watch terminal"],
   setupComplete: ["Plugin.CreatePlugin.Ai.Progress.SetupComplete", "Dependencies installed and watch started"],
   setupFailed: ["Plugin.CreatePlugin.Ai.Progress.SetupFailed", "Plugin setup failed"],
+  stopped: ["Plugin.CreatePlugin.Ai.Progress.Stopped", "Plugin creation stopped"],
   failed: ["Plugin.CreatePlugin.Ai.Progress.Failed", "AI creation failed"]
 };
 
@@ -306,6 +361,14 @@ function finishLiveReplySegment() {
   liveReply?.parentElement?.classList.remove("live");
   liveReply = null;
   liveReplyMarkdown = "";
+}
+
+function finalizeLiveReplyInteraction() {
+  if (!liveReply || !liveReplyMarkdown) return;
+  const parsed = parseInteraction(liveReplyMarkdown);
+  if (!parsed.interaction) return;
+  renderMarkdown(liveReply, parsed.markdown);
+  liveReply.parentElement?.append(createInteraction(parsed.interaction));
 }
 
 function hasStreamedReply() { return streamedReplyReceived; }
@@ -344,7 +407,7 @@ function updateReadGroup(event: AiProgressEvent) {
     detail.title = detailText;
     activeReadGroup.body.append(detail);
   }
-  activeReadGroup.item.scrollIntoView({ block: "end" });
+  scrollChatToBottom();
 }
 
 function addProgress(event: AiProgressEvent) {
@@ -354,8 +417,11 @@ function addProgress(event: AiProgressEvent) {
     liveReplyMarkdown += event.detail ?? "";
     streamedReplyReceived ||= Boolean(event.detail);
     renderMarkdown(reply, liveReplyMarkdown);
-    reply.parentElement?.scrollIntoView({ block: "end" });
+    scrollChatToBottom();
     return;
+  }
+  if (event.kind === "responseComplete" || event.kind === "turnComplete") {
+    finalizeLiveReplyInteraction();
   }
   finishLiveReplySegment();
   if (event.kind === "responseComplete" || event.kind === "turnComplete") {
@@ -372,11 +438,12 @@ function addProgress(event: AiProgressEvent) {
   $("chatEmpty").hidden = true;
   const item = document.createElement("div");
   const isError = event.kind === "failed" || event.kind === "setupFailed";
+  const isStopped = event.kind === "stopped";
   const isDone = event.kind === "pluginReady" || event.kind === "setupComplete";
   item.className = `progress-event${isError ? " error" : isDone ? " done" : ""}`;
   const indicator = document.createElement("span");
   indicator.className = "progress-indicator";
-  indicator.textContent = isError ? "!" : isDone ? "✓" : "·";
+  indicator.textContent = isError ? "!" : isStopped ? "■" : isDone ? "✓" : "·";
   const body = document.createElement("span");
   const label = document.createElement("strong");
   label.textContent = t(definition[0], definition[1]);
@@ -389,7 +456,7 @@ function addProgress(event: AiProgressEvent) {
   }
   item.append(indicator, body);
   $("chatHistory").append(item);
-  item.scrollIntoView({ block: "end" });
+  scrollChatToBottom();
 }
 
 async function streamProgress(sessionId: string, turn: number) {
@@ -402,7 +469,7 @@ async function streamProgress(sessionId: string, turn: number) {
       for (const event of batch.events.sort((left, right) => left.sequence - right.sequence)) {
         progressSequence = Math.max(progressSequence, event.sequence);
         addProgress(event);
-        complete ||= event.kind === "turnComplete" || event.kind === "failed";
+        complete ||= event.kind === "turnComplete" || event.kind === "failed" || event.kind === "stopped";
       }
       if (complete) return;
     } catch {
@@ -411,13 +478,14 @@ async function streamProgress(sessionId: string, turn: number) {
   }
 }
 
-async function sendPrompt() {
+async function sendPrompt(messageOverride?: string): Promise<boolean> {
   const input = $<HTMLTextAreaElement>("aiPrompt");
-  const message = input.value.trim();
-  if (!message) return;
-  input.value = "";
+  const button = $<HTMLButtonElement>("sendPrompt");
+  const message = (messageOverride ?? input.value).trim();
+  if (!message || isAiWorking || input.disabled) return false;
+  if (messageOverride === undefined) input.value = "";
   addChatMessage("user", message);
-  aiSessionId ||= crypto.randomUUID().replaceAll("-", "");
+  aiSessionId ||= newAiSessionId();
   const turn = ++progressTurn;
   liveReply = null;
   liveReplyMarkdown = "";
@@ -427,14 +495,24 @@ async function sendPrompt() {
   const progressTask = streamProgress(aiSessionId, turn);
   let pluginCompleted = false;
   let operationIsUpdate = false;
-  const button = $<HTMLButtonElement>("sendPrompt");
-  button.disabled = true;
-  button.textContent = t("Plugin.CreatePlugin.Ai.Working", "AI is creating...");
+  let operationStopped = false;
+  isAiWorking = true;
+  aiStopRequested = false;
+  button.classList.add("working");
+  button.title = t("Plugin.CreatePlugin.Ai.Stop", "Stop creation");
+  button.setAttribute("aria-label", button.title);
   try {
     const response = await bus.call<AiChatResponse>(
       "chatWithAi", { sessionId: aiSessionId, message, selectedPluginId: currentPlugin?.pluginId }, AI_CHAT_TIMEOUT_MS);
     aiSessionId = response.sessionId;
-    if (!hasStreamedReply()) addChatMessage("assistant", response.reply);
+    if (response.stopped) {
+      operationStopped = true;
+      addChatMessage("assistant", t(
+        "Plugin.CreatePlugin.Ai.Stopped.Detail",
+        "Plugin creation was stopped. Files already written to the development folder were kept."));
+    } else if (!hasStreamedReply()) {
+      addChatMessage("assistant", response.reply);
+    }
     await loadPlugins();
     if (response.createdPlugin) {
       pluginCompleted = true;
@@ -447,19 +525,43 @@ async function sendPrompt() {
     } else if (response.setup?.error) {
       addChatMessage("assistant", `${t("Plugin.CreatePlugin.Ai.Setup.Failed", "npm install failed. Resolve the npm or network problem, then run npm install and npm run watch in the plugin directory.")}\n\n${response.setup.error}`);
     }
+    return !response.stopped;
   } catch (error) {
-    addChatMessage("assistant", error instanceof Error ? error.message : String(error));
+    operationStopped = aiStopRequested;
+    addChatMessage("assistant", aiStopRequested
+      ? t("Plugin.CreatePlugin.Ai.Stopped.Detail", "Plugin creation was stopped. Files already written to the development folder were kept.")
+      : error instanceof Error ? error.message : String(error));
+    return false;
   } finally {
-    accumulatedCreationMs += performance.now() - startedAt;
+    if (operationStopped) accumulatedCreationMs = 0;
+    else accumulatedCreationMs += performance.now() - startedAt;
     await Promise.race([progressTask, new Promise(resolve => window.setTimeout(resolve, 1500))]);
     if (turn === progressTurn) progressTurn++;
     if (pluginCompleted) {
       addElapsedTime(accumulatedCreationMs, operationIsUpdate);
       accumulatedCreationMs = 0;
     }
-    button.disabled = false;
+    isAiWorking = false;
+    aiStopRequested = false;
+    button.classList.remove("working");
     updateAiTarget();
     input.focus();
+  }
+}
+
+async function stopAiCreation() {
+  if (!isAiWorking || aiStopRequested || !aiSessionId) return;
+  aiStopRequested = true;
+  const button = $<HTMLButtonElement>("sendPrompt");
+  button.title = t("Plugin.CreatePlugin.Ai.Stopping", "Stopping creation...");
+  button.setAttribute("aria-label", button.title);
+  try {
+    await bus.call("cancelAiCreation", { sessionId: aiSessionId });
+  } catch (error) {
+    aiStopRequested = false;
+    button.title = t("Plugin.CreatePlugin.Ai.Stop", "Stop creation");
+    button.setAttribute("aria-label", button.title);
+    toast(error instanceof Error ? error.message : String(error), true);
   }
 }
 
@@ -468,17 +570,13 @@ document.querySelectorAll<HTMLInputElement>('input[name="type"]').forEach(radio 
   radio.closest(".choice")?.classList.add("selected");
 }));
 
-$("automaticMode").addEventListener("click", () => {
-  if (!$<HTMLButtonElement>("automaticMode").disabled) selectMode("automatic");
-});
-$("manualMode").addEventListener("click", () => selectMode("manual"));
-$("sendPrompt").addEventListener("click", () => void sendPrompt());
+$("sendPrompt").addEventListener("click", () => void (isAiWorking ? stopAiCreation() : sendPrompt()));
 $<HTMLTextAreaElement>("aiPrompt").addEventListener("keydown", event => {
   if (event.key === "Enter" && event.ctrlKey) { event.preventDefault(); void sendPrompt(); }
 });
-$("clearChat").addEventListener("click", async () => {
-  await bus.call("clearAiConversation", { sessionId: aiSessionId || undefined });
-  aiSessionId = "";
+$("clearChat").addEventListener("click", () => {
+  if (isAiWorking) return;
+  aiSessionId = newAiSessionId();
   progressTurn++;
   progressSequence = 0;
   liveReply = null;
@@ -524,11 +622,265 @@ $("refreshAll").addEventListener("click", async () => {
   } catch { toast(t("Plugin.CreatePlugin.Toast.ConnectionReset", "The connection was reset during refresh")); }
 });
 
-$("backToCreate").addEventListener("click", () => { showStep(1); void loadPlugins(); });
+function openCreateModal() {
+  setFormError();
+  showStep(1);
+  $("createModal").hidden = false;
+  window.setTimeout(() => $<HTMLInputElement>("name").focus());
+}
+
+function createInteraction(spec: InteractionSpec): HTMLDivElement {
+  const card = document.createElement("div");
+  card.className = "interaction-card";
+  const heading = document.createElement("div");
+  heading.className = "interaction-heading";
+  heading.textContent = spec.title || t("Plugin.CreatePlugin.Interaction.Questions", "A few questions");
+  const progress = document.createElement("div");
+  progress.className = "interaction-progress";
+  const body = document.createElement("div");
+  body.className = "interaction-body";
+  const footer = document.createElement("div");
+  footer.className = "interaction-footer";
+  card.append(heading, progress, body, footer);
+
+  const answers = spec.questions.map(() => ({ values: new Set<string>(), text: "" }));
+  const inputGroup = `interaction-${crypto.randomUUID()}`;
+  let page = 0;
+  let submitting = false;
+
+  function hasAnswer(index: number) {
+    return answers[index].values.size > 0 || answers[index].text.trim().length > 0;
+  }
+
+  function actionButton(className: string, text: string, action: () => void) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = className;
+    button.textContent = text;
+    button.addEventListener("click", action);
+    return button;
+  }
+
+  function updateActions() {
+    const primary = footer.querySelector<HTMLButtonElement>(".interaction-primary");
+    if (primary) primary.disabled = submitting || !hasAnswer(page);
+  }
+
+  function renderActions() {
+    footer.replaceChildren();
+    const previous = actionButton("interaction-button", t("Plugin.CreatePlugin.Interaction.Previous", "Previous"), () => {
+      page--;
+      renderPage();
+    });
+    previous.disabled = page === 0 || submitting;
+    previous.hidden = spec.questions.length === 1;
+    footer.append(previous);
+    if (page < spec.questions.length - 1) {
+      const next = actionButton("interaction-button interaction-primary", t("Plugin.CreatePlugin.Interaction.Next", "Next"), () => {
+        page++;
+        renderPage();
+      });
+      next.disabled = submitting || !hasAnswer(page);
+      footer.append(next);
+      return;
+    }
+    const submit = actionButton("interaction-button interaction-primary", t("Plugin.CreatePlugin.Interaction.Submit", "Submit"), () => {
+      if (submitting || answers.some((_, index) => !hasAnswer(index))) return;
+      submitting = true;
+      card.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLButtonElement>("input, textarea, button")
+        .forEach(control => { control.disabled = true; });
+      const result = spec.questions.map((question, index): InteractionAnswer => ({
+        questionId: question.id,
+        prompt: question.prompt,
+        values: [...answers[index].values],
+        text: answers[index].text.trim()
+      }));
+      void sendInteractionAnswers(result).then(sent => {
+        if (sent) showInteractionSummary(card, spec, result);
+        else {
+          card.classList.remove("submitted");
+          submitting = false;
+          renderPage();
+        }
+      });
+    });
+    submit.disabled = submitting || answers.some((_, index) => !hasAnswer(index));
+    footer.append(submit);
+  }
+
+  function renderPage() {
+    const question = spec.questions[page];
+    const answer = answers[page];
+    progress.textContent = t("Plugin.CreatePlugin.Interaction.Progress", "{{current}} of {{total}}")
+      .replace("{{current}}", String(page + 1)).replace("{{total}}", String(spec.questions.length));
+    body.replaceChildren();
+    const prompt = document.createElement("div");
+    prompt.className = "interaction-prompt";
+    prompt.textContent = question.prompt;
+    const choices = document.createElement("div");
+    choices.className = "interaction-choices";
+    question.options.forEach(option => {
+      const label = document.createElement("label");
+      label.className = "interaction-choice";
+      const input = document.createElement("input");
+      input.type = question.multiple ? "checkbox" : "radio";
+      input.name = `${inputGroup}-${page}`;
+      input.value = option;
+      input.checked = answer.values.has(option);
+      input.disabled = submitting;
+      label.classList.toggle("selected", input.checked);
+      input.addEventListener("change", () => {
+        if (question.multiple) {
+          if (input.checked) answer.values.add(option); else answer.values.delete(option);
+        } else {
+          answer.values.clear();
+          if (input.checked) answer.values.add(option);
+          answer.text = "";
+          const textInput = body.querySelector<HTMLTextAreaElement>(".interaction-text");
+          if (textInput) textInput.value = "";
+        }
+        choices.querySelectorAll<HTMLLabelElement>(".interaction-choice").forEach(choice => {
+          choice.classList.toggle("selected", choice.querySelector<HTMLInputElement>("input")?.checked === true);
+        });
+        updateActions();
+      });
+      const marker = document.createElement("span");
+      marker.className = "interaction-choice-marker";
+      const text = document.createElement("span");
+      text.textContent = option;
+      label.append(input, marker, text);
+      choices.append(label);
+    });
+    body.append(prompt, choices);
+    if (question.allowText) {
+      const textInput = document.createElement("textarea");
+      textInput.className = "interaction-text";
+      textInput.rows = 2;
+      textInput.maxLength = 1000;
+      textInput.value = answer.text;
+      textInput.disabled = submitting;
+      textInput.placeholder = question.textPlaceholder || t("Plugin.CreatePlugin.Interaction.Other", "Enter another answer");
+      textInput.addEventListener("input", () => {
+        answer.text = textInput.value;
+        if (!question.multiple && answer.text.trim()) {
+          answer.values.clear();
+          choices.querySelectorAll<HTMLInputElement>("input").forEach(input => {
+            input.checked = false;
+            input.closest(".interaction-choice")?.classList.remove("selected");
+          });
+        }
+        updateActions();
+      });
+      body.append(textInput);
+    }
+    renderActions();
+  }
+
+  renderPage();
+  return card;
+}
+
+function showInteractionSummary(card: HTMLDivElement, spec: InteractionSpec, answers: InteractionAnswer[]) {
+  card.className = "interaction-card submitted";
+  card.replaceChildren();
+
+  const row = document.createElement("div");
+  row.className = "interaction-summary-row";
+  const status = document.createElement("span");
+  status.className = "interaction-summary-status";
+  status.textContent = "✓";
+  const text = document.createElement("span");
+  text.className = "interaction-summary-text";
+  text.textContent = t("Plugin.CreatePlugin.Interaction.AnswersSubmitted", "Submitted {{count}} answers")
+    .replace("{{count}}", String(answers.length));
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "interaction-summary-toggle";
+  toggle.textContent = t("Plugin.CreatePlugin.Interaction.ViewAnswers", "View");
+  row.append(status, text, toggle);
+
+  const details = document.createElement("div");
+  details.className = "interaction-summary-details";
+  details.hidden = true;
+  if (spec.title) {
+    const title = document.createElement("div");
+    title.className = "interaction-summary-title";
+    title.textContent = spec.title;
+    details.append(title);
+  }
+  answers.forEach((answer, index) => {
+    const item = document.createElement("div");
+    item.className = "interaction-summary-answer";
+    const prompt = document.createElement("div");
+    prompt.className = "interaction-summary-prompt";
+    prompt.textContent = `${index + 1}. ${answer.prompt}`;
+    const value = document.createElement("div");
+    value.className = "interaction-summary-value";
+    value.textContent = [...answer.values, answer.text].filter(Boolean).join(" · ");
+    item.append(prompt, value);
+    details.append(item);
+  });
+  toggle.addEventListener("click", () => {
+    details.hidden = !details.hidden;
+    toggle.textContent = details.hidden
+      ? t("Plugin.CreatePlugin.Interaction.ViewAnswers", "View")
+      : t("Plugin.CreatePlugin.Interaction.HideAnswers", "Hide");
+  });
+  card.append(row, details);
+}
+
+async function sendInteractionAnswers(answers: InteractionAnswer[]) {
+  const lines = [t("Plugin.CreatePlugin.Interaction.AnswerHeading", "My answers:")];
+  answers.forEach((answer, index) => {
+    lines.push(`${index + 1}. ${answer.prompt}`);
+    answer.values.forEach(value => lines.push(`   - ${value}`));
+    if (answer.text) lines.push(`   - ${answer.text}`);
+  });
+  return sendPrompt(lines.join("\n"));
+}
+
+function closeCreateModal() { $("createModal").hidden = true; }
+
+$("newPlugin").addEventListener("click", openCreateModal);
+$("closeCreateModal").addEventListener("click", closeCreateModal);
+$("cancelCreate").addEventListener("click", closeCreateModal);
+$("backToCreate").addEventListener("click", () => {
+  closeCreateModal();
+  $<HTMLTextAreaElement>("aiPrompt").focus();
+  void loadPlugins();
+});
 $("openFolder").addEventListener("click", () => currentPlugin && void bus.call("openFolder", { sourcePath: currentPlugin.sourcePath }));
 $("openCode").addEventListener("click", () => currentPlugin && void bus.call("openCode", { sourcePath: currentPlugin.sourcePath }));
-$("selectedOpenFolder").addEventListener("click", () => currentPlugin && void bus.call("openFolder", { sourcePath: currentPlugin.sourcePath }));
-$("selectedOpenCode").addEventListener("click", () => currentPlugin && void bus.call("openCode", { sourcePath: currentPlugin.sourcePath }));
+
+function closeMenus() {
+  $("developMenu").hidden = true;
+  $("publishMenu").hidden = true;
+  $("developMenuButton").setAttribute("aria-expanded", "false");
+  $("publishMenuButton").setAttribute("aria-expanded", "false");
+}
+
+function toggleMenu(menuId: string, buttonId: string) {
+  const menu = $(menuId);
+  const open = menu.hidden;
+  closeMenus();
+  menu.hidden = !open;
+  $(buttonId).setAttribute("aria-expanded", String(open));
+}
+
+$("developMenuButton").addEventListener("click", () => toggleMenu("developMenu", "developMenuButton"));
+$("publishMenuButton").addEventListener("click", () => toggleMenu("publishMenu", "publishMenuButton"));
+document.addEventListener("click", event => {
+  if (!(event.target as Element).closest(".menu-root")) closeMenus();
+});
+document.addEventListener("keydown", event => { if (event.key === "Escape") closeMenus(); });
+$("selectedOpenFolder").addEventListener("click", () => {
+  closeMenus();
+  if (currentPlugin) void bus.call("openFolder", { sourcePath: currentPlugin.sourcePath });
+});
+$("selectedOpenCode").addEventListener("click", () => {
+  closeMenus();
+  if (currentPlugin) void bus.call("openCode", { sourcePath: currentPlugin.sourcePath });
+});
 
 async function runSelectedPluginOperation(buttonId: string, callName: string, successKey: string, successDefault: string) {
   if (!currentPlugin) return;
@@ -546,9 +898,37 @@ async function runSelectedPluginOperation(buttonId: string, callName: string, su
   }
 }
 
-$("selectedStartDebug").addEventListener("click", () => void runSelectedPluginOperation(
-  "selectedStartDebug", "startDebug", "Plugin.CreatePlugin.Debug.Success", "Development watch started."));
+$("selectedStartDebug").addEventListener("click", () => {
+  closeMenus();
+  const stopping = currentPlugin?.isDebugging === true;
+  void runSelectedPluginOperation(
+    "selectedStartDebug",
+    stopping ? "stopDebug" : "startDebug",
+    stopping ? "Plugin.CreatePlugin.Debug.Stopped" : "Plugin.CreatePlugin.Debug.Success",
+    stopping ? "Development watch stopped." : "Development watch started.");
+});
+$("selectedDelete").addEventListener("click", async () => {
+  closeMenus();
+  if (!currentPlugin || isAiWorking) return;
+  const plugin = currentPlugin;
+  const question = t("Plugin.CreatePlugin.Delete.Confirm", "Delete {{name}} and its entire plugin folder? This cannot be undone.")
+    .replace("{{name}}", plugin.name);
+  if (!window.confirm(question)) return;
+  const button = $<HTMLButtonElement>("selectedDelete");
+  button.disabled = true;
+  try {
+    await bus.call("deleteDevelopmentPlugin", { pluginId: plugin.pluginId }, 30_000);
+    if (currentPlugin?.pluginId === plugin.pluginId) clearSelectedPlugin(true);
+    await loadPlugins();
+    toast(t("Plugin.CreatePlugin.Delete.Success", "Plugin deleted."));
+  } catch (error) {
+    toast(error instanceof Error ? error.message : String(error), true);
+  } finally {
+    button.disabled = false;
+  }
+});
 $("selectedPublish").addEventListener("click", () => {
+  closeMenus();
   if (!currentPlugin) return;
   const question = t(
     "Plugin.CreatePlugin.Publish.Confirm",
@@ -556,13 +936,66 @@ $("selectedPublish").addEventListener("click", () => {
   if (window.confirm(question)) void runSelectedPluginOperation(
     "selectedPublish", "publishPlugin", "Plugin.CreatePlugin.Publish.Success", "Plugin installed in MyTools and reloaded.");
 });
-$("selectedPublishHub").addEventListener("click", () => {
+let publishValidationTurn = 0;
+
+function closePublishModal() {
+  publishValidationTurn++;
+  $("publishModal").hidden = true;
+}
+
+async function validateHubPublish() {
   if (!currentPlugin) return;
-  const question = t(
-    "Plugin.CreatePlugin.PublishHub.Confirm",
-    "Build and publish {{name}} to the MyTools plugin store? The version must be higher than any previous release.").replace("{{name}}", currentPlugin.name);
-  if (window.confirm(question)) void runSelectedPluginOperation(
-    "selectedPublishHub", "publishToHub", "Plugin.CreatePlugin.PublishHub.Success", "Plugin published to the store.");
+  const pluginId = currentPlugin.pluginId;
+  const turn = ++publishValidationTurn;
+  const status = $("publishValidation");
+  const publish = $<HTMLButtonElement>("confirmPublish");
+  publish.disabled = true;
+  status.className = "validation-status checking";
+  status.textContent = t("Plugin.CreatePlugin.PublishHub.Checking", "Checking plugin ID and version...");
+  try {
+    const result = await bus.call<HubPublishValidation>("validateHubPublish", { pluginId }, 30_000);
+    if (turn !== publishValidationTurn || currentPlugin?.pluginId !== pluginId) return;
+    $<HTMLInputElement>("publishPluginId").value = result.pluginId;
+    $<HTMLInputElement>("publishVersion").value = result.version;
+    status.className = `validation-status ${result.isValid ? "valid" : "invalid"}`;
+    status.textContent = result.isValid
+      ? result.publishedVersion
+        ? t("Plugin.CreatePlugin.PublishHub.Valid.Update", "Ready to publish. Current store version: {{version}}.").replace("{{version}}", result.publishedVersion)
+        : t("Plugin.CreatePlugin.PublishHub.Valid.New", "This plugin ID is available and ready to publish.")
+      : result.message || t("Plugin.CreatePlugin.PublishHub.Invalid", "Fix plugin.json and validate again.");
+    publish.disabled = !result.isValid;
+  } catch (error) {
+    if (turn !== publishValidationTurn) return;
+    status.className = "validation-status invalid";
+    status.textContent = error instanceof Error ? error.message : String(error);
+  }
+}
+
+$("selectedPublishHub").addEventListener("click", () => {
+  closeMenus();
+  if (!currentPlugin) return;
+  $<HTMLInputElement>("publishPluginId").value = currentPlugin.pluginId;
+  $<HTMLInputElement>("publishVersion").value = "";
+  $("publishModal").hidden = false;
+  void validateHubPublish();
+});
+$("closePublishModal").addEventListener("click", closePublishModal);
+$("cancelPublish").addEventListener("click", closePublishModal);
+$<HTMLInputElement>("publishPluginId").addEventListener("blur", () => void validateHubPublish());
+$<HTMLInputElement>("publishVersion").addEventListener("blur", () => void validateHubPublish());
+$("confirmPublish").addEventListener("click", async () => {
+  if (!currentPlugin) return;
+  const button = $<HTMLButtonElement>("confirmPublish");
+  button.disabled = true;
+  try {
+    await bus.call("publishToHub", { pluginId: currentPlugin.pluginId }, 180_000);
+    closePublishModal();
+    toast(t("Plugin.CreatePlugin.PublishHub.Success", "Plugin published to the store."));
+  } catch (error) {
+    $("publishValidation").className = "validation-status invalid";
+    $("publishValidation").textContent = error instanceof Error ? error.message : String(error);
+    await validateHubPublish();
+  }
 });
 
 window.addEventListener("focus", () => void loadPlugins());
@@ -579,25 +1012,19 @@ async function initialize() {
   updateAiTarget();
   try {
     const status = await bus.call<AiStatus>("getAiStatus");
-    $<HTMLButtonElement>("manualMode").disabled = false;
-    if (status.available) {
-      $<HTMLButtonElement>("automaticMode").disabled = false;
-      selectMode("automatic");
-    } else {
-      const automatic = $<HTMLButtonElement>("automaticMode");
-      automatic.disabled = true;
-      automatic.title = status.unavailableReason ?? "";
+    if (!status.available) {
       $("aiUnavailable").hidden = false;
       $("aiUnavailable").textContent = t(
         "Plugin.CreatePlugin.Ai.MissingKey",
         "Automatic mode is unavailable. Set the {{variable}} environment variable and restart MyTools.")
         .replace("{{variable}}", status.requiredEnvironmentVariable);
-      selectMode("manual");
+      $<HTMLButtonElement>("sendPrompt").disabled = true;
+      $<HTMLTextAreaElement>("aiPrompt").disabled = true;
     }
   } catch {
-    $<HTMLButtonElement>("automaticMode").disabled = true;
-    $<HTMLButtonElement>("manualMode").disabled = false;
-    selectMode("manual");
+    $("aiUnavailable").hidden = false;
+    $<HTMLButtonElement>("sendPrompt").disabled = true;
+    $<HTMLTextAreaElement>("aiPrompt").disabled = true;
   }
 }
 

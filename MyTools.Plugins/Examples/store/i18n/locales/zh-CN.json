@@ -1,5 +1,7 @@
 {
   "Plugin.Store.Name": "插件市场",
+  "Plugin.Store.Tagline": "发现为 MyTools 打造的实用工具",
+  "Plugin.Store.Explore": "探索插件",
   "Plugin.Store.Action.Open": "打开市场",
   "Plugin.Store.Result.Subtitle": "{{owner}} · v{{version}} · {{downloads}} 次下载",
   "Plugin.Store.Search": "搜索插件",
@@ -10,6 +12,12 @@
   "Plugin.Store.Owner": "发布者",
   "Plugin.Store.Created": "创建时间",
   "Plugin.Store.Updated": "更新时间",
+  "Plugin.Store.Protocol": "协议版本",
+  "Plugin.Store.VerifiedListing": "MyTools 插件",
+  "Plugin.Store.About": "关于此插件",
+  "Plugin.Store.NoDescription": "发布者还没有添加插件说明。",
+  "Plugin.Store.Select.Title": "选择一个插件",
+  "Plugin.Store.Select.Description": "从左侧列表选择插件，查看详情并安装。",
   "Plugin.Store.Install": "安装",
   "Plugin.Store.Installed": "插件已安装。"
 }

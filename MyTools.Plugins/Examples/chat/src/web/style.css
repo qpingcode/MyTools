@@ -73,8 +73,7 @@ body {
     line-height: 1;
 }
 
-.new-chat-button:hover,
-.send-button:hover:not(:disabled) {
+.new-chat-button:hover {
     border-color: var(--mt-border, #666666);
     color: var(--mt-text, #ffffff);
     background: var(--mt-surface-hover, #3a3a3a);
@@ -185,18 +184,6 @@ body {
     line-height: 38px;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-.send-button {
-    border: 1px solid var(--mt-border, #555555);
-    border-radius: 999px;
-    background: var(--mt-surface-alt, #333333);
-    color: var(--mt-text-muted, #cccccc);
-    padding: 4px 10px;
-    font: inherit;
-    font-size: 12px;
-    line-height: 1.2;
-    cursor: pointer;
 }
 
 .message.markdown > :last-child,
@@ -678,24 +665,53 @@ body {
     color: var(--mt-text-tertiary, #666666);
 }
 
-.send-button,
-.stop-button {
-    min-height: 38px;
-    padding-inline: 14px;
-}
-
-.stop-button {
-    border: 1px solid rgba(248, 113, 113, 0.45);
-    border-radius: 999px;
-    background: rgba(220, 38, 38, 0.12);
-    color: #fca5a5;
-    font: inherit;
+.send-button {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    min-height: 0;
+    place-items: center;
+    padding: 0;
+    border: 1px solid var(--mt-text, #f2f4f8);
+    border-radius: 50%;
+    background: var(--mt-text, #f2f4f8);
+    color: var(--mt-surface-bg, #111318);
     cursor: pointer;
 }
 
-.send-button:disabled,
-.stop-button:disabled {
-    opacity: 0.6;
+.send-button:hover:not(:disabled) {
+    border-color: var(--mt-text-muted, #d3d7df);
+    background: var(--mt-text-muted, #d3d7df);
+    color: var(--mt-surface-bg, #111318);
+}
+
+.send-button:active:not(:disabled) {
+    background: var(--mt-text-tertiary, #a3a8b3);
+}
+
+.send-arrow {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.stop-square {
+    display: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    background: currentColor;
+}
+
+.send-button.working .send-arrow { display: none; }
+.send-button.working .stop-square { display: block; }
+
+.send-button:disabled {
+    opacity: 0.34;
     cursor: default;
 }
 

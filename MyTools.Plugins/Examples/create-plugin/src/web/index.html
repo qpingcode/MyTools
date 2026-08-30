@@ -7,137 +7,61 @@
   <title data-i18n="[text]Plugin.CreatePlugin.Name" data-i18n-default-value="Create Plugin"></title>
 </head>
 <body>
-<main>
-  <header>
-    <div>
-      <h1 data-i18n="[text]Plugin.CreatePlugin.Detail.Title" data-i18n-default-value="Create Plugin"></h1>
-      <p data-i18n="[text]Plugin.CreatePlugin.Detail.Subtitle" data-i18n-default-value="Create or edit plugins with AI, or start from a template"></p>
-    </div>
-    <button id="refreshAll" class="ghost" data-i18n="[title]Plugin.CreatePlugin.Action.RefreshAll.Description"
-            data-i18n-default-value="Force refresh all development plugins"><span
-      data-i18n="[text]Plugin.CreatePlugin.Action.RefreshAll" data-i18n-default-value="↻ Refresh All"></span></button>
-  </header>
+<main class="app-shell">
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-icon">M</span><div><strong data-i18n="[text]Plugin.CreatePlugin.Detail.Title" data-i18n-default-value="Plugin Studio"></strong><small data-i18n="[text]Plugin.CreatePlugin.Detail.Subtitle" data-i18n-default-value="Build MyTools plugins with AI"></small></div></div>
+    <button id="newPlugin" class="new-plugin"><span>＋</span><span data-i18n="[text]Plugin.CreatePlugin.Action.New" data-i18n-default-value="New plugin"></span></button>
+    <div class="sidebar-heading"><span data-i18n="[text]Plugin.CreatePlugin.List.Title" data-i18n-default-value="In development"></span><span id="pluginCount"></span></div>
+    <div id="pluginList" class="plugin-list"></div>
+    <p id="pluginListEmpty" class="empty-state" data-i18n="[text]Plugin.CreatePlugin.List.Empty" data-i18n-default-value="No plugins yet. Create your first plugin."></p>
+    <button id="refreshAll" class="sidebar-action" data-i18n="[title]Plugin.CreatePlugin.Action.RefreshAll.Description" data-i18n-default-value="Reload all development plugins in MyTools"><span>↻</span><span data-i18n="[text]Plugin.CreatePlugin.Action.RefreshAll" data-i18n-default-value="Reload plugins"></span></button>
+  </aside>
 
-  <div class="mode-switch" role="tablist">
-    <button id="automaticMode" class="mode" role="tab" aria-selected="false" disabled>
-      <b data-i18n="[text]Plugin.CreatePlugin.Mode.Automatic" data-i18n-default-value="Automatic"></b>
-      <small data-i18n="[text]Plugin.CreatePlugin.Mode.Automatic.Help" data-i18n-default-value="Create or edit a plugin with AI"></small>
-    </button>
-    <button id="manualMode" class="mode" role="tab" aria-selected="false" disabled>
-      <b data-i18n="[text]Plugin.CreatePlugin.Mode.Manual" data-i18n-default-value="Manual"></b>
-      <small data-i18n="[text]Plugin.CreatePlugin.Mode.Manual.Help" data-i18n-default-value="Use the starter template form"></small>
-    </button>
-  </div>
-  <p id="aiUnavailable" class="warning" role="status" hidden></p>
-
-  <div class="workspace">
-    <div class="creation-panel">
-      <section id="automaticPanel" hidden>
-        <div class="chat-heading">
-          <div>
-            <h2 data-i18n="[text]Plugin.CreatePlugin.Ai.Title" data-i18n-default-value="AI plugin builder and editor"></h2>
-            <p data-i18n="[text]Plugin.CreatePlugin.Ai.Description" data-i18n-default-value="Describe a new plugin, or select one on the right and tell AI what to change."></p>
-          </div>
-          <button id="clearChat" class="ghost compact" data-i18n="[text]Plugin.CreatePlugin.Ai.NewChat" data-i18n-default-value="New chat"></button>
-        </div>
-        <div id="aiTarget" class="ai-target" role="status"><span>◎</span><strong id="aiTargetText"></strong></div>
-        <div id="chatHistory" class="chat-history" aria-live="polite">
-          <div id="chatEmpty" class="chat-empty">
-            <span>✦</span>
-            <b data-i18n="[text]Plugin.CreatePlugin.Ai.Empty.Title" data-i18n-default-value="What should the plugin do?"></b>
-            <p data-i18n="[text]Plugin.CreatePlugin.Ai.Empty.Description" data-i18n-default-value="For example: Create a color converter with alias color and a custom detail page."></p>
+  <section class="conversation">
+    <header class="toolbar">
+      <nav id="pluginTools" class="menu-bar" hidden>
+        <div class="menu-root">
+          <button id="developMenuButton" class="menu-trigger" aria-haspopup="true" aria-expanded="false" data-i18n="[text]Plugin.CreatePlugin.Toolbar.Develop" data-i18n-default-value="Develop"></button>
+          <div id="developMenu" class="menu-popup" role="menu" hidden>
+            <button id="selectedOpenCode" role="menuitem" data-i18n="[text]Plugin.CreatePlugin.Action.OpenCode" data-i18n-default-value="Open in VS Code"></button>
+            <button id="selectedOpenFolder" role="menuitem" data-i18n="[text]Plugin.CreatePlugin.Action.OpenFolder" data-i18n-default-value="Open folder"></button>
+            <button id="selectedStartDebug" class="debug-action" role="menuitem"><span id="debugMenuIcon" class="debug-indicator">▶</span><span id="debugMenuLabel"></span></button>
+            <div class="menu-separator"></div>
+            <button id="selectedDelete" class="danger-action" role="menuitem" data-i18n="[text]Plugin.CreatePlugin.Action.Delete" data-i18n-default-value="Delete plugin"></button>
           </div>
         </div>
-        <div class="composer">
-          <textarea id="aiPrompt" rows="5" data-i18n="[placeholder]Plugin.CreatePlugin.Ai.Placeholder"
-                    data-i18n-default-value="Describe the plugin you want to create..."></textarea>
-          <div class="composer-footer">
-            <small data-i18n="[text]Plugin.CreatePlugin.Ai.Send.Help" data-i18n-default-value="Ctrl+Enter to send"></small>
-            <button id="sendPrompt" data-i18n="[text]Plugin.CreatePlugin.Ai.Send" data-i18n-default-value="Create with AI"></button>
+        <div class="menu-root">
+          <button id="publishMenuButton" class="menu-trigger" aria-haspopup="true" aria-expanded="false" data-i18n="[text]Plugin.CreatePlugin.Toolbar.Publish" data-i18n-default-value="Publish"></button>
+          <div id="publishMenu" class="menu-popup" role="menu" hidden>
+            <button id="selectedPublish" role="menuitem" data-i18n="[text]Plugin.CreatePlugin.Action.Publish" data-i18n-default-value="Publish to this PC"></button>
+            <button id="selectedPublishHub" role="menuitem" data-i18n="[text]Plugin.CreatePlugin.Action.PublishHub" data-i18n-default-value="Publish to Store"></button>
           </div>
         </div>
-      </section>
+      </nav>
+      <button id="clearChat" class="icon-button" data-i18n="[title]Plugin.CreatePlugin.Ai.NewChat" data-i18n-default-value="New chat" aria-label="New chat">＋</button>
+    </header>
+    <p id="aiUnavailable" class="warning" role="status" hidden></p>
+    <section id="automaticPanel" class="chat-panel">
+      <div id="aiTarget" class="ai-target" role="status"><span>◎</span><strong id="aiTargetText"></strong></div>
+      <div id="chatHistory" class="chat-history" aria-live="polite"><div id="chatEmpty" class="chat-empty"><span class="spark">✦</span><b data-i18n="[text]Plugin.CreatePlugin.Ai.Empty.Title" data-i18n-default-value="What would you like to build?"></b><p data-i18n="[text]Plugin.CreatePlugin.Ai.Empty.Description" data-i18n-default-value="Describe a MyTools plugin. I can create it, explain the files, and help you refine it."></p></div></div>
+      <div class="composer"><textarea id="aiPrompt" rows="4" data-i18n="[placeholder]Plugin.CreatePlugin.Ai.Placeholder" data-i18n-default-value="Describe the MyTools plugin you want to create..."></textarea><div class="composer-footer"><small data-i18n="[text]Plugin.CreatePlugin.Ai.Send.Help" data-i18n-default-value="Ctrl+Enter to send"></small><button id="sendPrompt" class="send-button" data-i18n="[title]Plugin.CreatePlugin.Ai.Send" data-i18n-default-value="Send" aria-label="Send"><svg class="send-arrow" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 9V3.5M3.5 6 6 3.5 8.5 6"/></svg><span class="stop-square"></span></button></div></div>
+    </section>
+  </section>
 
-      <section id="manualPanel" hidden>
-        <nav class="stepper" aria-label="Progress">
-          <span class="active" aria-current="step"><strong>1</strong><b data-i18n="[text]Plugin.CreatePlugin.Step.Basic" data-i18n-default-value="Basics"></b></span><i></i>
-          <span><strong>2</strong><b data-i18n="[text]Plugin.CreatePlugin.Step.Generate" data-i18n-default-value="Generate"></b></span><i></i>
-          <span><strong>3</strong><b data-i18n="[text]Plugin.CreatePlugin.Step.Done" data-i18n-default-value="Done"></b></span>
-        </nav>
-        <section id="step1">
-          <div class="form-grid">
-            <label class="form-field"><span data-i18n="[text]Plugin.CreatePlugin.Form.Name" data-i18n-default-value="Plugin name"></span>
-              <input id="name" data-i18n="[placeholder]Plugin.CreatePlugin.Form.Name.Placeholder" data-i18n-default-value="For example: My Productivity Tool" autocomplete="off">
-            </label>
-            <label class="form-field"><span data-i18n="[text]Plugin.CreatePlugin.Form.Id" data-i18n-default-value="Plugin ID"></span>
-              <input id="pluginId" data-i18n="[placeholder]Plugin.CreatePlugin.Form.Id.Placeholder" data-i18n-default-value="For example: my-productivity-tool" autocomplete="off">
-              <small data-i18n="[text]Plugin.CreatePlugin.Form.Id.Help" data-i18n-default-value="Lowercase letters, numbers, dots, or hyphens; up to 64 characters"></small>
-            </label>
-          </div>
-          <fieldset>
-            <legend data-i18n="[text]Plugin.CreatePlugin.Form.Type" data-i18n-default-value="Plugin type"></legend>
-            <div class="choice-grid">
-              <label class="choice selected"><input type="radio" name="type" value="standard" checked><span>
-                <b data-i18n="[text]Plugin.CreatePlugin.Form.Type.Standard" data-i18n-default-value="Standard results plugin"></b>
-                <small data-i18n="[text]Plugin.CreatePlugin.Form.Type.Standard.Help" data-i18n-default-value="Use the native MyTools result list without an HTML UI"></small>
-              </span></label>
-              <label class="choice"><input type="radio" name="type" value="custom-ui"><span>
-                <b data-i18n="[text]Plugin.CreatePlugin.Form.Type.Custom" data-i18n-default-value="Custom UI plugin"></b>
-                <small data-i18n="[text]Plugin.CreatePlugin.Form.Type.Custom.Help" data-i18n-default-value="Include a customizable HTML and TypeScript detail page"></small>
-              </span></label>
-            </div>
-          </fieldset>
-          <p id="formError" class="error" role="alert" aria-live="polite"></p>
-          <footer><button id="create" data-i18n="[text]Plugin.CreatePlugin.Action.Create" data-i18n-default-value="Create Plugin"></button></footer>
-        </section>
-        <section id="step2" hidden><div class="spinner"></div>
-          <h2 data-i18n="[text]Plugin.CreatePlugin.Progress.Title" data-i18n-default-value="Generating plugin"></h2>
-          <p data-i18n="[text]Plugin.CreatePlugin.Progress.Description" data-i18n-default-value="Writing the source template..."></p>
-        </section>
-        <section id="step3" hidden><div class="success">✓</div>
-          <h2 data-i18n="[text]Plugin.CreatePlugin.Success.Title" data-i18n-default-value="Plugin created"></h2>
-          <p data-i18n="[text]Plugin.CreatePlugin.Success.Description" data-i18n-default-value="The source template is ready. The plugin loads after watch starts."></p>
-          <dl class="plugin-details">
-            <div><dt data-i18n="[text]Plugin.CreatePlugin.Form.Name" data-i18n-default-value="Plugin name"></dt><dd id="detailName"></dd></div>
-            <div><dt data-i18n="[text]Plugin.CreatePlugin.Form.Id" data-i18n-default-value="Plugin ID"></dt><dd id="detailId"></dd></div>
-            <div><dt data-i18n="[text]Plugin.CreatePlugin.Form.Type" data-i18n-default-value="Plugin type"></dt><dd id="detailType"></dd></div>
-          </dl>
-          <code id="sourcePath"></code>
-          <div class="actions">
-            <button id="backToCreate" class="ghost" data-i18n="[text]Plugin.CreatePlugin.Action.Back" data-i18n-default-value="Back to create"></button>
-            <button id="openFolder" class="ghost" data-i18n="[text]Plugin.CreatePlugin.Action.OpenFolder" data-i18n-default-value="Open Folder"></button>
-            <button id="openCode" data-i18n="[text]Plugin.CreatePlugin.Action.OpenCode" data-i18n-default-value="Open in VS Code"></button>
-          </div>
-        </section>
-      </section>
-    </div>
+  <div id="createModal" class="modal-backdrop" hidden><section class="modal" role="dialog" aria-modal="true" aria-labelledby="createModalTitle">
+    <header class="modal-header"><div><span class="eyebrow" data-i18n="[text]Plugin.CreatePlugin.Wizard.Eyebrow" data-i18n-default-value="MYTOOLS PLUGIN"></span><h2 id="createModalTitle" data-i18n="[text]Plugin.CreatePlugin.Wizard.Title" data-i18n-default-value="Create a new plugin"></h2></div><button id="closeCreateModal" class="icon-button" aria-label="Close">×</button></header>
+    <nav class="stepper" aria-label="Progress"><span class="active" aria-current="step"><strong>1</strong><b data-i18n="[text]Plugin.CreatePlugin.Step.Basic" data-i18n-default-value="Basics"></b></span><i></i><span><strong>2</strong><b data-i18n="[text]Plugin.CreatePlugin.Step.Generate" data-i18n-default-value="Generate"></b></span><i></i><span><strong>3</strong><b data-i18n="[text]Plugin.CreatePlugin.Step.Done" data-i18n-default-value="Ready"></b></span></nav>
+    <section id="step1" class="wizard-step"><div class="form-grid"><label class="form-field"><span data-i18n="[text]Plugin.CreatePlugin.Form.Name" data-i18n-default-value="Plugin name"></span><input id="name" data-i18n="[placeholder]Plugin.CreatePlugin.Form.Name.Placeholder" data-i18n-default-value="For example: Quick Notes" autocomplete="off"></label><label class="form-field"><span data-i18n="[text]Plugin.CreatePlugin.Form.Id" data-i18n-default-value="Plugin ID"></span><input id="pluginId" data-i18n="[placeholder]Plugin.CreatePlugin.Form.Id.Placeholder" data-i18n-default-value="For example: quick-notes" autocomplete="off"><small data-i18n="[text]Plugin.CreatePlugin.Form.Id.Help" data-i18n-default-value="Lowercase letters, numbers, dots, or hyphens"></small></label></div>
+      <fieldset><legend data-i18n="[text]Plugin.CreatePlugin.Form.Type" data-i18n-default-value="Plugin type"></legend><div class="choice-grid"><label class="choice selected"><input type="radio" name="type" value="standard" checked><span><b data-i18n="[text]Plugin.CreatePlugin.Form.Type.Standard" data-i18n-default-value="Results plugin"></b><small data-i18n="[text]Plugin.CreatePlugin.Form.Type.Standard.Help" data-i18n-default-value="Uses the native MyTools results list"></small></span></label><label class="choice"><input type="radio" name="type" value="custom-ui"><span><b data-i18n="[text]Plugin.CreatePlugin.Form.Type.Custom" data-i18n-default-value="Custom UI plugin"></b><small data-i18n="[text]Plugin.CreatePlugin.Form.Type.Custom.Help" data-i18n-default-value="Includes a custom HTML and TypeScript page"></small></span></label></div></fieldset>
+      <p id="formError" class="error" role="alert" aria-live="polite"></p><footer><button id="cancelCreate" class="secondary" data-i18n="[text]Plugin.CreatePlugin.Action.Cancel" data-i18n-default-value="Cancel"></button><button id="create" data-i18n="[text]Plugin.CreatePlugin.Action.Create" data-i18n-default-value="Create plugin"></button></footer></section>
+    <section id="step2" class="wizard-step centered" hidden><div class="spinner"></div><h2 data-i18n="[text]Plugin.CreatePlugin.Progress.Title" data-i18n-default-value="Generating your plugin"></h2><p data-i18n="[text]Plugin.CreatePlugin.Progress.Description" data-i18n-default-value="Creating the project, manifest, translations, and README files..."></p></section>
+    <section id="step3" class="wizard-step centered" hidden><div class="success">✓</div><h2 data-i18n="[text]Plugin.CreatePlugin.Success.Title" data-i18n-default-value="Your plugin is ready"></h2><p data-i18n="[text]Plugin.CreatePlugin.Success.Description" data-i18n-default-value="Start in VS Code, browse the files yourself, or continue here and ask AI to shape the plugin with you."></p><dl class="plugin-details"><div><dt data-i18n="[text]Plugin.CreatePlugin.Form.Name" data-i18n-default-value="Name"></dt><dd id="detailName"></dd></div><div><dt data-i18n="[text]Plugin.CreatePlugin.Form.Id" data-i18n-default-value="Plugin ID"></dt><dd id="detailId"></dd></div><div><dt data-i18n="[text]Plugin.CreatePlugin.Form.Type" data-i18n-default-value="Type"></dt><dd id="detailType"></dd></div></dl><code id="sourcePath"></code><div class="completion-actions"><button id="openFolder" class="secondary" data-i18n="[text]Plugin.CreatePlugin.Action.OpenFolder" data-i18n-default-value="Open folder"></button><button id="openCode" class="secondary" data-i18n="[text]Plugin.CreatePlugin.Action.OpenCode" data-i18n-default-value="Open in VS Code"></button><button id="backToCreate" data-i18n="[text]Plugin.CreatePlugin.Action.ContinueAi" data-i18n-default-value="Continue with AI"></button></div></section>
+  </section></div>
 
-    <aside class="plugin-list-panel">
-      <div class="panel-heading">
-        <h2 data-i18n="[text]Plugin.CreatePlugin.List.Title" data-i18n-default-value="Created plugins"></h2>
-        <span id="pluginCount"></span>
-      </div>
-      <div id="pluginList" class="plugin-list"></div>
-      <p id="pluginListEmpty" class="empty-state" data-i18n="[text]Plugin.CreatePlugin.List.Empty" data-i18n-default-value="No plugins have been created yet."></p>
-      <section id="selectedPlugin" class="selected-plugin" hidden>
-        <h3 id="selectedName"></h3>
-        <code id="selectedPath"></code>
-        <dl>
-          <div><dt data-i18n="[text]Plugin.CreatePlugin.List.Alias" data-i18n-default-value="Alias"></dt><dd id="selectedAlias"></dd></div>
-          <div><dt data-i18n="[text]Plugin.CreatePlugin.List.HotKey" data-i18n-default-value="Hotkey"></dt><dd id="selectedHotKey"></dd></div>
-        </dl>
-        <h3 data-i18n="[text]Plugin.CreatePlugin.Next.Title" data-i18n-default-value="Next steps"></h3>
-        <ol id="selectedTestSteps"></ol>
-        <div class="actions">
-          <button id="selectedOpenFolder" class="ghost" data-i18n="[text]Plugin.CreatePlugin.Action.OpenFolder" data-i18n-default-value="Open Folder"></button>
-          <button id="selectedOpenCode" data-i18n="[text]Plugin.CreatePlugin.Action.OpenCode" data-i18n-default-value="Open in VS Code"></button>
-          <button id="selectedStartDebug" class="ghost" data-i18n="[text]Plugin.CreatePlugin.Action.StartDebug" data-i18n-default-value="Start debugging"></button>
-          <button id="selectedPublish" data-i18n="[text]Plugin.CreatePlugin.Action.Publish" data-i18n-default-value="Install in MyTools"></button>
-          <button id="selectedPublishHub" class="ghost" data-i18n="[text]Plugin.CreatePlugin.Action.PublishHub" data-i18n-default-value="Publish to Store"></button>
-        </div>
-      </section>
-    </aside>
-  </div>
+  <div id="publishModal" class="modal-backdrop" hidden><section class="modal publish-modal" role="dialog" aria-modal="true" aria-labelledby="publishModalTitle">
+    <header class="modal-header"><div><span class="eyebrow" data-i18n="[text]Plugin.CreatePlugin.PublishHub.Eyebrow" data-i18n-default-value="MYTOOLS STORE"></span><h2 id="publishModalTitle" data-i18n="[text]Plugin.CreatePlugin.PublishHub.Title" data-i18n-default-value="Publish plugin"></h2></div><button id="closePublishModal" class="icon-button" aria-label="Close">×</button></header>
+    <p data-i18n="[text]Plugin.CreatePlugin.PublishHub.Description" data-i18n-default-value="Metadata is read from plugin.json. After editing the file, leave either field to validate again."></p><div class="form-grid publish-fields"><label class="form-field"><span data-i18n="[text]Plugin.CreatePlugin.Form.Id" data-i18n-default-value="Plugin ID"></span><input id="publishPluginId" readonly></label><label class="form-field"><span data-i18n="[text]Plugin.CreatePlugin.PublishHub.Version" data-i18n-default-value="Version"></span><input id="publishVersion" readonly></label></div><div id="publishValidation" class="validation-status checking" role="status"></div><footer><button id="cancelPublish" class="secondary" data-i18n="[text]Plugin.CreatePlugin.Action.Cancel" data-i18n-default-value="Cancel"></button><button id="confirmPublish" disabled data-i18n="[text]Plugin.CreatePlugin.Action.PublishHub" data-i18n-default-value="Publish to Store"></button></footer>
+  </section></div>
   <div id="toast"></div>
 </main>
 <script src="./main.js"></script>

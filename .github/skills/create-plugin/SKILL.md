@@ -17,7 +17,15 @@ MyTools Node 插件 = 独立 Node 进程里的后端 + 可选的 WebView2 HTML �
 - [`chat`](references/Examples/chat/)
 - [`translator`](references/Examples/translator/)。
 
-创建或编辑前只读取与需求最相关的最小参考集合。
+## 0. 先确认需求，再开始实现
+
+每一轮创建或编辑任务都先判断现有描述是否足以确定实现方向。至少确认会影响架构或用户体验的事项，
+例如插件要解决的问题、核心交互、需要的数据来源或 Host capability，以及用户明确要求的限制。若仍有必须
+由用户决定、会实质改变实现的歧义，按下方格式发起确认并结束本轮；在用户回答前，不得调用
+`write_plugin_file`、`complete_plugin` 或其他会创建、修改、注册插件的工具。已有安全合理的默认值、不会
+改变主要实现的细节无需提问，应直接采用默认值继续。
+
+需求已足够明确后，只读取与需求最相关的最小参考集合。
 创建模式下选择唯一的插件 ID 和名称，从完整目录结构开始生成。编辑模式下，先读取 Host 提供的
 `selectedPlugin`（ID、名称、类型和源码目录）并检查现有文件，只能修改该插件目录；保持插件 ID，
 保留与用户需求无关的行为和配置。无论创建还是编辑，完成前都要重新检查 manifest、i18n、图标、
@@ -27,12 +35,45 @@ Create Plugin 的“打开目录”和“用 VS Code 打开”必须通过 Host 
 `development.openFolder` / `development.openCode`）完成；AI 和插件页面不能直接启动
 `explorer.exe`、`code`、`Code.exe` 或其他本地进程。
 
+## 需要用户确认时
+
+当存在会实质改变插件实现的歧义、必须由用户选择后才能继续时，在说明文字之后用且只用一个
+fenced `mytools-interaction` JSON 块结束回复。Create Plugin 页面会把它渲染为可填写的确认卡片，
+提交后在同一会话中继续。格式与 `chat` 参考插件一致：
+
+````markdown
+```mytools-interaction
+{
+  "version": 1,
+  "id": "stable_interaction_id",
+  "title": "Optional short heading",
+  "questions": [
+    {
+      "id": "stable_question_id",
+      "prompt": "Question shown to the user",
+      "options": ["First choice", "Second choice"],
+      "multiple": false,
+      "allowText": true,
+      "textPlaceholder": "Enter another answer"
+    }
+  ]
+}
+```
+````
+
+交互和问题的 `id` 使用简短、稳定且唯一的 ASCII 标识。`questions` 可以包含多个问题，页面会分页显示；
+`multiple` 默认 `false`，`allowText` 默认 `false`。每个问题必须提供至少一个 `options` 或启用
+`allowText`。不要在 JSON 字符串中写 Markdown，也不要把该格式用于修辞性问题、普通进度说明，或已有
+合理默认值且无需用户决定的细节。
+
 ## 1. 目录结构
 
 （照 [`calculator`](references/Examples/calculator/)）：
 
 ```text
 my-plugin/
+  README.md
+  README.zh-CN.md
   plugin.json
   package.json
   tsconfig.json
@@ -46,6 +87,10 @@ my-plugin/
 ```
 
 构建输出到 `dist/`。`plugin.json` 里的路径相对 `dist` 根（如 `backend/index.mjs`、`web/index.html`）。
+
+每个新插件必须创建 `README.md`，说明插件解决的问题、主要功能、使用方法、开发方式和发布方式。
+同时创建与插件受支持语言对应的本地化 README；至少在支持简体中文时创建 `README.zh-CN.md`。
+各 README 顶部互相链接。编辑已有插件时，如果功能或使用方式改变，同步更新这些 README。
 
 ## 2. SDK：`@qping/plugin-bus`
 

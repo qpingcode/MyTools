@@ -48,7 +48,7 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
 
     public event EventHandler<DevelopmentPluginReloadRequestedEventArgs>? ReloadRequested;
 
-    public string CodingRoot => Path.Combine(ConfigPath.Base, "coding");
+    public string CodingRoot => Path.Combine(DevelopmentPluginRegistrationStore.DataDirectory, "coding");
     public string PluginsRoot => Path.Combine(ConfigPath.Base, "plugins");
 
     public void Initialize()
@@ -341,6 +341,15 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
     {
         var result = await StartPluginWatchAsync(pluginId, cancellationToken);
         return new DevelopmentPluginOperationResult(result.Running, result.SourcePath);
+    }
+
+    public DevelopmentPluginOperationResult StopDebug(string pluginId)
+    {
+        var registration = GetAiEditableRegistration(pluginId);
+        StopWatchProcess(registration.PluginId);
+        if (IsWatchRunning(registration.PluginId))
+            throw new InvalidOperationException("The development watch is running in another process and cannot be stopped here.");
+        return new DevelopmentPluginOperationResult(true, registration.SourcePath);
     }
 
     public async Task<PluginWatchStartResult> StartPluginWatchAsync(
@@ -994,6 +1003,8 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
         }
         if (process is null) return;
         TryKillProcess(process);
+        try { process.WaitForExit(3000); }
+        catch { /* best effort; the mutex check will report the remaining process */ }
         process.Dispose();
     }
 
@@ -1091,7 +1102,7 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
         }
     }
 
-    private static DevelopmentPluginRegistration EnrichRegistration(DevelopmentPluginRegistration registration)
+    private DevelopmentPluginRegistration EnrichRegistration(DevelopmentPluginRegistration registration)
     {
         try
         {
@@ -1111,7 +1122,8 @@ public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDi
             {
                 Aliases = aliases,
                 HotKeys = hotKeys,
-                TestSteps = []
+                TestSteps = [],
+                IsDebugging = IsWatchRunning(registration.PluginId)
             };
         }
         catch

@@ -37,7 +37,6 @@ import { marked } from "marked";
     const messagesElement = document.getElementById("messages") as HTMLElement;
     const promptInput = document.getElementById("promptInput") as HTMLTextAreaElement;
     const sendButton = document.getElementById("sendButton") as HTMLButtonElement;
-    const stopButton = document.getElementById("stopButton") as HTMLButtonElement;
     const newChatButton = document.getElementById("newChatButton") as HTMLButtonElement;
     const conversationList = document.getElementById("conversationList") as HTMLElement;
     const conversationTitle = document.getElementById("conversationTitle") as HTMLElement;
@@ -47,6 +46,7 @@ import { marked } from "marked";
     let pollInFlight = false;
     let pollAfterCurrent = false;
     let currentState: ChatState | null = null;
+    let cancelRequested = false;
     let userScrolledUp = false;
     let pendingStreamingFrame: number | null = null;
     let pendingStreamingRender: { entry: RenderedMessage; content: string } | null = null;
@@ -822,8 +822,14 @@ import { marked } from "marked";
         renderNotice(state, messages.length > 0);
 
         const streaming = state.streaming === true;
-        sendButton.hidden = streaming;
-        stopButton.hidden = !streaming;
+        if (!streaming) cancelRequested = false;
+        sendButton.classList.toggle("working", streaming);
+        const actionLabel = streaming
+            ? bus.i18n.t("Plugin.Chat.Detail.Stop", { defaultValue: "Stop" })
+            : bus.i18n.t("Plugin.Chat.Detail.Send", { defaultValue: "Send" });
+        sendButton.title = actionLabel;
+        sendButton.setAttribute("aria-label", actionLabel);
+        sendButton.disabled = streaming && cancelRequested;
         modelSelect.disabled = streaming;
         newChatButton.disabled = streaming;
         renderConversationList();
@@ -967,11 +973,19 @@ import { marked } from "marked";
         if (isNearBottom()) userScrolledUp = false;
         else if (currentState?.streaming) userScrolledUp = true;
     });
-    sendButton.addEventListener("click", function () { void sendMessage(); });
-    stopButton.addEventListener("click", async function () {
-        stopButton.disabled = true;
+    sendButton.addEventListener("click", async function () {
+        if (!currentState?.streaming) {
+            void sendMessage();
+            return;
+        }
+        if (cancelRequested) return;
+        cancelRequested = true;
+        sendButton.disabled = true;
         try { await bus.call("cancel", { sessionId }); await poll(); }
-        finally { stopButton.disabled = false; }
+        finally {
+            cancelRequested = false;
+            sendButton.disabled = false;
+        }
     });
     newChatButton.addEventListener("click", function () { void startNewChat(); });
     promptInput.addEventListener("keydown", function (event) {

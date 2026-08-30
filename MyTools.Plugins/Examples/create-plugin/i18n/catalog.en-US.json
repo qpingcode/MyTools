@@ -5,6 +5,198 @@
   "sourceLocale": "en-US",
   "entries": [
     {
+      "key": "Plugin.CreatePlugin.Action.New",
+      "defaultValue": "New plugin",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.Action.Cancel",
+      "defaultValue": "Cancel",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.Action.ContinueAi",
+      "defaultValue": "Continue with AI",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.Wizard.Eyebrow",
+      "defaultValue": "MYTOOLS PLUGIN",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.Wizard.Title",
+      "defaultValue": "Create a new plugin",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.Toolbar.NoSelection",
+      "defaultValue": "New plugin conversation",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.Toolbar.NoSelection.Help",
+      "defaultValue": "Describe an idea or choose a plugin from the sidebar",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.Toolbar.Develop",
+      "defaultValue": "Develop",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.Toolbar.Publish",
+      "defaultValue": "Publish",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.Interaction.Questions",
+      "defaultValue": "A few questions",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.Interaction.Progress",
+      "defaultValue": "{{current}} of {{total}}",
+      "placeholders": ["current", "total"],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.Interaction.Previous",
+      "defaultValue": "Previous",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.Interaction.Next",
+      "defaultValue": "Next",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.Interaction.Submit",
+      "defaultValue": "Submit",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.Interaction.Other",
+      "defaultValue": "Enter another answer",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.Interaction.AnswerHeading",
+      "defaultValue": "My answers:",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.Interaction.AnswersSubmitted",
+      "defaultValue": "Submitted {{count}} answers",
+      "placeholders": ["count"],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.Interaction.ViewAnswers",
+      "defaultValue": "View",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.Interaction.HideAnswers",
+      "defaultValue": "Hide",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.Action.StopDebug",
+      "defaultValue": "Stop debugging",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.Debug.Stopped",
+      "defaultValue": "Development watch stopped.",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.Action.PublishHub",
+      "defaultValue": "Publish to Store",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.PublishHub.Confirm",
+      "defaultValue": "Build and publish {{name}} to the MyTools plugin store? The version must be higher than any previous release.",
+      "placeholders": ["name"],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.PublishHub.Success",
+      "defaultValue": "Plugin published to the store.",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.PublishHub.Eyebrow",
+      "defaultValue": "MYTOOLS STORE",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.PublishHub.Title",
+      "defaultValue": "Publish plugin",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.PublishHub.Description",
+      "defaultValue": "Metadata is read from plugin.json. After editing the file, leave either field to validate again.",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.PublishHub.Version",
+      "defaultValue": "Version",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.PublishHub.Checking",
+      "defaultValue": "Checking plugin ID and version...",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.PublishHub.Valid.Update",
+      "defaultValue": "Ready to publish. Current store version: {{version}}.",
+      "placeholders": ["version"],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.PublishHub.Valid.New",
+      "defaultValue": "This plugin ID is available and ready to publish.",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.PublishHub.Invalid",
+      "defaultValue": "Fix plugin.json and validate again.",
+      "placeholders": [],
+      "references": null
+    },
+    {
       "key": "Plugin.CreatePlugin.Name",
       "defaultValue": "Create Plugin",
       "placeholders": [],
@@ -121,6 +313,24 @@
     {
       "key": "Plugin.CreatePlugin.Ai.Working",
       "defaultValue": "AI is creating...",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Stop",
+      "defaultValue": "Stop creation",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Stopping",
+      "defaultValue": "Stopping creation...",
+      "placeholders": [],
+      "references": null
+    },
+    {
+      "key": "Plugin.CreatePlugin.Ai.Stopped.Detail",
+      "defaultValue": "Plugin creation was stopped. Files already written to the development folder were kept.",
       "placeholders": [],
       "references": null
     },
@@ -259,6 +469,12 @@
       "references": null
     },
     {
+      "key": "Plugin.CreatePlugin.Ai.Progress.Stopped",
+      "defaultValue": "Plugin creation stopped",
+      "placeholders": [],
+      "references": null
+    },
+    {
       "key": "Plugin.CreatePlugin.Ai.Progress.Failed",
       "defaultValue": "AI creation failed",
       "placeholders": [],
@@ -326,7 +542,7 @@
     },
     {
       "key": "Plugin.CreatePlugin.Action.RefreshAll",
-      "defaultValue": "↻ Refresh All",
+      "defaultValue": "Reload plugins",
       "placeholders": [],
       "references": {
         "filePath": "src/web/index.html",
@@ -336,7 +552,7 @@
     },
     {
       "key": "Plugin.CreatePlugin.Action.RefreshAll.Description",
-      "defaultValue": "Force refresh all development plugins",
+      "defaultValue": "Reload all development plugins in MyTools",
       "placeholders": [],
       "references": {
         "filePath": "src/web/index.html",

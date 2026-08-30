@@ -26,16 +26,18 @@
     "development.openFolder",
     "development.openCode",
     "development.startDebug",
+    "development.stopDebug",
     "development.watch.start",
     "development.watch.logs",
     "development.logs",
     "development.publish",
     "marketplace.publish",
+    "marketplace.publish.validate",
     "account.status",
     "development.ai.status",
     "development.ai.chat",
     "development.ai.progress",
-    "development.ai.clear"
+    "development.ai.cancel"
   ],
   "alias": [
     "create"

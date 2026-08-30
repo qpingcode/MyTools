@@ -1,5 +1,7 @@
 {
   "Plugin.Store.Name": "Plugin Store",
+  "Plugin.Store.Tagline": "Discover tools made for MyTools",
+  "Plugin.Store.Explore": "Explore",
   "Plugin.Store.Action.Open": "Open Store",
   "Plugin.Store.Result.Subtitle": "{{owner}} · v{{version}} · {{downloads}} downloads",
   "Plugin.Store.Search": "Search plugins",
@@ -10,6 +12,12 @@
   "Plugin.Store.Owner": "Publisher",
   "Plugin.Store.Created": "Created",
   "Plugin.Store.Updated": "Updated",
+  "Plugin.Store.Protocol": "Protocol",
+  "Plugin.Store.VerifiedListing": "MyTools plugin",
+  "Plugin.Store.About": "About this plugin",
+  "Plugin.Store.NoDescription": "The publisher has not added a description yet.",
+  "Plugin.Store.Select.Title": "Choose a plugin",
+  "Plugin.Store.Select.Description": "Select a plugin from the list to view details and install it.",
   "Plugin.Store.Install": "Install",
   "Plugin.Store.Installed": "Plugin installed."
 }

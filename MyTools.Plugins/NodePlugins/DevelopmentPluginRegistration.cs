@@ -14,11 +14,16 @@ public sealed record DevelopmentPluginRegistration(
     public IReadOnlyList<string> Aliases { get; init; } = [];
     public IReadOnlyList<string> HotKeys { get; init; } = [];
     public IReadOnlyList<string> TestSteps { get; init; } = [];
+    public bool IsDebugging { get; init; }
 }
 
 public static class DevelopmentPluginRegistrationStore
 {
-    public static string FilePath => Path.Combine(ConfigPath.Base, "development-plugins.json");
+    public const string OwnerPluginId = "create-plugin";
+
+    public static string DataDirectory => ConfigPath.PluginDataDirectory(OwnerPluginId);
+
+    public static string FilePath => Path.Combine(DataDirectory, "development-plugins.json");
 
     public static IReadOnlyList<DevelopmentPluginRegistration> Load()
     {
@@ -36,7 +41,7 @@ public static class DevelopmentPluginRegistrationStore
 
     public static void Save(IEnumerable<DevelopmentPluginRegistration> registrations)
     {
-        Directory.CreateDirectory(ConfigPath.Base);
+        Directory.CreateDirectory(DataDirectory);
         var temporaryPath = FilePath + ".tmp";
         File.WriteAllText(temporaryPath, JsonSerializer.Serialize(registrations, JsonOptions));
         File.Move(temporaryPath, FilePath, true);

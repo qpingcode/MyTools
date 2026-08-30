@@ -6,9 +6,9 @@ function cssVar(name: string, fallback: string): string {
 }
 
 export function readThemeOverrides(): GlobalThemeOverrides {
-    const accent = cssVar("--settings-accent", "#22c55e");
-    const accentHover = cssVar("--settings-accent-hover", "#16a34a");
-    const accentPressed = cssVar("--settings-accent-pressed", "#15803d");
+    const accent = cssVar("--mt-accent", "#607cff");
+    const accentHover = cssVar("--mt-accent-hover", "#718bff");
+    const accentPressed = cssVar("--mt-accent-pressed", "#4e67db");
     const border = cssVar("--mt-border", "#404040");
 
     return {
@@ -29,8 +29,8 @@ export function readThemeOverrides(): GlobalThemeOverrides {
             inputColor: cssVar("--mt-surface", "#292929"),
             tableColor: "transparent",
             scrollbarColor: border,
-            errorColor: "#f44336",
-            warningColor: "#fb8c00",
+            errorColor: cssVar("--mt-error", "#e86a6a"),
+            warningColor: cssVar("--mt-warning", "#b98525"),
             successColor: accent,
             infoColor: accent,
         },

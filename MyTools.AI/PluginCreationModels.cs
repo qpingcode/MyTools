@@ -84,7 +84,8 @@ public sealed record PluginCreationChatResponse(
     string SessionId,
     string Reply,
     CreatedPluginArtifact? CreatedPlugin,
-    PluginSetupResult? Setup = null);
+    PluginSetupResult? Setup = null,
+    bool Stopped = false);
 
 public sealed record AiProgressEvent(long Sequence, string Kind, string? Detail);
 
