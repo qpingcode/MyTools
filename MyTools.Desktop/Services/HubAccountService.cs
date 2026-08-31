@@ -11,15 +11,33 @@ public sealed class HubAccountService(HubApiClient client)
 {
     public async Task<HubAccountStatus> GetStatusAsync(CancellationToken cancellationToken)
     {
-        var providers = await client.GetAsync<HubProvidersDto>("/api/auth/providers", authenticate: false, cancellationToken);
-        return new HubAccountStatus
+        try
         {
-            SignedIn = client.IsSignedIn,
-            Username = client.Session?.Username,
-            HubUrl = client.HubUrl,
-            Google = providers.Google,
-            Microsoft = providers.Microsoft
-        };
+            var providers = await client.GetAsync<HubProvidersDto>("/api/auth/providers", authenticate: false, cancellationToken);
+            return new HubAccountStatus
+            {
+                SignedIn = client.IsSignedIn,
+                Username = client.Session?.Username,
+                HubUrl = client.HubUrl,
+                Google = providers.Google,
+                Microsoft = providers.Microsoft
+            };
+        }
+        catch (HttpRequestException ex) when (ex.InnerException is SocketException
+                                              {
+                                                  SocketErrorCode: SocketError.ConnectionRefused
+                                              })
+        {
+            // Hub service offline: keep settings available and show signed-out state.
+            return new HubAccountStatus
+            {
+                SignedIn = false,
+                Username = null,
+                HubUrl = client.HubUrl,
+                Google = false,
+                Microsoft = false
+            };
+        }
     }
 
     public async Task<HubAccountStatus> LoginAsync(string username, string password, CancellationToken cancellationToken)

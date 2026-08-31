@@ -35,6 +35,7 @@ public sealed class NamedPipeTransport : IMessageTransport
     private Task? _readLoop;
     private bool _connected;
     private Action<Envelope>? _messageReceived;
+    private int _disposed;
 
     public NamedPipeTransport(string pipeName, bool isServer)
     {
@@ -119,6 +120,7 @@ public sealed class NamedPipeTransport : IMessageTransport
 
     public async ValueTask SendAsync(Envelope envelope, CancellationToken cancellationToken)
     {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) == 1, this);
         if (!_connected || _stream is null)
         {
             throw new InvalidOperationException("transport is not connected");
@@ -130,6 +132,7 @@ public sealed class NamedPipeTransport : IMessageTransport
         await _writeGate.WaitAsync(cancellationToken);
         try
         {
+            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) == 1, this);
             await _stream.WriteAsync(frame, cancellationToken);
             await _stream.FlushAsync(cancellationToken);
         }
@@ -236,14 +239,22 @@ public sealed class NamedPipeTransport : IMessageTransport
         Disconnected?.Invoke();
     }
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) == 1) return;
+
         _readCts?.Cancel();
         try { _stream?.Dispose(); }
         catch { /* disposing a half-closed pipe can throw; ignore during teardown */ }
+        _stream = null;
+
+        if (_readLoop is not null)
+        {
+            await _readLoop.ConfigureAwait(false);
+        }
+
         OnDisconnected();
-        _writeGate.Dispose();
-        // Note: the read loop is fire-and-forget; cancellation/peer-close ends it promptly.
-        return ValueTask.CompletedTask;
+        // Keep the semaphore alive until GC so concurrent SendAsync finally blocks cannot throw
+        // ObjectDisposedException during teardown.
     }
 }

@@ -1,4 +1,6 @@
 using System.IO;
+using System.Net.Http;
+using System.Net.Sockets;
 using System.Text.Json;
 using MyTools.Common.Config;
 using MyTools.Common.Localization;
@@ -37,7 +39,7 @@ public sealed class HubPluginHostCallHandler(
             "account.register" => Json(await SignInAsync(() => accounts.RegisterAsync(ReadString(request.Params, "username"), ReadString(request.Params, "password"), cancellationToken), cancellationToken)),
             "account.externalLogin" => Json(await SignInAsync(() => accounts.LoginWithExternalAsync(ReadString(request.Params, "provider"), cancellationToken), cancellationToken)),
             "account.logout" => Json(accounts.Logout()),
-            "marketplace.search" => Json(AttachInstallState(await marketplace.SearchAsync(TryReadString(request.Params, "query"), cancellationToken, TryReadString(request.Params, "locale") ?? localization.CurrentLocale))),
+            "marketplace.search" => Json(await SearchMarketplaceSafeAsync(request.Params, cancellationToken)),
             "marketplace.get" => Json(AttachInstallState(await marketplace.GetAsync(ReadString(request.Params, "pluginId"), TryReadString(request.Params, "locale") ?? localization.CurrentLocale, cancellationToken))),
             "marketplace.install" => Json(await marketplace.InstallAsync(ReadString(request.Params, "pluginId"), TryReadString(request.Params, "version"), cancellationToken)),
             "marketplace.uninstall" => Json(await UninstallAsync(ReadString(request.Params, "pluginId"), cancellationToken)),
@@ -47,6 +49,26 @@ public sealed class HubPluginHostCallHandler(
             "sync.push" => Json(await sync.PushAsync(cancellationToken)),
             _ => throw new NotSupportedException($"Unknown hub hostCall method: {request.Method}")
         };
+    }
+
+    private async Task<HubPluginList> SearchMarketplaceSafeAsync(
+        JsonElement payload,
+        CancellationToken cancellationToken)
+    {
+        var query = TryReadString(payload, "query");
+        var locale = TryReadString(payload, "locale") ?? localization.CurrentLocale;
+        try
+        {
+            return AttachInstallState(await marketplace.SearchAsync(query, cancellationToken, locale));
+        }
+        catch (HttpRequestException ex) when (ex.InnerException is SocketException
+                                              {
+                                                  SocketErrorCode: SocketError.ConnectionRefused
+                                              })
+        {
+            // If local Hub service is not running, keep global search responsive.
+            return new HubPluginList();
+        }
     }
 
     private HubPluginList AttachInstallState(HubPluginList list)

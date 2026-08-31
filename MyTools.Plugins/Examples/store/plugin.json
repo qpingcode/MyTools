@@ -21,6 +21,6 @@
     "marketplace.uninstall"
   ],
   "alias": ["store"],
-  "search": { "global": true },
+  "search": { "global": false },
   "detail": { "type": "web", "entry": "web/index.html" }
 }

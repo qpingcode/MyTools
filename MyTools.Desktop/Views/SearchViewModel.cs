@@ -274,7 +274,6 @@ namespace MyTools.Desktop.ViewModels
         {
             if (disposed)
             {
-                logger.LogWarning("SearchViewModel has been disposed, ignoring UpdateStatusBarMessage.");
                 return;
             }
             Status = status;
