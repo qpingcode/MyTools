@@ -36,6 +36,9 @@ internal interface INodePluginHost
     /// <summary>Recent diagnostics from the Node backend process, when available.</summary>
     string? FailureDetails { get; }
 
+    Task StopSessionAsync(CancellationToken cancellationToken = default);
+    Task RestartSessionAsync(CancellationToken cancellationToken = default);
+
     Task DisposeAsync();
     void Dispose();
 }

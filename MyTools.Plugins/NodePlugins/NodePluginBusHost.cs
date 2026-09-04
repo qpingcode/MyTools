@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MyTools.Host.Core.Bus;
+using MyTools.Host.Core.Diagnostics;
 using MyTools.Host.Core.Heartbeat;
 using MyTools.Host.Core.Sessions;
 using MyTools.Host.Core.Transports;
@@ -30,6 +31,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
     private readonly NodePluginManifest _manifest;
     private readonly PluginSessionManager _sessionManager;
     private readonly MessageBus _bus;
+    private readonly IPluginDiagnosticsService _diagnostics;
     private readonly ILogger<NodePluginBusHost> _logger;
     private readonly IIdGenerator _ids;
     private readonly ConcurrentDictionary<string, TaskCompletionSource<JsonNode?>> _pending = new();
@@ -68,11 +70,12 @@ internal sealed class NodePluginBusHost : INodePluginHost
     public string? FailureDetails => _session?.Controller?.FailureDetails;
 
     public NodePluginBusHost(NodePluginManifest manifest, PluginSessionManager sessionManager,
-        MessageBus bus, ILogger<NodePluginBusHost> logger, IIdGenerator? ids = null)
+        MessageBus bus, IPluginDiagnosticsService diagnostics, ILogger<NodePluginBusHost> logger, IIdGenerator? ids = null)
     {
         _manifest = manifest;
         _sessionManager = sessionManager;
         _bus = bus;
+        _diagnostics = diagnostics;
         _logger = logger;
         _ids = ids ?? new GuidIdGenerator();
         _sessionManager.SessionReplaced += OnSessionReplaced;
@@ -87,6 +90,32 @@ internal sealed class NodePluginBusHost : INodePluginHost
     {
         NodeExePath = nodeExePath;
         await EnsureStartedAsync(cancellationToken);
+    }
+
+    public async Task StopSessionAsync(CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) == 1, this);
+        await _startLock.WaitAsync(cancellationToken);
+        try
+        {
+            await StopSessionCoreAsync(recordDiagnostic: true);
+        }
+        finally
+        {
+            _startLock.Release();
+        }
+    }
+
+    public async Task RestartSessionAsync(CancellationToken cancellationToken = default)
+    {
+        await StopSessionAsync(cancellationToken);
+        await StartAsync(NodeExePath, cancellationToken);
+        _diagnostics.RecordDiagnostic(
+            LogLevel.Information,
+            "session.restart.requested",
+            "User requested plugin restart.",
+            _manifest.Id,
+            _session?.SessionId);
     }
 
     private async Task EnsureStartedAsync(CancellationToken cancellationToken)
@@ -244,6 +273,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
                 {
                     _pending.TryRemove(pingId, out _);
                     var check = monitor.CheckTimeout();
+                    _diagnostics.RecordHeartbeatTimeout(_manifest.Id, session.SessionId, monitor.ConsecutiveTimeouts, check.NowDead);
                     if (check.NowDead)
                     {
                         _logger.LogWarning(
@@ -375,13 +405,46 @@ internal sealed class NodePluginBusHost : INodePluginHost
 
             if (_session is not null)
             {
-                await _sessionManager.StopSessionAsync(_manifest.Id, _session.SessionId);
+                await StopSessionCoreAsync(recordDiagnostic: false);
             }
         }
         finally
         {
             _startLock.Release();
         }
+    }
+
+    private async Task StopSessionCoreAsync(bool recordDiagnostic)
+    {
+        if (_session is null)
+        {
+            Volatile.Write(ref _started, 0);
+            return;
+        }
+
+        if (recordDiagnostic)
+        {
+            _diagnostics.RecordDiagnostic(
+                LogLevel.Information,
+                "session.stop.requested",
+                "User requested plugin stop.",
+                _manifest.Id,
+                _session.SessionId);
+        }
+
+        try { _heartbeatCts?.Cancel(); } catch { /* ignore */ }
+        _heartbeatCts?.Dispose();
+        _heartbeatCts = null;
+
+        FailLocalPending(ErrorCode.TransportDisconnected, "node session stopped");
+        UnbindHostEndpoint();
+        _bus.UnregisterHostCallHandler(_manifest.Id);
+
+        var sessionId = _session.SessionId;
+        await _sessionManager.StopSessionAsync(_manifest.Id, sessionId);
+        _session = null;
+        _nodeEndpoint = null;
+        Volatile.Write(ref _started, 0);
     }
 
     private async Task<T> SendAsync<T>(string route, object parameters, CancellationToken cancellationToken)
@@ -445,6 +508,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
             var elapsedMs = System.Diagnostics.Stopwatch.GetElapsedTime(requestStartedAt).TotalMilliseconds;
             if (!timedOut || cancellationToken.IsCancellationRequested)
             {
+                _bus.AbandonPendingRequest(id, route);
                 _logger.LogDebug(
                     "plugin.call '{Route}' cancelled after {ElapsedMs}ms",
                     route, elapsedMs);
@@ -457,6 +521,15 @@ internal sealed class NodePluginBusHost : INodePluginHost
             _logger.LogWarning(
                 "plugin.call '{Route}' timed out after {ElapsedMs}ms (expected {TimeoutMs}ms)",
                 route, elapsedMs, RequestTimeoutMs);
+            _bus.AbandonPendingRequest(id, route);
+            _diagnostics.RecordCallTimeout(
+                _manifest.Id,
+                _session?.SessionId ?? string.Empty,
+                EndpointIds.Host,
+                route,
+                id,
+                elapsedMs,
+                $"timeoutMs={RequestTimeoutMs}");
             pendingTcs.TrySetException(new BusCallException(
                 ErrorCode.RequestTimeout,
                 $"plugin.call '{route}' timed out after {RequestTimeoutMs}ms"));

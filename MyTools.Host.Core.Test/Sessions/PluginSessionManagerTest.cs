@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using MyTools.Host.Core.Bus;
 using MyTools.Host.Core.Capabilities;
+using MyTools.Host.Core.Diagnostics;
 using MyTools.Host.Core.Reliability;
 using MyTools.Host.Core.Sessions;
 using MyTools.Host.Core.Transports;
@@ -202,6 +203,31 @@ public class PluginSessionManagerTest
         var fail = hostT.Sent.ToArray()[^1];
         Assert.That(fail.CorrelationId, Is.EqualTo("pending-1"));
         Assert.That(fail.Error?.Code, Is.EqualTo(ErrorCode.TransportDisconnected));
+    }
+
+    [Test]
+    public async Task ProcessExit_ShouldRecordExitDiagnostics()
+    {
+        var diagnostics = new PluginDiagnosticsService();
+        var factory = new FakeProcessControllerFactory();
+        var mgr = new PluginSessionManager(
+            new MessageBus(diagnostics: diagnostics),
+            new CapabilityGateway(),
+            factory,
+            diagnostics: diagnostics);
+        var session = await mgr.StartSessionAsync(Manifest("settings"), "node");
+        var controller = (FakeProcessController)session.Controller!;
+        controller.FailureDetails = "[stderr] boom";
+
+        controller.RaiseExited(23);
+
+        var snapshot = diagnostics.GetSnapshot().Plugins.Single(plugin => plugin.PluginId == "settings");
+        Assert.Multiple(() =>
+        {
+            Assert.That(snapshot.ProcessExits.Total, Is.EqualTo(1));
+            Assert.That(snapshot.LastExitCode, Is.EqualTo(23));
+            Assert.That(snapshot.FailureDetails, Is.EqualTo("[stderr] boom"));
+        });
     }
 
     private static async Task<bool> WaitForAsync(Func<bool> predicate, int timeoutMs = 5000)

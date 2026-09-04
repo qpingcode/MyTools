@@ -52,7 +52,10 @@ public static class DesktopServiceCollectionExtensions
         serviceCollection.AddTransient<SearchViewModel>();
         serviceCollection.AddTransient<PluginWindow>();
         serviceCollection.AddTransient<PluginViewModel>();
+        serviceCollection.AddTransient<PluginDiagnosticsWindow>();
+        serviceCollection.AddTransient<PluginDiagnosticsViewModel>();
         serviceCollection.AddSingleton<PluginWindowManager>();
+        serviceCollection.AddSingleton<PluginDiagnosticsWindowManager>();
         serviceCollection.AddSingleton<PluginLauncher>();
         serviceCollection.AddSingleton<IPluginLauncher>(sp => sp.GetRequiredService<PluginLauncher>());
         serviceCollection.AddSingleton<WindowPlacementService>();
@@ -134,6 +137,9 @@ public static class DesktopServiceCollectionExtensions
         serviceCollection.AddSingleton<IPluginHostCapabilityHandler>(sp =>
             sp.GetRequiredService<ChatPluginHostCallHandler>());
         serviceCollection.AddSingleton<NodePluginHostCallRouter>();
+        serviceCollection.AddSingleton<PluginDiagnosticsCoordinator>();
+        serviceCollection.AddSingleton<ITrayNotificationService, TrayNotificationService>();
+        serviceCollection.AddSingleton<PluginDiagnosticsAlertService>();
         serviceCollection.AddSingleton<HubApiClient>();
         serviceCollection.AddSingleton<HubAccountService>();
         serviceCollection.AddSingleton<HubMarketplaceService>();

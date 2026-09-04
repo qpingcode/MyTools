@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using MyTools.Host.Core.Diagnostics;
 using MyTools.Host.Core.Security;
 using MyTools.Host.Core.Transports;
 
@@ -35,6 +36,16 @@ public interface INodeProcessController
     /// that do not own a real process may leave this null.
     /// </summary>
     string? FailureDetails => null;
+
+    /// <summary>Best-effort current process resource usage; null when unavailable or already exited.</summary>
+    NodeProcessResourceUsage? TryGetResourceUsage() => null;
+
+    /// <summary>Raised when the owned process exits unexpectedly or during shutdown.</summary>
+    event Action<NodeProcessExitInfo>? ProcessExited
+    {
+        add { }
+        remove { }
+    }
 
     /// <summary>Terminates the process tree (the whole Job Object).</summary>
     Task StopAsync();

@@ -4,6 +4,7 @@ using MyTools.Common;
 using MyTools.Common.Config;
 using MyTools.Host.Core.Bus;
 using MyTools.Host.Core.Capabilities;
+using MyTools.Host.Core.Diagnostics;
 using MyTools.Host.Core.Sessions;
 using MyTools.Plugins.NodePlugins;
 
@@ -15,8 +16,10 @@ public static class PluginServiceCollectionExtensions
     {
         // Gateway must be the same instance MessageBus uses so RegisterManifest and Authorize share state.
         services.AddSingleton<CapabilityGateway>();
+        services.AddSingleton<IPluginDiagnosticsService, PluginDiagnosticsService>();
         services.AddSingleton(sp => new MessageBus(
             sp.GetRequiredService<CapabilityGateway>(),
+            diagnostics: sp.GetRequiredService<IPluginDiagnosticsService>(),
             logger: sp.GetService<ILoggerFactory>()?.CreateLogger("MyTools.Host.Core.Bus.MessageBus")));
         services.AddSingleton<INodeProcessControllerFactory>(_ =>
             new Host.Transports.Process.NodeProcessControllerFactory(ConfigPath.PluginsDataPath));
@@ -24,6 +27,7 @@ public static class PluginServiceCollectionExtensions
             sp.GetRequiredService<MessageBus>(),
             sp.GetRequiredService<CapabilityGateway>(),
             sp.GetRequiredService<INodeProcessControllerFactory>(),
+            diagnostics: sp.GetRequiredService<IPluginDiagnosticsService>(),
             logger: sp.GetService<ILoggerFactory>()?.CreateLogger("MyTools.Host.Core.Sessions.PluginSessionManager")));
 
         services.AddSingleton<SearchHistoryDbHelper>();
@@ -34,6 +38,7 @@ public static class PluginServiceCollectionExtensions
                 sp.GetService<Common.Localization.ILocalizationService>(),
                 sp.GetRequiredService<MessageBus>(),
                 sp.GetRequiredService<PluginSessionManager>(),
+                sp.GetRequiredService<IPluginDiagnosticsService>(),
                 sp.GetService<Common.Theming.IThemeService>()));
 
         services.AddSingleton<PluginLoader>();

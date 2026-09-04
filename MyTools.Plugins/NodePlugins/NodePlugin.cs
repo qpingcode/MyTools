@@ -95,6 +95,9 @@ public sealed class NodePlugin : IPlugin, IDisposable
             ? ""
             : manifest.DescriptionMessage.Resolve(PluginLocalization);
 
+    public string Version => manifest.Version;
+    public string Runtime => manifest.Runtime;
+
     public PluginId PluginId => new(manifest.Id);
 
     /// <summary>
@@ -117,6 +120,12 @@ public sealed class NodePlugin : IPlugin, IDisposable
         var busHost = (NodePluginBusHost)processHost;
         return busHost.StartAsync(busHost.NodeExePath, cancellationToken);
     }
+
+    public Task StopBackendAsync(CancellationToken cancellationToken = default)
+        => processHost.StopSessionAsync(cancellationToken);
+
+    public Task RestartBackendAsync(CancellationToken cancellationToken = default)
+        => processHost.RestartSessionAsync(cancellationToken);
 
     public List<IActionWithHotkey> Actions { get; } = [];
 

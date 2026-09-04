@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using MyTools.Common.Localization;
 using MyTools.Common.Theming;
 using MyTools.Host.Core.Bus;
+using MyTools.Host.Core.Diagnostics;
 using MyTools.Host.Core.Sessions;
 
 namespace MyTools.Plugins.NodePlugins;
@@ -13,12 +14,14 @@ public sealed class NodePluginFactory
     private readonly IThemeService themeService;
     private readonly MessageBus bus;
     private readonly PluginSessionManager sessionManager;
+    private readonly IPluginDiagnosticsService diagnostics;
 
     public NodePluginFactory(
         ILoggerFactory loggerFactory,
         ILocalizationService? localizationService,
         MessageBus bus,
         PluginSessionManager sessionManager,
+        IPluginDiagnosticsService diagnostics,
         IThemeService? themeService = null)
     {
         this.loggerFactory = loggerFactory;
@@ -26,6 +29,7 @@ public sealed class NodePluginFactory
         this.themeService = themeService ?? FallbackThemeService.Instance;
         this.bus = bus;
         this.sessionManager = sessionManager;
+        this.diagnostics = diagnostics;
     }
 
     public IReadOnlyList<NodePlugin> CreatePlugins(IEnumerable<NodePluginManifest> manifests)
@@ -41,7 +45,7 @@ public sealed class NodePluginFactory
             .Select(manifest =>
             {
                 INodePluginHost host = new NodePluginBusHost(
-                    manifest, sessionManager, bus, loggerFactory.CreateLogger<NodePluginBusHost>())
+                    manifest, sessionManager, bus, diagnostics, loggerFactory.CreateLogger<NodePluginBusHost>())
                 {
                     NodeExePath = NodeRuntimeLocator.Resolve()
                 };

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using MyTools.Host.Core.Diagnostics;
 using MyTools.Host.Core.Security;
 using MyTools.Host.Core.Sessions;
 using MyTools.Host.Core.Transports;
@@ -29,6 +30,7 @@ public sealed class NodeProcessController : INodeProcessController
     private System.Diagnostics.Process? _process;
     private ProcessTreeJob? _job;
     private NamedPipeTransport? _transport;
+    private int? _lastExitCode;
 
     public NodeProcessController(string nodeExePath, string nodeEntryFullPath, string pluginsDataRoot)
     {
@@ -51,6 +53,8 @@ public sealed class NodeProcessController : INodeProcessController
             }
         }
     }
+
+    public event Action<NodeProcessExitInfo>? ProcessExited;
 
     public async Task StartAsync(
         string pipeName,
@@ -94,14 +98,23 @@ public sealed class NodeProcessController : INodeProcessController
         startedProcess.EnableRaisingEvents = true;
         startedProcess.Exited += (_, _) =>
         {
+            int? exitCode = null;
             try
             {
+                exitCode = startedProcess.ExitCode;
+                _lastExitCode = exitCode;
                 AppendDiagnostic("process", $"Node process exited with code {startedProcess.ExitCode}.");
             }
             catch
             {
                 AppendDiagnostic("process", "Node process exited.");
             }
+
+            ProcessExited?.Invoke(new NodeProcessExitInfo(
+                startedProcess.HasExited ? startedProcess.Id : null,
+                exitCode,
+                DateTimeOffset.UtcNow,
+                FailureDetails));
         };
 
         _job.Assign(_process);
@@ -162,6 +175,36 @@ public sealed class NodeProcessController : INodeProcessController
         _process = null;
         _transport = null;
         ObservedIdentity = null;
+    }
+
+    public NodeProcessResourceUsage? TryGetResourceUsage()
+    {
+        var process = _process;
+        if (process is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            if (process.HasExited)
+            {
+                _lastExitCode ??= process.ExitCode;
+                return null;
+            }
+
+            process.Refresh();
+            return new NodeProcessResourceUsage(
+                process.Id,
+                process.WorkingSet64,
+                process.PrivateMemorySize64,
+                process.TotalProcessorTime,
+                DateTimeOffset.UtcNow);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private static string SanitizePathSegment(string value)

@@ -59,14 +59,15 @@ public partial class App
         var globalExceptionHandler = serviceProvider.GetRequiredService<GlobalExceptionHandler>();
         globalExceptionHandler.Register();
 
+        InitializeNotifyIcon();
+        serviceProvider.GetRequiredService<PluginDiagnosticsAlertService>();
+
         appBootstrapper = serviceProvider.GetRequiredService<AppBootstrapper>();
         var protocolActivation = serviceProvider.GetRequiredService<ProtocolActivationService>();
         protocolActivation.RegisterUriScheme();
         protocolActivation.StartListening();
         appBootstrapper.Init();
         protocolActivation.HandleStartup(e.Args);
-
-        InitializeNotifyIcon();
 
         // Keep the tray menu and the General.Theme setting in sync with theme changes,
         // regardless of whether the change originated from the tray or the settings UI.
@@ -117,6 +118,7 @@ public partial class App
         {
             _notifyIcon.ContextMenu.FontFamily = uiFont;
         }
+        serviceProvider?.GetRequiredService<ITrayNotificationService>().Attach(_notifyIcon);
         UpdateNotifyIconMenu();
         
         _notifyIcon.TrayMouseDoubleClick += (_, _) => WindowHelper.ShowSearchWindow();
@@ -149,6 +151,11 @@ public partial class App
         settingsItem.Header = GetCaption("Settings", "Settings");
         settingsItem.Click += OpenSettings_Click;
         _notifyIcon.ContextMenu.Items.Add(settingsItem);
+
+        var diagnosticsItem = new MenuItem();
+        diagnosticsItem.Header = GetCaption("PluginDiagnostics.Menu", "Diagnostics");
+        diagnosticsItem.Click += OpenPluginDiagnostics_Click;
+        _notifyIcon.ContextMenu.Items.Add(diagnosticsItem);
 
         var updateService = ServiceLocator.GetRequiredService<IUpdateService>();
         var versionItem = new MenuItem
@@ -231,6 +238,19 @@ public partial class App
                 MessageBoxImage.Error);
         }
     }
+
+    private void OpenPluginDiagnostics_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            ServiceLocator.GetRequiredService<PluginDiagnosticsWindowManager>().Show();
+        }
+        catch (Exception ex)
+        {
+            var logger = ServiceLocator.GetRequiredService<ILogger<App>>();
+            logger.LogError(ex, "Failed to open plugin diagnostics window");
+        }
+    }
     
     private void AutoStart_Click(object? sender, EventArgs e)
     {
@@ -311,6 +331,10 @@ public partial class App
     
     protected override void OnExit(ExitEventArgs e)
     {
+        if (_notifyIcon is not null)
+        {
+            serviceProvider?.GetService<ITrayNotificationService>()?.Detach(_notifyIcon);
+        }
         _notifyIcon?.Dispose();
         appBootstrapper?.Dispose();
         serviceProvider?.Dispose();

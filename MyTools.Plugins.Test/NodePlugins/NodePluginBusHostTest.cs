@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 using MyTools.Host.Core.Bus;
 using MyTools.Host.Core.Capabilities;
+using MyTools.Host.Core.Diagnostics;
 using MyTools.Host.Core.Security;
 using MyTools.Host.Core.Reliability;
 using MyTools.Host.Core.Sessions;
@@ -45,7 +46,7 @@ public class NodePluginBusHostTest
     [Test]
     public async Task SearchAsync_ShouldSendPluginCallSearchAndCorrelateResponse()
     {
-        var (host, nodeT, sessionId) = await CreateStartedHostAsync();
+        var (host, nodeT, sessionId, _) = await CreateStartedHostAsync();
 
         var searchTask = host.SearchAsync("hello", "global", "en-US", "en-US", "dark", CancellationToken.None);
         await Task.Delay(50);
@@ -71,7 +72,7 @@ public class NodePluginBusHostTest
     [Test]
     public async Task SearchAsync_WhenCallerCancels_ShouldFailWithCancelledNotTimeout()
     {
-        var (host, nodeT, _) = await CreateStartedHostAsync();
+        var (host, nodeT, _, _) = await CreateStartedHostAsync();
         using var cts = new CancellationTokenSource();
 
         var searchTask = host.SearchAsync("hello", "global", "en-US", "en-US", "dark", cts.Token);
@@ -95,19 +96,23 @@ public class NodePluginBusHostTest
     [Test]
     public async Task SearchAsync_WhenNoResponse_ShouldFailWithRequestTimeout()
     {
-        var (host, _, _) = await CreateStartedHostAsync();
+        var (host, _, _, diagnostics) = await CreateStartedHostAsync();
         host.RequestTimeoutMs = 80;
 
         var ex = Assert.ThrowsAsync<BusCallException>(async () =>
             await host.SearchAsync("hello", "global", "en-US", "en-US", "dark", CancellationToken.None));
         Assert.That(ex!.Code, Is.EqualTo(ErrorCode.RequestTimeout));
         Assert.That(ex.Message, Does.Contain("timed out"));
+
+        var snapshot = diagnostics.GetSnapshot().Plugins.Single(plugin => plugin.PluginId == "settings");
+        Assert.That(snapshot.RequestTimeouts.Total, Is.EqualTo(1));
+        Assert.That(snapshot.CallMetrics.Single(metric => metric.Route == "plugin.call.search").TimeoutCount, Is.EqualTo(1));
     }
 
     [Test]
     public async Task EventReceived_ShouldFireWhenPluginPublishesAnEvent()
     {
-        var (host, nodeT, sessionId) = await CreateStartedHostAsync();
+        var (host, nodeT, sessionId, _) = await CreateStartedHostAsync();
 
         NodePluginEventReceivedEventArgs? received = null;
         host.EventReceived += (_, e) => received = e;
@@ -128,7 +133,7 @@ public class NodePluginBusHostTest
     [Test]
     public async Task HostCall_ShouldAuthorizeAndReplyViaBus()
     {
-        var (host, nodeT, sessionId) = await CreateStartedHostAsync();
+        var (host, nodeT, sessionId, _) = await CreateStartedHostAsync();
 
         host.HostCallHandler = (_, _) =>
             Task.FromResult(JsonSerializer.SerializeToElement(new { theme = "light" }));
@@ -159,7 +164,7 @@ public class NodePluginBusHostTest
     [Test]
     public async Task HostCall_WhenCapabilityNotDeclared_ShouldReturnCapabilityNotDeclared()
     {
-        var (host, nodeT, sessionId) = await CreateStartedHostAsync(capabilities: []);
+        var (host, nodeT, sessionId, _) = await CreateStartedHostAsync(capabilities: []);
 
         host.HostCallHandler = (_, _) =>
             Task.FromResult(JsonSerializer.SerializeToElement(new { ok = true }));
@@ -189,10 +194,11 @@ public class NodePluginBusHostTest
     public async Task DisposeAsync_ShouldStopSessionBeforeCompleting()
     {
         var gateway = new CapabilityGateway();
-        var bus = new MessageBus(gateway);
+        var diagnostics = new PluginDiagnosticsService();
+        var bus = new MessageBus(gateway, diagnostics: diagnostics);
         var factory = new FakeFactory();
         var manager = new PluginSessionManager(bus, gateway, factory);
-        var host = new NodePluginBusHost(Manifest(), manager, bus, NullLogger<NodePluginBusHost>.Instance);
+        var host = new NodePluginBusHost(Manifest(), manager, bus, diagnostics, NullLogger<NodePluginBusHost>.Instance);
         await host.StartAsync("node", CancellationToken.None);
         var sessionId = host.SessionId!;
 
@@ -206,7 +212,7 @@ public class NodePluginBusHostTest
     [Test]
     public async Task HeartbeatDisconnect_ShouldNotSurfaceUnobservedTaskException()
     {
-        var (host, nodeT, _) = await CreateStartedHostAsync(
+        var (host, nodeT, _, _) = await CreateStartedHostAsync(
             restartPolicyFactory: () => new RestartPolicy(
                 TimeSpan.Zero, TimeSpan.Zero, TimeSpan.FromMinutes(5), maxRestartsPerWindow: 0, jitter: 0));
 
@@ -239,12 +245,25 @@ public class NodePluginBusHostTest
         }
     }
 
-    private static async Task<(NodePluginBusHost host, InMemoryTransport nodeT, string sessionId)>
+    [Test]
+    public async Task StopSessionAsync_ShouldAllowManualRestart()
+    {
+        var (host, _, sessionId, _) = await CreateStartedHostAsync();
+
+        await host.StopSessionAsync();
+
+        Assert.That(host.SessionId, Is.Null);
+        await host.StartAsync("node", CancellationToken.None);
+        Assert.That(host.SessionId, Is.Not.Null.And.Not.EqualTo(sessionId));
+    }
+
+    private static async Task<(NodePluginBusHost host, InMemoryTransport nodeT, string sessionId, PluginDiagnosticsService diagnostics)>
         CreateStartedHostAsync(IReadOnlyList<string>? capabilities = null,
             Func<RestartPolicy>? restartPolicyFactory = null)
     {
         var gateway = new CapabilityGateway();
-        var bus = new MessageBus(gateway);
+        var diagnostics = new PluginDiagnosticsService();
+        var bus = new MessageBus(gateway, diagnostics: diagnostics);
         var factory = new FakeFactory();
         var manager = new PluginSessionManager(bus, gateway, factory,
             restartPolicyFactory: restartPolicyFactory);
@@ -262,19 +281,24 @@ public class NodePluginBusHostTest
             HotKey = "Alt+S",
             Capabilities = capabilities ?? ["configuration.read"],
         };
-        var host = new NodePluginBusHost(m, manager, bus, NullLogger<NodePluginBusHost>.Instance);
+        var host = new NodePluginBusHost(m, manager, bus, diagnostics, NullLogger<NodePluginBusHost>.Instance);
 
         await host.StartAsync(nodeExePath: "node", CancellationToken.None);
 
         var session = host.Session!;
         var nodeT = (InMemoryTransport)factory.LastController!.Transport!;
-        return (host, nodeT, session.SessionId);
+        return (host, nodeT, session.SessionId, diagnostics);
     }
 
     private sealed class FakeController : INodeProcessController
     {
         public IMessageTransport? Transport { get; private set; }
         public ProcessIdentity? ObservedIdentity { get; private set; }
+        public event Action<NodeProcessExitInfo>? ProcessExited
+        {
+            add { }
+            remove { }
+        }
 
         public Task StartAsync(
             string pipeName,
@@ -305,6 +329,8 @@ public class NodePluginBusHostTest
         }
 
         public Task StopAsync() => Task.CompletedTask;
+
+        public NodeProcessResourceUsage? TryGetResourceUsage() => null;
     }
 
     private sealed class FakeFactory : INodeProcessControllerFactory

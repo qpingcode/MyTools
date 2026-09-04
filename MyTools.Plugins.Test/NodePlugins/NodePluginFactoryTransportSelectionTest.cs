@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MyTools.Common.Localization;
 using MyTools.Host.Core.Bus;
 using MyTools.Host.Core.Capabilities;
+using MyTools.Host.Core.Diagnostics;
 using MyTools.Host.Core.Sessions;
 using MyTools.Host.Core.Transports;
 using MyTools.Plugins.NodePlugins;
@@ -23,7 +24,12 @@ public class NodePluginFactoryTransportSelectionTest
     {
         var bus = new MessageBus();
         var manager = new PluginSessionManager(bus, new CapabilityGateway(), new FakeFactory());
-        var factory = new NodePluginFactory(NullLoggerFactory.Instance, NullLocalizationService.Instance, bus, manager);
+        var factory = new NodePluginFactory(
+            NullLoggerFactory.Instance,
+            NullLocalizationService.Instance,
+            bus,
+            manager,
+            new PluginDiagnosticsService());
 
         var plugins = factory.CreatePlugins([Manifest()]);
         var host = factory.GetHostForTest(plugins[0]);
@@ -48,6 +54,11 @@ public class NodePluginFactoryTransportSelectionTest
         {
             public IMessageTransport? Transport { get; private set; }
             public MyTools.Host.Core.Security.ProcessIdentity? ObservedIdentity { get; private set; }
+            public event Action<NodeProcessExitInfo>? ProcessExited
+            {
+                add { }
+                remove { }
+            }
 
             public Task StartAsync(
                 string pipeName,
@@ -63,6 +74,8 @@ public class NodePluginFactoryTransportSelectionTest
             }
 
             public Task StopAsync() => Task.CompletedTask;
+
+            public NodeProcessResourceUsage? TryGetResourceUsage() => null;
         }
     }
 }
