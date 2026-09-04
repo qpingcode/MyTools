@@ -178,74 +178,95 @@ internal sealed class NodePluginBusHost : INodePluginHost
             HeartbeatDeadAfter,
             () => Environment.TickCount64);
 
-        while (!cancellationToken.IsCancellationRequested)
+        try
         {
-            try
+            while (!cancellationToken.IsCancellationRequested)
             {
-                await Task.Delay(HeartbeatInterval, cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                break;
-            }
-
-            var session = _session;
-            var hostEndpoint = _hostEndpoint;
-            if (session is null || !session.IsAvailable || hostEndpoint is null) continue;
-
-            var pingId = _ids.NewId();
-            var waiter = new TaskCompletionSource<JsonNode?>(TaskCreationOptions.RunContinuationsAsynchronously);
-            _pending[pingId] = waiter;
-
-            var ping = new Envelope
-            {
-                Version = ProtocolVersion.Current,
-                Id = pingId,
-                TraceId = pingId,
-                SessionId = session.SessionId,
-                PluginId = _manifest.Id,
-                EndpointId = EndpointIds.Host,
-                Kind = MessageKind.Request,
-                Route = Routes.Bus.Ping,
-                TimeoutMs = (int)HeartbeatPingTimeout.TotalMilliseconds,
-                Payload = JsonNode.Parse("""{"ok":true}"""),
-            };
-
-            monitor.OnPingSent();
-            try
-            {
-                await _bus.RouteRequestAsync(ping, hostEndpoint);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogTrace(ex, "bus.ping send failed");
-                _pending.TryRemove(pingId, out _);
-                continue;
-            }
-
-            try
-            {
-                using var pingCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                pingCts.CancelAfter(HeartbeatPingTimeout);
-                await waiter.Task.WaitAsync(pingCts.Token);
-                monitor.OnPong();
-            }
-            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-            {
-                _pending.TryRemove(pingId, out _);
-                var check = monitor.CheckTimeout();
-                if (check.NowDead)
+                try
                 {
-                    _logger.LogWarning(
-                        "Node heartbeat dead for {PluginId} after {N} timeouts; requesting restart",
-                        _manifest.Id, HeartbeatDeadAfter);
-                    await _sessionManager.NotifyPeerDeadAsync(_manifest.Id);
+                    await Task.Delay(HeartbeatInterval, cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+
+                var session = _session;
+                var hostEndpoint = _hostEndpoint;
+                if (session is null || !session.IsAvailable || hostEndpoint is null) continue;
+
+                var pingId = _ids.NewId();
+                var waiter = new TaskCompletionSource<JsonNode?>(TaskCreationOptions.RunContinuationsAsynchronously);
+                _pending[pingId] = waiter;
+
+                var ping = new Envelope
+                {
+                    Version = ProtocolVersion.Current,
+                    Id = pingId,
+                    TraceId = pingId,
+                    SessionId = session.SessionId,
+                    PluginId = _manifest.Id,
+                    EndpointId = EndpointIds.Host,
+                    Kind = MessageKind.Request,
+                    Route = Routes.Bus.Ping,
+                    TimeoutMs = (int)HeartbeatPingTimeout.TotalMilliseconds,
+                    Payload = JsonNode.Parse("""{"ok":true}"""),
+                };
+
+                monitor.OnPingSent();
+                try
+                {
+                    await _bus.RouteRequestAsync(ping, hostEndpoint);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogTrace(ex, "bus.ping send failed");
+                    _pending.TryRemove(pingId, out _);
+                    continue;
+                }
+
+                try
+                {
+                    using var pingCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                    pingCts.CancelAfter(HeartbeatPingTimeout);
+                    await waiter.Task.WaitAsync(pingCts.Token);
+                    monitor.OnPong();
+                }
+                catch (BusCallException ex) when (ex.Code == ErrorCode.TransportDisconnected)
+                {
+                    _pending.TryRemove(pingId, out _);
+                    _logger.LogDebug(ex,
+                        "Node heartbeat stopped for {PluginId} because the transport disconnected",
+                        _manifest.Id);
+                    break;
+                }
+                catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+                {
+                    _pending.TryRemove(pingId, out _);
+                    var check = monitor.CheckTimeout();
+                    if (check.NowDead)
+                    {
+                        _logger.LogWarning(
+                            "Node heartbeat dead for {PluginId} after {N} timeouts; requesting restart",
+                            _manifest.Id, HeartbeatDeadAfter);
+                        await _sessionManager.NotifyPeerDeadAsync(_manifest.Id);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
                 }
             }
-            catch (OperationCanceledException)
-            {
-                break;
-            }
+        }
+        catch (BusCallException ex) when (ex.Code == ErrorCode.TransportDisconnected)
+        {
+            _logger.LogDebug(ex,
+                "Node heartbeat stopped for {PluginId} because the transport disconnected",
+                _manifest.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Node heartbeat loop failed for {PluginId}", _manifest.Id);
         }
     }
 

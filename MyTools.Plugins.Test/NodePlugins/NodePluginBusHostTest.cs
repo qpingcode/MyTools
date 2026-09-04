@@ -1,3 +1,4 @@
+using System;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MyTools.Host.Core.Bus;
 using MyTools.Host.Core.Capabilities;
 using MyTools.Host.Core.Security;
+using MyTools.Host.Core.Reliability;
 using MyTools.Host.Core.Sessions;
 using MyTools.Host.Core.Transports;
 using MyTools.Plugins.NodePlugins;
@@ -201,13 +203,51 @@ public class NodePluginBusHostTest
             Throws.InstanceOf<ObjectDisposedException>());
     }
 
+    [Test]
+    public async Task HeartbeatDisconnect_ShouldNotSurfaceUnobservedTaskException()
+    {
+        var (host, nodeT, _) = await CreateStartedHostAsync(
+            restartPolicyFactory: () => new RestartPolicy(
+                TimeSpan.Zero, TimeSpan.Zero, TimeSpan.FromMinutes(5), maxRestartsPerWindow: 0, jitter: 0));
+
+        var unobserved = new TaskCompletionSource<Exception>(TaskCreationOptions.RunContinuationsAsynchronously);
+        void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+        {
+            e.SetObserved();
+            unobserved.TrySetResult(e.Exception);
+        }
+
+        TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+        try
+        {
+            await Task.Delay(2500);
+            nodeT.Disconnect();
+            await Task.Delay(1000);
+
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            var completed = await Task.WhenAny(unobserved.Task, Task.Delay(1000));
+            Assert.That(completed, Is.Not.EqualTo(unobserved.Task),
+                "heartbeat disconnect should be handled, not rethrown on the finalizer thread");
+        }
+        finally
+        {
+            TaskScheduler.UnobservedTaskException -= OnUnobservedTaskException;
+            await host.DisposeAsync();
+        }
+    }
+
     private static async Task<(NodePluginBusHost host, InMemoryTransport nodeT, string sessionId)>
-        CreateStartedHostAsync(IReadOnlyList<string>? capabilities = null)
+        CreateStartedHostAsync(IReadOnlyList<string>? capabilities = null,
+            Func<RestartPolicy>? restartPolicyFactory = null)
     {
         var gateway = new CapabilityGateway();
         var bus = new MessageBus(gateway);
         var factory = new FakeFactory();
-        var manager = new PluginSessionManager(bus, gateway, factory);
+        var manager = new PluginSessionManager(bus, gateway, factory,
+            restartPolicyFactory: restartPolicyFactory);
         var m = new NodePluginManifest
         {
             Id = "settings",
