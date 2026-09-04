@@ -25,5 +25,8 @@
   "Plugin.Chat.Detail.DurationMilliseconds": "{{duration}} 毫秒",
   "Plugin.Chat.Detail.DurationSeconds": "{{duration}} 秒",
   "Plugin.Chat.Detail.CopyCode": "复制",
-  "Plugin.Chat.Detail.CodeCopied": "已复制"
+  "Plugin.Chat.Detail.CodeCopied": "已复制",
+  "Plugin.Chat.Detail.MermaidError": "无法渲染 Mermaid 图",
+  "Plugin.Chat.Detail.MermaidSource": "源码",
+  "Plugin.Chat.Detail.MermaidDiagram": "图表"
 }

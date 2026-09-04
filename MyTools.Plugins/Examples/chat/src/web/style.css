@@ -236,6 +236,26 @@ body {
     background: var(--mt-surface-alt, #161616);
 }
 
+.mermaid-diagram {
+    overflow-x: auto;
+    margin: 0;
+    padding: 16px;
+    background: var(--mt-surface-alt, #202020);
+    text-align: center;
+}
+
+.mermaid-diagram svg {
+    display: inline-block;
+    max-width: 100%;
+    height: auto;
+}
+
+.mermaid-error {
+    margin: -0.5em 0 1em;
+    color: var(--mt-text-muted, #b8b8b8);
+    font-size: 12px;
+}
+
 .code-toolbar {
     display: flex;
     align-items: center;
@@ -252,7 +272,14 @@ body {
     text-transform: lowercase;
 }
 
-.code-copy-button {
+.code-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.code-copy-button,
+.mermaid-toggle-button {
     border: 0;
     border-radius: 5px;
     padding: 3px 7px;
@@ -262,7 +289,8 @@ body {
     cursor: pointer;
 }
 
-.code-copy-button:hover {
+.code-copy-button:hover,
+.mermaid-toggle-button:hover {
     background: var(--mt-surface-hover, #333333);
     color: var(--mt-text, #eeeeee);
 }

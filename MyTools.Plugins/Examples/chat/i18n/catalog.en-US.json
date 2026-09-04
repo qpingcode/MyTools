@@ -30,6 +30,9 @@
     { "key": "Plugin.Chat.Detail.DurationMilliseconds", "defaultValue": "{{duration}} ms", "placeholders": ["duration"], "references": [] },
     { "key": "Plugin.Chat.Detail.DurationSeconds", "defaultValue": "{{duration}} s", "placeholders": ["duration"], "references": [] },
     { "key": "Plugin.Chat.Detail.CopyCode", "defaultValue": "Copy", "placeholders": [], "references": [] },
-    { "key": "Plugin.Chat.Detail.CodeCopied", "defaultValue": "Copied", "placeholders": [], "references": [] }
+    { "key": "Plugin.Chat.Detail.CodeCopied", "defaultValue": "Copied", "placeholders": [], "references": [] },
+    { "key": "Plugin.Chat.Detail.MermaidError", "defaultValue": "Unable to render Mermaid diagram", "placeholders": [], "references": [] },
+    { "key": "Plugin.Chat.Detail.MermaidSource", "defaultValue": "Source", "placeholders": [], "references": [] },
+    { "key": "Plugin.Chat.Detail.MermaidDiagram", "defaultValue": "Diagram", "placeholders": [], "references": [] }
   ]
 }

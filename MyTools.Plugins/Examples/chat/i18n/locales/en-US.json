@@ -25,5 +25,8 @@
   "Plugin.Chat.Detail.DurationMilliseconds": "{{duration}} ms",
   "Plugin.Chat.Detail.DurationSeconds": "{{duration}} s",
   "Plugin.Chat.Detail.CopyCode": "Copy",
-  "Plugin.Chat.Detail.CodeCopied": "Copied"
+  "Plugin.Chat.Detail.CodeCopied": "Copied",
+  "Plugin.Chat.Detail.MermaidError": "Unable to render Mermaid diagram",
+  "Plugin.Chat.Detail.MermaidSource": "Source",
+  "Plugin.Chat.Detail.MermaidDiagram": "Diagram"
 }

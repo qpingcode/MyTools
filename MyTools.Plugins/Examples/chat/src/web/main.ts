@@ -3,6 +3,7 @@ import type { MyToolsHostInitializePayload, MyToolsHostSearchPayload } from "@qp
 import DOMPurify from "dompurify";
 import hljs from "highlight.js/lib/common";
 import { marked } from "marked";
+import mermaid from "mermaid";
 
 (function () {
     type ChatTokenUsage = { inputTokens: number; outputTokens: number; totalTokens: number };
@@ -60,6 +61,7 @@ import { marked } from "marked";
         language: string;
         signature: string;
         highlighted: boolean;
+        mermaidSourceVisible: boolean;
     };
     type RenderedMessage = {
         role: string;
@@ -82,6 +84,7 @@ import { marked } from "marked";
     type InteractionResponse = { interactionId: string; answers: InteractionAnswer[] };
 
     const renderedMessages: RenderedMessage[] = [];
+    let mermaidRenderQueue: Promise<void> = Promise.resolve();
     let noticeElement: HTMLDivElement | null = null;
     let emptyElement: HTMLDivElement | null = null;
     const INTERACTION_PATTERN = /```mytools-interaction\s*\r?\n([\s\S]*?)\r?\n```/i;
@@ -101,6 +104,61 @@ import { marked } from "marked";
             USE_PROFILES: { html: true },
             FORBID_TAGS: ["style", "iframe", "object", "embed"]
         });
+    }
+
+    function sanitizeDiagram(svg: string): string {
+        return DOMPurify.sanitize(svg, {
+            USE_PROFILES: { svg: true, svgFilters: true },
+            FORBID_TAGS: ["foreignObject", "script"]
+        });
+    }
+
+    function themeColor(name: string, fallback: string): string {
+        return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+    }
+
+    function configureMermaid(): void {
+        const background = themeColor("--mt-surface-alt", "#202020");
+        const surface = themeColor("--mt-surface", "#242424");
+        const text = themeColor("--mt-text", "#eeeeee");
+        const mutedText = themeColor("--mt-text-muted", "#b8b8b8");
+        const border = themeColor("--mt-border", "#393939");
+        mermaid.initialize({
+            startOnLoad: false,
+            securityLevel: "strict",
+            suppressErrorRendering: true,
+            theme: "base",
+            flowchart: { htmlLabels: false },
+            themeVariables: {
+                background,
+                primaryColor: background,
+                primaryTextColor: text,
+                primaryBorderColor: border,
+                secondaryColor: surface,
+                secondaryTextColor: text,
+                secondaryBorderColor: border,
+                tertiaryColor: themeColor("--mt-surface-hover", "#303030"),
+                tertiaryTextColor: text,
+                tertiaryBorderColor: border,
+                lineColor: mutedText,
+                textColor: text,
+                mainBkg: background,
+                nodeBorder: border,
+                clusterBkg: surface,
+                clusterBorder: border,
+                titleColor: text,
+                edgeLabelBackground: surface
+            }
+        });
+    }
+
+    function enqueueMermaidRender<T>(operation: () => Promise<T>): Promise<T> {
+        const queued = mermaidRenderQueue.then(operation, operation);
+        mermaidRenderQueue = queued.then(
+            (): void => undefined,
+            (): void => undefined
+        );
+        return queued;
     }
 
     function limitedText(value: unknown, maxLength: number): string {
@@ -219,6 +277,7 @@ import { marked } from "marked";
 
     class MarkdownRenderer {
         private readonly blocks: RenderedMarkdownBlock[] = [];
+        private diagramRevision = 0;
         private interactionElement: HTMLDivElement | null = null;
         private interactionSpec: InteractionSpec | null = null;
         private interactionResponse: InteractionResponse | null = null;
@@ -260,12 +319,28 @@ import { marked } from "marked";
             }
             if (final) {
                 this.finalizeCodeBlocks();
+                void this.renderMermaidBlocks();
                 this.renderInteraction(parsed.interaction);
             }
         }
 
         public refreshCodeTools(): void {
-            this.blocks.forEach((block) => this.updateCopyButtonLabel(block));
+            this.blocks.forEach((block) => {
+                this.updateCopyButtonLabel(block);
+                this.updateMermaidToggleLabel(block);
+            });
+        }
+
+        public refreshMermaidDiagrams(): void {
+            this.blocks.forEach((block) => {
+                block.element.querySelector(".mermaid-diagram")?.remove();
+                block.element.querySelector(".mermaid-error")?.remove();
+                block.element.querySelector(".mermaid-toggle-button")?.remove();
+                const shell = block.element.querySelector<HTMLElement>(".code-block-shell");
+                const pre = shell?.querySelector<HTMLElement>("pre");
+                if (pre) pre.hidden = false;
+            });
+            void this.renderMermaidBlocks();
         }
 
         public setInteractionState(response: InteractionResponse | null, expanded: boolean): void {
@@ -278,6 +353,7 @@ import { marked } from "marked";
         }
 
         public clear(): void {
+            this.diagramRevision++;
             this.blocks.length = 0;
             this.interactionElement = null;
             this.interactionSpec = null;
@@ -328,7 +404,8 @@ import { marked } from "marked";
                 raw: token.raw,
                 language: token.type === "code" && "lang" in token ? token.lang ?? "" : "",
                 signature: this.tokenSignature(token),
-                highlighted: false
+                highlighted: false,
+                mermaidSourceVisible: false
             });
         }
 
@@ -336,6 +413,10 @@ import { marked } from "marked";
             this.blocks.filter((block) => block.type === "code").forEach((block) => {
                 const code = block.element.querySelector<HTMLElement>("code");
                 if (!code) return;
+                if (block.language.trim().toLowerCase() === "mermaid") {
+                    this.ensureCodeTools(block, code);
+                    return;
+                }
                 if (!block.highlighted) {
                     const source = code.textContent ?? "";
                     const requestedLanguage = block.language.trim().toLowerCase();
@@ -349,6 +430,49 @@ import { marked } from "marked";
                 }
                 this.ensureCodeTools(block, code);
             });
+        }
+
+        private async renderMermaidBlocks(): Promise<void> {
+            const revision = ++this.diagramRevision;
+            const blocks = this.blocks.filter((block) =>
+                block.type === "code" && block.language.trim().toLowerCase() === "mermaid");
+            for (const block of blocks) {
+                if (revision !== this.diagramRevision) return;
+                await this.renderMermaidBlock(block, revision);
+            }
+        }
+
+        private async renderMermaidBlock(block: RenderedMarkdownBlock, revision: number): Promise<void> {
+            const code = block.element.querySelector<HTMLElement>("code");
+            const shell = code?.closest<HTMLElement>(".code-block-shell");
+            if (!code || !shell || block.element.querySelector(".mermaid-diagram")) return;
+            const source = code.textContent ?? "";
+            try {
+                const result = await enqueueMermaidRender(async () => {
+                    if (revision !== this.diagramRevision || !block.element.isConnected) return null;
+                    configureMermaid();
+                    return mermaid.render(`mermaid-${crypto.randomUUID()}`, source);
+                });
+                if (!result) return;
+                if (revision !== this.diagramRevision || !block.element.isConnected) return;
+                const svg = sanitizeDiagram(result.svg);
+                if (!svg.includes("<svg")) throw new Error("Mermaid returned an invalid SVG.");
+                const diagram = document.createElement("div");
+                diagram.className = "mermaid-diagram";
+                diagram.innerHTML = svg;
+                shell.appendChild(diagram);
+                this.ensureMermaidToggle(block, shell, diagram);
+            } catch (error) {
+                if (revision !== this.diagramRevision || !block.element.isConnected) return;
+                const message = document.createElement("div");
+                message.className = "mermaid-error";
+                message.textContent = bus.i18n.t("Plugin.Chat.Detail.MermaidError", {
+                    defaultValue: "Unable to render Mermaid diagram"
+                });
+                message.title = error instanceof Error ? error.message : String(error);
+                block.element.appendChild(message);
+                console.warn("Unable to render Mermaid diagram.", error);
+            }
         }
 
         private ensureCodeTools(block: RenderedMarkdownBlock, code: HTMLElement): void {
@@ -370,14 +494,50 @@ import { marked } from "marked";
                 const language = document.createElement("span");
                 language.className = "code-language";
                 language.textContent = block.language || "text";
+                const actions = document.createElement("div");
+                actions.className = "code-actions";
                 const copy = document.createElement("button");
                 copy.type = "button";
                 copy.className = "code-copy-button";
                 copy.addEventListener("click", () => { void this.copyCode(copy, code); });
-                toolbar.append(language, copy);
+                actions.appendChild(copy);
+                toolbar.append(language, actions);
                 shell.prepend(toolbar);
             }
             this.updateCopyButtonLabel(block);
+        }
+
+        private ensureMermaidToggle(
+            block: RenderedMarkdownBlock,
+            shell: HTMLElement,
+            diagram: HTMLElement
+        ): void {
+            const pre = shell.querySelector<HTMLElement>("pre");
+            const actions = shell.querySelector<HTMLElement>(".code-actions");
+            if (!pre || !actions) return;
+            const toggle = document.createElement("button");
+            toggle.type = "button";
+            toggle.className = "mermaid-toggle-button";
+            toggle.addEventListener("click", () => {
+                block.mermaidSourceVisible = !block.mermaidSourceVisible;
+                pre.hidden = !block.mermaidSourceVisible;
+                diagram.hidden = block.mermaidSourceVisible;
+                this.updateMermaidToggleLabel(block);
+            });
+            actions.prepend(toggle);
+            pre.hidden = !block.mermaidSourceVisible;
+            diagram.hidden = block.mermaidSourceVisible;
+            this.updateMermaidToggleLabel(block);
+        }
+
+        private updateMermaidToggleLabel(block: RenderedMarkdownBlock): void {
+            const toggle = block.element.querySelector<HTMLButtonElement>(".mermaid-toggle-button");
+            if (!toggle) return;
+            toggle.textContent = block.mermaidSourceVisible
+                ? bus.i18n.t("Plugin.Chat.Detail.MermaidDiagram", { defaultValue: "Diagram" })
+                : bus.i18n.t("Plugin.Chat.Detail.MermaidSource", { defaultValue: "Source" });
+            toggle.title = toggle.textContent;
+            toggle.setAttribute("aria-pressed", String(block.mermaidSourceVisible));
         }
 
         private updateCopyButtonLabel(block: RenderedMarkdownBlock): void {
@@ -1002,5 +1162,12 @@ import { marked } from "marked";
     bus.on(HostEvents.LanguageChanged, function () {
         if (currentState) renderState(currentState);
         else renderConversationList();
+    });
+    bus.on(HostEvents.ThemeChanged, function () {
+        requestAnimationFrame(() => {
+            renderedMessages.forEach((entry) => {
+                if (entry.finalized) entry.markdown?.refreshMermaidDiagrams();
+            });
+        });
     });
 })();
