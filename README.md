@@ -31,8 +31,9 @@ MyTools is published on two channels:
 | Channel | Version | Installer (full setup) | Portable |
 | --- | --- | --- | --- |
 | **Stable** | — | Not published yet | Not published yet |
-| **Beta** | 0.0.30 | [Download](https://github.com/qpingcode/MyTools/releases/download/v0.0.30/MyTools-0.0.30-windows-x64-setup.exe) | [Download](https://github.com/qpingcode/MyTools/releases/download/v0.0.30/MyTools-0.0.30-windows-x64-portable.zip) |
+| **Beta** | 0.0.31 | [Download](https://github.com/qpingcode/MyTools/releases/download/v0.0.31/MyTools-0.0.31-windows-x64-setup.exe) | [Download](https://github.com/qpingcode/MyTools/releases/download/v0.0.31/MyTools-0.0.31-windows-x64-portable.zip) |
 <!-- mytools-downloads:end -->
+
 
 
 
