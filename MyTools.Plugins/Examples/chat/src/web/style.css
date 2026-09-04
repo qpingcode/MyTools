@@ -1,3 +1,5 @@
+@import "github-markdown-css/github-markdown.css";
+
 html,
 body {
     height: 100%;
@@ -105,11 +107,23 @@ body {
 }
 
 .message.markdown {
+    --fgColor-default: var(--mt-text, #eeeeee);
+    --fgColor-muted: var(--mt-text-muted, #b8b8b8);
+    --fgColor-accent: var(--mt-accent, #60a5fa);
+    --bgColor-default: transparent;
+    --bgColor-muted: var(--mt-surface-alt, #202020);
+    --bgColor-neutral-muted: var(--mt-surface-hover, #303030);
+    --borderColor-default: var(--mt-border, #393939);
+    --borderColor-muted: var(--mt-border-subtle, #333333);
+    color: var(--mt-text, #eeeeee);
+    background: transparent;
+    font-family: "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.65;
     white-space: normal;
 }
 
-.message.markdown > :first-child,
-.message.markdown .markdown-block > :first-child {
+.message.markdown > .markdown-block:first-child > :first-child {
     margin-top: 0;
 }
 
@@ -186,8 +200,7 @@ body {
     white-space: nowrap;
 }
 
-.message.markdown > :last-child,
-.message.markdown .markdown-block > :last-child {
+.message.markdown > .markdown-block:last-child > :last-child {
     margin-bottom: 0;
 }
 
@@ -195,12 +208,16 @@ body {
     display: none;
 }
 
-.message.markdown p,
-.message.markdown ul,
-.message.markdown ol,
-.message.markdown pre,
-.message.markdown blockquote {
-    margin: 0.55em 0;
+.message.markdown h1 {
+    font-size: 1.55em;
+}
+
+.message.markdown h2 {
+    font-size: 1.35em;
+}
+
+.message.markdown h3 {
+    font-size: 1.18em;
 }
 
 .message.markdown pre {
@@ -213,7 +230,7 @@ body {
 
 .code-block-shell {
     overflow: hidden;
-    margin: 0.55em 0;
+    margin: 1em 0;
     border: 1px solid var(--mt-border-subtle, #333333);
     border-radius: 8px;
     background: var(--mt-surface-alt, #161616);
@@ -343,6 +360,7 @@ body {
 
 .message.user {
     width: fit-content;
+    margin-bottom: 22px;
     margin-left: auto;
     border-color: var(--mt-accent, rgba(96, 165, 250, 0.32));
     background: var(--mt-accent, rgba(37, 99, 235, 0.22));

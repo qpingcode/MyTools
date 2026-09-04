@@ -17,7 +17,7 @@ await build({
 });
 
 await build({
-  entryPoints: ["src/web/main.ts"],
+  entryPoints: ["src/web/main.ts", "src/web/style.css"],
   bundle: true,
   format: "iife",
   target: "es2024",
@@ -29,7 +29,6 @@ await build({
       assets: [
         { from: ["plugin.json"], to: ["dist/plugin.json"] },
         { from: ["src/web/index.html"], to: ["dist/web/index.html"] },
-        { from: ["src/web/style.css"], to: ["dist/web/style.css"] },
         { from: ["i18n/**/*"], to: ["dist/i18n"] },
       ],
     }),

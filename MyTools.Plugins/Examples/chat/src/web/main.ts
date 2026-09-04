@@ -658,7 +658,7 @@ import { marked } from "marked";
 
     function createRenderedMessage(role: string): RenderedMessage {
         const bubble = document.createElement("div");
-        bubble.className = role === "user" ? "message user" : "message assistant markdown";
+        bubble.className = role === "user" ? "message user" : "message assistant markdown markdown-body";
         const entry: RenderedMessage = {
             role,
             bubble,
