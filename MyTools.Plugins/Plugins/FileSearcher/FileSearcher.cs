@@ -92,8 +92,7 @@ public sealed class FileSearcher : PluginBase, IDisposable
 
     public override List<IActionWithHotkey> Actions =>
     [
-        WellKnownActions.Execute.WithDefaultHotkey(),
-        WellKnownActions.AdminExecute.WithHotkey(Hotkey.Ctrl(HotkeyKey.Enter)),
+        WellKnownActions.OpenFile.WithDefaultHotkey(),
         WellKnownActions.OpenInExplorer.WithHotkey(Hotkey.Ctrl(HotkeyKey.O))
     ];
 

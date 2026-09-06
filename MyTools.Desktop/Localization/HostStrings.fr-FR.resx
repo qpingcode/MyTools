@@ -54,6 +54,12 @@
   <data name="Action.Execute.EmptyPath" xml:space="preserve"><value>Le chemin du fichier est vide</value></data>
   <data name="Action.Execute.Success" xml:space="preserve"><value>Exécuté : {{path}}</value></data>
   <data name="Action.Execute.Failed" xml:space="preserve"><value>Échec de l’exécution : {{message}}</value></data>
+  <data name="Action.OpenFile.Name" xml:space="preserve"><value>Ouvrir</value></data>
+  <data name="Action.OpenFile.Description" xml:space="preserve"><value>Ouvrir le fichier avec son application par défaut</value></data>
+  <data name="Action.OpenFile.InvalidParameters" xml:space="preserve"><value>Paramètres non valides pour l’action Ouvrir</value></data>
+  <data name="Action.OpenFile.EmptyPath" xml:space="preserve"><value>Le chemin du fichier est vide</value></data>
+  <data name="Action.OpenFile.Success" xml:space="preserve"><value>Ouvert : {{path}}</value></data>
+  <data name="Action.OpenFile.Failed" xml:space="preserve"><value>Échec de l’ouverture : {{message}}</value></data>
   <data name="Action.AdminExecute.Name" xml:space="preserve"><value>Exécuter en administrateur</value></data>
   <data name="Action.AdminExecute.Description" xml:space="preserve"><value>Exécuter un programme ou un script avec les privilèges administrateur</value></data>
   <data name="Action.Copy.Name" xml:space="preserve"><value>Copier</value></data>

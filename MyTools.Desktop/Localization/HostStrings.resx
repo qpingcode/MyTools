@@ -146,6 +146,12 @@
   <data name="Action.Execute.EmptyPath" xml:space="preserve"><value>File path is empty</value></data>
   <data name="Action.Execute.Success" xml:space="preserve"><value>Executed: {{path}}</value></data>
   <data name="Action.Execute.Failed" xml:space="preserve"><value>Failed to execute: {{message}}</value></data>
+  <data name="Action.OpenFile.Name" xml:space="preserve"><value>Open</value></data>
+  <data name="Action.OpenFile.Description" xml:space="preserve"><value>Open the file with its default application</value></data>
+  <data name="Action.OpenFile.InvalidParameters" xml:space="preserve"><value>Invalid parameters for Open action</value></data>
+  <data name="Action.OpenFile.EmptyPath" xml:space="preserve"><value>File path is empty</value></data>
+  <data name="Action.OpenFile.Success" xml:space="preserve"><value>Opened: {{path}}</value></data>
+  <data name="Action.OpenFile.Failed" xml:space="preserve"><value>Failed to open: {{message}}</value></data>
   <data name="Action.AdminExecute.Name" xml:space="preserve"><value>Admin Execute</value></data>
   <data name="Action.AdminExecute.Description" xml:space="preserve"><value>Execute a program or script with administrator privileges</value></data>
   <data name="Action.Copy.Name" xml:space="preserve"><value>Copy</value></data>

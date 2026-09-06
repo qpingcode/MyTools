@@ -146,6 +146,12 @@
   <data name="Action.Execute.EmptyPath" xml:space="preserve"><value>文件路径为空</value></data>
   <data name="Action.Execute.Success" xml:space="preserve"><value>已运行：{{path}}</value></data>
   <data name="Action.Execute.Failed" xml:space="preserve"><value>运行失败：{{message}}</value></data>
+  <data name="Action.OpenFile.Name" xml:space="preserve"><value>打开</value></data>
+  <data name="Action.OpenFile.Description" xml:space="preserve"><value>使用系统默认应用打开文件</value></data>
+  <data name="Action.OpenFile.InvalidParameters" xml:space="preserve"><value>打开操作的参数无效</value></data>
+  <data name="Action.OpenFile.EmptyPath" xml:space="preserve"><value>文件路径为空</value></data>
+  <data name="Action.OpenFile.Success" xml:space="preserve"><value>已打开：{{path}}</value></data>
+  <data name="Action.OpenFile.Failed" xml:space="preserve"><value>打开失败：{{message}}</value></data>
   <data name="Action.AdminExecute.Name" xml:space="preserve"><value>以管理员身份运行</value></data>
   <data name="Action.AdminExecute.Description" xml:space="preserve"><value>以管理员权限运行程序或脚本</value></data>
   <data name="Action.Copy.Name" xml:space="preserve"><value>复制</value></data>
