@@ -14,9 +14,7 @@ public class PluginWindowChromeStateTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(state.FrameMargin, Is.EqualTo(new Thickness(0)));
             Assert.That(state.CornerRadius, Is.EqualTo(new CornerRadius(0)));
-            Assert.That(state.ShowShadow, Is.False);
             Assert.That(state.ShowRestoreIcon, Is.True);
             Assert.That(state.CloseButtonCornerRadius, Is.EqualTo(new CornerRadius(0)));
         });
@@ -30,9 +28,7 @@ public class PluginWindowChromeStateTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(state.FrameMargin, Is.EqualTo(new Thickness(10)));
             Assert.That(state.CornerRadius, Is.EqualTo(new CornerRadius(12)));
-            Assert.That(state.ShowShadow, Is.True);
             Assert.That(state.ShowRestoreIcon, Is.False);
             Assert.That(state.CloseButtonCornerRadius, Is.EqualTo(new CornerRadius(0, 12, 0, 0)));
         });

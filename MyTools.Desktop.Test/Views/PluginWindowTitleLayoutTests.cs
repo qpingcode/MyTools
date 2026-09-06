@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Shell;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -51,6 +52,24 @@ public class PluginWindowTitleLayoutTests
     public void TearDown()
     {
         ServiceProviderField.SetValue(null, originalServiceProvider);
+    }
+
+    [Test]
+    public void Window_UsesNativeResizableChrome()
+    {
+        var services = new ServiceCollection().BuildServiceProvider();
+        var window = new PluginWindow(new PluginViewModel(services));
+        var chrome = WindowChrome.GetWindowChrome(window);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(window.AllowsTransparency, Is.False);
+            Assert.That(window.ResizeMode, Is.EqualTo(ResizeMode.CanResize));
+            Assert.That(chrome, Is.Not.Null);
+            Assert.That(chrome!.CaptionHeight, Is.EqualTo(34));
+            Assert.That(chrome.ResizeBorderThickness, Is.EqualTo(new Thickness(8)));
+            Assert.That(chrome.GlassFrameThickness, Is.EqualTo(new Thickness(0)));
+        });
     }
 
     [Test]

@@ -6,17 +6,25 @@
         xmlns:local="clr-namespace:MyTools.Desktop.Components"
         xmlns:converters="clr-namespace:MyTools.Desktop.Converters"
         xmlns:loc="clr-namespace:MyTools.Desktop.Localization"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         mc:Ignorable="d"
         Title="{loc:Loc QuickSearch, DefaultValue=Quick Search}"
         Height="624"
         Width="1020"
         WindowStartupLocation="CenterScreen"
         WindowState="Normal"
-        Background="Transparent"
-        AllowsTransparency="True"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        AllowsTransparency="False"
         WindowStyle="None"
-        ResizeMode="CanResizeWithGrip"
+        ResizeMode="CanResize"
         FontFamily="{StaticResource UiFontFamily}">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="0"
+                            ResizeBorderThickness="8"
+                            GlassFrameThickness="0"
+                            CornerRadius="12"
+                            UseAeroCaptionButtons="False" />
+    </shell:WindowChrome.WindowChrome>
     <Window.Resources>
         <converters:IsNullToVisibilityConverter x:Key="IsNullToVisibilityConverter" />
 
@@ -94,17 +102,7 @@
     </Window.Resources>
 
     <Border CornerRadius="12"
-            Background="{DynamicResource WindowBackgroundBrush}"
-            Opacity="0.95"
-            Margin="10">
-        <Border.Effect>
-            <DropShadowEffect ShadowDepth="3"
-                              Direction="315"
-                              Color="{DynamicResource ShadowColor}"
-                              Opacity="0.5"
-                              BlurRadius="10" />
-        </Border.Effect>
-
+            Background="{DynamicResource WindowBackgroundBrush}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />

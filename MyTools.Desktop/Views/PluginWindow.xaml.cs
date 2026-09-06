@@ -4,10 +4,8 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
-using System.Windows.Controls.Primitives;
 using MyTools.Desktop.Components;
 using MyTools.Desktop.Services;
-using MyTools.Desktop.Utils;
 using MyTools.Desktop.ViewModels;
 using MyTools.Plugins;
 using MyTools.Plugins.NodePlugins;
@@ -24,13 +22,9 @@ namespace MyTools.Desktop.Views;
 public partial class PluginWindow
 {
     private const int WmGetMinMaxInfo = 0x0024;
-    private const int WmNcLButtonDown = 0x00A1;
-    private static readonly IntPtr HtCaption = new(0x0002);
     private const uint MonitorDefaultToNearest = 0x00000002;
     private readonly PluginViewModel viewModel;
     private HwndSource? hwndSource;
-    private Point? pendingTitleBarDragStartPoint;
-    private UIElement? pendingTitleBarDragRegion;
 
     public PluginWindow(PluginViewModel viewModel)
     {
@@ -174,79 +168,6 @@ public partial class PluginWindow
         ApplyWindowChromeState();
     }
 
-    private void TitleBarDragRegion_OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        var isInteractiveControlSource = IsInteractiveTitleBarSource(e.OriginalSource as DependencyObject);
-        var action = PluginWindowTitleBarDragBehavior.ResolveMouseLeftButtonDownAction(
-            e.ChangedButton,
-            e.ClickCount,
-            isInteractiveControlSource);
-        if (action == PluginWindowTitleBarDragAction.ToggleMaximizeRestore)
-        {
-            ClearPendingTitleBarDrag(releaseMouseCapture: true);
-            ToggleMaximizeRestore();
-            e.Handled = true;
-            return;
-        }
-
-        if (sender is UIElement region
-            && PluginWindowTitleBarDragBehavior.ShouldCaptureForPotentialDrag(
-                e.ChangedButton,
-                e.ClickCount,
-                isInteractiveControlSource))
-        {
-            pendingTitleBarDragStartPoint = e.GetPosition(this);
-            pendingTitleBarDragRegion = region;
-            if (pendingTitleBarDragRegion.CaptureMouse())
-            {
-                e.Handled = true;
-            }
-            else
-            {
-                ClearPendingTitleBarDrag(releaseMouseCapture: false);
-            }
-        }
-    }
-
-    private void TitleBarDragRegion_OnMouseMove(object sender, MouseEventArgs e)
-    {
-        if (pendingTitleBarDragStartPoint is null || pendingTitleBarDragRegion == null)
-        {
-            return;
-        }
-
-        var action = PluginWindowTitleBarDragBehavior.ResolveMouseMoveAction(
-            pendingTitleBarDragStartPoint.Value,
-            e.GetPosition(this),
-            WindowState,
-            e.LeftButton,
-            SystemParameters.MinimumHorizontalDragDistance,
-            SystemParameters.MinimumVerticalDragDistance);
-        if (action == PluginWindowTitleBarDragAction.None)
-        {
-            if (e.LeftButton != MouseButtonState.Pressed)
-            {
-                ClearPendingTitleBarDrag(releaseMouseCapture: true);
-            }
-
-            return;
-        }
-
-        ClearPendingTitleBarDrag(releaseMouseCapture: true);
-        BeginTitleBarDrag(action);
-        e.Handled = true;
-    }
-
-    private void TitleBarDragRegion_OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-    {
-        ClearPendingTitleBarDrag(releaseMouseCapture: true);
-    }
-
-    private void TitleBarDragRegion_OnLostMouseCapture(object sender, MouseEventArgs e)
-    {
-        ClearPendingTitleBarDrag(releaseMouseCapture: false);
-    }
-
     private void MinimizeButton_OnClick(object sender, RoutedEventArgs e)
     {
         SystemCommands.MinimizeWindow(this);
@@ -281,9 +202,7 @@ public partial class PluginWindow
     private void ApplyWindowChromeState()
     {
         var state = PluginWindowChromeState.From(WindowState);
-        WindowFrame.Margin = state.FrameMargin;
         WindowFrame.CornerRadius = state.CornerRadius;
-        WindowShadow.Opacity = state.ShowShadow ? 0.5 : 0;
         MaximizeIcon.Visibility = state.ShowRestoreIcon ? Visibility.Collapsed : Visibility.Visible;
         RestoreIcon.Visibility = state.ShowRestoreIcon ? Visibility.Visible : Visibility.Collapsed;
         var maximizeRestoreCaption = state.ShowRestoreIcon
@@ -291,58 +210,6 @@ public partial class PluginWindow
             : LanguageService.GetCaption("PluginWindow.Maximize", "Maximize");
         MaximizeRestoreButton.ToolTip = maximizeRestoreCaption;
         AutomationProperties.SetName(MaximizeRestoreButton, maximizeRestoreCaption);
-    }
-
-    private void BeginTitleBarDrag(PluginWindowTitleBarDragAction action)
-    {
-        switch (action)
-        {
-            case PluginWindowTitleBarDragAction.NativeCaptionDrag:
-                BeginNativeCaptionDrag();
-                return;
-            case PluginWindowTitleBarDragAction.DragMove:
-                try
-                {
-                    DragMove();
-                }
-                catch (InvalidOperationException)
-                {
-                }
-
-                return;
-            default:
-                return;
-        }
-    }
-
-    private void BeginNativeCaptionDrag()
-    {
-        var handle = hwndSource?.Handle ?? new WindowInteropHelper(this).Handle;
-        if (handle == IntPtr.Zero)
-        {
-            return;
-        }
-
-        if (!Native.GetCursorPos(out var cursorPosition))
-        {
-            return;
-        }
-
-        var lParam = new IntPtr(PluginWindowCaptionDragLParam.PackScreenCoordinates(cursorPosition.x, cursorPosition.y));
-        ReleaseCapture();
-        SendMessage(handle, WmNcLButtonDown, HtCaption, lParam);
-    }
-
-    private void ClearPendingTitleBarDrag(bool releaseMouseCapture)
-    {
-        var region = pendingTitleBarDragRegion;
-        pendingTitleBarDragStartPoint = null;
-        pendingTitleBarDragRegion = null;
-
-        if (releaseMouseCapture && region?.IsMouseCaptured == true)
-        {
-            region.ReleaseMouseCapture();
-        }
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -434,36 +301,12 @@ public partial class PluginWindow
         return null;
     }
 
-    private static bool IsInteractiveTitleBarSource(DependencyObject? source)
-    {
-        while (source != null)
-        {
-            if (source is ButtonBase)
-            {
-                return true;
-            }
-
-            source = source is Visual
-                ? VisualTreeHelper.GetParent(source)
-                : null;
-        }
-
-        return false;
-    }
-
     [DllImport("user32.dll")]
     private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
-
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool ReleaseCapture();
 
     [DllImport("user32.dll", CharSet = CharSet.Auto)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MonitorInfo lpmi);
-
-    [DllImport("user32.dll", CharSet = CharSet.Auto)]
-    private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct MinMaxInfo

@@ -144,6 +144,8 @@ SDK：`@qping/plugin-bus/node`（`createPlugin`、`HostAction`、`Key`、`Modifi
 
 ## i18n
 
+在本仓库创建或修改插件 UI 时，同时遵循 [`ui-i18n`](../ui-i18n/SKILL.md)，尤其要同步 catalog、manifest 声明的全部 locale，以及语言切换后的响应式重渲染。
+
 用户可见文本：稳定 key + 英文 `defaultValue`。key 用 PascalCase，前缀 `Plugin.{PluginId}.*`。占位符 `{{name}}`。
 
 - 后端：`mytoolsI18n.t(key, { defaultValue, ... })`

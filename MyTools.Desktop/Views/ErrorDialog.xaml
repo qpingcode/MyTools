@@ -3,17 +3,25 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         mc:Ignorable="d"
         Title="Error"
         Height="480"
         Width="720"
         WindowStartupLocation="CenterOwner"
-        Background="Transparent"
-        AllowsTransparency="True"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        AllowsTransparency="False"
         WindowStyle="None"
-        ResizeMode="CanResizeWithGrip"
+        ResizeMode="CanResize"
         ShowInTaskbar="False"
         FontFamily="{StaticResource UiFontFamily}">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="0"
+                            ResizeBorderThickness="8"
+                            GlassFrameThickness="0"
+                            CornerRadius="12"
+                            UseAeroCaptionButtons="False" />
+    </shell:WindowChrome.WindowChrome>
     <Window.Resources>
         <Style x:Key="DialogButton"
                TargetType="Button">
@@ -45,16 +53,7 @@
     </Window.Resources>
 
     <Border CornerRadius="12"
-            Background="{DynamicResource WindowBackgroundBrush}"
-            Margin="10">
-        <Border.Effect>
-            <DropShadowEffect ShadowDepth="3"
-                              Direction="315"
-                              Color="{DynamicResource ShadowColor}"
-                              Opacity="0.5"
-                              BlurRadius="10" />
-        </Border.Effect>
-
+            Background="{DynamicResource WindowBackgroundBrush}">
         <Grid Margin="20">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
