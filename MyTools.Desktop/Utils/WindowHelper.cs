@@ -16,16 +16,19 @@ public static class WindowHelper
         {
             if (existing!.CurrentPlugin == plugin)
             {
-                existing.SetPluginWindow(plugin);
                 if (existing.WindowState == WindowState.Minimized)
                 {
                     existing.WindowState = WindowState.Normal;
                 }
+                if (!existing.IsVisible)
+                {
+                    existing.Show();
+                }
                 existing.Activate();
-                existing.Refresh();
                 if (text != null)
                 {
                     existing.SearchTextBox.Text = text;
+                    existing.SearchTextBox.CaretIndex = text.Length;
                 }
                 existing.SearchTextBox.Focus();
                 return;

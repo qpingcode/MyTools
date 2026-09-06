@@ -58,6 +58,9 @@ public partial class ErrorDialog
 
         try
         {
+            using var autoHide = owner is SearchWindow searchWindow
+                ? searchWindow.SuppressAutoHide()
+                : null;
             owner.Activate();
             dialog.Owner = owner;
             dialog.ShowDialog();

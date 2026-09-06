@@ -35,8 +35,13 @@ public sealed class InputActionCaptureService
         window.Configure(options);
         var completed = new TaskCompletionSource<InputActionCaptureResult?>(
             TaskCreationOptions.RunContinuationsAsynchronously);
+        window.Owner = FindOwner();
+        var autoHide = window.Owner is SearchWindow searchWindow
+            ? searchWindow.SuppressAutoHide()
+            : null;
         window.Closed += (_, _) =>
         {
+            autoHide?.Dispose();
             if (ReferenceEquals(openWindow, window))
             {
                 openWindow = null;
@@ -47,7 +52,6 @@ public sealed class InputActionCaptureService
             completed.TrySetResult(window.Confirmed ? window.Result : null);
         };
         openWindow = window;
-        window.Owner = FindOwner();
         window.Show();
         window.Activate();
         return completed.Task;

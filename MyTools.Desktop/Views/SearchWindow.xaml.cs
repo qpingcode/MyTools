@@ -15,15 +15,11 @@ namespace MyTools.Desktop.Views
         IRecipient<SearchRefreshMessage>,
         IRecipient<ClipboardHistoryChangedMessage>
     {
-        private static readonly object singletonLock = new();
         private readonly SearchViewModel viewModel;
+        private readonly AutoHideSuppressionState autoHideSuppression = new();
 
         public SearchWindow(SearchViewModel searchViewModel)
         {
-            if (!Monitor.TryEnter(singletonLock))
-            {
-                Shutdown();
-            }
             InitializeComponent();
             //WindowFocusTopmost.Attach(this);
 
@@ -38,6 +34,7 @@ namespace MyTools.Desktop.Views
             PreviewKeyUp += (sender, e) => viewModel.HandlePreviewKeyUp(e);;
             KeyDown += Window_KeyDown;
             Closed += Window_OnClosed;
+            Deactivated += Window_OnDeactivated;
 
             MouseLeftButtonDown += (s, e) => DragMove();
             
@@ -49,6 +46,23 @@ namespace MyTools.Desktop.Views
         public void Refresh()
         {
             viewModel.Refresh();
+        }
+
+        /// <summary>
+        /// Prevents focus changes caused by an explicitly scoped dialog or picker
+        /// from hiding the search window. The returned scope may be nested.
+        /// </summary>
+        internal IDisposable SuppressAutoHide() => autoHideSuppression.Enter();
+
+        private void SearchDragHandle_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton != MouseButton.Left)
+            {
+                return;
+            }
+
+            e.Handled = true;
+            DragMove();
         }
 
         public void Receive(ClipboardHistoryChangedMessage message)
@@ -83,8 +97,21 @@ namespace MyTools.Desktop.Views
         
         private void Window_OnClosed(object? sender, EventArgs e)
         {
+            Deactivated -= Window_OnDeactivated;
             WeakReferenceMessenger.Default.UnregisterAll(this);
             viewModel.Dispose();
+        }
+
+        private void Window_OnDeactivated(object? sender, EventArgs e)
+        {
+            // Let the new foreground window and any explicit suppression scope settle.
+            _ = Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, () =>
+            {
+                if (IsVisible && !IsActive && !autoHideSuppression.IsSuppressed)
+                {
+                    Hide();
+                }
+            });
         }
         
         private void Window_KeyDown(object sender, KeyEventArgs e)

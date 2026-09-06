@@ -27,6 +27,7 @@
     </shell:WindowChrome.WindowChrome>
     <Window.Resources>
         <converters:IsNullToVisibilityConverter x:Key="IsNullToVisibilityConverter" />
+        <converters:MdiGlyphConverter x:Key="MdiGlyphConverter" />
 
         <Style x:Key="ModernTextBox"
                TargetType="TextBox">
@@ -116,23 +117,47 @@
                     BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,0,0,1"
                     CornerRadius="12,12,0,0"
-                    Padding="16,8,16,12">
-                <TextBox x:Name="SearchTextBox"
-                         Style="{StaticResource ModernTextBox}"
-                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                         Height="36"
-                         Padding="0"
-                         Margin="0"
-                         Background="Transparent"
-                         VerticalContentAlignment="Center">
-                    <TextBox.InputBindings>
-                        <!-- 覆盖默认的上下键行为 -->
-                        <KeyBinding Key="Up"
-                                    Command="{x:Null}" />
-                        <KeyBinding Key="Down"
-                                    Command="{x:Null}" />
-                    </TextBox.InputBindings>
-                </TextBox>
+                    Padding="15,13,16,17">
+                <!-- Keep these columns in sync with the result row's 15 DIP inset
+                     and 50 DIP icon column so the query starts with result titles. -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="50" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0"
+                            Background="Transparent"
+                            Cursor="SizeAll"
+                            MouseLeftButtonDown="SearchDragHandle_MouseLeftButtonDown">
+                        <TextBlock Text="{Binding Source=magnify, Converter={StaticResource MdiGlyphConverter}}"
+                                   FontFamily="{DynamicResource MdiFontFamily}"
+                                   FontSize="20"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Margin="0,0,8,0"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   IsHitTestVisible="False" />
+                    </Border>
+
+                    <TextBox x:Name="SearchTextBox"
+                             Grid.Column="1"
+                             Style="{StaticResource ModernTextBox}"
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             Height="36"
+                             Padding="0"
+                             Margin="0"
+                             Background="Transparent"
+                             VerticalContentAlignment="Center">
+                        <TextBox.InputBindings>
+                            <!-- 覆盖默认的上下键行为 -->
+                            <KeyBinding Key="Up"
+                                        Command="{x:Null}" />
+                            <KeyBinding Key="Down"
+                                        Command="{x:Null}" />
+                        </TextBox.InputBindings>
+                    </TextBox>
+                </Grid>
             </Border>
 
             <!-- 搜索结果列表 -->

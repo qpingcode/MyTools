@@ -263,7 +263,7 @@
                                   DataContext="{Binding BasicViewModel}"
                                   IconVisible="True"
                                   SingleLineText="True"
-                                  IconColumnWidth="40"
+                                  IconColumnWidth="50"
                                   IconMargin="0"
                                   IconContainerStyle="{StaticResource ClipboardIconChromeStyle}"
                                   ToolTipService.IsEnabled="False"/>

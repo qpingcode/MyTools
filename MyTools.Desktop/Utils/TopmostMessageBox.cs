@@ -1,4 +1,5 @@
 using System.Windows;
+using MyTools.Desktop.Views;
 
 namespace MyTools.Desktop.Utils;
 
@@ -39,6 +40,9 @@ public static class TopmostMessageBox
 
         try
         {
+            using var autoHide = owner is SearchWindow searchWindow
+                ? searchWindow.SuppressAutoHide()
+                : null;
             owner.Activate();
             return MessageBox.Show(owner, messageBoxText, caption, button, icon);
         }

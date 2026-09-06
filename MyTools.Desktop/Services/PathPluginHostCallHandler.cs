@@ -1,6 +1,8 @@
 using System.IO;
 using System.Text.Json;
+using System.Windows;
 using Microsoft.Win32;
+using MyTools.Desktop.Views;
 using MyTools.Plugins.NodePlugins;
 using MyTools.Protocol.Manifest;
 
@@ -36,9 +38,13 @@ public sealed class PathPluginHostCallHandler : IPluginHostCapabilityHandler
         string? selectedPath = null;
         dispatcher.Invoke(() =>
         {
+            var searchWindow = Application.Current.Windows
+                .OfType<SearchWindow>()
+                .FirstOrDefault(window => window.IsVisible && window.IsActive);
+            using var autoHide = searchWindow?.SuppressAutoHide();
             selectedPath = kind == PluginConfigurationTypes.PathDirectory
-                ? PickDirectory(request)
-                : PickFile(request, checkFileExists: true);
+                ? PickDirectory(request, searchWindow)
+                : PickFile(request, checkFileExists: true, searchWindow);
         });
 
         return JsonSerializer.SerializeToElement(new
@@ -48,7 +54,7 @@ public sealed class PathPluginHostCallHandler : IPluginHostCapabilityHandler
         }, JsonOptions);
     }
 
-    private static string? PickDirectory(PickPathRequest request)
+    private static string? PickDirectory(PickPathRequest request, Window? owner)
     {
         var dialog = new OpenFolderDialog
         {
@@ -64,10 +70,12 @@ public sealed class PathPluginHostCallHandler : IPluginHostCapabilityHandler
             dialog.InitialDirectory = Path.GetDirectoryName(request.InitialPath) ?? string.Empty;
         }
 
-        return dialog.ShowDialog() == true ? dialog.FolderName : null;
+        return (owner == null ? dialog.ShowDialog() : dialog.ShowDialog(owner)) == true
+            ? dialog.FolderName
+            : null;
     }
 
-    private static string? PickFile(PickPathRequest request, bool checkFileExists)
+    private static string? PickFile(PickPathRequest request, bool checkFileExists, Window? owner)
     {
         var dialog = new OpenFileDialog
         {
@@ -89,7 +97,9 @@ public sealed class PathPluginHostCallHandler : IPluginHostCapabilityHandler
             dialog.FileName = Path.GetFileName(request.InitialPath);
         }
 
-        return dialog.ShowDialog() == true ? dialog.FileName : null;
+        return (owner == null ? dialog.ShowDialog() : dialog.ShowDialog(owner)) == true
+            ? dialog.FileName
+            : null;
     }
 
     private static JsonElement ValidatePath(JsonElement payload)
