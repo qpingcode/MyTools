@@ -338,17 +338,31 @@ public sealed class NodePlugin : IPlugin, IDisposable
             actionName);
     }
 
-    internal void LogActionCompleted(string actionId, string actionName, NodePluginActionOutcome outcome)
+    internal void LogActionCompleted(string actionId, string actionName, NodePluginNormalizedActionOutcome outcome)
     {
+        var target = outcome.Target switch
+        {
+            NodePluginNormalizedHostTarget => "host",
+            NodePluginNormalizedWebTarget => "current-web",
+            NodePluginNormalizedDetailTarget => "new-web",
+            null => "none",
+            _ => "unknown"
+        };
+        var after = outcome.After switch
+        {
+            NodePluginActionAfter.Keep => "keep",
+            NodePluginActionAfter.Close => "close",
+            NodePluginActionAfter.Refresh => "refresh",
+            _ => "unknown"
+        };
+
         logger.LogInformation(
-            "Completed node plugin action: plugin={PluginId} action={ActionId} name={ActionName} host={HasHost} web={HasWeb} detail={HasDetail} close={Close}",
+            "Completed node plugin action: plugin={PluginId} action={ActionId} name={ActionName} target={Target} after={After}",
             PluginId,
             actionId,
             actionName,
-            string.Equals(outcome.Target?.Kind, "host", StringComparison.OrdinalIgnoreCase),
-            string.Equals(outcome.Target?.Kind, "web", StringComparison.OrdinalIgnoreCase),
-            string.Equals(outcome.Target?.Kind, "detail", StringComparison.OrdinalIgnoreCase),
-            string.Equals(outcome.After, "close", StringComparison.OrdinalIgnoreCase));
+            target,
+            after);
     }
 
     internal void LogActionFailed(string actionId, string actionName, Exception exception)
@@ -708,7 +722,7 @@ internal sealed class NodePluginInvokeAction : IAction
                 ? $"Executed {title}"
                 : new LocalizedMessage(outcome.Message.Key, outcome.Message.DefaultValue)
                     .Resolve(plugin.PluginLocalization);
-            plugin.LogActionCompleted(actionId, title, outcome);
+            plugin.LogActionCompleted(actionId, title, normalized);
             return ActionResult.CreateSuccess(message, actionType);
         }
         catch (Exception ex)

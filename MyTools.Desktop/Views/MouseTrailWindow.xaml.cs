@@ -147,7 +147,7 @@ public partial class MouseTrailWindow
             _dpiScale = source.CompositionTarget.TransformToDevice.M11;
             var screen = Screen.FromHandle(new WindowInteropHelper(this).Handle);
             var screenBounds = screen.Bounds;
-            _logger.LogInformation("Screen bounds: Left {Left}, Top {Top}, Width {Width}, Height {Height}",
+            _logger.LogDebug("Screen bounds: Left {Left}, Top {Top}, Width {Width}, Height {Height}",
                 screenBounds.Left, screenBounds.Top, screenBounds.Width, screenBounds.Height);
 
             Left = screenBounds.Left / _dpiScale;
