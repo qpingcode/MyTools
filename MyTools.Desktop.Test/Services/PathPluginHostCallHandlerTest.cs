@@ -1,4 +1,6 @@
+using System.Text.Json;
 using MyTools.Desktop.Services;
+using MyTools.Plugins.NodePlugins;
 using MyTools.Protocol.Manifest;
 using NUnit.Framework;
 
@@ -7,6 +9,28 @@ namespace MyTools.Desktop.Test.Services;
 [TestFixture]
 public class PathPluginHostCallHandlerTest
 {
+    [Test]
+    public async Task HandleAsync_PathPick_ShouldRemainPendingWhileDialogIsOpen()
+    {
+        var dialogResult = new TaskCompletionSource<JsonElement>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var handler = new PathPluginHostCallHandler((_, _) => dialogResult.Task);
+        var request = new HostCallRequest(
+            "path.pick",
+            JsonSerializer.SerializeToElement(new { kind = PluginConfigurationTypes.PathDirectory }));
+
+        var pendingCall = handler.HandleAsync(request, CancellationToken.None);
+
+        Assert.That(pendingCall.IsCompleted, Is.False,
+            "path.pick must yield while the modal dialog is open so the pipe can keep reading heartbeats");
+
+        var expected = JsonSerializer.SerializeToElement(new { cancelled = true, path = (string?)null });
+        dialogResult.SetResult(expected);
+        var actual = await pendingCall;
+
+        Assert.That(actual.GetProperty("cancelled").GetBoolean(), Is.True);
+    }
+
     [Test]
     public void ValidatePathByKind_Empty_ShouldBeValid()
     {

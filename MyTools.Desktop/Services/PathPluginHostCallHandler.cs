@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text.Json;
 using System.Windows;
+using System.Windows.Threading;
 using Microsoft.Win32;
 using MyTools.Desktop.Views;
 using MyTools.Plugins.NodePlugins;
@@ -14,38 +15,50 @@ public sealed class PathPluginHostCallHandler : IPluginHostCapabilityHandler
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
+    private readonly Func<JsonElement, CancellationToken, Task<JsonElement>> _pickPathAsync;
+
+    public PathPluginHostCallHandler()
+        : this(PickPathAsync)
+    {
+    }
+
+    internal PathPluginHostCallHandler(
+        Func<JsonElement, CancellationToken, Task<JsonElement>> pickPathAsync)
+    {
+        _pickPathAsync = pickPathAsync;
+    }
 
     public IReadOnlyCollection<string> Capabilities { get; } = ["path.pick", "path.validate"];
 
-    public Task<JsonElement> HandleAsync(HostCallRequest request, CancellationToken cancellationToken)
+    public async Task<JsonElement> HandleAsync(HostCallRequest request, CancellationToken cancellationToken)
     {
-        var result = request.Method switch
+        return request.Method switch
         {
-            "path.pick" => PickPath(request.Params),
+            "path.pick" => await _pickPathAsync(request.Params, cancellationToken),
             "path.validate" => ValidatePath(request.Params),
             _ => throw new NotSupportedException($"Unknown path hostCall method: {request.Method}")
         };
-        return Task.FromResult(result);
     }
 
-    private static JsonElement PickPath(JsonElement payload)
+    private static async Task<JsonElement> PickPathAsync(
+        JsonElement payload,
+        CancellationToken cancellationToken)
     {
         var request = payload.Deserialize<PickPathRequest>(JsonOptions) ?? new PickPathRequest();
         var dispatcher = System.Windows.Application.Current?.Dispatcher
             ?? throw new InvalidOperationException("WPF dispatcher is not available.");
         var kind = PluginConfigurationTypes.NormalizePathKind(request.Kind);
 
-        string? selectedPath = null;
-        dispatcher.Invoke(() =>
+        var selectedPath = await dispatcher.InvokeAsync(() =>
         {
             var searchWindow = Application.Current.Windows
                 .OfType<SearchWindow>()
                 .FirstOrDefault(window => window.IsVisible && window.IsActive);
             using var autoHide = searchWindow?.SuppressAutoHide();
-            selectedPath = kind == PluginConfigurationTypes.PathDirectory
+            return kind == PluginConfigurationTypes.PathDirectory
                 ? PickDirectory(request, searchWindow)
                 : PickFile(request, checkFileExists: true, searchWindow);
-        });
+        }, DispatcherPriority.Normal, cancellationToken);
 
         return JsonSerializer.SerializeToElement(new
         {
