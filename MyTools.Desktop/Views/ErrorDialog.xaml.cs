@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Input;
 using MyTools.Desktop.Utils;
 
 namespace MyTools.Desktop.Views;
@@ -67,20 +68,29 @@ public partial class ErrorDialog
         }
     }
 
-    private void CopyButton_Click(object sender, RoutedEventArgs e)
+    private async void CopyButton_Click(object sender, RoutedEventArgs e)
     {
         try
         {
             Clipboard.SetText(StackTraceText.Text);
             CopyButton.Content = "Copied!";
-            Task.Delay(1500).ContinueWith(_ =>
+            await Task.Delay(1500);
+            if (IsLoaded)
             {
-                Dispatcher.Invoke(() => CopyButton.Content = "Copy");
-            });
+                CopyButton.Content = "Copy";
+            }
         }
         catch
         {
             // 剪贴板被占用等情况，忽略
+        }
+    }
+
+    private void TitleArea_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton == MouseButton.Left)
+        {
+            DragMove();
         }
     }
 

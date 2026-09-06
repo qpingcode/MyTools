@@ -115,5 +115,6 @@
   "Plugin.Settings.Account.Google": "Continue with Google",
   "Plugin.Settings.Account.Microsoft": "Continue with Microsoft",
   "Plugin.Settings.Account.Or": "or",
-  "Plugin.Settings.Account.SignedIn": "Signed in."
+  "Plugin.Settings.Account.SignedIn": "Signed in.",
+  "Plugin.Settings.Account.Disconnected": "MyTools Hub is unavailable"
 }

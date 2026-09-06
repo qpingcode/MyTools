@@ -115,5 +115,6 @@
   "Plugin.Settings.Account.Google": "使用 Google 账号",
   "Plugin.Settings.Account.Microsoft": "使用微软账号",
   "Plugin.Settings.Account.Or": "或",
-  "Plugin.Settings.Account.SignedIn": "已登录。"
+  "Plugin.Settings.Account.SignedIn": "已登录。",
+  "Plugin.Settings.Account.Disconnected": "无法连接到 MyTools Hub"
 }

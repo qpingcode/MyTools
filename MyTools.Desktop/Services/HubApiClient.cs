@@ -20,6 +20,7 @@ public sealed class HubSession
 public sealed class HubAccountStatus
 {
     public bool SignedIn { get; init; }
+    public bool Connected { get; init; }
     public string? Username { get; init; }
     public string HubUrl { get; init; } = "";
     public bool Google { get; init; }

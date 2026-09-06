@@ -11,6 +11,7 @@
   <data name="Version" xml:space="preserve"><value>Version: 1.0.0</value></data>
   <data name="AppSettings" xml:space="preserve"><value>Application Settings</value></data>
   <data name="Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="PluginDiagnostics.Menu" xml:space="preserve"><value>Diagnostics</value></data>
   <data name="OpenConfigFolder" xml:space="preserve"><value>Open Config Folder</value></data>
   <data name="AutoStart" xml:space="preserve"><value>Auto Start</value></data>
   <data name="HotKeySettings" xml:space="preserve"><value>Hotkey Settings</value></data>

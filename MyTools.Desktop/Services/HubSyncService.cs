@@ -21,7 +21,9 @@ public sealed class HubSyncService : IDisposable
     private readonly FileSystemWatcher rootWatcher;
     private readonly FileSystemWatcher? pluginsWatcher;
     private readonly object gate = new();
+    private readonly CancellationTokenSource lifetime = new();
     private CancellationTokenSource? debounce;
+    private int pullScheduled;
     private bool applying;
     private bool disposed;
 
@@ -66,6 +68,20 @@ public sealed class HubSyncService : IDisposable
         return new { success = true, updatedAt = stored.UpdatedAt, pulled = false };
     }
 
+    /// <summary>
+    /// Starts the initial Hub pull without delaying application startup. Failures are
+    /// observed here because an unavailable Hub is an expected offline state.
+    /// </summary>
+    public void SchedulePull()
+    {
+        if (!client.IsSignedIn || disposed || Interlocked.Exchange(ref pullScheduled, 1) != 0)
+        {
+            return;
+        }
+
+        _ = RunScheduledPullAsync(lifetime.Token);
+    }
+
     public void SchedulePush()
     {
         if (!client.IsSignedIn || applying)
@@ -102,10 +118,33 @@ public sealed class HubSyncService : IDisposable
     {
         if (disposed) return;
         disposed = true;
+        lifetime.Cancel();
         debounce?.Cancel();
         debounce?.Dispose();
         rootWatcher.Dispose();
         pluginsWatcher?.Dispose();
+        lifetime.Dispose();
+    }
+
+    private async Task RunScheduledPullAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await PullAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            /* application is shutting down */
+        }
+        catch (Exception ex)
+        {
+            // Offline startup is normal; retain diagnostics without surfacing an error dialog.
+            logger.LogDebug(ex, "Initial MyTools Hub pull was skipped because the Hub is unavailable.");
+        }
+        finally
+        {
+            Volatile.Write(ref pullScheduled, 0);
+        }
     }
 
     private void Apply(Dictionary<string, string> files)

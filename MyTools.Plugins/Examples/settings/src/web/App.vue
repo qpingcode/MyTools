@@ -23,7 +23,7 @@ const { message } = createDiscreteApi(["message"]);
 const searchText = ref("");
 const searchTimer = ref<ReturnType<typeof setTimeout> | null>(null);
 const currentTheme = ref(bus.theme.current);
-const account = ref<{ signedIn: boolean; username?: string; google?: boolean; microsoft?: boolean }>({ signedIn: false });
+const account = ref<{ signedIn: boolean; connected?: boolean; username?: string; google?: boolean; microsoft?: boolean }>({ signedIn: false });
 const loginOpen = ref(false);
 const registerMode = ref(false);
 const loginUsername = ref("");
@@ -46,6 +46,7 @@ const labels = computed(() => ({
     google: t("Plugin.Settings.Account.Google", "Continue with Google"),
     microsoft: t("Plugin.Settings.Account.Microsoft", "Continue with Microsoft"),
     or: t("Plugin.Settings.Account.Or", "or"),
+    disconnected: t("Plugin.Settings.Account.Disconnected", "MyTools Hub is unavailable"),
 }));
 
 const themeOverrides = computed(() => {
@@ -193,10 +194,12 @@ async function externalLogin(provider: string): Promise<void> {
                     </div>
                     <div class="sidebar-account">
                         <button v-if="!account.signedIn" type="button" class="account-login" @click="loginOpen = true; registerMode = false">
-                            {{ labels.login }}
+                            <span>{{ labels.login }}</span>
+                            <i v-if="account.connected === false" class="mdi mdi-cloud-off-outline hub-disconnected" :title="labels.disconnected"></i>
                         </button>
                         <div v-else class="account-user">
                             <span class="account-name" :title="account.username">{{ account.username }}</span>
+                            <i v-if="account.connected === false" class="mdi mdi-cloud-off-outline hub-disconnected" :title="labels.disconnected"></i>
                             <button type="button" class="account-logout" :title="labels.logout" @click="logout">
                                 <i class="mdi mdi-logout-variant"></i>
                             </button>
@@ -335,6 +338,16 @@ async function externalLogin(provider: string): Promise<void> {
     padding: 8px 10px;
     cursor: pointer;
     font: inherit;
+}
+
+.account-login > span {
+    flex: 1 1 auto;
+}
+
+.hub-disconnected {
+    flex: 0 0 auto;
+    color: #e5484d;
+    font-size: 18px;
 }
 
 .account-login:hover {

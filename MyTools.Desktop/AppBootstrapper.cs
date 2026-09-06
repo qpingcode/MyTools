@@ -556,7 +556,7 @@ public class AppBootstrapper : IDisposable
        
             if (hubApiClient.IsSignedIn)
             {
-                _ = hubSyncService.PullAsync(CancellationToken.None);
+                hubSyncService.SchedulePull();
             }
         }
         catch (Exception ex)

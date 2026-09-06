@@ -17,26 +17,20 @@ public sealed class HubAccountService(HubApiClient client)
             return new HubAccountStatus
             {
                 SignedIn = client.IsSignedIn,
+                Connected = true,
                 Username = client.Session?.Username,
                 HubUrl = client.HubUrl,
                 Google = providers.Google,
                 Microsoft = providers.Microsoft
             };
         }
-        catch (HttpRequestException ex) when (ex.InnerException is SocketException
-                                              {
-                                                  SocketErrorCode: SocketError.ConnectionRefused
-                                              })
+        catch (HttpRequestException)
         {
-            // Hub service offline: keep settings available and show signed-out state.
-            return new HubAccountStatus
-            {
-                SignedIn = false,
-                Username = null,
-                HubUrl = client.HubUrl,
-                Google = false,
-                Microsoft = false
-            };
+            return OfflineStatus();
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return OfflineStatus();
         }
     }
 
@@ -91,9 +85,21 @@ public sealed class HubAccountService(HubApiClient client)
         return new HubAccountStatus
         {
             SignedIn = false,
+            Connected = true,
             HubUrl = client.HubUrl
         };
     }
+
+    private HubAccountStatus OfflineStatus() => new()
+    {
+        // A saved session remains signed in while the Hub is temporarily unavailable.
+        SignedIn = client.IsSignedIn,
+        Connected = false,
+        Username = client.Session?.Username,
+        HubUrl = client.HubUrl,
+        Google = false,
+        Microsoft = false
+    };
 
     private void Store(HubAuthDto response)
     {

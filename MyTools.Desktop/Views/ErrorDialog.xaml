@@ -64,12 +64,16 @@
             </Grid.RowDefinitions>
 
             <!-- 标题 -->
-            <TextBlock Grid.Row="0"
-                       x:Name="ContextText"
-                       FontSize="16"
-                       FontWeight="Bold"
-                       Foreground="{DynamicResource TextPrimaryBrush}"
-                       Margin="0,0,0,8" />
+            <Border Grid.Row="0"
+                    Background="Transparent"
+                    Padding="0,0,0,8"
+                    Cursor="SizeAll"
+                    MouseLeftButtonDown="TitleArea_MouseLeftButtonDown">
+                <TextBlock x:Name="ContextText"
+                           FontSize="16"
+                           FontWeight="Bold"
+                           Foreground="{DynamicResource TextPrimaryBrush}" />
+            </Border>
 
             <!-- 错误消息 -->
             <TextBlock Grid.Row="1"
