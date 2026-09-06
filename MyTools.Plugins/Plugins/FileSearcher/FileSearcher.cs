@@ -394,10 +394,6 @@ public sealed class FileSearcher : PluginBase, IDisposable
     {
         if (indexWriter != null) return;
 
-        var pluginDataDirectory = ConfigPath.PluginDataDirectory(PluginDataId);
-        SystemDirectory.CreateDirectory(pluginDataDirectory);
-        MigrateLegacyIndexStorage(pluginDataDirectory);
-
         var indexPath = GetIndexDirectory(ConfigPath.PluginsDataPath);
         SystemDirectory.CreateDirectory(indexPath);
         indexDirectory = FSDirectory.Open(indexPath);
@@ -418,40 +414,6 @@ public sealed class FileSearcher : PluginBase, IDisposable
 
     internal static string GetIndexedRootsPath(string pluginsDataRoot) =>
         Path.Combine(ConfigPath.PluginDataDirectory(pluginsDataRoot, PluginDataId), IndexedRootsFileName);
-
-    private void MigrateLegacyIndexStorage(string pluginDataDirectory)
-    {
-        var legacyIndexPath = Path.Combine(ConfigPath.Base, IndexDir);
-        var indexPath = Path.Combine(pluginDataDirectory, IndexDir);
-        var legacyRootsPath = Path.Combine(ConfigPath.Base, IndexedRootsFileName);
-        var rootsPath = Path.Combine(pluginDataDirectory, IndexedRootsFileName);
-
-        try
-        {
-            if (!SystemDirectory.Exists(indexPath) && SystemDirectory.Exists(legacyIndexPath))
-            {
-                SystemDirectory.Move(legacyIndexPath, indexPath);
-                logger.LogInformation(
-                    "Migrated FileSearcher index from {LegacyPath} to {Path}.",
-                    legacyIndexPath, indexPath);
-            }
-
-            if (!File.Exists(rootsPath) && File.Exists(legacyRootsPath))
-            {
-                File.Move(legacyRootsPath, rootsPath);
-                logger.LogInformation(
-                    "Migrated FileSearcher indexed roots from {LegacyPath} to {Path}.",
-                    legacyRootsPath, rootsPath);
-            }
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            logger.LogWarning(
-                ex,
-                "Could not migrate legacy FileSearcher index storage to {Directory}; a new index will be used.",
-                pluginDataDirectory);
-        }
-    }
 
     private static HashSet<string> ReadIndexedRoots(string path)
     {
