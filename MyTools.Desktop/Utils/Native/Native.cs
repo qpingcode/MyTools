@@ -26,10 +26,38 @@ public class Native
     public static extern IntPtr GetForegroundWindow();
 
     [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    internal static bool FlashTaskbar(IntPtr windowHandle)
+    {
+        var info = new FlashWindowInfo
+        {
+            Size = (uint)Marshal.SizeOf<FlashWindowInfo>(),
+            WindowHandle = windowHandle,
+            Flags = 0x00000002, // FLASHW_TRAY
+            Count = 3,
+            Timeout = 0
+        };
+        return FlashWindowEx(ref info);
+    }
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool FlashWindowEx(ref FlashWindowInfo flashInfo);
 
     [DllImport("user32.dll")]
     public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct FlashWindowInfo
+    {
+        public uint Size;
+        public IntPtr WindowHandle;
+        public uint Flags;
+        public uint Count;
+        public uint Timeout;
+    }
 
     [DllImport("user32.dll")]
     public static extern bool GetCursorPos(out POINT lpPoint);
@@ -41,8 +69,14 @@ public class Native
         public MOUSEINPUT mi; // 鼠标输入
     }
     
-    [DllImport("user32.dll")]
+    [DllImport("user32.dll", SetLastError = true)]
     public static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
+
+    internal static uint SendEmptyMouseInput()
+    {
+        INPUT[] inputs = [new INPUT { type = 0 }]; // INPUT_MOUSE
+        return SendInput(1, inputs, Marshal.SizeOf<INPUT>());
+    }
 
     public enum MouseMsg
     {

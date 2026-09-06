@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using MyTools.Common.Plugins;
+using MyTools.Desktop.Utils;
 using MyTools.Desktop.Views;
 using MyTools.Plugins.NodePlugins;
 
@@ -54,7 +55,16 @@ public sealed class PluginWindowManager
             window = CreateAndShowShell(plugin, context);
         }
         window.ActivateShellFromHotKey();
-        hotKeyActivated.Add(plugin.PluginId);
+        if (WindowForeground.IsForeground(window))
+        {
+            hotKeyActivated.Add(plugin.PluginId);
+        }
+        else
+        {
+            // The deferred open gets one more normal foreground request if Windows denied the
+            // synchronous WM_HOTKEY attempt.
+            hotKeyActivated.Remove(plugin.PluginId);
+        }
     }
 
     private PluginWindow CreateAndShowShell(NodePlugin plugin, NodePluginDetailContext? context)

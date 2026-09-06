@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using MyTools.Common;
 using MyTools.Common.Plugins;
 using MyTools.Desktop.Models;
+using MyTools.Desktop.Utils;
 using MyTools.Plugins.NodePlugins;
 
 namespace MyTools.Desktop.Services;
@@ -50,11 +51,16 @@ public sealed class PluginHotKeyService : IPluginHotKeyRegistry
 
             try
             {
-                var id = hotKeyManager.RegisterHotKey(
-                    hotKey.Key,
-                    hotKey.Modifiers,
-                    () => openDetail(plugin),
-                    () => pluginWindowManager.ActivateHotKeyShell(plugin));
+                var id = plugin.HasWebDetail
+                    ? hotKeyManager.RegisterHotKey(
+                        hotKey.Key,
+                        hotKey.Modifiers,
+                        () => openDetail(plugin),
+                        () => pluginWindowManager.ActivateHotKeyShell(plugin))
+                    : hotKeyManager.RegisterForegroundHotKey(
+                        hotKey.Key,
+                        hotKey.Modifiers,
+                        () => WindowHelper.ActivateSearchWindowFromHotKey(plugin));
                 hotKeyIds[plugin.PluginId] = id;
                 logger.LogInformation("Registered hotkey {HotKey} for plugin {PluginId}.", hotKeyText, plugin.PluginId);
             }

@@ -11,6 +11,7 @@ public class HotKeyMessageHandler: IWindowMessageHandler, IWindowHandleAware
 {
     private readonly Dictionary<int, Action> _callbacks = new();
     private readonly Dictionary<int, Action> _foregroundCallbacks = new();
+    private readonly HashSet<int> _synchronousCallbacks = new();
     private readonly Dictionary<int, (Key key, ModifierKeys modifiers, Action callback)> _registrations = new();
     private readonly Action<Action>? _callbackScheduler;
     private IntPtr _messageWindowHandle;
@@ -36,6 +37,21 @@ public class HotKeyMessageHandler: IWindowMessageHandler, IWindowHandleAware
         if (_callbacks.TryGetValue(id, out var callback))
         {
             handled = true;
+            if (_synchronousCallbacks.Contains(id))
+            {
+                try
+                {
+                    callback();
+                }
+                catch
+                {
+                    // Preserve the previous deferred fallback if the foreground path itself
+                    // cannot run inside the native message callback.
+                    ScheduleCallback(callback);
+                }
+                return;
+            }
+
             // Only the small window-shell activation belongs in WM_HOTKEY.
             // Plugin content and WebView2 initialization remain deferred.
             if (_foregroundCallbacks.TryGetValue(id, out var foregroundCallback))
@@ -85,6 +101,7 @@ public class HotKeyMessageHandler: IWindowMessageHandler, IWindowHandleAware
         HotKeyNativeMethods.UnregisterHotKey(_messageWindowHandle, id);
         _callbacks.Remove(id);
         _foregroundCallbacks.Remove(id);
+        _synchronousCallbacks.Remove(id);
         _registrations.Remove(id);
     }
 
@@ -97,6 +114,7 @@ public class HotKeyMessageHandler: IWindowMessageHandler, IWindowHandleAware
         _callbacks.Clear();
         _registrations.Clear();
         _foregroundCallbacks.Clear();
+        _synchronousCallbacks.Clear();
     }
 
     /// <summary>
@@ -151,6 +169,13 @@ public class HotKeyMessageHandler: IWindowMessageHandler, IWindowHandleAware
         if (foregroundCallback != null) _foregroundCallbacks[_currentId] = foregroundCallback;
         _registrations[_currentId] = (key, modifiers, callback);
         return _currentId;
+    }
+
+    public int RegisterSynchronous(Key key, ModifierKeys modifiers, Action callback)
+    {
+        var id = Register(key, modifiers, callback);
+        _synchronousCallbacks.Add(id);
+        return id;
     }
     
     private static uint GetNativeModifiers(ModifierKeys modifiers)

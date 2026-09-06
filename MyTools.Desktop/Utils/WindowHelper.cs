@@ -1,4 +1,6 @@
 using System.Windows;
+using System.Windows.Input;
+using Microsoft.Extensions.Logging;
 using MyTools.Common.DependencyInjection;
 using MyTools.Desktop.Services;
 using MyTools.Desktop.Views;
@@ -8,57 +10,66 @@ namespace MyTools.Desktop.Utils;
 
 public static class WindowHelper
 {
+    public static void PrepareSearchWindow()
+    {
+        var searchWindow = ServiceLocator.GetRequiredService<SearchWindow>();
+        Prepare(searchWindow);
+    }
+
     public static void ShowSearchWindow(IPlugin? plugin = null, string? text = null)
     {
-        string previousSearchText = string.Empty;
-        
-        if (FindExistingSearchWindow(out var existing))
-        {
-            if (existing!.CurrentPlugin == plugin)
-            {
-                if (existing.WindowState == WindowState.Minimized)
-                {
-                    existing.WindowState = WindowState.Normal;
-                }
-                if (!existing.IsVisible)
-                {
-                    existing.Show();
-                }
-                existing.Activate();
-                if (text != null)
-                {
-                    existing.SearchTextBox.Text = text;
-                    existing.SearchTextBox.CaretIndex = text.Length;
-                }
-                existing.SearchTextBox.Focus();
-                return;
-            }
-
-            previousSearchText = existing.SearchTextBox.Text;
-            existing.Close();
-        }
-
         var searchWindow = ServiceLocator.GetRequiredService<SearchWindow>();
-        var placement = ServiceLocator.GetRequiredService<WindowPlacementService>();
-        if (plugin != null)
+        Prepare(searchWindow);
+        RestorePlacement(searchWindow);
+        if (searchWindow.CurrentPlugin != plugin)
         {
             searchWindow.SetPluginWindow(plugin);
         }
 
-        placement.Restore(searchWindow, WindowPlacementService.SearchKey);
-        placement.Track(searchWindow, WindowPlacementService.SearchKey);
-
-        var searchText = text ?? previousSearchText;
-        searchWindow.Show();
-        searchWindow.Activate();
-        searchWindow.SearchTextBox.Text = searchText;
-        searchWindow.SearchTextBox.Focus();
-        searchWindow.SearchTextBox.CaretIndex = searchText.Length;
+        WindowForeground.TryActivate(searchWindow);
+        FocusSearchInput(searchWindow, text);
     }
 
-    static bool FindExistingSearchWindow(out SearchWindow? existingWindow)
+    internal static void ActivateSearchWindowFromHotKey(IPlugin? plugin = null)
     {
-        existingWindow = Application.Current.Windows.OfType<SearchWindow>().FirstOrDefault();
-        return existingWindow != null;
+        var searchWindow = ServiceLocator.GetRequiredService<SearchWindow>();
+        Prepare(searchWindow);
+        RestorePlacement(searchWindow);
+
+        var logger = ServiceLocator.GetRequiredService<ILogger<SearchWindow>>();
+        WindowForeground.TryActivateFromHotKey(searchWindow, logger);
+        FocusSearchInput(searchWindow, text: null);
+        if (searchWindow.CurrentPlugin != plugin)
+        {
+            _ = searchWindow.Dispatcher.BeginInvoke(() =>
+            {
+                searchWindow.SetPluginWindow(plugin);
+                FocusSearchInput(searchWindow, text: null);
+            });
+        }
+    }
+
+    private static void Prepare(SearchWindow searchWindow)
+    {
+        var placement = ServiceLocator.GetRequiredService<WindowPlacementService>();
+        searchWindow.PreparePersistentShell(placement);
+    }
+
+    private static void RestorePlacement(SearchWindow searchWindow)
+    {
+        var placement = ServiceLocator.GetRequiredService<WindowPlacementService>();
+        placement.Restore(searchWindow, WindowPlacementService.SearchKey);
+    }
+
+    private static void FocusSearchInput(SearchWindow searchWindow, string? text)
+    {
+        if (text != null)
+        {
+            searchWindow.SearchTextBox.Text = text;
+        }
+
+        searchWindow.SearchTextBox.CaretIndex = searchWindow.SearchTextBox.Text.Length;
+        searchWindow.SearchTextBox.Focus();
+        Keyboard.Focus(searchWindow.SearchTextBox);
     }
 }

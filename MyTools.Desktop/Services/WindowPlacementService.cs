@@ -90,6 +90,11 @@ public sealed class WindowPlacementService
 
         void OnClosing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
+            if (e.Cancel)
+            {
+                return;
+            }
+
             window.Closing -= OnClosing;
             window.LocationChanged -= ScheduleSave;
             window.SizeChanged -= ScheduleSave;

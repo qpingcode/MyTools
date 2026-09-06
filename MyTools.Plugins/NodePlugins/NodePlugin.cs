@@ -108,6 +108,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
 
     public string PluginDirectory => manifest.PluginDirectory;
     public bool HasInstalledEntry => File.Exists(manifest.EntryFullPath);
+    public bool HasWebDetail => manifest.HasWebDetail;
 
     /// <summary>Bus session id after the Node process has been started.</summary>
     public string? BusSessionId => processHost.SessionId;

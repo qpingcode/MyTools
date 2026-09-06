@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using MyTools.Common.Config.Interfaces;
 using MyTools.Desktop.Storage;
+using MyTools.Desktop.Views;
 using NUnit.Framework;
 
 namespace MyTools.Desktop.Test;
@@ -17,6 +18,17 @@ public class AppServiceCollectionExtensionsTests
 
         var registration = services.Single(service =>
             service.ServiceType == typeof(AppBootstrapper));
+        Assert.That(registration.Lifetime, Is.EqualTo(ServiceLifetime.Singleton));
+    }
+
+    [Test]
+    public void AddDesktopServices_RegistersSearchWindowAsSingleton()
+    {
+        var services = new ServiceCollection();
+
+        services.AddDesktopServices();
+
+        var registration = services.Single(service => service.ServiceType == typeof(SearchWindow));
         Assert.That(registration.Lifetime, Is.EqualTo(ServiceLifetime.Singleton));
     }
 

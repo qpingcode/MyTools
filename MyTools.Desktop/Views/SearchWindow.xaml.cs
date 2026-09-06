@@ -1,9 +1,12 @@
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.Messaging;
 using MyTools.Desktop.Components;
+using MyTools.Desktop.Services;
 using MyTools.Desktop.ViewModels;
 using MyTools.Plugins;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
@@ -17,6 +20,7 @@ namespace MyTools.Desktop.Views
     {
         private readonly SearchViewModel viewModel;
         private readonly AutoHideSuppressionState autoHideSuppression = new();
+        private bool persistentShellPrepared;
 
         public SearchWindow(SearchViewModel searchViewModel)
         {
@@ -33,6 +37,7 @@ namespace MyTools.Desktop.Views
             PreviewKeyDown += Window_HandlePreviewKeyDown;
             PreviewKeyUp += (sender, e) => viewModel.HandlePreviewKeyUp(e);;
             KeyDown += Window_KeyDown;
+            Closing += Window_OnClosing;
             Closed += Window_OnClosed;
             Deactivated += Window_OnDeactivated;
 
@@ -80,6 +85,22 @@ namespace MyTools.Desktop.Views
             viewModel.ResetViewModelIfNeeded(plugin);
         }
 
+        internal void PreparePersistentShell(WindowPlacementService placement)
+        {
+            if (persistentShellPrepared)
+            {
+                return;
+            }
+
+            placement.Track(this, WindowPlacementService.SearchKey);
+            _ = new WindowInteropHelper(this).EnsureHandle();
+            ApplyTemplate();
+            Measure(new Size(Width, Height));
+            Arrange(new Rect(0, 0, Width, Height));
+            UpdateLayout();
+            persistentShellPrepared = true;
+        }
+
         public async Task FocusNodePluginPrimaryInputAsync()
         {
             await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
@@ -92,11 +113,24 @@ namespace MyTools.Desktop.Views
 
         private void Shutdown()
         {
-            Close();
+            Hide();
+        }
+
+        private void Window_OnClosing(object? sender, CancelEventArgs e)
+        {
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher == null || dispatcher.HasShutdownStarted || dispatcher.HasShutdownFinished)
+            {
+                return;
+            }
+
+            e.Cancel = true;
+            Hide();
         }
         
         private void Window_OnClosed(object? sender, EventArgs e)
         {
+            Closing -= Window_OnClosing;
             Deactivated -= Window_OnDeactivated;
             WeakReferenceMessenger.Default.UnregisterAll(this);
             viewModel.Dispose();

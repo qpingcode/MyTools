@@ -67,6 +67,7 @@ public partial class App
         protocolActivation.RegisterUriScheme();
         protocolActivation.StartListening();
         appBootstrapper.Init();
+        WindowHelper.PrepareSearchWindow();
         protocolActivation.HandleStartup(e.Args);
 
         // Keep the tray menu and the General.Theme setting in sync with theme changes,

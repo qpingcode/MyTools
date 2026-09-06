@@ -4,8 +4,11 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using MyTools.Desktop.Components;
 using MyTools.Desktop.Services;
+using MyTools.Desktop.Utils;
 using MyTools.Desktop.ViewModels;
 using MyTools.Plugins;
 using MyTools.Plugins.NodePlugins;
@@ -24,10 +27,16 @@ public partial class PluginWindow
     private const int WmGetMinMaxInfo = 0x0024;
     private const uint MonitorDefaultToNearest = 0x00000002;
     private readonly PluginViewModel viewModel;
+    private readonly ILogger<PluginWindow> logger;
     private HwndSource? hwndSource;
     private int activationAttempt;
 
     public PluginWindow(PluginViewModel viewModel)
+        : this(viewModel, NullLogger<PluginWindow>.Instance)
+    {
+    }
+
+    public PluginWindow(PluginViewModel viewModel, ILogger<PluginWindow> logger)
     {
         InitializeComponent();
         MinWidth = PluginWindowLayoutMetrics.MinimumWindowWidth;
@@ -35,6 +44,7 @@ public partial class PluginWindow
         ApplyWindowChromeState();
 
         this.viewModel = viewModel;
+        this.logger = logger;
         DataContext = viewModel;
         viewModel.CloseRequested += ViewModel_OnCloseRequested;
 
@@ -89,14 +99,13 @@ public partial class PluginWindow
 
     private void ActivateWindow()
     {
-        Activate();
-        Focus();
+        WindowForeground.TryActivate(this);
     }
 
     internal void ActivateShellFromHotKey()
     {
         if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
-        ActivateWindow();
+        WindowForeground.TryActivateFromHotKey(this, logger);
     }
 
     private async void PluginWindow_Loaded(object sender, RoutedEventArgs e)

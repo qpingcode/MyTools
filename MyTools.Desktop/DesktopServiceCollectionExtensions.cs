@@ -48,7 +48,9 @@ public static class DesktopServiceCollectionExtensions
         serviceCollection.AddSingleton<NativeMessageWindowHost>();
         
         // windows
-        serviceCollection.AddTransient<SearchWindow>();  // 如果是 singleton的，每次打开都会闪烁
+        // Keep the launcher shell alive so a hotkey does not have to create and lay out a
+        // top-level window before requesting foreground permission.
+        serviceCollection.AddSingleton<SearchWindow>();
         serviceCollection.AddTransient<SearchViewModel>();
         serviceCollection.AddTransient<PluginWindow>();
         serviceCollection.AddTransient<PluginViewModel>();

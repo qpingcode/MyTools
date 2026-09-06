@@ -43,7 +43,10 @@ namespace MyTools.Desktop.Services
 
             try
             {
-                _searchHotKeyId = RegisterHotKey(hotKey.Key, hotKey.Modifiers, () => WindowHelper.ShowSearchWindow());
+                _searchHotKeyId = RegisterForegroundHotKey(
+                    hotKey.Key,
+                    hotKey.Modifiers,
+                    () => WindowHelper.ActivateSearchWindowFromHotKey());
             }catch (InvalidOperationException ex)
             {
                 MessageBox.Show("Cannot register hotkeys: " + hotKey, "HotKey Conflict", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -55,6 +58,11 @@ namespace MyTools.Desktop.Services
         public int RegisterHotKey(Key key, ModifierKeys modifiers, Action callback, Action? foregroundCallback = null)
         {
             return _hotKeyMessageHandler.Register(key, modifiers, callback, foregroundCallback);
+        }
+
+        public int RegisterForegroundHotKey(Key key, ModifierKeys modifiers, Action callback)
+        {
+            return _hotKeyMessageHandler.RegisterSynchronous(key, modifiers, callback);
         }
 
         public void RegisterClipboardHotKey(HotKeyConfig? hotKey, Action callback)
