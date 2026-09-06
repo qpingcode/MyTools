@@ -228,7 +228,12 @@ public sealed class ApplicationsPlugin(
                 catch (Exception ex) { logger.LogDebug(ex, "Could not load application icon {Path}.", path); }
                 return new MdiIcon("mdi-application-outline");
             })!;
-            items.Add(new ResultItem(icon, Path.GetFileNameWithoutExtension(path), path, ActionStringParam.From(path))
+            items.Add(new ResultItem(
+                icon,
+                Path.GetFileNameWithoutExtension(path),
+                path,
+                ActionStringParam.From(path),
+                ResultItemPriorities.Highest)
             {
                 ResultKey = match.Identity, AllowedActions = Actions
             });

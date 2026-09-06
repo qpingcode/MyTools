@@ -145,6 +145,7 @@ public class ApplicationsPluginTests
             Assert.That(result.Items.Count(), Is.EqualTo(2));
             Assert.That(result.Items.Select(item => item.ResultKey).Distinct().Count(), Is.EqualTo(2));
             Assert.That(result.Items.All(item => item.AllowedActions.First().Hotkey == Hotkey.Enter), Is.True);
+            Assert.That(result.Items.All(item => item.Priority == ResultItemPriorities.Highest), Is.True);
             File.Delete(exe);
             Assert.That((await plugin.SearchAsync("example", CancellationToken.None)).Items.Count(), Is.EqualTo(1));
             await plugin.RescanAsync(JsonSerializer.SerializeToElement(Array.Empty<object>()));
