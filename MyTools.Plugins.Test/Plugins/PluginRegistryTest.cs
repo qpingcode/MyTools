@@ -49,6 +49,19 @@ public class PluginRegistryTest
     }
 
     [Test]
+    public void TryFindPlugin_ShouldPreserveExpressionWhenPrefixIsNotAKeyword()
+    {
+        IKeywordRegistry registry = new PluginRegistry();
+        registry.Register("calc", new TestPlugin());
+        const string expression = "1 + 2 + 3";
+
+        var found = registry.TryFindPlugin(expression, out var queryWithoutPrefix, out _);
+
+        Assert.That(found, Is.False);
+        Assert.That(queryWithoutPrefix, Is.EqualTo(expression));
+    }
+
+    [Test]
     public void UnregisterPlugin_ShouldRemoveOnlyThatPluginKeywords()
     {
         IKeywordRegistry registry = new PluginRegistry();

@@ -64,17 +64,15 @@ public class PluginRegistry : IKeywordRegistry, IGlobalSearchRegistry, IActionRe
     bool IKeywordRegistry.TryFindPlugin(string searchText, [NotNullWhen(true)] out string searchTextWithoutPrefix, [NotNullWhen(true)] out IPlugin plugin)
     {
         var prefix = GetPrefix(searchText);
-        searchTextWithoutPrefix = GetQueryWithoutPrefix(searchText, prefix);
-        if (!_keywordMap.ContainsKey(prefix))
+        if (!_keywordMap.TryGetValue(prefix, out plugin!))
         {
+            searchTextWithoutPrefix = searchText;
             plugin = null!;
             return false;
         }
-        else
-        {
-            plugin = _keywordMap[prefix];
-            return true;
-        }
+
+        searchTextWithoutPrefix = GetQueryWithoutPrefix(searchText, prefix);
+        return true;
     }
 
     IEnumerable<(string keyword, IPlugin plugin)> IKeywordRegistry.Match(string searchText)
