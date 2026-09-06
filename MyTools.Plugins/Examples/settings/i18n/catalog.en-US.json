@@ -731,6 +731,42 @@
       "placeholders": [],
       "references": ["src/web/components/SettingField.vue"],
       "existingTranslations": { "zh-CN": "请输入" }
+    },
+    {
+      "key": "Plugin.Settings.Directories.Add",
+      "defaultValue": "Add directory",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "添加目录"
+      }
+    },
+    {
+      "key": "Plugin.Settings.Directories.Remove",
+      "defaultValue": "Remove directory",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "移除目录"
+      }
+    },
+    {
+      "key": "Plugin.Settings.Directories.Pick",
+      "defaultValue": "Select a directory",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "选择目录"
+      }
+    },
+    {
+      "key": "Plugin.Settings.Directories.Failed",
+      "defaultValue": "Could not select a directory. Please try again.",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "无法选择目录，请重试。"
+      }
     }
   ]
 }

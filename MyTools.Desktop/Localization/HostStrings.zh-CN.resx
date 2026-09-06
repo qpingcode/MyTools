@@ -222,4 +222,25 @@
   <data name="Plugin.ClipBoard.Empty.Title" xml:space="preserve"><value>剪贴板历史为空</value></data>
   <data name="Plugin.ClipBoard.Empty.Description" xml:space="preserve"><value>复制一些文本、图片或文件后，它们会出现在这里。</value></data>
   <data name="Protocol.InstallFailed" xml:space="preserve"><value>无法安装插件：{{message}}</value></data>
+  <data name="Search.History.Open" xml:space="preserve">
+    <value>打开</value>
+  </data>
+  <data name="Search.History.Unavailable" xml:space="preserve">
+    <value>此结果已不可用，请重新搜索以获取最新结果。</value>
+  </data>
+  <data name="Plugin.applications.Name" xml:space="preserve">
+    <value>Applications</value>
+  </data>
+  <data name="Plugin.applications.Description" xml:space="preserve">
+    <value>搜索并启动应用程序</value>
+  </data>
+  <data name="Plugin.applications.SearchScopes.Title" xml:space="preserve">
+    <value>搜索范围</value>
+  </data>
+  <data name="Plugin.applications.SearchScopes.Description" xml:space="preserve">
+    <value>选择搜索应用程序时需要包含的其他目录。</value>
+  </data>
+  <data name="Plugin.applications.SearchScopes.Directory" xml:space="preserve">
+    <value>目录</value>
+  </data>
 </root>

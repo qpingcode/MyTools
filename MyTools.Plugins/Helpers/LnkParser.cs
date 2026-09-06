@@ -6,6 +6,20 @@ namespace MyTools.Plugins;
 
 public static class LnkParser
 {
+    internal static (string? Target, string Arguments)? ReadApplicationLaunch(string path)
+    {
+        var shellLink = (IShellLink)new ShellLink();
+        try
+        {
+            if (((IPersistFile)shellLink).Load(path, STGM_READ) != 0) return null;
+            var arguments = new StringBuilder(32768);
+            shellLink.GetArguments(arguments, arguments.Capacity);
+            return (ReadTargetPath(shellLink), arguments.ToString());
+        }
+        catch { return null; }
+        finally { Marshal.ReleaseComObject(shellLink); }
+    }
+
     /// <summary>
     /// 解析.lnk文件，获取目标程序的路径
     /// </summary>

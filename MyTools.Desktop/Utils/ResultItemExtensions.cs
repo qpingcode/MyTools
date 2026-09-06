@@ -23,11 +23,15 @@ public static class ResultItemExtensions
             actionResult.Message);
         if (actionResult.Success)
         {
-            var history = ServiceLocator.GetRequiredService<SearchHistoryDbHelper>();
-            history.RecordSelection(item.SearchQuery, item.SourcePluginId, item.ResultKey);
-
-            var searcher = ServiceLocator.GetRequiredService<Searcher>();
-            searcher.InvalidateHomePageCache();
+            try
+            {
+                var history = ServiceLocator.GetRequiredService<SearchHistoryDbHelper>();
+                history.RecordSelection(item);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to record selected search result.");
+            }
         }
         
         if (actionResult.ActionType == ActionTypeEnum.Close)

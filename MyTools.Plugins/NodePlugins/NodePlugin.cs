@@ -107,6 +107,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
     public string OverrideKey => manifest.PluginDirectory;
 
     public string PluginDirectory => manifest.PluginDirectory;
+    public bool HasInstalledEntry => File.Exists(manifest.EntryFullPath);
 
     /// <summary>Bus session id after the Node process has been started.</summary>
     public string? BusSessionId => processHost.SessionId;

@@ -116,5 +116,9 @@
   "Plugin.Settings.Account.Microsoft": "使用微软账号",
   "Plugin.Settings.Account.Or": "或",
   "Plugin.Settings.Account.SignedIn": "已登录。",
-  "Plugin.Settings.Account.Disconnected": "无法连接到 MyTools Hub"
+  "Plugin.Settings.Account.Disconnected": "无法连接到 MyTools Hub",
+  "Plugin.Settings.Directories.Add": "添加目录",
+  "Plugin.Settings.Directories.Remove": "移除目录",
+  "Plugin.Settings.Directories.Pick": "选择目录",
+  "Plugin.Settings.Directories.Failed": "无法选择目录，请重试。"
 }

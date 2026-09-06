@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using MyTools.Common;
+using MyTools.Common.Localization;
 using MyTools.Plugins;
 
 namespace MyTools.Desktop.Components;
@@ -14,9 +15,9 @@ public partial class DetailedListViewModel : ObservableObject, ISwitchableViewMo
 
     private BasicListViewModel basicListViewModel;
     
-    public DetailedListViewModel(ISearchViewModelCallback callback, IActionRegistry actionRegistry, ISearcher searcher, ILogger<DetailedListViewModel> logger, ILogger<BasicListViewModel> logger2)
+    public DetailedListViewModel(ISearchViewModelCallback callback, IActionRegistry actionRegistry, ISearcher searcher, ILogger<DetailedListViewModel> logger, ILogger<BasicListViewModel> logger2, ILocalizationService localization)
     {
-        basicListViewModel = new BasicListViewModel(callback, actionRegistry, searcher, logger2);
+        basicListViewModel = new BasicListViewModel(callback, actionRegistry, searcher, logger2, localization);
     }
 
     public BasicListViewModel BasicViewModel => basicListViewModel;

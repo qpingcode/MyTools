@@ -1,10 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using MyTools.Common;
 using MyTools.Plugins.NodePlugins;
 
 namespace MyTools.Plugins;
 
-public class PluginLoader(ILogger<PluginLoader> logger, IKeywordRegistry keywordRegistry, IGlobalSearchRegistry globalSearchRegistry, IActionRegistry actionRegistry, IPluginHotKeyRegistry pluginHotKeyRegistry, IEnumerable<IPlugin> plugins, Searcher searcher, NodePluginCatalog nodePluginCatalog, NodePluginFactory nodePluginFactory) : IDisposable
+public class PluginLoader(ILogger<PluginLoader> logger, IKeywordRegistry keywordRegistry, IGlobalSearchRegistry globalSearchRegistry, IActionRegistry actionRegistry, IPluginHotKeyRegistry pluginHotKeyRegistry, IEnumerable<IPlugin> plugins, NodePluginCatalog nodePluginCatalog, NodePluginFactory nodePluginFactory) : IDisposable
 {
     private readonly List<IPlugin> dynamicPlugins = [];
     private bool actionsRegistered;
@@ -21,7 +21,6 @@ public class PluginLoader(ILogger<PluginLoader> logger, IKeywordRegistry keyword
         _ = Task.Run(async () =>
         {
             await InitializeAsync();
-            await searcher.WarmupHomePageAsync();
         });
 
         return GetAllPlugins().ToList();
@@ -38,7 +37,6 @@ public class PluginLoader(ILogger<PluginLoader> logger, IKeywordRegistry keyword
         _ = Task.Run(async () =>
         {
             await InitializeAsync();
-            await searcher.WarmupHomePageAsync();
         });
 
         return GetAllPlugins().ToList();
@@ -67,7 +65,6 @@ public class PluginLoader(ILogger<PluginLoader> logger, IKeywordRegistry keyword
         await DisposePluginsAsync(replaced);
         dynamicPlugins.AddRange(replacements);
         RegisterNodePlugins(replacements);
-        searcher.InvalidateHomePageCache();
         _ = Task.Run(() => InitializeAsync(replacements));
 
         return replacements;
@@ -93,7 +90,6 @@ public class PluginLoader(ILogger<PluginLoader> logger, IKeywordRegistry keyword
         }
 
         await DisposePluginsAsync(replaced);
-        searcher.InvalidateHomePageCache();
     }
 
     private async Task InitializeAsync(IEnumerable<IPlugin>? pluginsToInitialize = null)

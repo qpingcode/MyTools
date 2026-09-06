@@ -7,6 +7,7 @@ namespace MyTools.Plugins;
 
 public class ImageIcon(byte[] imageData) : Icon
 {
+    public byte[] ImageData => imageData;
     readonly Lazy<ImageSource> _lazyImage = new(() => CreateImage(imageData));
 
     private static ImageSource CreateImage(byte[] imageData)

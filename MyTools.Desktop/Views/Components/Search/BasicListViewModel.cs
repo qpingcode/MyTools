@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Lucene.Net.Util;
 using Microsoft.Extensions.Logging;
 using MyTools.Common;
+using MyTools.Common.Localization;
 using MyTools.Plugins;
 using MyTools.Desktop.Utils;
 
@@ -48,18 +49,23 @@ public partial class BasicListViewModel : ObservableObject, ISwitchableViewModel
     private readonly ISearcher searcher;
     private readonly ILogger<BasicListViewModel> logger;
     private readonly ISearchViewModelCallback callback;
+    private readonly ILocalizationService localization;
 
     // 使用 IVisibleItemProvider 来解耦ViewModel和View
     public IVisibleItemProvider? VisibleItemProvider { get; set; }                 
 
-    public BasicListViewModel(ISearchViewModelCallback callback, IActionRegistry actionRegistry, ISearcher searcher, ILogger<BasicListViewModel> logger)
+    public BasicListViewModel(ISearchViewModelCallback callback, IActionRegistry actionRegistry, ISearcher searcher, ILogger<BasicListViewModel> logger, ILocalizationService localization)
     {
         this.callback = callback;
         this.actionRegistry = actionRegistry;
         this.searcher = searcher;
         this.logger = logger;
+        this.localization = localization;
+        localization.LocaleChanged += OnLocaleChanged;
     }
 
+    private void OnLocaleChanged(object? sender, LocaleChangedEventArgs e)
+        => Application.Current.Dispatcher.Invoke(UpdateSelectedResultActions);
 
     private void UpdateSelectedResultActions()
     {
@@ -81,6 +87,7 @@ public partial class BasicListViewModel : ObservableObject, ISwitchableViewModel
         {
             searchCancellation?.Cancel();
             searchCancellation = new CancellationTokenSource();
+            var cancellationToken = searchCancellation.Token;
             SelectedResult = null;
             IsEmptyStateVisible = false;
             EmptyStateTitle = string.Empty;
@@ -91,7 +98,8 @@ public partial class BasicListViewModel : ObservableObject, ISwitchableViewModel
             Result result;
             try
             {
-                result = await searcher.SearchAsync(plugin, searchText, searchCancellation.Token);
+                result = await searcher.SearchAsync(plugin, searchText, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
             }
             catch (OperationCanceledException)
             {
@@ -261,6 +269,8 @@ public partial class BasicListViewModel : ObservableObject, ISwitchableViewModel
 
     public void Dispose()
     {
+        localization.LocaleChanged -= OnLocaleChanged;
+        searchCancellation?.Cancel();
         searchCancellation?.Dispose();
         searchCancellation = null;
     }

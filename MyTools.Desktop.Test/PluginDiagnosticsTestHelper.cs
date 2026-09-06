@@ -1,5 +1,4 @@
 using System.Reflection;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using MyTools.Common;
@@ -51,14 +50,6 @@ internal static class PluginDiagnosticsTestHelper
         globalSearchRegistry.SetupGet(registry => registry.Plugins).Returns(Array.Empty<IPlugin>());
         var actionRegistry = new Mock<IActionRegistry>(MockBehavior.Strict);
         var pluginHotKeyRegistry = new Mock<IPluginHotKeyRegistry>(MockBehavior.Strict);
-        var searcher = new Searcher(
-            globalSearchRegistry.Object,
-            new MemoryCache(new MemoryCacheOptions()),
-            new SearchHistoryDbHelper(Path.Combine(
-                TestContext.CurrentContext.WorkDirectory,
-                "plugin-diagnostics-tests",
-                $"{Guid.NewGuid():N}.db")),
-            NullLogger<Searcher>.Instance);
         var pluginLoader = new PluginLoader(
             NullLogger<PluginLoader>.Instance,
             keywordRegistry.Object,
@@ -66,7 +57,6 @@ internal static class PluginDiagnosticsTestHelper
             actionRegistry.Object,
             pluginHotKeyRegistry.Object,
             [],
-            searcher,
             new NodePluginCatalog(
                 Path.Combine(TestContext.CurrentContext.WorkDirectory, "plugin-diagnostics-plugin-root"),
                 NullLogger<NodePluginCatalog>.Instance),

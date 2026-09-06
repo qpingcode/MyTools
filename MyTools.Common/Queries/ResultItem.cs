@@ -21,6 +21,7 @@ public sealed partial class ResultItem(Icon icon, string title, string subTitle,
     public string SourcePluginName { get; set; } = string.Empty;
     public string ResultKey { get; set; } = string.Empty;
     public string SearchQuery { get; set; } = string.Empty;
+    public Plugins.SearchFrom SearchFrom { get; set; } = Plugins.SearchFrom.Global;
     public DateTime? CreatedAt { get; set; }
     public bool IgnoreSelectionHistoryBoost { get; set; }
 
@@ -59,6 +60,7 @@ public sealed partial class ResultItem(Icon icon, string title, string subTitle,
             SourcePluginName = SourcePluginName,
             ResultKey = ResultKey,
             SearchQuery = SearchQuery,
+            SearchFrom = SearchFrom,
             AllowedActions = AllowedActions,
             NumberLabel = NumberLabel,
             LocalizedTitle = LocalizedTitle,

@@ -1,20 +1,19 @@
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using MyTools.Common;
 using MyTools.Common.Plugins;
+using MyTools.Common.Localization;
+using MyTools.Plugins.NodePlugins;
 
 namespace MyTools.Plugins;
 
-public class Searcher(IGlobalSearchRegistry globalSearchRegistry, IMemoryCache cache, SearchHistoryDbHelper searchHistoryDbHelper, ILogger<Searcher> logger) : ISearcher
+public class Searcher(IGlobalSearchRegistry globalSearchRegistry, SearchHistoryDbHelper searchHistoryDbHelper, ILogger<Searcher> logger, IEnumerable<IPlugin>? builtInPlugins = null, ILocalizationService? localization = null) : ISearcher
 {
-    private const string HomePageCacheKey = "Searcher_HomePage";
-    private static readonly TimeSpan HomePageCacheDuration = TimeSpan.FromMinutes(10);
-
     async Task<Result> ISearcher.SearchAsync(IPlugin? plugin, string searchText, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         searchHistoryDbHelper.RecordSearch(searchText);
 
         if (plugin != null)
@@ -25,54 +24,92 @@ public class Searcher(IGlobalSearchRegistry globalSearchRegistry, IMemoryCache c
             logger.LogInformation(
                 "Search completed: query={Query} plugin={PluginName} total={TotalMs}ms",
                 searchText, plugin.Name, pluginStopwatch.ElapsedMilliseconds);
-            var prepared = PrepareResultItems(result.Items, plugin, searchText).ToList();
+            var prepared = PrepareResultItems(result.Items, plugin, searchText, SearchFrom.Plugin).ToList();
             ApplyHistoryBoosts(prepared, searchText);
             return Result.CreateSuccessResult(
                 prepared, result.EmptyStateTitle, result.EmptyStateDescription);
         }
 
-        if (string.IsNullOrWhiteSpace(searchText)
-            && cache.TryGetValue(HomePageCacheKey, out List<ResultItem>? cachedItems)
-            && cachedItems != null)
-        {
-            return Result.CreateSuccessResult(CloneItems(cachedItems));
-        }
-
-        var searchResult = await GlobalSearchAsync(searchText, cancellationToken);
         if (string.IsNullOrWhiteSpace(searchText))
         {
-            cache.Set(HomePageCacheKey, CloneItems(searchResult.Items), HomePageCacheDuration);
+            return ReadHomePage(cancellationToken);
         }
 
-        return searchResult;
+        return await GlobalSearchAsync(searchText, cancellationToken);
     }
 
-    public async Task WarmupHomePageAsync(CancellationToken cancellationToken = default)
-    {
-        if (cache.TryGetValue(HomePageCacheKey, out _))
-        {
-            return;
-        }
+    private IEnumerable<IPlugin> AvailablePlugins => globalSearchRegistry.Plugins.Concat(builtInPlugins ?? [])
+        .Where(plugin => plugin.IsEnabled && (plugin is not NodePlugin node || node.HasInstalledEntry))
+        .DistinctBy(plugin => plugin.PluginId.Value);
 
+    private Result ReadHomePage(CancellationToken cancellationToken)
+    {
+        var plugins = AvailablePlugins.ToDictionary(plugin => plugin.PluginId.Value);
+        var items = new List<ResultItem>();
+        foreach (var entry in searchHistoryDbHelper.GetRecentSelections())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (entry.Snapshot is not { } snapshot || !plugins.TryGetValue(entry.PluginId, out var plugin)) continue;
+            try
+            {
+                items.Add(new ResultItem(snapshot.RestoreIcon(), snapshot.Title, snapshot.SubTitle, snapshot)
+                {
+                    SourcePluginId = entry.PluginId,
+                    SourcePluginName = plugin.Name,
+                    ResultKey = entry.ResultKey,
+                    SearchQuery = entry.Query,
+                    SearchFrom = entry.SearchFrom,
+                    SortScore = entry.SelectionCount,
+                    AllowedActions = [new ActionWithHotkey(new OpenHistoryResultAction(this, entry), Hotkey.Enter)]
+                });
+                if (items.Count == 50) break;
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Invalid snapshot for {PluginId}/{ResultKey}.", entry.PluginId, entry.ResultKey);
+            }
+        }
+        return new Result(true, null, items);
+    }
+
+    private sealed class OpenHistoryResultAction(Searcher owner, SearchHistorySelection entry) : IAction
+    {
+        public string Name => owner.HistoryActionName;
+        public string Description => owner.HistoryActionName;
+        public Task<ActionResult> ExecuteAsync(IActionParams args) => owner.ExecuteHistoryResultAsync(entry);
+    }
+
+    private string HistoryActionName => localization?.GetCaption("Search.History.Open", "Open") ?? "Open";
+
+    private async Task<ActionResult> ExecuteHistoryResultAsync(SearchHistorySelection entry)
+    {
         try
         {
-            var result = await GlobalSearchAsync(string.Empty, cancellationToken);
-            cache.Set(HomePageCacheKey, CloneItems(result.Items), HomePageCacheDuration);
-            logger.LogInformation("Home page search cache warmed with {Count} results.", result.Items.Count());
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
+            var plugin = AvailablePlugins.FirstOrDefault(plugin => plugin.PluginId.Value == entry.PluginId);
+            if (plugin != null)
+            {
+                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                var result = await plugin.SearchAsync(entry.Query, timeout.Token, new SearchOptions(entry.SearchFrom))
+                    .WaitAsync(timeout.Token);
+                var selected = result.Success
+                    ? PrepareResultItems(result.Items, plugin, entry.Query, entry.SearchFrom)
+                        .FirstOrDefault(item => item.ResultKey == entry.ResultKey)
+                    : null;
+                var action = selected?.AllowedActions.FirstOrDefault();
+                if (selected != null && action != null && AvailablePlugins.Contains(plugin))
+                {
+                    var outcome = await action.ExecuteAsync(selected.Args);
+                    if (outcome.Success) return outcome;
+                }
+            }
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Failed to warm home page search cache.");
+            logger.LogWarning(ex, "Historical result is unavailable: {PluginId}/{ResultKey}.", entry.PluginId, entry.ResultKey);
         }
-    }
-
-    public void InvalidateHomePageCache()
-    {
-        cache.Remove(HomePageCacheKey);
+        searchHistoryDbHelper.InvalidateSnapshot(entry.PluginId, entry.ResultKey);
+        return ActionResult.CreateFailure(new LocalizedMessage(
+            "Search.History.Unavailable", "This result is no longer available. Search again to find an updated result."), ActionTypeEnum.Refresh);
     }
 
     private async Task<Result> GlobalSearchAsync(string query, CancellationToken cancellationToken)
@@ -134,15 +171,17 @@ public class Searcher(IGlobalSearchRegistry globalSearchRegistry, IMemoryCache c
         return Result.CreateSuccessResult(items);
     }
 
-    private IEnumerable<ResultItem> PrepareResultItems(IEnumerable<ResultItem> items, IPlugin plugin, string query)
+    private IEnumerable<ResultItem> PrepareResultItems(IEnumerable<ResultItem> items, IPlugin plugin, string query, SearchFrom searchFrom = SearchFrom.Global)
     {
         var pluginId = plugin.PluginId.Value;
-        foreach (var resultItem in items)
+        foreach (var source in items)
         {
+            var resultItem = source.Clone();
             resultItem.AllowedActions = resultItem.AllowedActions.Any() ? resultItem.AllowedActions : plugin.Actions;
             resultItem.SourcePluginId = pluginId;
             resultItem.SourcePluginName = plugin.Name;
             resultItem.SearchQuery = query;
+            resultItem.SearchFrom = searchFrom;
             resultItem.ResultKey = string.IsNullOrWhiteSpace(resultItem.ResultKey)
                 ? BuildResultKey(resultItem)
                 : resultItem.ResultKey;
@@ -162,12 +201,6 @@ public class Searcher(IGlobalSearchRegistry globalSearchRegistry, IMemoryCache c
                 : item.Priority + boosts.GetValueOrDefault(key, 0);
         }
     }
-
-    private static List<ResultItem> CloneItems(IEnumerable<ResultItem> items)
-    {
-        return items.Select(item => item.Clone()).ToList();
-    }
-
 
     private static string BuildResultKey(ResultItem item)
     {

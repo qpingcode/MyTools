@@ -3,6 +3,7 @@ import { computed } from "vue";
 import HighlightText from "../components/HighlightText.vue";
 import HotKeyRecorder from "../components/HotKeyRecorder.vue";
 import ArraySettingTable from "../components/ArraySettingTable.vue";
+import DirectoryList from "../components/DirectoryList.vue";
 import SettingField from "../components/SettingField.vue";
 import { t } from "../i18n";
 import { isHeadingType, isPathType, isTopLevelHeading, resolvePathKind } from "../setting-utils";
@@ -147,7 +148,8 @@ function onHotKey(setting: Setting, value: string | null): void {
                 </div>
                 <div v-else-if="!isArraySetting(setting)" class="setting-copy" />
                 <div class="setting-control" :class="{ 'setting-control-block': isArraySetting(setting) }">
-                <ArraySettingTable v-if="isArraySetting(setting)" :setting="setting" />
+                <DirectoryList v-if="isArraySetting(setting) && setting.uiHint === 'directory-list'" :setting="setting" />
+                <ArraySettingTable v-else-if="isArraySetting(setting)" :setting="setting" />
                 <div v-else-if="setting.valueType === 'Bool' && !setting.uiHint" class="control-bool">
                     <n-switch
                         :value="currentValue(setting) === 'True'"

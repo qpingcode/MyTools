@@ -41,7 +41,6 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     private readonly IKeywordRegistry keywordRegistry;
     private readonly IPluginLauncher pluginLauncher;
     private readonly HotKeyManager hotKeyManager;
-    private readonly Searcher searcher;
     private readonly InputActionCaptureService inputActionCaptureService;
     private readonly NodePluginCatalog nodePluginCatalog;
     private readonly IKeyboardHelper keyboardHelper;
@@ -78,7 +77,6 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         IKeywordRegistry keywordRegistry,
         IPluginLauncher pluginLauncher,
         HotKeyManager hotKeyManager,
-        Searcher searcher,
         InputActionCaptureService inputActionCaptureService,
         ILogger<SettingsPluginHostCallHandler> logger,
         NodePluginCatalog nodePluginCatalog,
@@ -99,7 +97,6 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         this.keywordRegistry = keywordRegistry;
         this.pluginLauncher = pluginLauncher;
         this.hotKeyManager = hotKeyManager;
-        this.searcher = searcher;
         this.inputActionCaptureService = inputActionCaptureService;
         this.logger = logger;
         this.nodePluginCatalog = nodePluginCatalog;
@@ -179,26 +176,31 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         return JsonSerializer.SerializeToElement(dto, JsonCamelCaseOptions);
     }
 
-    private static CategoryDto MapCategory(ConfigurationCategory category)
+    private CategoryDto MapCategory(ConfigurationCategory category)
     {
         return new CategoryDto
         {
             Key = category.Key,
-            Name = category.Name,
-            Description = category.Description,
+            Name = category.PluginId?.Value == "applications"
+                ? languageService.GetCaption("Plugin.applications.Name", "Applications") : category.Name,
+            Description = category.PluginId?.Value == "applications"
+                ? languageService.GetCaption("Plugin.applications.Description", "Search and launch applications") : category.Description,
             Icon = category.Icon,
             IsSelectable = category.IsSelectable,
             Settings = category.Settings.Select(MapSetting).ToList()
         };
     }
 
-    private static SettingDto MapSetting(ConfigurationSetting setting)
+    private SettingDto MapSetting(ConfigurationSetting setting)
     {
         return new SettingDto
         {
             Key = setting.Key,
-            Title = setting.Title,
-            Description = setting.Description,
+            Title = setting.Key == ApplicationsPlugin.SearchScopesKey
+                ? languageService.GetCaption("Plugin.applications.SearchScopes.Title", "Search Scopes") : setting.Title,
+            Description = setting.Key == ApplicationsPlugin.SearchScopesKey
+                ? languageService.GetCaption("Plugin.applications.SearchScopes.Description",
+                    "Pick additional directories to be included when searching for applications.") : setting.Description,
             ValueType = setting.ValueType switch
             {
                 SettingValueTypes.H1 => PluginConfigurationTypes.H1,
@@ -479,7 +481,6 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
             pluginKeymapService.ReRegisterKeywords(
                 nodePlugins.Where(plugin => keywordAffectedKeys.Contains(plugin.OverrideKey)));
-            searcher.InvalidateHomePageCache();
         });
 
         return JsonSerializer.SerializeToElement(new { success = true }, JsonCamelCaseOptions);

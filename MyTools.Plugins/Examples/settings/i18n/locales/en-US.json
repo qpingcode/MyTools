@@ -116,5 +116,9 @@
   "Plugin.Settings.Account.Microsoft": "Continue with Microsoft",
   "Plugin.Settings.Account.Or": "or",
   "Plugin.Settings.Account.SignedIn": "Signed in.",
-  "Plugin.Settings.Account.Disconnected": "MyTools Hub is unavailable"
+  "Plugin.Settings.Account.Disconnected": "MyTools Hub is unavailable",
+  "Plugin.Settings.Directories.Add": "Add directory",
+  "Plugin.Settings.Directories.Remove": "Remove directory",
+  "Plugin.Settings.Directories.Pick": "Select a directory",
+  "Plugin.Settings.Directories.Failed": "Could not select a directory. Please try again."
 }
