@@ -733,6 +733,76 @@
       "existingTranslations": { "zh-CN": "请输入" }
     },
     {
+      "key": "Plugin.Settings.Account.Login",
+      "defaultValue": "Sign in",
+      "placeholders": [],
+      "references": ["src/web/App.vue"],
+      "existingTranslations": { "zh-CN": "登录" }
+    },
+    {
+      "key": "Plugin.Settings.Account.Logout",
+      "defaultValue": "Sign out",
+      "placeholders": [],
+      "references": ["src/web/App.vue"],
+      "existingTranslations": { "zh-CN": "退出" }
+    },
+    {
+      "key": "Plugin.Settings.Account.Register",
+      "defaultValue": "Register",
+      "placeholders": [],
+      "references": ["src/web/App.vue"],
+      "existingTranslations": { "zh-CN": "注册" }
+    },
+    {
+      "key": "Plugin.Settings.Account.Username",
+      "defaultValue": "Username",
+      "placeholders": [],
+      "references": ["src/web/App.vue"],
+      "existingTranslations": { "zh-CN": "用户名" }
+    },
+    {
+      "key": "Plugin.Settings.Account.Password",
+      "defaultValue": "Password",
+      "placeholders": [],
+      "references": ["src/web/App.vue"],
+      "existingTranslations": { "zh-CN": "密码" }
+    },
+    {
+      "key": "Plugin.Settings.Account.Google",
+      "defaultValue": "Continue with Google",
+      "placeholders": [],
+      "references": ["src/web/App.vue"],
+      "existingTranslations": { "zh-CN": "使用 Google 账号" }
+    },
+    {
+      "key": "Plugin.Settings.Account.Microsoft",
+      "defaultValue": "Continue with Microsoft",
+      "placeholders": [],
+      "references": ["src/web/App.vue"],
+      "existingTranslations": { "zh-CN": "使用微软账号" }
+    },
+    {
+      "key": "Plugin.Settings.Account.Or",
+      "defaultValue": "or",
+      "placeholders": [],
+      "references": ["src/web/App.vue"],
+      "existingTranslations": { "zh-CN": "或" }
+    },
+    {
+      "key": "Plugin.Settings.Account.SignedIn",
+      "defaultValue": "Signed in.",
+      "placeholders": [],
+      "references": ["src/web/App.vue"],
+      "existingTranslations": { "zh-CN": "已登录。" }
+    },
+    {
+      "key": "Plugin.Settings.Account.Disconnected",
+      "defaultValue": "MyTools Hub is unavailable",
+      "placeholders": [],
+      "references": ["src/web/App.vue"],
+      "existingTranslations": { "zh-CN": "无法连接到 MyTools Hub" }
+    },
+    {
       "key": "Plugin.Settings.Directories.Add",
       "defaultValue": "Add directory",
       "placeholders": [],

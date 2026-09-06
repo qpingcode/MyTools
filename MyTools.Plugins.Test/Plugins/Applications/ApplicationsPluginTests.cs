@@ -97,6 +97,7 @@ public class ApplicationsPluginTests
             await File.WriteAllTextAsync(Path.Combine(root, "SavedScope.exe"), "");
             plugin.RegisterSettings(registry.Object);
             Assert.That(setting!.UiHint, Is.EqualTo("directory-list"));
+            Assert.That(category.Icon, Is.EqualTo("mdi-view-grid-outline"));
             await plugin.InitializeAsync();
             Assert.That((await plugin.SearchAsync("SavedScope", CancellationToken.None)).Items.Count(), Is.EqualTo(1));
             var empty = JsonSerializer.SerializeToElement(Array.Empty<object>());

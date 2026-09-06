@@ -242,7 +242,7 @@
     <value>此结果已不可用，请重新搜索以获取最新结果。</value>
   </data>
   <data name="Plugin.applications.Name" xml:space="preserve">
-    <value>Applications</value>
+    <value>应用程序</value>
   </data>
   <data name="Plugin.applications.Description" xml:space="preserve">
     <value>搜索并启动应用程序</value>

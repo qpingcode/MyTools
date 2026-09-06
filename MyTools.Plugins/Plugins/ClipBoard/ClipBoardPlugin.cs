@@ -50,6 +50,7 @@ public class ClipBoardPlugin(ILogger<ClipBoardPlugin> logger) : PluginBase, IWin
         ConfigurationCategory pluginCategory,
         IConfigurationRegistry configurationRegistry)
     {
+        pluginCategory.Icon = "mdi-clipboard-text-clock-outline";
         configurationRegistry.AddSetting(
             pluginCategory,
             "HotKey",

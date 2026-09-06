@@ -48,6 +48,7 @@ public sealed class ApplicationsPlugin(
 
     protected override void AddPluginSettings(ConfigurationCategory category, IConfigurationRegistry configurationRegistry)
     {
+        category.Icon = "mdi-view-grid-outline";
         if (registry != null) registry.ConfigurationChanged -= OnConfigurationChanged;
         registry = configurationRegistry;
         scopesSetting = registry.AddSetting(category, "SearchScopes",
