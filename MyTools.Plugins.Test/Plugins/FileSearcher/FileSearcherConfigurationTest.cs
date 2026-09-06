@@ -6,6 +6,7 @@ using Lucene.Net.Search;
 using Lucene.Net.Util;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
+using MyTools.Common;
 using NUnit.Framework;
 using RamDirectory = Lucene.Net.Store.RAMDirectory;
 
@@ -15,6 +16,25 @@ namespace MyTools.Plugins.Test.Plugins.FileSearcher;
 public class FileSearcherConfigurationTest
 {
     private const LuceneVersion TestLuceneVersion = LuceneVersion.LUCENE_48;
+
+    [Test]
+    public void Actions_DefaultToSystemOpenWithoutExecuteActions()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        using var searcher = new MyTools.Plugins.FileSearcher(
+            NullLogger<MyTools.Plugins.FileSearcher>.Instance, cache);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(searcher.Actions, Has.Count.EqualTo(2));
+            Assert.That(searcher.Actions[0].Name, Is.EqualTo(WellKnownActions.OpenFile.Name));
+            Assert.That(searcher.Actions[0].Hotkey, Is.EqualTo(Hotkey.Enter));
+            Assert.That(searcher.Actions[1].Name, Is.EqualTo(WellKnownActions.OpenInExplorer.Name));
+            Assert.That(searcher.Actions[1].Hotkey, Is.EqualTo(Hotkey.Ctrl(HotkeyKey.O)));
+            Assert.That(searcher.Actions, Has.None.Matches<IActionWithHotkey>(
+                action => action.Hotkey == Hotkey.Ctrl(HotkeyKey.Enter)));
+        });
+    }
 
     [Test]
     public void IndexStoragePaths_BelongToFileSearcherPluginDataDirectory()
