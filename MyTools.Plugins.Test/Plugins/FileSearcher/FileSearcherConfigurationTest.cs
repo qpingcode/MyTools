@@ -9,6 +9,23 @@ namespace MyTools.Plugins.Test.Plugins.FileSearcher;
 public class FileSearcherConfigurationTest
 {
     [Test]
+    public void IndexStoragePaths_BelongToFileSearcherPluginDataDirectory()
+    {
+        var pluginsDataRoot = Path.Combine(Path.GetTempPath(), "pluginsData");
+        var pluginDataDirectory = Path.Combine(pluginsDataRoot, "file-searcher");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                MyTools.Plugins.FileSearcher.GetIndexDirectory(pluginsDataRoot),
+                Is.EqualTo(Path.Combine(pluginDataDirectory, "FileSearcherIndex")));
+            Assert.That(
+                MyTools.Plugins.FileSearcher.GetIndexedRootsPath(pluginsDataRoot),
+                Is.EqualTo(Path.Combine(pluginDataDirectory, "FileSearcherIndexedRoots.json")));
+        });
+    }
+
+    [Test]
     public void DefaultSearchDirectories_UseProfileAndProgramData()
     {
         var result = MyTools.Plugins.FileSearcher.ReadSearchDirectories(
@@ -70,6 +87,14 @@ public class FileSearcherConfigurationTest
             Assert.That(changes.Added, Is.EqualTo(new[] { @"C:\\add" }));
             Assert.That(changes.Removed, Is.EqualTo(new[] { @"C:\\remove" }));
         });
+    }
+
+    [TestCase(@"C:\Users\example\notes.txt", false)]
+    [TestCase(@"C:\Users\example\.gitignore", true)]
+    [TestCase(@"C:\Users\example\project\.IGNORE", true)]
+    public void IsIgnoreRulesFile_OnlyMatchesIgnoreFiles(string path, bool expected)
+    {
+        Assert.That(MyTools.Plugins.FileSearcher.IsIgnoreRulesFile(path), Is.EqualTo(expected));
     }
 
     [TestCase("scratch.tmp", false)]
