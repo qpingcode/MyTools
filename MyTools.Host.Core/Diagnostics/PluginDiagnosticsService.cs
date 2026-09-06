@@ -55,9 +55,18 @@ public sealed class PluginDiagnosticsService : IPluginDiagnosticsService, IDispo
     {
         var record = CreateRecord(level, category, message, pluginId, sessionId, endpointId, route, correlationId, details);
         _records.Add(record);
-        _logger.Log(level,
-            "Plugin diagnostic category={category} pluginId={pluginId} sessionId={sessionId} endpointId={endpointId} route={route} correlationId={correlationId} sequence={sequence} message={message} details={details}",
-            category, pluginId, sessionId, endpointId, route, correlationId, record.Sequence, message, details);
+        if (string.IsNullOrWhiteSpace(details))
+        {
+            _logger.Log(level,
+                "Plugin diagnostic {category} [{pluginId}]: {message}",
+                category, pluginId, message);
+        }
+        else
+        {
+            _logger.Log(level,
+                "Plugin diagnostic {category} [{pluginId}]: {message} details={details}",
+                category, pluginId, message, details);
+        }
     }
 
     public void RecordSessionState(

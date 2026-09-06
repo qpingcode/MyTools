@@ -11,6 +11,37 @@ namespace MyTools.Host.Core.Test.Diagnostics;
 public class PluginDiagnosticsServiceTest
 {
     [Test]
+    public void RecordDiagnostic_ShouldLogConciseMessageAndKeepFullSnapshot()
+    {
+        var logger = new RecordingLogger<PluginDiagnosticsService>();
+        using var diagnostics = new PluginDiagnosticsService(logger);
+
+        diagnostics.RecordDiagnostic(
+            LogLevel.Warning,
+            "call.slow",
+            "Slow call completed in 2500 ms.",
+            "calculator",
+            "session-1",
+            "node-main",
+            "host.call.configuration.readOwn",
+            "correlation-1");
+
+        Assert.That(logger.Messages, Is.EqualTo(new[]
+        {
+            "Plugin diagnostic call.slow [calculator]: Slow call completed in 2500 ms."
+        }));
+
+        var record = diagnostics.GetSnapshot().Records.Single();
+        Assert.Multiple(() =>
+        {
+            Assert.That(record.SessionId, Is.EqualTo("session-1"));
+            Assert.That(record.EndpointId, Is.EqualTo("node-main"));
+            Assert.That(record.Route, Is.EqualTo("host.call.configuration.readOwn"));
+            Assert.That(record.CorrelationId, Is.EqualTo("correlation-1"));
+        });
+    }
+
+    [Test]
     public async Task AttachProcessController_ShouldCaptureBoundedSamples()
     {
         using var diagnostics = new PluginDiagnosticsService();
@@ -47,6 +78,25 @@ public class PluginDiagnosticsServiceTest
             Assert.That(snapshot.Process.CpuPercent, Is.GreaterThan(0));
             Assert.That(all.Records.First().Sequence, Is.LessThan(all.Records.Last().Sequence));
         });
+    }
+
+    private sealed class RecordingLogger<T> : ILogger<T>
+    {
+        public List<string> Messages { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            Messages.Add(formatter(state, exception));
+        }
     }
 
     [Test]

@@ -39,6 +39,7 @@ public sealed class FileSearcher : PluginBase, IDisposable
     private readonly IMemoryCache cache;
     private readonly object indexLock = new();
     private readonly object watcherLock = new();
+    private readonly object configurationRequestLock = new();
     private readonly SemaphoreSlim configurationLock = new(1, 1);
     private readonly CancellationTokenSource disposeCancellation = new();
     private readonly CancellationToken disposeToken;
@@ -51,6 +52,7 @@ public sealed class FileSearcher : PluginBase, IDisposable
     private LuceneDirectory? indexDirectory;
     private Analyzer? analyzer;
     private long configurationRevision;
+    private CancellationTokenSource? configurationApplyCancellation;
     private bool initialized;
     private bool disposed;
 
@@ -124,8 +126,20 @@ public sealed class FileSearcher : PluginBase, IDisposable
         ObjectDisposedException.ThrowIf(disposed, this);
         initialized = true;
         var value = searchDirectoriesSetting?.CurrentValue ?? CreateDefaultSearchDirectories();
-        var revision = Interlocked.Increment(ref configurationRevision);
-        await ApplyConfiguredDirectoriesAsync(ReadSearchDirectories(value), revision);
+        var request = BeginConfigurationApply();
+        try
+        {
+            await ApplyConfiguredDirectoriesAsync(
+                ReadSearchDirectories(value), request.Revision, request.CancellationToken);
+        }
+        catch (OperationCanceledException) when (request.CancellationToken.IsCancellationRequested)
+        {
+            // A newer configuration request superseded initialization.
+        }
+        finally
+        {
+            CompleteConfigurationApply(request);
+        }
     }
 
     private void OnConfigurationChanged(object? sender, ConfigurationChangedEventArgs args)
@@ -141,28 +155,71 @@ public sealed class FileSearcher : PluginBase, IDisposable
         if (disposed) return;
 
         var directories = ReadSearchDirectories(value);
-        var revision = Interlocked.Increment(ref configurationRevision);
+        var request = BeginConfigurationApply();
         _ = Task.Run(async () =>
         {
             try
             {
-                await ApplyConfiguredDirectoriesAsync(directories, revision);
+                await ApplyConfiguredDirectoriesAsync(
+                    directories, request.Revision, request.CancellationToken);
             }
-            catch (OperationCanceledException) when (disposeCancellation.IsCancellationRequested)
+            catch (OperationCanceledException) when (request.CancellationToken.IsCancellationRequested)
             {
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to apply FileSearcher directory configuration.");
             }
+            finally
+            {
+                CompleteConfigurationApply(request);
+            }
         });
     }
 
-    private async Task ApplyConfiguredDirectoriesAsync(IReadOnlySet<string> desiredDirectories, long revision)
+    private ConfigurationApplyRequest BeginConfigurationApply()
     {
-        await configurationLock.WaitAsync(disposeToken);
+        lock (configurationRequestLock)
+        {
+            configurationApplyCancellation?.Cancel();
+            if (disposed)
+            {
+                var canceled = new CancellationTokenSource();
+                canceled.Cancel();
+                return new ConfigurationApplyRequest(
+                    Interlocked.Increment(ref configurationRevision),
+                    canceled);
+            }
+
+            configurationApplyCancellation = CancellationTokenSource.CreateLinkedTokenSource(disposeToken);
+            return new ConfigurationApplyRequest(
+                Interlocked.Increment(ref configurationRevision),
+                configurationApplyCancellation);
+        }
+    }
+
+    private void CompleteConfigurationApply(ConfigurationApplyRequest request)
+    {
+        lock (configurationRequestLock)
+        {
+            if (ReferenceEquals(configurationApplyCancellation, request.Cancellation))
+            {
+                configurationApplyCancellation = null;
+            }
+        }
+
+        request.Cancellation.Dispose();
+    }
+
+    private async Task ApplyConfiguredDirectoriesAsync(
+        IReadOnlySet<string> desiredDirectories,
+        long revision,
+        CancellationToken cancellationToken)
+    {
+        await configurationLock.WaitAsync(cancellationToken);
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (revision != Interlocked.Read(ref configurationRevision) || disposed) return;
 
             HashSet<string> previousDirectories;
@@ -183,13 +240,31 @@ public sealed class FileSearcher : PluginBase, IDisposable
             lock (indexLock)
             {
                 EnsureIndexWriter();
+            }
+
+            var preparedDirectories = await RunIndexingWorkAsync(
+                () => added.Select(directory => PrepareDirectoryIndex(directory, cancellationToken)).ToArray(),
+                cancellationToken);
+
+            cancellationToken.ThrowIfCancellationRequested();
+            if (revision != Interlocked.Read(ref configurationRevision) || disposed) return;
+
+            lock (indexLock)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (revision != Interlocked.Read(ref configurationRevision)
+                    || disposed
+                    || indexWriter == null)
+                {
+                    return;
+                }
                 foreach (var directory in removed)
                 {
                     indexWriter!.DeleteDocuments(new Term(RootField, directory));
                 }
-                foreach (var directory in added)
+                foreach (var prepared in preparedDirectories)
                 {
-                    ReplaceDirectoryIndex(directory, commit: false);
+                    ReplaceDirectoryIndex(prepared, commit: false);
                 }
                 indexWriter!.Commit();
             }
@@ -216,27 +291,32 @@ public sealed class FileSearcher : PluginBase, IDisposable
         indexWriter = new IndexWriter(indexDirectory, config);
     }
 
-    private void ReplaceDirectoryIndex(string directory, bool commit)
+    private void ReplaceDirectoryIndex(PreparedDirectoryIndex prepared, bool commit)
     {
-        indexWriter!.DeleteDocuments(new Term(RootField, directory));
-        if (SystemDirectory.Exists(directory))
+        indexWriter!.DeleteDocuments(new Term(RootField, prepared.RootDirectory));
+        foreach (var document in prepared.Documents)
         {
-            IndexDirectory(directory, indexWriter);
-        }
-        else
-        {
-            logger.LogWarning("FileSearcher directory does not exist: {Directory}", directory);
+            indexWriter.AddDocument(document);
         }
         if (commit) indexWriter.Commit();
+        logger.LogInformation("Indexed {FileCount} files under {Directory}.",
+            prepared.Documents.Count, prepared.RootDirectory);
     }
 
-    private void IndexDirectory(string rootDirectory, IndexWriter writer)
+    private PreparedDirectoryIndex PrepareDirectoryIndex(string rootDirectory, CancellationToken cancellationToken)
     {
-        var count = 0;
-        foreach (var file in EnumerateIndexableFiles(rootDirectory))
+        var documents = new List<Document>();
+        if (!SystemDirectory.Exists(rootDirectory))
         {
+            logger.LogWarning("FileSearcher directory does not exist: {Directory}", rootDirectory);
+            return new PreparedDirectoryIndex(rootDirectory, documents);
+        }
+
+        foreach (var file in EnumerateIndexableFiles(rootDirectory, cancellationToken))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
             var fileName = Path.GetFileNameWithoutExtension(file);
-            writer.AddDocument(new Document
+            documents.Add(new Document
             {
                 new StringField(RootField, rootDirectory, Field.Store.NO),
                 new StoredField("path", file),
@@ -246,17 +326,20 @@ public sealed class FileSearcher : PluginBase, IDisposable
                 new StringField("searchInitials", StringUtils.GetInitialsFromWords(fileName), Field.Store.NO),
                 new TextField("searchPossibles", fileName, Field.Store.NO)
             });
-            count++;
         }
-        logger.LogInformation("Indexed {FileCount} files under {Directory}.", count, rootDirectory);
+
+        return new PreparedDirectoryIndex(rootDirectory, documents);
     }
 
-    private IEnumerable<string> EnumerateIndexableFiles(string rootDirectory)
+    private IEnumerable<string> EnumerateIndexableFiles(
+        string rootDirectory,
+        CancellationToken cancellationToken)
     {
         var pending = new Stack<string>();
         pending.Push(rootDirectory);
         while (pending.Count > 0)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var current = pending.Pop();
             string[] files;
             try
@@ -271,6 +354,7 @@ public sealed class FileSearcher : PluginBase, IDisposable
 
             foreach (var file in files)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 if (IsIndexableFile(file)) yield return file;
             }
 
@@ -287,6 +371,7 @@ public sealed class FileSearcher : PluginBase, IDisposable
 
             foreach (var directory in directories)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 try
                 {
                     if ((File.GetAttributes(directory) & FileAttributes.ReparsePoint) == 0) pending.Push(directory);
@@ -386,10 +471,19 @@ public sealed class FileSearcher : PluginBase, IDisposable
                 }
 
                 Stopwatch stopwatch = Stopwatch.StartNew();
+                var prepared = await RunIndexingWorkAsync(
+                    () => PrepareDirectoryIndex(rootDirectory, pendingToken),
+                    pendingToken);
+
+                lock (watcherLock)
+                {
+                    if (disposed || !configuredDirectories.Contains(rootDirectory)) return;
+                }
+
                 lock (indexLock)
                 {
-                    if (indexWriter == null) return;
-                    ReplaceDirectoryIndex(rootDirectory, commit: true);
+                    if (disposed || indexWriter == null) return;
+                    ReplaceDirectoryIndex(prepared, commit: true);
                 }
                 stopwatch.Stop();
                 logger.LogInformation("Reindexed changed FileSearcher directory {Directory}, cost {CostTime} ms.",
@@ -552,12 +646,35 @@ public sealed class FileSearcher : PluginBase, IDisposable
         path.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase)
         || path.EndsWith(".ps1", StringComparison.OrdinalIgnoreCase);
 
+    private static Task<T> RunIndexingWorkAsync<T>(Func<T> work, CancellationToken cancellationToken) =>
+        Task.Factory.StartNew(
+            work,
+            cancellationToken,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default);
+
+    private sealed record PreparedDirectoryIndex(string RootDirectory, IReadOnlyList<Document> Documents);
+    private readonly record struct ConfigurationApplyRequest(
+        long Revision,
+        CancellationTokenSource Cancellation)
+    {
+        public CancellationToken CancellationToken => Cancellation.Token;
+    }
+
     public void Dispose()
     {
         if (disposed) return;
         disposed = true;
         if (configurationRegistry != null) configurationRegistry.ConfigurationChanged -= OnConfigurationChanged;
         disposeCancellation.Cancel();
+        CancellationTokenSource? activeConfigurationApply;
+        lock (configurationRequestLock)
+        {
+            activeConfigurationApply = configurationApplyCancellation;
+            configurationApplyCancellation = null;
+            activeConfigurationApply?.Cancel();
+        }
+        // The owning apply operation disposes its source after observing cancellation.
 
         lock (watcherLock)
         {
