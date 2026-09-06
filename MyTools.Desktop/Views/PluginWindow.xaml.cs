@@ -29,7 +29,6 @@ public partial class PluginWindow
     public PluginWindow(PluginViewModel viewModel)
     {
         InitializeComponent();
-        WindowFocusTopmost.Attach(this);
         MinWidth = PluginWindowLayoutMetrics.MinimumWindowWidth;
         StateChanged += Window_OnStateChanged;
         ApplyWindowChromeState();

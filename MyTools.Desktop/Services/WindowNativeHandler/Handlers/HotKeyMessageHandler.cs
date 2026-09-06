@@ -1,5 +1,7 @@
 using System.Runtime.InteropServices;
+using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 using MyTools.Common;
 using MyTools.Common.WindowsMessageHandler;
 
@@ -9,6 +11,7 @@ public class HotKeyMessageHandler: IWindowMessageHandler, IWindowHandleAware
 {
     private readonly Dictionary<int, Action> _callbacks = new();
     private readonly Dictionary<int, (Key key, ModifierKeys modifiers, Action callback)> _registrations = new();
+    private readonly Action<Action>? _callbackScheduler;
     private IntPtr _messageWindowHandle;
     private static int _currentId;
     private bool _suspended;
@@ -17,14 +20,44 @@ public class HotKeyMessageHandler: IWindowMessageHandler, IWindowHandleAware
 
     public IEnumerable<WindowsMessageType> Messages => [WindowsMessageType.HotKey];
 
+    public HotKeyMessageHandler()
+    {
+    }
+
+    internal HotKeyMessageHandler(Action<Action> callbackScheduler)
+    {
+        _callbackScheduler = callbackScheduler;
+    }
+
     public void Handle(int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         int id = wParam.ToInt32();
-        if (_callbacks.ContainsKey(id))
+        if (_callbacks.TryGetValue(id, out var callback))
         {
-            _callbacks[id].Invoke();
+            ScheduleCallback(callback);
             handled = true;
         }
+    }
+
+    private void ScheduleCallback(Action callback)
+    {
+        if (_callbackScheduler != null)
+        {
+            _callbackScheduler(callback);
+            return;
+        }
+
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher == null || dispatcher.HasShutdownStarted || dispatcher.HasShutdownFinished)
+        {
+            callback();
+            return;
+        }
+
+        // Do not create or activate WPF/WebView2 windows while the native
+        // WM_HOTKEY call stack is still active. The dispatcher runs this after
+        // NativeMessageWindowHost.WndProc has returned to the message loop.
+        _ = dispatcher.BeginInvoke(DispatcherPriority.Normal, callback);
     }
 
     public void initializeWindowHandle(IntPtr hwnd)
