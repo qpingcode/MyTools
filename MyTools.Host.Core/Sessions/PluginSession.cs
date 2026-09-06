@@ -32,6 +32,9 @@ public sealed class PluginSession
     /// <summary>Disconnect handler wired by the manager; cleared on tear-down.</summary>
     internal Action? DisconnectHandler { get; set; }
 
+    /// <summary>Process exit handler wired by the manager; cleared on tear-down.</summary>
+    internal Action<Diagnostics.NodeProcessExitInfo>? ProcessExitHandler { get; set; }
+
     internal void Transition(SessionState target)
     {
         _sm.Transition(target);

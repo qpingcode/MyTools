@@ -1,0 +1,288 @@
+<Window x:Class="MyTools.Desktop.Views.PluginDiagnosticsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:loc="clr-namespace:MyTools.Desktop.Localization"
+        mc:Ignorable="d"
+        Title="{Binding WindowTitle}"
+        Width="1280"
+        Height="840"
+        MinWidth="1100"
+        MinHeight="720"
+        WindowStartupLocation="CenterScreen"
+        FontFamily="{StaticResource UiFontFamily}">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" Margin="0,0,0,8">
+            <TextBlock DockPanel.Dock="Left"
+                       Text="{Binding WindowTitle}"
+                       FontSize="20"
+                       FontWeight="SemiBold"
+                       VerticalAlignment="Center" />
+            <StackPanel DockPanel.Dock="Right"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right">
+                <Button Content="{loc:Loc PluginDiagnostics.Actions.Refresh, DefaultValue=Refresh}"
+                        Command="{Binding RefreshWindowCommand}"
+                        Margin="0,0,8,0"
+                        Padding="12,6" />
+                <Button Content="{loc:Loc PluginDiagnostics.Actions.Stop, DefaultValue=Stop}"
+                        Command="{Binding StopCommand}"
+                        Margin="0,0,8,0"
+                        Padding="12,6" />
+                <Button Content="{loc:Loc PluginDiagnostics.Actions.Restart, DefaultValue=Restart}"
+                        Command="{Binding RestartCommand}"
+                        Padding="12,6" />
+            </StackPanel>
+        </DockPanel>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="260" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <GroupBox Grid.Column="0"
+                      Header="{loc:Loc PluginDiagnostics.Plugins, DefaultValue=Plugins}">
+                <DataGrid ItemsSource="{Binding Plugins}"
+                          SelectedItem="{Binding SelectedPlugin, Mode=TwoWay}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          CanUserAddRows="False"
+                          SelectionMode="Single">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Name" Binding="{Binding DisplayName}" Width="1.5*" />
+                        <DataGridTextColumn Header="State" Binding="{Binding State}" Width="*" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </GroupBox>
+
+            <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <GroupBox Header="{loc:Loc PluginDiagnostics.Summary, DefaultValue=Summary}" Margin="0,0,0,8">
+                        <Grid Margin="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Name:" FontWeight="SemiBold" />
+                            <TextBlock Grid.Column="1" Text="{Binding SelectedPluginName}" Margin="8,0,16,0" />
+                            <TextBlock Grid.Column="2" Text="Id:" FontWeight="SemiBold" />
+                            <TextBlock Grid.Column="3" Text="{Binding SelectedPluginId}" Margin="8,0,0,0" />
+
+                            <TextBlock Grid.Row="1" Text="Version:" FontWeight="SemiBold" />
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedVersion}" Margin="8,0,16,0" />
+                            <TextBlock Grid.Row="1" Grid.Column="2" Text="Runtime:" FontWeight="SemiBold" />
+                            <TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding SelectedRuntime}" Margin="8,0,0,0" />
+
+                            <TextBlock Grid.Row="2" Text="Enabled:" FontWeight="SemiBold" />
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedEnabled}" Margin="8,0,16,0" />
+                            <TextBlock Grid.Row="2" Grid.Column="2" Text="State:" FontWeight="SemiBold" />
+                            <TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding SelectedState}" Margin="8,0,0,0" />
+
+                            <TextBlock Grid.Row="3" Text="Session:" FontWeight="SemiBold" />
+                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SelectedSessionId}" Margin="8,0,16,0" />
+                            <TextBlock Grid.Row="3" Grid.Column="2" Text="PID:" FontWeight="SemiBold" />
+                            <TextBlock Grid.Row="3" Grid.Column="3" Text="{Binding SelectedPid}" Margin="8,0,0,0" />
+                        </Grid>
+                    </GroupBox>
+
+                    <GroupBox Header="{loc:Loc PluginDiagnostics.Counters, DefaultValue=Counters}" Margin="0,0,0,8">
+                        <UniformGrid Columns="5" Margin="8">
+                            <StackPanel><TextBlock Text="Disconnects" FontWeight="SemiBold"/><TextBlock Text="{Binding DisconnectCount}" /></StackPanel>
+                            <StackPanel><TextBlock Text="Restarts" FontWeight="SemiBold"/><TextBlock Text="{Binding RestartCount}" /></StackPanel>
+                            <StackPanel><TextBlock Text="Heartbeat timeouts" FontWeight="SemiBold"/><TextBlock Text="{Binding HeartbeatTimeoutCount}" /></StackPanel>
+                            <StackPanel><TextBlock Text="Heartbeat dead" FontWeight="SemiBold"/><TextBlock Text="{Binding HeartbeatDeadCount}" /></StackPanel>
+                            <StackPanel><TextBlock Text="Request timeouts" FontWeight="SemiBold"/><TextBlock Text="{Binding RequestTimeoutCount}" /></StackPanel>
+                            <StackPanel><TextBlock Text="Errors" FontWeight="SemiBold"/><TextBlock Text="{Binding ErrorCount}" /></StackPanel>
+                            <StackPanel><TextBlock Text="TooManyRequests" FontWeight="SemiBold"/><TextBlock Text="{Binding TooManyRequestsCount}" /></StackPanel>
+                            <StackPanel><TextBlock Text="Queue drops" FontWeight="SemiBold"/><TextBlock Text="{Binding EventDropsCount}" /></StackPanel>
+                            <StackPanel><TextBlock Text="Process exits" FontWeight="SemiBold"/><TextBlock Text="{Binding ProcessExitCount}" /></StackPanel>
+                            <StackPanel><TextBlock Text="Restart exhausted" FontWeight="SemiBold"/><TextBlock Text="{Binding RestartExhaustionCount}" /></StackPanel>
+                        </UniformGrid>
+                    </GroupBox>
+
+                    <GroupBox Header="{loc:Loc PluginDiagnostics.Resources, DefaultValue=Resources}" Margin="0,0,0,8">
+                        <UniformGrid Columns="3" Margin="8">
+                            <StackPanel><TextBlock Text="Working set" FontWeight="SemiBold"/><TextBlock Text="{Binding WorkingSet}" /></StackPanel>
+                            <StackPanel><TextBlock Text="Private memory" FontWeight="SemiBold"/><TextBlock Text="{Binding PrivateMemory}" /></StackPanel>
+                            <StackPanel><TextBlock Text="CPU" FontWeight="SemiBold"/><TextBlock Text="{Binding CpuUsage}" /></StackPanel>
+                        </UniformGrid>
+                    </GroupBox>
+
+                    <GroupBox Margin="0,0,0,8">
+                        <GroupBox.Header>
+                            <TextBlock Text="{loc:Loc PluginDiagnostics.Endpoints, DefaultValue=Endpoint Backpressure}"
+                                       ToolTip="Current per-endpoint request concurrency and event queue pressure." />
+                        </GroupBox.Header>
+                        <DataGrid ItemsSource="{Binding EndpointMetrics}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  CanUserAddRows="False"
+                                  Height="180">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Endpoint" Binding="{Binding EndpointId}" Width="140" />
+                                <DataGridTextColumn Binding="{Binding Pending}" Width="90">
+                                    <DataGridTextColumn.Header><TextBlock Text="Pending" ToolTip="Current in-flight requests / request limit." /></DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding PendingHighWater}" Width="90">
+                                    <DataGridTextColumn.Header><TextBlock Text="Pending HWM" ToolTip="High-water mark: the highest concurrent pending request count observed for this endpoint in the current session." /></DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding Queue}" Width="90">
+                                    <DataGridTextColumn.Header><TextBlock Text="Queue" ToolTip="Current queued events / event queue capacity." /></DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding QueueHighWater}" Width="90">
+                                    <DataGridTextColumn.Header><TextBlock Text="Queue HWM" ToolTip="High-water mark: the highest event queue depth observed for this endpoint in the current session." /></DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding QueueUsage}" Width="80">
+                                    <DataGridTextColumn.Header><TextBlock Text="Usage" ToolTip="Current event queue usage percentage." /></DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding OldestWait}" Width="90">
+                                    <DataGridTextColumn.Header><TextBlock Text="Oldest wait" ToolTip="How long the oldest currently queued event has waited." /></DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding QueueDrops}" Width="140">
+                                    <DataGridTextColumn.Header><TextBlock Text="Drops" ToolTip="Total dropped events, followed by drops in the recent 5-minute window." /></DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding TooManyRequests}" Width="150">
+                                    <DataGridTextColumn.Header><TextBlock Text="TooManyRequests" ToolTip="Total rejected calls, followed by rejections in the recent 5-minute window." /></DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding HighPressure}" Width="100">
+                                    <DataGridTextColumn.Header><TextBlock Text="High pressure" ToolTip="Current continuous time with event queue usage at or above 80%." /></DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding MaxHighPressure}" Width="100">
+                                    <DataGridTextColumn.Header><TextBlock Text="Max pressure" ToolTip="Longest continuous high-pressure period observed for this endpoint." /></DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </GroupBox>
+
+                    <TabControl Margin="0,0,0,8">
+                        <TabItem>
+                            <TabItem.Header>
+                                <TextBlock Text="{loc:Loc PluginDiagnostics.CallMetrics, DefaultValue=Call Metrics}"
+                                           ToolTip="Request/response calls grouped by endpoint and route." />
+                            </TabItem.Header>
+                            <DataGrid ItemsSource="{Binding CallMetrics}"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      CanUserAddRows="False"
+                                      Height="220">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Endpoint" Binding="{Binding EndpointId}" Width="120" />
+                                    <DataGridTextColumn Header="Route" Binding="{Binding Route}" Width="*" />
+                                    <DataGridTextColumn Binding="{Binding Counts}" Width="230">
+                                        <DataGridTextColumn.Header><TextBlock Text="Counts (all/ok/fail/timeout/reject)" ToolTip="Lifetime call counts in this session, displayed in the stated order." /></DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Last" Binding="{Binding Last}" Width="70" />
+                                    <DataGridTextColumn Header="Avg" Binding="{Binding Average}" Width="70" />
+                                    <DataGridTextColumn Header="Max" Binding="{Binding Max}" Width="70" />
+                                    <DataGridTextColumn Binding="{Binding P50}" Width="70">
+                                        <DataGridTextColumn.Header><TextBlock Text="P50" ToolTip="50th percentile response time from the bounded latency sample." /></DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Binding="{Binding P95}" Width="70">
+                                        <DataGridTextColumn.Header><TextBlock Text="P95" ToolTip="95th percentile response time from the bounded latency sample." /></DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Binding="{Binding P99}" Width="70">
+                                        <DataGridTextColumn.Header><TextBlock Text="P99" ToolTip="99th percentile response time from the bounded latency sample." /></DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Binding="{Binding RecentSlowCount}" Width="120">
+                                        <DataGridTextColumn.Header><TextBlock Text="Slow (5m, >=2s)" ToolTip="Calls taking at least 2 seconds in the rolling 5-minute window." /></DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </TabItem>
+                        <TabItem>
+                            <TabItem.Header>
+                                <TextBlock Text="{loc:Loc PluginDiagnostics.EventMetrics, DefaultValue=Event Metrics}"
+                                           ToolTip="One-way event queueing and host-side delivery metrics; events have no response time." />
+                            </TabItem.Header>
+                            <DataGrid ItemsSource="{Binding EventMetrics}"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      CanUserAddRows="False"
+                                      Height="220">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Endpoint" Binding="{Binding EndpointId}" Width="120" />
+                                    <DataGridTextColumn Header="Route" Binding="{Binding Route}" Width="*" />
+                                    <DataGridTextColumn Header="Count" Binding="{Binding EventCount}" Width="80" />
+                                    <DataGridTextColumn Header="Queue p50" Binding="{Binding QueueWaitP50}" Width="90" />
+                                    <DataGridTextColumn Header="Queue p95" Binding="{Binding QueueWaitP95}" Width="90" />
+                                    <DataGridTextColumn Header="Queue p99" Binding="{Binding QueueWaitP99}" Width="90" />
+                                    <DataGridTextColumn Header="Delivery p50" Binding="{Binding DeliveryP50}" Width="90" />
+                                    <DataGridTextColumn Header="Delivery p95" Binding="{Binding DeliveryP95}" Width="90" />
+                                    <DataGridTextColumn Header="Delivery p99" Binding="{Binding DeliveryP99}" Width="90" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </TabItem>
+                    </TabControl>
+
+                    <GroupBox Header="{loc:Loc PluginDiagnostics.RecentDiagnostics, DefaultValue=Recent Diagnostics}">
+                        <Grid Margin="8">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="0"
+                                        Orientation="Horizontal"
+                                        Margin="0,0,0,8">
+                                <ComboBox Width="160"
+                                          ItemsSource="{Binding LevelFilters}"
+                                          SelectedItem="{Binding SelectedLevelFilter}" />
+                                <ComboBox Width="160"
+                                          Margin="8,0,0,0"
+                                          ItemsSource="{Binding TimeWindowFilters}"
+                                          SelectedItem="{Binding SelectedTimeWindowFilter}" />
+                                <TextBox Width="220"
+                                         Margin="8,0,0,0"
+                                         Text="{Binding SessionFilter, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                            <DataGrid Grid.Row="1"
+                                      ItemsSource="{Binding Records}"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      CanUserAddRows="False"
+                                      Height="260">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Timestamp + Seq" Binding="{Binding Timestamp}" Width="140" />
+                                    <DataGridTextColumn Header="Level" Binding="{Binding Level}" Width="80" />
+                                    <DataGridTextColumn Header="Session" Binding="{Binding SessionId}" Width="140" />
+                                    <DataGridTextColumn Header="Endpoint" Binding="{Binding EndpointId}" Width="100" />
+                                    <DataGridTextColumn Header="Route" Binding="{Binding Route}" Width="*" />
+                                    <DataGridTextColumn Header="Correlation" Binding="{Binding CorrelationId}" Width="150" />
+                                    <DataGridTextColumn Header="Message" Binding="{Binding Message}" Width="2*" />
+                                    <DataGridTextColumn Header="Details" Binding="{Binding Details}" Width="2*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <Expander Grid.Row="2"
+                                      Header="Node backend output"
+                                      ToolTip="Recent stdout, stderr, and process-exit diagnostics retained by the Node process controller."
+                                      Margin="0,8,0,0">
+                                <TextBox Text="{Binding FailureDetails}"
+                                         IsReadOnly="True"
+                                         TextWrapping="Wrap"
+                                         AcceptsReturn="True"
+                                         VerticalScrollBarVisibility="Auto"
+                                         MinHeight="80" />
+                            </Expander>
+                        </Grid>
+                    </GroupBox>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</Window>

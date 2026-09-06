@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MyTools.Common.Localization;
 using MyTools.Host.Core.Bus;
 using MyTools.Host.Core.Capabilities;
+using MyTools.Host.Core.Diagnostics;
 using MyTools.Host.Core.Sessions;
 using MyTools.Host.Core.Transports;
 using MyTools.Plugins.NodePlugins;
@@ -155,7 +156,7 @@ public class NodePluginKeywordRouteTest
 
         var bus = new MessageBus();
         var manager = new PluginSessionManager(bus, new CapabilityGateway(), new NoopProcessFactory());
-        return new NodePluginFactory(NullLoggerFactory.Instance, null, bus, manager)
+        return new NodePluginFactory(NullLoggerFactory.Instance, null, bus, manager, new PluginDiagnosticsService())
             .CreatePlugins([manifest]).Single();
     }
 
@@ -167,6 +168,11 @@ public class NodePluginKeywordRouteTest
         {
             public IMessageTransport? Transport { get; } = new InMemoryTransport();
             public MyTools.Host.Core.Security.ProcessIdentity? ObservedIdentity { get; }
+            public event Action<NodeProcessExitInfo>? ProcessExited
+            {
+                add { }
+                remove { }
+            }
 
             public Task StartAsync(
                 string pipeName, string pluginId,
@@ -174,6 +180,8 @@ public class NodePluginKeywordRouteTest
                 CancellationToken c) => Task.CompletedTask;
 
             public Task StopAsync() => Task.CompletedTask;
+
+            public NodeProcessResourceUsage? TryGetResourceUsage() => null;
         }
     }
 }

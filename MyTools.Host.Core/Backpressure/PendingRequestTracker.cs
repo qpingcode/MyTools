@@ -15,11 +15,13 @@ namespace MyTools.Host.Core.Backpressure;
 public sealed class PendingRequestTracker
 {
     private readonly HashSet<string> _inFlight = new();
+    private int _highWaterMark;
 
     public PendingRequestTracker(int limit = 64) => Limit = limit;
 
     public int Limit { get; }
     public int InFlight => _inFlight.Count;
+    public int HighWaterMark => _highWaterMark;
 
     /// <summary>
     /// Attempts to admit a request identified by <paramref name="requestKey"/>. Returns false
@@ -30,7 +32,13 @@ public sealed class PendingRequestTracker
     {
         if (Routes.IsPing(route)) return true;
         if (_inFlight.Count >= Limit) return false;
-        return _inFlight.Add(requestKey);
+        var added = _inFlight.Add(requestKey);
+        if (added && _inFlight.Count > _highWaterMark)
+        {
+            _highWaterMark = _inFlight.Count;
+        }
+
+        return added;
     }
 
     /// <summary>Releases a slot on response/timeout/disconnect. Ping release is a no-op.</summary>

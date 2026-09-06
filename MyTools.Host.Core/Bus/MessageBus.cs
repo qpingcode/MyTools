@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MyTools.Host.Core.Backpressure;
 using MyTools.Host.Core.Capabilities;
+using MyTools.Host.Core.Diagnostics;
 using MyTools.Host.Core.Transports;
 using MyTools.Protocol.Errors;
 using MyTools.Protocol.Identity;
@@ -48,6 +49,7 @@ public sealed class MessageBus
     private readonly CapabilityGateway _gateway;
     private readonly IIdGenerator _ids;
     private readonly ILogger _logger;
+    private readonly IPluginDiagnosticsService? _diagnostics;
     private readonly int _pendingLimit;
     private readonly int _eventQueueCapacity;
 
@@ -55,12 +57,14 @@ public sealed class MessageBus
         CapabilityGateway? gateway = null,
         IIdGenerator? ids = null,
         ILogger? logger = null,
+        IPluginDiagnosticsService? diagnostics = null,
         int pendingLimit = DefaultPendingLimit,
         int eventQueueCapacity = DefaultEventQueueCapacity)
     {
         _gateway = gateway ?? new CapabilityGateway();
         _ids = ids ?? new GuidIdGenerator();
         _logger = logger ?? NullLogger.Instance;
+        _diagnostics = diagnostics;
         _pendingLimit = pendingLimit;
         _eventQueueCapacity = eventQueueCapacity;
     }
@@ -82,7 +86,7 @@ public sealed class MessageBus
     public void RegisterEndpoint(EndpointId id, IMessageTransport transport)
     {
         var key = SessionKey(id.PluginId, id.SessionId);
-        var session = _sessions.GetOrAdd(key, _ => new SessionEndpoints(_pendingLimit, _eventQueueCapacity));
+        var session = _sessions.GetOrAdd(key, _ => new SessionEndpoints(this, _pendingLimit, _eventQueueCapacity));
         Action<Envelope> handler = env => OnInbound(id, env);
         session.Add(id, transport, handler);
         transport.MessageReceived += handler;
@@ -98,6 +102,7 @@ public sealed class MessageBus
             && session.TryRemove(id, out var transport, out var handler))
         {
             transport.MessageReceived -= handler;
+            _diagnostics?.RemoveEndpoint(id.PluginId, id.SessionId, id.EndpointLabel);
             _logger.LogDebug(
                 "Bus endpoint unregistered plugin={PluginId} session={SessionId} ep={Endpoint}",
                 id.PluginId, id.SessionId, id.EndpointLabel);
@@ -109,6 +114,20 @@ public sealed class MessageBus
 
     public void UnregisterHostCallHandler(string pluginId)
         => _hostCallHandlers.TryRemove(pluginId, out _);
+
+    public void AbandonPendingRequest(string requestId, string route)
+    {
+        if (!_pending.TryRemove(requestId, out var pending))
+        {
+            return;
+        }
+
+        var key = SessionKey(pending.Origin.PluginId, pending.Origin.SessionId);
+        if (_sessions.TryGetValue(key, out var session))
+        {
+            session.Release(pending.Origin.EndpointLabel, requestId, route);
+        }
+    }
 
     /// <summary>
     /// Routes a request from <paramref name="origin"/> to the Node endpoint of the same session.
@@ -125,6 +144,16 @@ public sealed class MessageBus
 
         if (!session.TryReserve(origin.EndpointLabel, request.Id, request.Route))
         {
+            if (!Routes.IsPing(request.Route))
+            {
+                _diagnostics?.RecordCallRejected(
+                    origin.PluginId,
+                    origin.SessionId,
+                    origin.EndpointLabel,
+                    request.Route,
+                    request.Id,
+                    $"pending request limit {_pendingLimit} reached for endpoint {origin.EndpointLabel}");
+            }
             _logger.LogWarning(
                 "TooManyRequests origin={Endpoint} route={Route} traceId={TraceId} inFlightCap={Cap}",
                 origin.EndpointLabel, request.Route, request.TraceId, _pendingLimit);
@@ -227,6 +256,16 @@ public sealed class MessageBus
 
         if (!session.TryReserve(source.EndpointLabel, env.Id, env.Route))
         {
+            if (!Routes.IsPing(env.Route))
+            {
+                _diagnostics?.RecordCallRejected(
+                    source.PluginId,
+                    source.SessionId,
+                    source.EndpointLabel,
+                    env.Route,
+                    env.Id,
+                    $"pending request limit {_pendingLimit} reached for endpoint {source.EndpointLabel}");
+            }
             await session.WriteOnAsync(source.EndpointLabel, BuildHostCallReply(env, source, payload: null,
                 BusError.For(ErrorCode.TooManyRequests,
                     $"pending request limit {_pendingLimit} reached for endpoint {source.EndpointLabel}",
@@ -236,6 +275,7 @@ public sealed class MessageBus
 
         try
         {
+            var startedAt = Stopwatch.GetTimestamp();
             var capability = Routes.StripHostCall(env.Route);
             var decision = _gateway.Authorize(source.PluginId, capability);
             _logger.LogDebug(
@@ -260,9 +300,19 @@ public sealed class MessageBus
                     var parameters = env.Payload is null
                         ? JsonDocument.Parse("{}").RootElement.Clone()
                         : JsonDocument.Parse(env.Payload.ToJsonString()).RootElement.Clone();
-                    var result = await invoker(method, parameters, CancellationToken.None);
+                    using var timeoutCts = env.TimeoutMs is > 0
+                        ? new CancellationTokenSource(env.TimeoutMs.Value)
+                        : null;
+                    var result = await invoker(method, parameters, timeoutCts?.Token ?? CancellationToken.None);
                     reply = BuildHostCallReply(env, source,
                         payload: JsonNode.Parse(result.GetRawText()), error: null);
+                }
+                catch (OperationCanceledException) when (env.TimeoutMs is > 0)
+                {
+                    reply = BuildHostCallReply(env, source, payload: null,
+                        BusError.For(ErrorCode.RequestTimeout,
+                            $"host.call '{env.Route}' timed out after {env.TimeoutMs}ms",
+                            retryable: true));
                 }
                 catch (Exception ex)
                 {
@@ -280,6 +330,34 @@ public sealed class MessageBus
             if (session.NodeLabel is not null)
             {
                 await session.WriteOnAsync(session.NodeLabel, reply);
+            }
+
+            if (!Routes.IsPing(env.Route))
+            {
+                var elapsedMs = Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds;
+                if (reply.Error?.Code == ErrorCode.RequestTimeout)
+                {
+                    _diagnostics?.RecordCallTimeout(
+                        source.PluginId,
+                        source.SessionId,
+                        source.EndpointLabel,
+                        env.Route,
+                        env.Id,
+                        elapsedMs,
+                        reply.Error.Message);
+                }
+                else
+                {
+                    _diagnostics?.RecordCallCompleted(
+                        source.PluginId,
+                        source.SessionId,
+                        source.EndpointLabel,
+                        env.Route,
+                        env.Id,
+                        elapsedMs,
+                        reply.Error is null ? PluginCallOutcome.Success : PluginCallOutcome.Failure,
+                        reply.Error?.Message);
+                }
             }
         }
         finally
@@ -328,6 +406,18 @@ public sealed class MessageBus
 
         session.Release(pending.Origin.EndpointLabel, env.CorrelationId, pending.Route);
         var elapsedMs = Stopwatch.GetElapsedTime(pending.StartedAt).TotalMilliseconds;
+        if (!Routes.IsPing(pending.Route))
+        {
+            _diagnostics?.RecordCallCompleted(
+                pending.Origin.PluginId,
+                pending.Origin.SessionId,
+                pending.Origin.EndpointLabel,
+                env.Route,
+                env.CorrelationId,
+                elapsedMs,
+                env.Error is null ? PluginCallOutcome.Success : PluginCallOutcome.Failure,
+                env.Error?.Message);
+        }
         _logger.Log(
             Routes.IsPing(pending.Route) ? LogLevel.Trace : LogLevel.Debug,
             "Response correlated id={Corr} route={Route} result={Result} elapsedMs={ElapsedMs:0}",
@@ -339,15 +429,7 @@ public sealed class MessageBus
     {
         var key = SessionKey(source.PluginId, source.SessionId);
         if (!_sessions.TryGetValue(key, out var session)) return;
-        var droppedBefore = session.DroppedEvents;
         session.BroadcastExcept(source.EndpointLabel, env);
-        var dropped = session.DroppedEvents - droppedBefore;
-        if (dropped > 0)
-        {
-            _logger.LogWarning(
-                "DroppedEvents plugin={PluginId} session={SessionId} route={Route} droppedDelta={Delta} total={Total}",
-                source.PluginId, source.SessionId, env.Route, dropped, session.DroppedEvents);
-        }
     }
 
     /// <summary>
@@ -381,6 +463,19 @@ public sealed class MessageBus
             if (!_sessions.TryGetValue(key, out var session)) continue;
 
             session.Release(pending.Origin.EndpointLabel, requestId, pending.Route);
+            var elapsedMs = Stopwatch.GetElapsedTime(pending.StartedAt).TotalMilliseconds;
+            if (!Routes.IsPing(pending.Route))
+            {
+                _diagnostics?.RecordCallCompleted(
+                    pending.Origin.PluginId,
+                    pending.Origin.SessionId,
+                    pending.Origin.EndpointLabel,
+                    pending.Route,
+                    requestId,
+                    elapsedMs,
+                    PluginCallOutcome.Failure,
+                    error.Message);
+            }
             var fail = new Envelope
             {
                 Version = ProtocolVersion.Current,
@@ -402,16 +497,19 @@ public sealed class MessageBus
         => $"{pluginId}\u001f{sessionId}";
 
     private readonly record struct PendingOrigin(EndpointId Origin, string Route, long StartedAt);
+    private readonly record struct QueuedEvent(Envelope Envelope, long EnqueuedAt);
 
     private sealed class SessionEndpoints
     {
+        private readonly MessageBus _owner;
         private readonly object _gate = new();
         private readonly Dictionary<string, EndpointSlot> _byLabel = new();
         private readonly int _pendingLimit;
         private readonly int _eventCapacity;
 
-        public SessionEndpoints(int pendingLimit, int eventCapacity)
+        public SessionEndpoints(MessageBus owner, int pendingLimit, int eventCapacity)
         {
+            _owner = owner;
             _pendingLimit = pendingLimit;
             _eventCapacity = eventCapacity;
         }
@@ -441,8 +539,10 @@ public sealed class MessageBus
                 _byLabel[id.EndpointLabel] = new EndpointSlot(
                     id, transport, handler,
                     new PendingRequestTracker(_pendingLimit),
-                    new BoundedEventQueue<Envelope>(_eventCapacity));
+                    new BoundedEventQueue<QueuedEvent>(_eventCapacity));
                 if (id.IsNode) NodeLabel = id.EndpointLabel;
+                _owner.UpdatePendingDiagnostics(id, _byLabel[id.EndpointLabel].Pending);
+                _owner.UpdateEventQueueDiagnostics(id, _byLabel[id.EndpointLabel].EventQueue);
             }
         }
 
@@ -468,8 +568,14 @@ public sealed class MessageBus
         {
             lock (_gate)
             {
-                return _byLabel.TryGetValue(label, out var slot)
-                       && slot.Pending.TryReserve(requestId, route);
+                var reserved = _byLabel.TryGetValue(label, out var slot)
+                               && slot.Pending.TryReserve(requestId, route);
+                if (slot is not null)
+                {
+                    _owner.UpdatePendingDiagnostics(slot.Id, slot.Pending);
+                }
+
+                return reserved;
             }
         }
 
@@ -480,6 +586,7 @@ public sealed class MessageBus
                 if (_byLabel.TryGetValue(label, out var slot))
                 {
                     slot.Pending.Release(requestId, route);
+                    _owner.UpdatePendingDiagnostics(slot.Id, slot.Pending);
                 }
             }
         }
@@ -506,7 +613,14 @@ public sealed class MessageBus
                 foreach (var (label, slot) in _byLabel)
                 {
                     if (excludeLabel is not null && label == excludeLabel) continue;
-                    slot.EventQueue.Enqueue(env);
+                    var queued = new QueuedEvent(env, Stopwatch.GetTimestamp());
+                    var dropped = slot.EventQueue.TryEnqueue(queued, out var droppedItem);
+                    _owner.RecordEventQueuedDiagnostics(
+                        slot.Id,
+                        env.Route,
+                        slot.EventQueue,
+                        dropped,
+                        dropped ? droppedItem.Envelope.Route : null);
                     if (!slot.Draining)
                     {
                         slot.Draining = true;
@@ -527,10 +641,11 @@ public sealed class MessageBus
             {
                 while (true)
                 {
-                    IReadOnlyList<Envelope> batch;
+                    IReadOnlyList<QueuedEvent> batch;
                     lock (_gate)
                     {
                         batch = slot.EventQueue.Drain();
+                        _owner.UpdateEventQueueDiagnostics(slot.Id, slot.EventQueue);
                         if (batch.Count == 0)
                         {
                             slot.Draining = false;
@@ -540,7 +655,32 @@ public sealed class MessageBus
 
                     foreach (var item in batch)
                     {
-                        await slot.Transport.SendAsync(item, CancellationToken.None);
+                        var queueWaitMs = Stopwatch.GetElapsedTime(item.EnqueuedAt).TotalMilliseconds;
+                        await slot.Transport.SendAsync(item.Envelope, CancellationToken.None);
+                        var deliveryMs = Stopwatch.GetElapsedTime(item.EnqueuedAt).TotalMilliseconds;
+                        int depth;
+                        int capacity;
+                        int highWaterMark;
+                        long droppedTotal;
+                        double oldestWaitMs;
+                        lock (_gate)
+                        {
+                            depth = slot.EventQueue.Count;
+                            capacity = slot.EventQueue.Capacity;
+                            highWaterMark = slot.EventQueue.HighWaterMark;
+                            droppedTotal = slot.EventQueue.DroppedEvents;
+                            oldestWaitMs = GetOldestWaitMs(slot.EventQueue);
+                        }
+                        _owner.RecordEventDeliveredDiagnostics(
+                            slot.Id,
+                            item.Envelope.Route,
+                            queueWaitMs,
+                            deliveryMs,
+                            depth,
+                            capacity,
+                            highWaterMark,
+                            droppedTotal,
+                            oldestWaitMs);
                     }
                 }
             }
@@ -560,7 +700,7 @@ public sealed class MessageBus
                 IMessageTransport transport,
                 Action<Envelope> handler,
                 PendingRequestTracker pending,
-                BoundedEventQueue<Envelope> eventQueue)
+                BoundedEventQueue<QueuedEvent> eventQueue)
             {
                 Id = id;
                 Transport = transport;
@@ -573,8 +713,85 @@ public sealed class MessageBus
             public IMessageTransport Transport { get; }
             public Action<Envelope> Handler { get; }
             public PendingRequestTracker Pending { get; }
-            public BoundedEventQueue<Envelope> EventQueue { get; }
+            public BoundedEventQueue<QueuedEvent> EventQueue { get; }
             public bool Draining;
         }
+    }
+
+    private void UpdatePendingDiagnostics(EndpointId id, PendingRequestTracker pending)
+    {
+        _diagnostics?.UpdateEndpointPending(
+            id.PluginId,
+            id.SessionId,
+            id.EndpointLabel,
+            pending.InFlight,
+            pending.Limit,
+            pending.HighWaterMark);
+    }
+
+    private void UpdateEventQueueDiagnostics(EndpointId id, BoundedEventQueue<QueuedEvent> queue)
+    {
+        _diagnostics?.UpdateEventQueueState(
+            id.PluginId,
+            id.SessionId,
+            id.EndpointLabel,
+            queue.Count,
+            queue.Capacity,
+            queue.HighWaterMark,
+            queue.DroppedEvents,
+            GetOldestWaitMs(queue));
+    }
+
+    private void RecordEventQueuedDiagnostics(
+        EndpointId id,
+        string route,
+        BoundedEventQueue<QueuedEvent> queue,
+        bool dropped,
+        string? droppedRoute)
+    {
+        _diagnostics?.RecordEventQueued(
+            id.PluginId,
+            id.SessionId,
+            id.EndpointLabel,
+            route,
+            queue.Count,
+            queue.Capacity,
+            queue.HighWaterMark,
+            queue.DroppedEvents,
+            dropped,
+            GetOldestWaitMs(queue),
+            droppedRoute);
+    }
+
+    private void RecordEventDeliveredDiagnostics(
+        EndpointId id,
+        string route,
+        double queueWaitMs,
+        double deliveryMs,
+        int depth,
+        int capacity,
+        int highWaterMark,
+        long droppedTotal,
+        double oldestWaitMs)
+    {
+        _diagnostics?.RecordEventDelivered(
+            id.PluginId,
+            id.SessionId,
+            id.EndpointLabel,
+            route,
+            queueWaitMs,
+            deliveryMs,
+            depth,
+            capacity,
+            highWaterMark,
+            droppedTotal,
+            oldestWaitMs);
+    }
+
+    private static double GetOldestWaitMs(BoundedEventQueue<QueuedEvent> queue)
+    {
+        return queue.TryPeek(out var queued)
+            ? Stopwatch.GetElapsedTime(queued.EnqueuedAt).TotalMilliseconds
+            : 0;
     }
 }

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MyTools.Host.Core.Bus;
 using MyTools.Host.Core.Capabilities;
+using MyTools.Host.Core.Diagnostics;
 using MyTools.Host.Core.Reliability;
 using MyTools.Host.Core.Security;
 using MyTools.Host.Core.Transports;
@@ -52,6 +53,7 @@ public sealed class PluginSessionManager
     private readonly TimeSpan _tokenTtl;
     private readonly Func<RestartPolicy> _restartPolicyFactory;
     private readonly ILogger _logger;
+    private readonly IPluginDiagnosticsService? _diagnostics;
 
     public PluginSessionManager(MessageBus bus, CapabilityGateway gateway,
         INodeProcessControllerFactory processFactory, IIdGenerator? ids = null,
@@ -59,6 +61,7 @@ public sealed class PluginSessionManager
         TimeSpan? handshakeTimeout = null,
         TimeSpan? tokenTtl = null,
         Func<RestartPolicy>? restartPolicyFactory = null,
+        IPluginDiagnosticsService? diagnostics = null,
         ILogger? logger = null)
     {
         _bus = bus;
@@ -74,6 +77,7 @@ public sealed class PluginSessionManager
             window: TimeSpan.FromMinutes(5),
             maxRestartsPerWindow: 2,
             jitter: 0.2));
+        _diagnostics = diagnostics;
         _logger = logger ?? NullLogger.Instance;
     }
 
@@ -145,10 +149,12 @@ public sealed class PluginSessionManager
             and not SessionState.Restarting)
         {
             try { session.Transition(SessionState.Stopping); } catch { /* ignore */ }
+            _diagnostics?.RecordSessionState(pluginId, sessionId, SessionState.Stopping, failureDetails: session.Controller?.FailureDetails);
         }
         else if (markStopped && session.State is SessionState.Restarting)
         {
             try { session.Transition(SessionState.Stopping); } catch { /* ignore */ }
+            _diagnostics?.RecordSessionState(pluginId, sessionId, SessionState.Stopping, failureDetails: session.Controller?.FailureDetails);
         }
 
         _bus.FailPendingForSession(pluginId, sessionId,
@@ -163,6 +169,17 @@ public sealed class PluginSessionManager
             session.DisconnectHandler = null;
         }
 
+        if (session.Controller is { } controller)
+        {
+            if (session.ProcessExitHandler is { } processExitHandler)
+            {
+                controller.ProcessExited -= processExitHandler;
+                session.ProcessExitHandler = null;
+            }
+
+            _diagnostics?.DetachProcessController(pluginId, sessionId, controller);
+        }
+
         if (session.Controller is not null)
         {
             try { await session.Controller.StopAsync(); } catch { /* best-effort */ }
@@ -174,6 +191,11 @@ public sealed class PluginSessionManager
         if (markStopped && session.State is SessionState.Stopping)
         {
             try { session.Transition(SessionState.Stopped); } catch { /* ignore */ }
+            _diagnostics?.RecordSessionState(pluginId, sessionId, SessionState.Stopped, failureDetails: session.Controller?.FailureDetails);
+        }
+        else if (session.State is SessionState.Restarting)
+        {
+            _diagnostics?.ClearSession(pluginId, sessionId, SessionState.Restarting, session.Controller?.FailureDetails);
         }
 
         if (removePlugin)
@@ -200,6 +222,7 @@ public sealed class PluginSessionManager
             _logger.LogWarning(
                 "Session disconnect plugin={PluginId} session={SessionId} willRestart={WillRestart}",
                 session.PluginId, session.SessionId, shouldRestart);
+            _diagnostics?.RecordDisconnect(session.PluginId, session.SessionId, shouldRestart, session.Controller?.FailureDetails);
 
             SessionUnavailable?.Invoke(this, new PluginSessionUnavailableEventArgs
             {
@@ -219,6 +242,7 @@ public sealed class PluginSessionManager
 
         if (!shouldRestart)
         {
+            _diagnostics?.RecordRestartExhausted(session.PluginId, session.SessionId, session.Controller?.FailureDetails);
             return;
         }
 
@@ -233,6 +257,7 @@ public sealed class PluginSessionManager
             _logger.LogWarning(
                 "Session restarted plugin={PluginId} oldSession={Old} newSession={New}",
                 neu.PluginId, previous.SessionId, neu.SessionId);
+            _diagnostics?.RecordRestart(neu.PluginId, previous.SessionId, neu.SessionId);
             SessionReplaced?.Invoke(this, new PluginSessionReplacedEventArgs
             {
                 PluginId = neu.PluginId,
@@ -245,6 +270,7 @@ public sealed class PluginSessionManager
             _logger.LogError(ex,
                 "Session restart failed plugin={PluginId}",
                 runtime.Manifest.Id);
+            _diagnostics?.RecordRestartExhausted(runtime.Manifest.Id, session.SessionId, ex.Message);
             await runtime.Actor.PostAsync(() =>
             {
                 if (runtime.Session?.State is SessionState.Restarting)
@@ -266,6 +292,7 @@ public sealed class PluginSessionManager
         const string endpointId = EndpointIds.NodeMain;
 
         session.Transition(SessionState.Starting);
+        _diagnostics?.RecordSessionState(manifest.Id, sessionId, SessionState.Starting);
 
         var pipeName = $"mytools-plugin-{_ids.NewId()}";
         var controller = _processFactory.Create(runtime.NodeExePath, manifest.Entry);
@@ -282,7 +309,10 @@ public sealed class PluginSessionManager
                 ?? throw new InvalidOperationException("process controller did not report identity");
 
             session.Controller = controller;
+            _diagnostics?.AttachProcessController(manifest.Id, sessionId, controller);
+            WireProcessExit(session);
             session.Transition(SessionState.Handshaking);
+            _diagnostics?.RecordSessionState(manifest.Id, sessionId, SessionState.Handshaking, controller.ObservedIdentity?.Pid);
 
             await PipeHandshake.CompleteAsHostAsync(
                 controller.Transport!,
@@ -305,12 +335,14 @@ public sealed class PluginSessionManager
             WireDisconnect(runtime, session);
 
             session.Transition(SessionState.Ready);
+            _diagnostics?.RecordSessionState(manifest.Id, sessionId, SessionState.Ready, controller.ObservedIdentity?.Pid);
             runtime.Session = session;
             return session;
         }
         catch
         {
             try { await controller.StopAsync(); } catch { /* best-effort */ }
+            _diagnostics?.DetachProcessController(manifest.Id, sessionId, controller);
             _gateway.UnregisterManifest(manifest.Id);
             if (session.Controller is not null)
             {
@@ -322,6 +354,7 @@ public sealed class PluginSessionManager
             {
                 try { session.Transition(SessionState.Stopping); } catch { }
                 try { session.Transition(SessionState.Stopped); } catch { }
+                _diagnostics?.RecordSessionState(manifest.Id, sessionId, SessionState.Stopped, failureDetails: controller.FailureDetails);
             }
             throw;
         }
@@ -342,6 +375,19 @@ public sealed class PluginSessionManager
         };
         session.DisconnectHandler = handler;
         transport.Disconnected += handler;
+    }
+
+    private void WireProcessExit(PluginSession session)
+    {
+        if (session.Controller is null)
+        {
+            return;
+        }
+
+        Action<NodeProcessExitInfo> handler = info =>
+            _diagnostics?.RecordProcessExit(session.PluginId, session.SessionId, info);
+        session.ProcessExitHandler = handler;
+        session.Controller.ProcessExited += handler;
     }
 
     private static string SessionKey(string pluginId, string sessionId)
