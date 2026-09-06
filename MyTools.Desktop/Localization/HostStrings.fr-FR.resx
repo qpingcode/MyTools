@@ -156,4 +156,17 @@
   <data name="Plugin.applications.SearchScopes.Directory" xml:space="preserve">
     <value>Dossier</value>
   </data>
+  <data name="Plugin.FileSearcher.Name" xml:space="preserve"><value>Recherche de fichiers</value></data>
+  <data name="Plugin.FileSearcher.Description" xml:space="preserve"><value>Rechercher dans les fichiers indexés</value></data>
+  <data name="Plugin.FileSearcher.Settings.Category.Description" xml:space="preserve"><value>Configurer les dossiers indexés et les règles d’exclusion</value></data>
+  <data name="Plugin.FileSearcher.Settings.SearchDirectories.Title" xml:space="preserve"><value>Dossiers de recherche</value></data>
+  <data name="Plugin.FileSearcher.Settings.SearchDirectories.Description" xml:space="preserve"><value>Ajouter ou supprimer les dossiers dont les fichiers doivent être indexés</value></data>
+  <data name="Plugin.FileSearcher.Settings.SearchDirectories.Path" xml:space="preserve"><value>Dossier</value></data>
+  <data name="Plugin.FileSearcher.Settings.IgnorePatterns.Title" xml:space="preserve"><value>Motifs à ignorer</value></data>
+  <data name="Plugin.FileSearcher.Settings.IgnorePatterns.Description" xml:space="preserve"><value>Exclure de l’index les fichiers et dossiers correspondants</value></data>
+  <data name="Plugin.FileSearcher.Settings.IgnorePatterns.Pattern" xml:space="preserve"><value>Motif</value></data>
+  <data name="Plugin.FileSearcher.Settings.UseIgnoreFiles.Title" xml:space="preserve"><value>Utiliser les fichiers d’exclusion</value></data>
+  <data name="Plugin.FileSearcher.Settings.UseIgnoreFiles.Description" xml:space="preserve"><value>Respecter les fichiers .gitignore et .ignore trouvés pendant l’indexation</value></data>
+  <data name="Plugin.FileSearcher.Settings.KeepFilesFromRemovedVolumes.Title" xml:space="preserve"><value>Conserver les fichiers des volumes retirés</value></data>
+  <data name="Plugin.FileSearcher.Settings.KeepFilesFromRemovedVolumes.Description" xml:space="preserve"><value>Conserver les fichiers indexés lorsque leurs volumes sont déconnectés. Utile pour les lecteurs réseau et les stockages externes</value></data>
 </root>

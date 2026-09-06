@@ -28,9 +28,16 @@ public sealed class FileSearcher : PluginBase, IDisposable
 {
     public const string SearchDirectoriesSettingName = "SearchDirectories";
     public const string SearchDirectoriesSettingPath = "file-searcher.SearchDirectories";
+    public const string IgnorePatternsSettingName = "IgnorePatterns";
+    public const string IgnorePatternsSettingPath = "file-searcher.IgnorePatterns";
+    public const string UseIgnoreFilesSettingName = "UseIgnoreFiles";
+    public const string UseIgnoreFilesSettingPath = "file-searcher.UseIgnoreFiles";
+    public const string KeepFilesFromRemovedVolumesSettingName = "KeepFilesFromRemovedVolumes";
+    public const string KeepFilesFromRemovedVolumesSettingPath = "file-searcher.KeepFilesFromRemovedVolumes";
 
     private const LuceneVersion LuceneVersion = Lucene.Net.Util.LuceneVersion.LUCENE_48;
     private const string IndexDir = "FileSearcherIndex";
+    private const string IndexedRootsFileName = "FileSearcherIndexedRoots.json";
     private const string RootField = "root";
     private static readonly TimeSpan WatchDebounce = TimeSpan.FromSeconds(1);
     private static readonly StringComparer PathComparer = StringComparer.OrdinalIgnoreCase;
@@ -38,6 +45,7 @@ public sealed class FileSearcher : PluginBase, IDisposable
     private readonly ILogger<FileSearcher> logger;
     private readonly IMemoryCache cache;
     private readonly object indexLock = new();
+    private readonly object indexWriteLock = new();
     private readonly object watcherLock = new();
     private readonly object configurationRequestLock = new();
     private readonly SemaphoreSlim configurationLock = new(1, 1);
@@ -46,11 +54,16 @@ public sealed class FileSearcher : PluginBase, IDisposable
     private readonly Dictionary<string, FileSystemWatcher> watchers = new(PathComparer);
     private readonly Dictionary<string, CancellationTokenSource> pendingReindexes = new(PathComparer);
     private HashSet<string> configuredDirectories = new(PathComparer);
+    private FileSearchConfiguration currentConfiguration = FileSearchConfiguration.Empty;
     private IConfigurationRegistry? configurationRegistry;
     private ConfigurationSetting? searchDirectoriesSetting;
+    private ConfigurationSetting? ignorePatternsSetting;
+    private ConfigurationSetting? useIgnoreFilesSetting;
+    private ConfigurationSetting? keepFilesFromRemovedVolumesSetting;
     private IndexWriter? indexWriter;
     private LuceneDirectory? indexDirectory;
     private Analyzer? analyzer;
+    private HashSet<string> indexedRoots = new(PathComparer);
     private long configurationRevision;
     private CancellationTokenSource? configurationApplyCancellation;
     private bool initialized;
@@ -65,11 +78,11 @@ public sealed class FileSearcher : PluginBase, IDisposable
 
     public override PluginId PluginId => new("file-searcher");
     public override string Name => GetCaption("Plugin.FileSearcher.Name", "File Searcher");
-    public override string Description => GetCaption("Plugin.FileSearcher.Description", "Search for files and scripts");
+    public override string Description => GetCaption("Plugin.FileSearcher.Description", "Search indexed files");
     protected override string SettingsCategoryName => Name;
     protected override string SettingsCategoryDescription => GetCaption(
         "Plugin.FileSearcher.Settings.Category.Description",
-        "Choose the directories whose shortcuts and PowerShell scripts are searchable");
+        "Configure indexed directories and exclusion rules");
 
     public override List<IActionWithHotkey> Actions =>
     [
@@ -96,10 +109,11 @@ public sealed class FileSearcher : PluginBase, IDisposable
             GetCaption("Plugin.FileSearcher.Settings.SearchDirectories.Title", "Search directories"),
             GetCaption(
                 "Plugin.FileSearcher.Settings.SearchDirectories.Description",
-                "Add or remove directories containing shortcuts (.lnk) and PowerShell scripts (.ps1)"),
+                "Add or remove directories whose files should be indexed"),
             CreateDefaultSearchDirectories(),
             new JsonElementSettingSerializer(),
             valueType: SettingValueTypes.Array);
+        searchDirectoriesSetting.UiHint = "directory-list";
         searchDirectoriesSetting.Schema = new SettingSchema
         {
             Properties =
@@ -113,11 +127,56 @@ public sealed class FileSearcher : PluginBase, IDisposable
                 }
             ]
         };
+
+        ignorePatternsSetting = registry.AddSetting(
+            pluginCategory,
+            IgnorePatternsSettingName,
+            GetCaption("Plugin.FileSearcher.Settings.IgnorePatterns.Title", "Ignore patterns"),
+            GetCaption(
+                "Plugin.FileSearcher.Settings.IgnorePatterns.Description",
+                "Exclude matching files and directories from the index"),
+            CreateDefaultIgnorePatterns(),
+            new JsonElementSettingSerializer(),
+            valueType: SettingValueTypes.Array);
+        ignorePatternsSetting.Schema = new SettingSchema
+        {
+            Properties =
+            [
+                new SettingSchemaProperty
+                {
+                    Key = "Pattern",
+                    Type = SchemaPropertyType.String,
+                    Title = GetCaption("Plugin.FileSearcher.Settings.IgnorePatterns.Pattern", "Pattern")
+                }
+            ]
+        };
+
+        useIgnoreFilesSetting = registry.AddSetting(
+            pluginCategory,
+            UseIgnoreFilesSettingName,
+            GetCaption("Plugin.FileSearcher.Settings.UseIgnoreFiles.Title", "Use ignore files"),
+            GetCaption(
+                "Plugin.FileSearcher.Settings.UseIgnoreFiles.Description",
+                "Respect .gitignore and .ignore files found while indexing"),
+            true,
+            null);
+
+        keepFilesFromRemovedVolumesSetting = registry.AddSetting(
+            pluginCategory,
+            KeepFilesFromRemovedVolumesSettingName,
+            GetCaption(
+                "Plugin.FileSearcher.Settings.KeepFilesFromRemovedVolumes.Title",
+                "Keep files from removed volumes"),
+            GetCaption(
+                "Plugin.FileSearcher.Settings.KeepFilesFromRemovedVolumes.Description",
+                "Preserve indexed files when their volumes are disconnected. Useful for network drives and external storage"),
+            false,
+            null);
         registry.ConfigurationChanged += OnConfigurationChanged;
 
         if (initialized)
         {
-            QueueConfigurationApply(searchDirectoriesSetting.CurrentValue);
+            QueueConfigurationApply();
         }
     }
 
@@ -125,12 +184,12 @@ public sealed class FileSearcher : PluginBase, IDisposable
     {
         ObjectDisposedException.ThrowIf(disposed, this);
         initialized = true;
-        var value = searchDirectoriesSetting?.CurrentValue ?? CreateDefaultSearchDirectories();
+        var configuration = ReadCurrentConfiguration();
         var request = BeginConfigurationApply();
         try
         {
             await ApplyConfiguredDirectoriesAsync(
-                ReadSearchDirectories(value), request.Revision, request.CancellationToken);
+                configuration, request.Revision, request.CancellationToken);
         }
         catch (OperationCanceledException) when (request.CancellationToken.IsCancellationRequested)
         {
@@ -144,24 +203,36 @@ public sealed class FileSearcher : PluginBase, IDisposable
 
     private void OnConfigurationChanged(object? sender, ConfigurationChangedEventArgs args)
     {
-        if (string.Equals(args.Setting.Key, SearchDirectoriesSettingPath, StringComparison.OrdinalIgnoreCase))
+        if (IsFileSearchSetting(args.Setting.Key))
         {
-            QueueConfigurationApply(args.NewValue);
+            QueueConfigurationApply();
         }
     }
 
-    private void QueueConfigurationApply(object? value)
+    private static bool IsFileSearchSetting(string key) =>
+        key.Equals(SearchDirectoriesSettingPath, StringComparison.OrdinalIgnoreCase)
+        || key.Equals(IgnorePatternsSettingPath, StringComparison.OrdinalIgnoreCase)
+        || key.Equals(UseIgnoreFilesSettingPath, StringComparison.OrdinalIgnoreCase)
+        || key.Equals(KeepFilesFromRemovedVolumesSettingPath, StringComparison.OrdinalIgnoreCase);
+
+    private FileSearchConfiguration ReadCurrentConfiguration() => new(
+        ReadSearchDirectories(searchDirectoriesSetting?.CurrentValue ?? CreateDefaultSearchDirectories()),
+        ReadIgnorePatterns(ignorePatternsSetting?.CurrentValue ?? CreateDefaultIgnorePatterns()),
+        useIgnoreFilesSetting?.CurrentValue as bool? ?? true,
+        keepFilesFromRemovedVolumesSetting?.CurrentValue as bool? ?? false);
+
+    private void QueueConfigurationApply()
     {
         if (disposed) return;
 
-        var directories = ReadSearchDirectories(value);
+        var configuration = ReadCurrentConfiguration();
         var request = BeginConfigurationApply();
         _ = Task.Run(async () =>
         {
             try
             {
                 await ApplyConfiguredDirectoriesAsync(
-                    directories, request.Revision, request.CancellationToken);
+                    configuration, request.Revision, request.CancellationToken);
             }
             catch (OperationCanceledException) when (request.CancellationToken.IsCancellationRequested)
             {
@@ -212,7 +283,7 @@ public sealed class FileSearcher : PluginBase, IDisposable
     }
 
     private async Task ApplyConfiguredDirectoriesAsync(
-        IReadOnlySet<string> desiredDirectories,
+        FileSearchConfiguration configuration,
         long revision,
         CancellationToken cancellationToken)
     {
@@ -222,19 +293,26 @@ public sealed class FileSearcher : PluginBase, IDisposable
             cancellationToken.ThrowIfCancellationRequested();
             if (revision != Interlocked.Read(ref configurationRevision) || disposed) return;
 
+            var desiredDirectories = configuration.Directories;
             HashSet<string> previousDirectories;
             lock (watcherLock)
             {
                 previousDirectories = new HashSet<string>(configuredDirectories, PathComparer);
                 configuredDirectories = new HashSet<string>(desiredDirectories, PathComparer);
+                currentConfiguration = configuration;
             }
 
             var changes = CalculateDirectoryChanges(previousDirectories, desiredDirectories);
             var removed = changes.Removed;
             var added = changes.Added;
 
-            foreach (var directory in removed) StopWatching(directory);
-            foreach (var directory in added) StartWatching(directory);
+            // A recursive watcher on a large root also observes the Lucene files written under
+            // that root (for example under AppData). Stop watching until the replacement index is
+            // committed so those writes cannot overflow the native watcher buffer.
+            foreach (var directory in previousDirectories.Union(desiredDirectories, PathComparer))
+            {
+                StopWatching(directory);
+            }
 
             Stopwatch stopwatch = Stopwatch.StartNew();
             lock (indexLock)
@@ -243,30 +321,50 @@ public sealed class FileSearcher : PluginBase, IDisposable
             }
 
             var preparedDirectories = await RunIndexingWorkAsync(
-                () => added.Select(directory => PrepareDirectoryIndex(directory, cancellationToken)).ToArray(),
+                () => desiredDirectories
+                    .Select(directory => PrepareDirectoryIndex(directory, configuration, cancellationToken))
+                    .ToArray(),
                 cancellationToken);
 
             cancellationToken.ThrowIfCancellationRequested();
             if (revision != Interlocked.Read(ref configurationRevision) || disposed) return;
 
-            lock (indexLock)
+            lock (indexWriteLock)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (revision != Interlocked.Read(ref configurationRevision)
-                    || disposed
-                    || indexWriter == null)
+                IndexWriter writer;
+                lock (indexLock)
                 {
-                    return;
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (revision != Interlocked.Read(ref configurationRevision)
+                        || disposed
+                        || indexWriter == null)
+                    {
+                        return;
+                    }
+                    writer = indexWriter;
                 }
-                foreach (var directory in removed)
+
+                var removedFromIndex = indexedRoots.Except(desiredDirectories, PathComparer).ToArray();
+                foreach (var directory in removedFromIndex)
                 {
-                    indexWriter!.DeleteDocuments(new Term(RootField, directory));
+                    writer.DeleteDocuments(new Term(RootField, directory));
+                    indexedRoots.Remove(directory);
                 }
                 foreach (var prepared in preparedDirectories)
                 {
-                    ReplaceDirectoryIndex(prepared, commit: false);
+                    if (!prepared.IsAvailable && configuration.KeepFilesFromRemovedVolumes) continue;
+                    ReplaceDirectoryIndex(writer, prepared, commit: false);
+                    if (prepared.IsAvailable)
+                    {
+                        indexedRoots.Add(prepared.RootDirectory);
+                    }
+                    else
+                    {
+                        indexedRoots.Remove(prepared.RootDirectory);
+                    }
                 }
-                indexWriter!.Commit();
+                writer.Commit();
+                WriteIndexedRoots();
             }
             stopwatch.Stop();
             logger.LogInformation(
@@ -275,6 +373,13 @@ public sealed class FileSearcher : PluginBase, IDisposable
         }
         finally
         {
+            if (revision == Interlocked.Read(ref configurationRevision) && !disposed)
+            {
+                foreach (var directory in configuration.Directories)
+                {
+                    StartWatching(directory);
+                }
+            }
             configurationLock.Release();
         }
     }
@@ -287,85 +392,141 @@ public sealed class FileSearcher : PluginBase, IDisposable
         SystemDirectory.CreateDirectory(indexPath);
         indexDirectory = FSDirectory.Open(indexPath);
         analyzer = new StandardAnalyzer(LuceneVersion);
-        var config = new IndexWriterConfig(LuceneVersion, analyzer) { OpenMode = OpenMode.CREATE };
-        indexWriter = new IndexWriter(indexDirectory, config);
-    }
-
-    private void ReplaceDirectoryIndex(PreparedDirectoryIndex prepared, bool commit)
-    {
-        indexWriter!.DeleteDocuments(new Term(RootField, prepared.RootDirectory));
-        foreach (var document in prepared.Documents)
+        var rootsPath = Path.Combine(ConfigPath.Base, IndexedRootsFileName);
+        var canReuseIndex = File.Exists(rootsPath) && DirectoryReader.IndexExists(indexDirectory);
+        indexedRoots = canReuseIndex ? ReadIndexedRoots(rootsPath) : new HashSet<string>(PathComparer);
+        var config = new IndexWriterConfig(LuceneVersion, analyzer)
         {
-            indexWriter.AddDocument(document);
-        }
-        if (commit) indexWriter.Commit();
-        logger.LogInformation("Indexed {FileCount} files under {Directory}.",
-            prepared.Documents.Count, prepared.RootDirectory);
+            OpenMode = canReuseIndex ? OpenMode.CREATE_OR_APPEND : OpenMode.CREATE
+        };
+        indexWriter = new IndexWriter(indexDirectory, config);
+        indexWriter.Commit();
     }
 
-    private PreparedDirectoryIndex PrepareDirectoryIndex(string rootDirectory, CancellationToken cancellationToken)
+    private static HashSet<string> ReadIndexedRoots(string path)
     {
-        var documents = new List<Document>();
+        try
+        {
+            var roots = JsonSerializer.Deserialize<string[]>(File.ReadAllText(path)) ?? [];
+            return roots
+                .Select(NormalizeDirectoryPath)
+                .Where(root => root != null)
+                .Select(root => root!)
+                .ToHashSet(PathComparer);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        {
+            return new HashSet<string>(PathComparer);
+        }
+    }
+
+    private void WriteIndexedRoots()
+    {
+        var path = Path.Combine(ConfigPath.Base, IndexedRootsFileName);
+        try
+        {
+            File.WriteAllText(path, JsonSerializer.Serialize(indexedRoots.Order(PathComparer)));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            logger.LogWarning(ex, "Could not persist FileSearcher indexed roots.");
+        }
+    }
+
+    private void ReplaceDirectoryIndex(IndexWriter writer, PreparedDirectoryIndex prepared, bool commit)
+    {
+        writer.DeleteDocuments(new Term(RootField, prepared.RootDirectory));
+        foreach (var file in prepared.Files)
+        {
+            writer.AddDocument(new Document
+            {
+                new StringField(RootField, prepared.RootDirectory, Field.Store.NO),
+                new StoredField("path", file.Path),
+                new StoredField("filename", file.FileName),
+                new StringField("indexedTime", file.IndexedTime, Field.Store.YES),
+                new StringField("searchFilename", file.FileName.ToLowerInvariant(), Field.Store.NO),
+                new StringField("searchInitials", file.SearchInitials, Field.Store.NO),
+                new TextField("searchPossibles", file.FileName, Field.Store.NO)
+            });
+        }
+        if (commit) writer.Commit();
+        logger.LogInformation("Indexed {FileCount} files under {Directory}.",
+            prepared.Files.Count, prepared.RootDirectory);
+    }
+
+    private PreparedDirectoryIndex PrepareDirectoryIndex(
+        string rootDirectory,
+        FileSearchConfiguration configuration,
+        CancellationToken cancellationToken)
+    {
+        var files = new List<PreparedFile>();
         if (!SystemDirectory.Exists(rootDirectory))
         {
             logger.LogWarning("FileSearcher directory does not exist: {Directory}", rootDirectory);
-            return new PreparedDirectoryIndex(rootDirectory, documents);
+            return new PreparedDirectoryIndex(rootDirectory, files, IsAvailable: false);
         }
 
-        foreach (var file in EnumerateIndexableFiles(rootDirectory, cancellationToken))
+        var indexedTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        foreach (var file in EnumerateIndexableFiles(
+                     rootDirectory, configuration.IgnoreMatcher, configuration.UseIgnoreFiles, cancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
             var fileName = Path.GetFileNameWithoutExtension(file);
-            documents.Add(new Document
-            {
-                new StringField(RootField, rootDirectory, Field.Store.NO),
-                new StoredField("path", file),
-                new StoredField("filename", fileName),
-                new StringField("indexedTime", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), Field.Store.YES),
-                new StringField("searchFilename", fileName.ToLowerInvariant(), Field.Store.NO),
-                new StringField("searchInitials", StringUtils.GetInitialsFromWords(fileName), Field.Store.NO),
-                new TextField("searchPossibles", fileName, Field.Store.NO)
-            });
+            files.Add(new PreparedFile(
+                file,
+                fileName,
+                StringUtils.GetInitialsFromWords(fileName),
+                indexedTime));
         }
 
-        return new PreparedDirectoryIndex(rootDirectory, documents);
+        return new PreparedDirectoryIndex(rootDirectory, files, IsAvailable: true);
     }
 
-    private IEnumerable<string> EnumerateIndexableFiles(
+    internal IEnumerable<string> EnumerateIndexableFiles(
         string rootDirectory,
+        FileSearchIgnoreMatcher ignoreMatcher,
+        bool useIgnoreFiles,
         CancellationToken cancellationToken)
     {
-        var pending = new Stack<string>();
-        pending.Push(rootDirectory);
+        var pending = new Stack<PendingDirectory>();
+        pending.Push(new PendingDirectory(rootDirectory, string.Empty, FileSearchIgnoreMatcher.ScopedRules.Empty));
         while (pending.Count > 0)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var current = pending.Pop();
+            var scopedRules = useIgnoreFiles
+                ? current.Rules.AddFromDirectory(current.Path, current.RelativePath)
+                : current.Rules;
             string[] files;
             try
             {
-                files = SystemDirectory.GetFiles(current);
+                files = SystemDirectory.GetFiles(current.Path);
             }
             catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
             {
-                logger.LogDebug(ex, "Skipping inaccessible directory {Directory}.", current);
+                logger.LogDebug(ex, "Skipping inaccessible directory {Directory}.", current.Path);
                 continue;
             }
 
             foreach (var file in files)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (IsIndexableFile(file)) yield return file;
+                var relativePath = NormalizeRelativePath(Path.GetRelativePath(rootDirectory, file));
+                if (!ignoreMatcher.IsIgnored(relativePath, isDirectory: false)
+                    && !scopedRules.IsIgnored(relativePath, isDirectory: false))
+                {
+                    yield return file;
+                }
             }
 
             string[] directories;
             try
             {
-                directories = SystemDirectory.GetDirectories(current);
+                directories = SystemDirectory.GetDirectories(current.Path);
             }
             catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
             {
-                logger.LogDebug(ex, "Cannot enumerate child directories of {Directory}.", current);
+                logger.LogDebug(ex, "Cannot enumerate child directories of {Directory}.", current.Path);
                 continue;
             }
 
@@ -374,7 +535,13 @@ public sealed class FileSearcher : PluginBase, IDisposable
                 cancellationToken.ThrowIfCancellationRequested();
                 try
                 {
-                    if ((File.GetAttributes(directory) & FileAttributes.ReparsePoint) == 0) pending.Push(directory);
+                    var relativePath = NormalizeRelativePath(Path.GetRelativePath(rootDirectory, directory));
+                    if ((File.GetAttributes(directory) & FileAttributes.ReparsePoint) == 0
+                        && !ignoreMatcher.IsIgnored(relativePath, isDirectory: true)
+                        && !scopedRules.IsIgnored(relativePath, isDirectory: true))
+                    {
+                        pending.Push(new PendingDirectory(directory, relativePath, scopedRules));
+                    }
                 }
                 catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
                 {
@@ -395,21 +562,32 @@ public sealed class FileSearcher : PluginBase, IDisposable
                 IncludeSubdirectories = true,
                 NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName
                                | NotifyFilters.LastWrite | NotifyFilters.CreationTime,
-                InternalBufferSize = 32 * 1024
+                InternalBufferSize = 64 * 1024
             };
             watcher.Changed += (_, args) =>
             {
-                if (IsIndexableFile(args.FullPath)) ScheduleDirectoryReindex(rootDirectory);
+                if (ShouldReindexForChange(rootDirectory, args.FullPath)) ScheduleDirectoryReindex(rootDirectory);
             };
             watcher.Created += (_, args) =>
             {
-                if (IsIndexableFile(args.FullPath) || SystemDirectory.Exists(args.FullPath))
+                if (ShouldReindexForChange(rootDirectory, args.FullPath))
                     ScheduleDirectoryReindex(rootDirectory);
             };
-            watcher.Deleted += (_, _) => ScheduleDirectoryReindex(rootDirectory);
-            watcher.Renamed += (_, _) => ScheduleDirectoryReindex(rootDirectory);
+            watcher.Deleted += (_, args) =>
+            {
+                if (ShouldReindexForChange(rootDirectory, args.FullPath)) ScheduleDirectoryReindex(rootDirectory);
+            };
+            watcher.Renamed += (_, args) =>
+            {
+                if (ShouldReindexForChange(rootDirectory, args.FullPath)
+                    || ShouldReindexForChange(rootDirectory, args.OldFullPath))
+                {
+                    ScheduleDirectoryReindex(rootDirectory);
+                }
+            };
             watcher.Error += (_, args) =>
             {
+                PauseWatching(rootDirectory);
                 logger.LogWarning(args.GetException(),
                     "FileSearcher watcher error for {Directory}; rebuilding that directory.", rootDirectory);
                 ScheduleDirectoryReindex(rootDirectory);
@@ -431,6 +609,36 @@ public sealed class FileSearcher : PluginBase, IDisposable
         {
             logger.LogWarning(ex, "Could not monitor FileSearcher directory {Directory}.", rootDirectory);
         }
+    }
+
+    private void PauseWatching(string rootDirectory)
+    {
+        lock (watcherLock)
+        {
+            if (watchers.TryGetValue(rootDirectory, out var watcher))
+            {
+                watcher.EnableRaisingEvents = false;
+            }
+        }
+    }
+
+    private bool ShouldReindexForChange(string rootDirectory, string path)
+    {
+        var fileName = Path.GetFileName(path);
+        if (fileName.Equals(".gitignore", StringComparison.OrdinalIgnoreCase)
+            || fileName.Equals(".ignore", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        FileSearchConfiguration configuration;
+        lock (watcherLock)
+        {
+            configuration = currentConfiguration;
+        }
+
+        var relativePath = NormalizeRelativePath(Path.GetRelativePath(rootDirectory, path));
+        return !configuration.IgnoreMatcher.IsIgnored(relativePath, SystemDirectory.Exists(path));
     }
 
     private void StopWatching(string rootDirectory)
@@ -470,9 +678,15 @@ public sealed class FileSearcher : PluginBase, IDisposable
                     if (disposed || !configuredDirectories.Contains(rootDirectory)) return;
                 }
 
+                PauseWatching(rootDirectory);
                 Stopwatch stopwatch = Stopwatch.StartNew();
+                FileSearchConfiguration configuration;
+                lock (watcherLock)
+                {
+                    configuration = currentConfiguration;
+                }
                 var prepared = await RunIndexingWorkAsync(
-                    () => PrepareDirectoryIndex(rootDirectory, pendingToken),
+                    () => PrepareDirectoryIndex(rootDirectory, configuration, pendingToken),
                     pendingToken);
 
                 lock (watcherLock)
@@ -480,10 +694,25 @@ public sealed class FileSearcher : PluginBase, IDisposable
                     if (disposed || !configuredDirectories.Contains(rootDirectory)) return;
                 }
 
-                lock (indexLock)
+                lock (indexWriteLock)
                 {
-                    if (disposed || indexWriter == null) return;
-                    ReplaceDirectoryIndex(prepared, commit: true);
+                    IndexWriter writer;
+                    lock (indexLock)
+                    {
+                        if (disposed || indexWriter == null) return;
+                        writer = indexWriter;
+                    }
+                    if (!prepared.IsAvailable && configuration.KeepFilesFromRemovedVolumes) return;
+                    ReplaceDirectoryIndex(writer, prepared, commit: true);
+                    if (prepared.IsAvailable)
+                    {
+                        indexedRoots.Add(rootDirectory);
+                    }
+                    else
+                    {
+                        indexedRoots.Remove(rootDirectory);
+                    }
+                    WriteIndexedRoots();
                 }
                 stopwatch.Stop();
                 logger.LogInformation("Reindexed changed FileSearcher directory {Directory}, cost {CostTime} ms.",
@@ -498,13 +727,19 @@ public sealed class FileSearcher : PluginBase, IDisposable
             }
             finally
             {
+                var shouldRestartWatcher = false;
                 lock (watcherLock)
                 {
                     if (pendingReindexes.TryGetValue(rootDirectory, out var current) && ReferenceEquals(current, pending))
                     {
                         pendingReindexes.Remove(rootDirectory);
+                        shouldRestartWatcher = !disposed && configuredDirectories.Contains(rootDirectory);
                     }
                     pending.Dispose();
+                }
+                if (shouldRestartWatcher)
+                {
+                    StartWatching(rootDirectory);
                 }
             }
         });
@@ -519,8 +754,11 @@ public sealed class FileSearcher : PluginBase, IDisposable
             DirectoryReader reader;
             lock (indexLock)
             {
-                reader = indexWriter?.GetReader(true)
-                         ?? throw new InvalidOperationException("FileSearcher index is not initialized.");
+                if (indexDirectory is null || !DirectoryReader.IndexExists(indexDirectory))
+                {
+                    throw new InvalidOperationException("FileSearcher index is not initialized.");
+                }
+                reader = DirectoryReader.Open(indexDirectory);
             }
 
             using (reader)
@@ -596,6 +834,35 @@ public sealed class FileSearcher : PluginBase, IDisposable
         return result;
     }
 
+    internal static IReadOnlyList<string> ReadIgnorePatterns(object? value)
+    {
+        var result = new List<string>();
+        if (value is not JsonElement { ValueKind: JsonValueKind.Array } array) return result;
+
+        foreach (var item in array.EnumerateArray())
+        {
+            string? pattern = null;
+            if (item.ValueKind == JsonValueKind.String)
+            {
+                pattern = item.GetString();
+            }
+            else if (item.ValueKind == JsonValueKind.Object)
+            {
+                var property = item.EnumerateObject()
+                    .FirstOrDefault(candidate => string.Equals(candidate.Name, "Pattern", StringComparison.OrdinalIgnoreCase));
+                if (property.Value.ValueKind == JsonValueKind.String) pattern = property.Value.GetString();
+            }
+
+            pattern = pattern?.Trim();
+            if (!string.IsNullOrEmpty(pattern)
+                && !result.Contains(pattern, StringComparer.OrdinalIgnoreCase))
+            {
+                result.Add(pattern);
+            }
+        }
+        return result;
+    }
+
     internal static DirectoryChanges CalculateDirectoryChanges(
         IEnumerable<string> previous,
         IEnumerable<string> current)
@@ -609,7 +876,7 @@ public sealed class FileSearcher : PluginBase, IDisposable
 
     internal sealed record DirectoryChanges(string[] Added, string[] Removed);
 
-    private static JsonElement CreateDefaultSearchDirectories() =>
+    internal static JsonElement CreateDefaultSearchDirectories() =>
         JsonSerializer.SerializeToElement(DefaultSearchDirectoryPaths()
             .Where(path => !string.IsNullOrWhiteSpace(path))
             .Distinct(PathComparer)
@@ -617,13 +884,22 @@ public sealed class FileSearcher : PluginBase, IDisposable
 
     private static IEnumerable<string> DefaultSearchDirectoryPaths()
     {
-        yield return Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-        yield return Path.Combine("C:\\Users", Environment.UserName, "OneDrive", "Custom Shortcuts", "Scripts");
-        yield return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-            "Microsoft", "Windows", "Start Menu", "Programs");
-        yield return Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-        yield return Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+        yield return Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        yield return Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
     }
+
+    internal static JsonElement CreateDefaultIgnorePatterns() => JsonSerializer.SerializeToElement(
+        new[]
+        {
+            "*.tmp",
+            "*.temp",
+            "node_modules",
+            "**/tmp/**",
+            "**/temp/**",
+            "**/[Cc]ache/**",
+            "**/[Cc]aches/**",
+            "**/AppData/**"
+        }.Select(pattern => new Dictionary<string, string> { ["Pattern"] = pattern }));
 
     private static string? NormalizeDirectoryPath(string? path)
     {
@@ -642,9 +918,7 @@ public sealed class FileSearcher : PluginBase, IDisposable
         }
     }
 
-    private static bool IsIndexableFile(string path) =>
-        path.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase)
-        || path.EndsWith(".ps1", StringComparison.OrdinalIgnoreCase);
+    private static string NormalizeRelativePath(string path) => path.Replace('\\', '/').Trim('/');
 
     private static Task<T> RunIndexingWorkAsync<T>(Func<T> work, CancellationToken cancellationToken) =>
         Task.Factory.StartNew(
@@ -653,7 +927,30 @@ public sealed class FileSearcher : PluginBase, IDisposable
             TaskCreationOptions.LongRunning,
             TaskScheduler.Default);
 
-    private sealed record PreparedDirectoryIndex(string RootDirectory, IReadOnlyList<Document> Documents);
+    private sealed record PreparedDirectoryIndex(
+        string RootDirectory,
+        IReadOnlyList<PreparedFile> Files,
+        bool IsAvailable);
+    private sealed record PreparedFile(
+        string Path,
+        string FileName,
+        string SearchInitials,
+        string IndexedTime);
+    private sealed record PendingDirectory(
+        string Path,
+        string RelativePath,
+        FileSearchIgnoreMatcher.ScopedRules Rules);
+    private sealed record FileSearchConfiguration(
+        IReadOnlySet<string> Directories,
+        IReadOnlyList<string> IgnorePatterns,
+        bool UseIgnoreFiles,
+        bool KeepFilesFromRemovedVolumes)
+    {
+        public FileSearchIgnoreMatcher IgnoreMatcher { get; } = new(IgnorePatterns);
+
+        public static FileSearchConfiguration Empty { get; } = new(
+            new HashSet<string>(PathComparer), [], true, false);
+    }
     private readonly record struct ConfigurationApplyRequest(
         long Revision,
         CancellationTokenSource Cancellation)
@@ -688,14 +985,17 @@ public sealed class FileSearcher : PluginBase, IDisposable
             configuredDirectories.Clear();
         }
 
-        lock (indexLock)
+        lock (indexWriteLock)
         {
-            indexWriter?.Dispose();
-            analyzer?.Dispose();
-            indexDirectory?.Dispose();
-            indexWriter = null;
-            analyzer = null;
-            indexDirectory = null;
+            lock (indexLock)
+            {
+                indexWriter?.Dispose();
+                analyzer?.Dispose();
+                indexDirectory?.Dispose();
+                indexWriter = null;
+                analyzer = null;
+                indexDirectory = null;
+            }
         }
         disposeCancellation.Dispose();
         GC.SuppressFinalize(this);

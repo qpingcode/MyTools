@@ -116,11 +116,18 @@
   <data name="Plugin.ProcessKiller.Name" xml:space="preserve"><value>Process Killer</value></data>
   <data name="Plugin.ProcessKiller.Description" xml:space="preserve"><value>Search and manage running processes</value></data>
   <data name="Plugin.FileSearcher.Name" xml:space="preserve"><value>File Searcher</value></data>
-  <data name="Plugin.FileSearcher.Description" xml:space="preserve"><value>Search for files and scripts</value></data>
-  <data name="Plugin.FileSearcher.Settings.Category.Description" xml:space="preserve"><value>Choose the directories whose shortcuts and PowerShell scripts are searchable</value></data>
+  <data name="Plugin.FileSearcher.Description" xml:space="preserve"><value>Search indexed files</value></data>
+  <data name="Plugin.FileSearcher.Settings.Category.Description" xml:space="preserve"><value>Configure indexed directories and exclusion rules</value></data>
   <data name="Plugin.FileSearcher.Settings.SearchDirectories.Title" xml:space="preserve"><value>Search directories</value></data>
-  <data name="Plugin.FileSearcher.Settings.SearchDirectories.Description" xml:space="preserve"><value>Add or remove directories containing shortcuts (.lnk) and PowerShell scripts (.ps1)</value></data>
+  <data name="Plugin.FileSearcher.Settings.SearchDirectories.Description" xml:space="preserve"><value>Add or remove directories whose files should be indexed</value></data>
   <data name="Plugin.FileSearcher.Settings.SearchDirectories.Path" xml:space="preserve"><value>Directory</value></data>
+  <data name="Plugin.FileSearcher.Settings.IgnorePatterns.Title" xml:space="preserve"><value>Ignore patterns</value></data>
+  <data name="Plugin.FileSearcher.Settings.IgnorePatterns.Description" xml:space="preserve"><value>Exclude matching files and directories from the index</value></data>
+  <data name="Plugin.FileSearcher.Settings.IgnorePatterns.Pattern" xml:space="preserve"><value>Pattern</value></data>
+  <data name="Plugin.FileSearcher.Settings.UseIgnoreFiles.Title" xml:space="preserve"><value>Use ignore files</value></data>
+  <data name="Plugin.FileSearcher.Settings.UseIgnoreFiles.Description" xml:space="preserve"><value>Respect .gitignore and .ignore files found while indexing</value></data>
+  <data name="Plugin.FileSearcher.Settings.KeepFilesFromRemovedVolumes.Title" xml:space="preserve"><value>Keep files from removed volumes</value></data>
+  <data name="Plugin.FileSearcher.Settings.KeepFilesFromRemovedVolumes.Description" xml:space="preserve"><value>Preserve indexed files when their volumes are disconnected. Useful for network drives and external storage</value></data>
   <data name="Plugin.CommandRunner.Name" xml:space="preserve"><value>Scripts</value></data>
   <data name="Plugin.CommandRunner.Description" xml:space="preserve"><value>Run custom commands from search</value></data>
   <data name="Plugin.DllInterfaceReader.Name" xml:space="preserve"><value>DLL Interface Reader</value></data>
