@@ -18,19 +18,23 @@ public class FileSearcherConfigurationTest
     private const LuceneVersion TestLuceneVersion = LuceneVersion.LUCENE_48;
 
     [Test]
-    public void Actions_DefaultToSystemOpenWithoutExecuteActions()
+    public async Task Actions_DefaultToSystemOpenWithoutExecuteActions()
     {
         using var cache = new MemoryCache(new MemoryCacheOptions());
         using var searcher = new MyTools.Plugins.FileSearcher(
             NullLogger<MyTools.Plugins.FileSearcher>.Instance, cache);
+        var defaultActionResult = await searcher.Actions[0].ExecuteAsync(new UnsupportedActionParams());
+        var explorerActionResult = await searcher.Actions[1].ExecuteAsync(new UnsupportedActionParams());
 
         Assert.Multiple(() =>
         {
             Assert.That(searcher.Actions, Has.Count.EqualTo(2));
-            Assert.That(searcher.Actions[0].Name, Is.EqualTo(WellKnownActions.OpenFile.Name));
             Assert.That(searcher.Actions[0].Hotkey, Is.EqualTo(Hotkey.Enter));
-            Assert.That(searcher.Actions[1].Name, Is.EqualTo(WellKnownActions.OpenInExplorer.Name));
+            Assert.That(defaultActionResult.LocalizedMessage?.Key,
+                Is.EqualTo("Action.OpenFile.InvalidParameters"));
             Assert.That(searcher.Actions[1].Hotkey, Is.EqualTo(Hotkey.Ctrl(HotkeyKey.O)));
+            Assert.That(explorerActionResult.LocalizedMessage?.Key,
+                Is.EqualTo("Action.OpenInExplorer.InvalidParameters"));
             Assert.That(searcher.Actions, Has.None.Matches<IActionWithHotkey>(
                 action => action.Hotkey == Hotkey.Ctrl(HotkeyKey.Enter)));
         });
@@ -255,4 +259,6 @@ public class FileSearcherConfigurationTest
             Directory.Delete(root, recursive: true);
         }
     }
+
+    private sealed class UnsupportedActionParams : IActionParams;
 }
