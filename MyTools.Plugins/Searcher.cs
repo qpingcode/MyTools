@@ -9,7 +9,7 @@ using MyTools.Plugins.NodePlugins;
 
 namespace MyTools.Plugins;
 
-public class Searcher(IGlobalSearchRegistry globalSearchRegistry, SearchHistoryDbHelper searchHistoryDbHelper, ILogger<Searcher> logger, IEnumerable<IPlugin>? builtInPlugins = null, ILocalizationService? localization = null) : ISearcher
+public class Searcher(IGlobalSearchRegistry globalSearchRegistry, SearchHistoryDbHelper searchHistoryDbHelper, ILogger<Searcher> logger, IEnumerable<IPlugin>? builtInPlugins = null) : ISearcher
 {
     async Task<Result> ISearcher.SearchAsync(IPlugin? plugin, string searchText, CancellationToken cancellationToken)
     {
@@ -49,18 +49,20 @@ public class Searcher(IGlobalSearchRegistry globalSearchRegistry, SearchHistoryD
         foreach (var entry in searchHistoryDbHelper.GetRecentSelections())
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (entry.Snapshot is not { } snapshot || !plugins.TryGetValue(entry.PluginId, out var plugin)) continue;
+            if (entry.Snapshot is not { IsCurrent: true, Actions.Count: > 0 } snapshot
+                || !plugins.TryGetValue(entry.PluginId, out var plugin)) continue;
             try
             {
-                items.Add(new ResultItem(snapshot.RestoreIcon(), snapshot.Title, snapshot.SubTitle, snapshot)
+                var arguments = snapshot.RestoreArguments() ?? snapshot;
+                var actions = RestoreHistoryActions(plugin, entry, snapshot);
+                items.Add(new ResultItem(snapshot.RestoreIcon(), snapshot.Title, snapshot.SubTitle, arguments)
                 {
                     SourcePluginId = entry.PluginId,
                     SourcePluginName = plugin.Name,
                     ResultKey = entry.ResultKey,
                     SearchQuery = entry.Query,
                     SearchFrom = entry.SearchFrom,
-                    SortScore = entry.SelectionCount,
-                    AllowedActions = [new ActionWithHotkey(new OpenHistoryResultAction(this, entry), Hotkey.Enter)]
+                    AllowedActions = actions
                 });
                 if (items.Count == 50) break;
             }
@@ -72,16 +74,43 @@ public class Searcher(IGlobalSearchRegistry globalSearchRegistry, SearchHistoryD
         return new Result(true, null, items);
     }
 
-    private sealed class OpenHistoryResultAction(Searcher owner, SearchHistorySelection entry) : IAction
+    private IReadOnlyList<IActionWithHotkey> RestoreHistoryActions(
+        IPlugin plugin,
+        SearchHistorySelection entry,
+        SearchResultSnapshot snapshot)
     {
-        public string Name => owner.HistoryActionName;
-        public string Description => owner.HistoryActionName;
-        public Task<ActionResult> ExecuteAsync(IActionParams args) => owner.ExecuteHistoryResultAsync(entry);
+        var currentActions = plugin.Actions
+            .GroupBy(action => action.Id, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
+        return snapshot.Actions!.Select(saved =>
+        {
+            if (snapshot.RestoreArguments() != null && currentActions.TryGetValue(saved.Id, out var current))
+            {
+                return current;
+            }
+
+            IActionWithHotkey action = new ActionWithHotkey(
+                new OpenHistoryResultAction(this, entry, saved.Id, saved.Name, saved.Description),
+                saved.Hotkey,
+                saved.Pinned);
+            return action;
+        }).ToArray();
     }
 
-    private string HistoryActionName => localization?.GetCaption("Search.History.Open", "Open") ?? "Open";
+    private sealed class OpenHistoryResultAction(
+        Searcher owner,
+        SearchHistorySelection entry,
+        string actionId,
+        string? name = null,
+        string? description = null) : IAction
+    {
+        public string Id => actionId;
+        public string Name => name ?? actionId;
+        public string Description => description ?? Name;
+        public Task<ActionResult> ExecuteAsync(IActionParams args) => owner.ExecuteHistoryResultAsync(entry, actionId);
+    }
 
-    private async Task<ActionResult> ExecuteHistoryResultAsync(SearchHistorySelection entry)
+    private async Task<ActionResult> ExecuteHistoryResultAsync(SearchHistorySelection entry, string actionId)
     {
         try
         {
@@ -95,11 +124,16 @@ public class Searcher(IGlobalSearchRegistry globalSearchRegistry, SearchHistoryD
                     ? PrepareResultItems(result.Items, plugin, entry.Query, entry.SearchFrom)
                         .FirstOrDefault(item => item.ResultKey == entry.ResultKey)
                     : null;
-                var action = selected?.AllowedActions.FirstOrDefault();
+                var action = selected?.AllowedActions.FirstOrDefault(candidate =>
+                    string.Equals(candidate.Id, actionId, StringComparison.Ordinal));
                 if (selected != null && action != null && AvailablePlugins.Contains(plugin))
                 {
                     var outcome = await action.ExecuteAsync(selected.Args);
-                    if (outcome.Success) return outcome;
+                    if (outcome.Success)
+                    {
+                        searchHistoryDbHelper.UpdateSnapshot(selected);
+                        return outcome;
+                    }
                 }
             }
         }

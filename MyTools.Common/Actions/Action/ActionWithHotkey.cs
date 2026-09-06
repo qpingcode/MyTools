@@ -15,6 +15,8 @@ public class ActionWithHotkey : IActionWithHotkey
 
     public bool Pinned { get; }
 
+    public string Id => inner.Id;
+
     public string Name => inner.Name;
 
     public string Description => inner.Description;

@@ -40,7 +40,7 @@ public class SearchHistoryDbHelperTest
         var selected = new ResultItem(new StringIcon("★"), "Selected result", "Original subtitle", ActionStringParam.From("fav"))
         {
             SourcePluginId = plugin.PluginId.Value, ResultKey = "fav", SearchQuery = "MixedCase",
-            SearchFrom = SearchFrom.Plugin
+            SearchFrom = SearchFrom.Plugin, AllowedActions = plugin.Actions
         };
         helper.RecordSelection(selected);
         helper.RecordSelection(selected);
@@ -55,18 +55,19 @@ public class SearchHistoryDbHelperTest
             Assert.That(((StringIcon)item.Icon).Emoji, Is.EqualTo("★"));
             Assert.That(item.SearchQuery, Is.EqualTo("MixedCase"));
             Assert.That(item.SearchFrom, Is.EqualTo(SearchFrom.Plugin));
-            Assert.That(item.AllowedActions.Single().Hotkey, Is.EqualTo(Hotkey.Enter));
+            Assert.That(item.AllowedActions.Select(action => action.Hotkey),
+                Is.EqualTo(new[] { Hotkey.Enter, Hotkey.Ctrl(HotkeyKey.O) }));
             Assert.That(plugin.SearchCalls, Is.Zero);
             Assert.That(reopened.GetRecentSelections().Single().SelectionCount, Is.EqualTo(2));
         });
-        var outcome = await item.AllowedActions.Single().ExecuteAsync(item.Args);
+        var outcome = await item.AllowedActions.First().ExecuteAsync(item.Args);
         Assert.That(outcome.Success, Is.True);
-        Assert.That(plugin.SearchCalls, Is.EqualTo(1));
+        Assert.That(plugin.SearchCalls, Is.Zero);
         Assert.That(plugin.ExecutedValue, Is.EqualTo("fav"));
     }
 
     [Test]
-    public void RecentSelections_CountsThirtyDaysAndDeduplicatesAcrossQueries()
+    public void RecentSelections_UsesNewestFirstAndDeduplicatesAcrossQueries()
     {
         var helper = new SearchHistoryDbHelper(_dbPath);
         var now = DateTime.UtcNow;
@@ -76,10 +77,10 @@ public class SearchHistoryDbHelperTest
         helper.RecordSelection("earlier", "plugin", "earlier", selectedAt: now.AddHours(-1));
         helper.RecordSelection("latest", "plugin", "latest", selectedAt: now);
         var history = helper.GetRecentSelections(now);
-        Assert.That(history.Select(item => item.ResultKey), Is.EqualTo(new[] { "frequent", "latest", "earlier" }));
-        Assert.That(history.First().SelectionCount, Is.EqualTo(2));
-        Assert.That(history.First().Query, Is.EqualTo("MixedCase"));
-        Assert.That(history.First().SearchFrom, Is.EqualTo(SearchFrom.Plugin));
+        Assert.That(history.Select(item => item.ResultKey), Is.EqualTo(new[] { "latest", "earlier", "frequent" }));
+        Assert.That(history.Last().SelectionCount, Is.EqualTo(2));
+        Assert.That(history.Last().Query, Is.EqualTo("MixedCase"));
+        Assert.That(history.Last().SearchFrom, Is.EqualTo(SearchFrom.Plugin));
     }
 
     [Test]
@@ -88,8 +89,8 @@ public class SearchHistoryDbHelperTest
         var helper = new SearchHistoryDbHelper(_dbPath);
         var disabled = new FakePlugin();
         disabled.Disable();
-        helper.RecordSelection("q", disabled.PluginId.Value, "fav", snapshot: new("Disabled", "", "emoji", ""));
-        helper.RecordSelection("q", "uninstalled", "fav", snapshot: new("Removed", "", "emoji", ""));
+        helper.RecordSelection("q", disabled.PluginId.Value, "fav", snapshot: CreateSnapshot(disabled, "Disabled", "fav"));
+        helper.RecordSelection("q", "uninstalled", "fav", snapshot: CreateSnapshot(disabled, "Removed", "fav"));
         var searcher = new Searcher(new FakeGlobalSearchRegistry(disabled), helper, NullLogger<Searcher>.Instance);
         Assert.That((await ((ISearcher)searcher).SearchAsync(null, "", CancellationToken.None)).Items, Is.Empty);
         Assert.That(disabled.SearchCalls, Is.Zero);
@@ -101,7 +102,15 @@ public class SearchHistoryDbHelperTest
     {
         var helper = new SearchHistoryDbHelper(_dbPath);
         var plugin = new FakePlugin();
-        helper.RecordSelection("q", plugin.PluginId.Value, "missing", snapshot: new("Missing", "", "emoji", ""));
+        var missingSnapshot = CreateSnapshot(plugin, "Missing", "missing") with
+        {
+            Actions =
+            [
+                new SearchActionSnapshot(
+                    "removed-action", "Removed", "Removed", HotkeyKey.Enter, HotkeyModifiers.None, false)
+            ]
+        };
+        helper.RecordSelection("q", plugin.PluginId.Value, "missing", snapshot: missingSnapshot);
         var searcher = new Searcher(new FakeGlobalSearchRegistry(plugin), helper, NullLogger<Searcher>.Instance);
         var item = (await ((ISearcher)searcher).SearchAsync(null, "", CancellationToken.None)).Items.Single();
         if (disableAfterDisplay) plugin.Disable();
@@ -123,6 +132,26 @@ public class SearchHistoryDbHelperTest
         Assert.That((await ((ISearcher)searcher).SearchAsync(null, "", CancellationToken.None)).Items, Is.Empty);
         Assert.That(plugin.SearchCalls, Is.Zero);
     }
+
+    [Test]
+    public async Task HomePage_IgnoresLegacySnapshots()
+    {
+        var helper = new SearchHistoryDbHelper(_dbPath);
+        var plugin = new FakePlugin();
+        helper.RecordSelection("q", plugin.PluginId.Value, "fav",
+            snapshot: new("Legacy", "", "emoji", ""));
+        var searcher = new Searcher(new FakeGlobalSearchRegistry(plugin), helper, NullLogger<Searcher>.Instance);
+
+        Assert.That((await ((ISearcher)searcher).SearchAsync(null, "", CancellationToken.None)).Items, Is.Empty);
+        Assert.That(plugin.SearchCalls, Is.Zero);
+    }
+
+    private static SearchResultSnapshot CreateSnapshot(FakePlugin plugin, string title, string value) =>
+        SearchResultSnapshot.Create(new ResultItem(
+            StringIcon.Empty, title, string.Empty, ActionStringParam.From(value))
+        {
+            AllowedActions = plugin.Actions
+        });
 
     [Test]
     public void GetSelectionBoosts_PrefersExactQueryOverPrefixQuery()
@@ -218,11 +247,22 @@ public class SearchHistoryDbHelperTest
                 return Task.FromResult(ActionResult.CreateSuccess(""));
             }
         }
+        private sealed class SecondaryAction : IAction
+        {
+            public string Name => "Secondary";
+            public string Description => "Secondary";
+            public Task<ActionResult> ExecuteAsync(IActionParams args) =>
+                Task.FromResult(ActionResult.CreateSuccess(""));
+        }
         public override PluginId PluginId => new(GetType().FullName!);
 
         public override string Name => "Fake";
         public override string Description => "Fake";
-        public override List<IActionWithHotkey> Actions => [new ActionWithHotkey(new TestAction(this), Hotkey.Enter)];
+        public override List<IActionWithHotkey> Actions =>
+        [
+            new ActionWithHotkey(new TestAction(this), Hotkey.Enter),
+            new ActionWithHotkey(new SecondaryAction(), Hotkey.Ctrl(HotkeyKey.O))
+        ];
         public override bool IsGlobalSearchPlugin => true;
 
         public override Task<Result> SearchAsync(string query, CancellationToken cancellationToken, SearchOptions? searchOptions = null)

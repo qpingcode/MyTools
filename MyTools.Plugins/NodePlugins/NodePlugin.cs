@@ -661,6 +661,8 @@ internal sealed class NodePluginInvokeAction : IAction
 
     public string Name => title;
 
+    public string Id => actionId;
+
     public string Description => string.IsNullOrWhiteSpace(description) ? $"Invoke {title}" : description;
 
     public async Task<ActionResult> ExecuteAsync(IActionParams args)

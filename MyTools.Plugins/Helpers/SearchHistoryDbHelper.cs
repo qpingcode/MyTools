@@ -49,7 +49,26 @@ ON CONFLICT(normalized_query) DO UPDATE SET
 
     public void RecordSelection(ResultItem item)
         => RecordSelection(item.SearchQuery, item.SourcePluginId, item.ResultKey, item.SearchFrom,
-            snapshot: SearchResultSnapshot.Create(item));
+            snapshot: item.Args is SearchResultSnapshot ? null : SearchResultSnapshot.Create(item));
+
+    public void UpdateSnapshot(ResultItem item)
+    {
+        if (string.IsNullOrWhiteSpace(item.SourcePluginId) || string.IsNullOrWhiteSpace(item.ResultKey))
+        {
+            return;
+        }
+
+        using var conn = CreateConnection();
+        conn.Open();
+        using var save = conn.CreateCommand();
+        save.CommandText = @"INSERT INTO search_result_snapshots (plugin_id, result_key, snapshot)
+VALUES (@plugin, @key, @snapshot)
+ON CONFLICT(plugin_id, result_key) DO UPDATE SET snapshot = excluded.snapshot;";
+        save.Parameters.AddWithValue("@plugin", item.SourcePluginId);
+        save.Parameters.AddWithValue("@key", item.ResultKey);
+        save.Parameters.AddWithValue("@snapshot", JsonSerializer.Serialize(SearchResultSnapshot.Create(item)));
+        save.ExecuteNonQuery();
+    }
 
     public void RecordSelection(string? query, string pluginId, string resultKey,
         SearchFrom searchFrom = SearchFrom.Global, DateTime? selectedAt = null, SearchResultSnapshot? snapshot = null)
@@ -120,7 +139,7 @@ SELECT recent.plugin_id, recent.result_key, query, search_from, frequency, last_
 FROM recent LEFT JOIN search_result_snapshots snapshots
 ON recent.plugin_id = snapshots.plugin_id AND recent.result_key = snapshots.result_key
 WHERE position = 1
-ORDER BY frequency DESC, last_selected_at DESC, recent.plugin_id, recent.result_key;";
+ORDER BY last_selected_at DESC, recent.plugin_id, recent.result_key;";
         var today = (now ?? DateTime.UtcNow).ToUniversalTime().Date;
         cmd.Parameters.AddWithValue("@oldestDay", today.AddDays(-29).ToString("yyyy-MM-dd"));
         cmd.Parameters.AddWithValue("@today", today.ToString("yyyy-MM-dd"));
