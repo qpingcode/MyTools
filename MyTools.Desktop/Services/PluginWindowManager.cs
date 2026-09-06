@@ -14,6 +14,7 @@ namespace MyTools.Desktop.Services;
 public sealed class PluginWindowManager
 {
     private readonly Dictionary<PluginId, PluginWindow> windows = new();
+    private readonly HashSet<PluginId> hotKeyActivated = new();
     private readonly IServiceProvider serviceProvider;
     private readonly WindowPlacementService windowPlacement;
 
@@ -30,24 +31,57 @@ public sealed class PluginWindowManager
     {
         if (windows.TryGetValue(plugin.PluginId, out var existing))
         {
-            if (replaceContext)
+            if (replaceContext || !existing.HasPluginContent)
             {
                 existing.SetPlugin(plugin, context);
             }
-            _ = existing.ActivatePluginAsync();
+            _ = existing.ActivatePluginAsync(requestForeground: !hotKeyActivated.Remove(plugin.PluginId));
             return;
         }
 
-        var window = serviceProvider.GetRequiredService<PluginWindow>();
-        window.Closed += (_, _) => windows.Remove(plugin.PluginId);
+        var window = CreateAndShowShell(plugin, context);
+        _ = window.ActivatePluginAsync();
         window.SetPlugin(plugin, context);
+    }
+
+    // Called synchronously during WM_HOTKEY. No plugin detail view is attached here.
+    internal void ActivateHotKeyShell(NodePlugin plugin)
+    {
+        if (!windows.TryGetValue(plugin.PluginId, out var window))
+        {
+            var context = plugin.CreateHotKeyDetailContext();
+            if (context == null) return; // Search-only plugins keep the normal deferred path.
+            window = CreateAndShowShell(plugin, context);
+        }
+        window.ActivateShellFromHotKey();
+        hotKeyActivated.Add(plugin.PluginId);
+    }
+
+    private PluginWindow CreateAndShowShell(NodePlugin plugin, NodePluginDetailContext? context)
+    {
+        var window = serviceProvider.GetRequiredService<PluginWindow>();
+        window.Closed += (_, _) =>
+        {
+            windows.Remove(plugin.PluginId);
+            hotKeyActivated.Remove(plugin.PluginId);
+        };
+        // Show and activate the shell before creating the WebView2 visual tree.
+        window.PreparePluginShell(plugin, context);
         var placementKey = WindowPlacementService.PluginKey(plugin.PluginId.Value);
         windowPlacement.Restore(window, placementKey);
         windowPlacement.Track(window, placementKey);
-        window.Show();
-        _ = window.ActivatePluginAsync();
-
         windows[plugin.PluginId] = window;
+        try
+        {
+            window.Show();
+            return window;
+        }
+        catch
+        {
+            windows.Remove(plugin.PluginId);
+            window.Close();
+            throw;
+        }
     }
 
     public void RefreshOpenPlugins(IEnumerable<NodePlugin> plugins)

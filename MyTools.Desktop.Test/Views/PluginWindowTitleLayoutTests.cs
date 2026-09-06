@@ -55,6 +55,24 @@ public class PluginWindowTitleLayoutTests
     }
 
     [Test]
+    public void NewWindow_LeavesPluginContentEmptyUntilPluginIsAttached()
+    {
+        using var services = new ServiceCollection().BuildServiceProvider();
+        using var viewModel = new PluginViewModel(services);
+        var window = new PluginWindow(viewModel);
+        window.Measure(new Size(1020, 624));
+        window.Arrange(new Rect(0, 0, 1020, 624));
+        window.UpdateLayout();
+
+        var content = (ContentControl)window.FindName("PluginContentView");
+        Assert.Multiple(() =>
+        {
+            Assert.That(viewModel.CurrentViewModel, Is.Null);
+            Assert.That(content.Content, Is.Null);
+        });
+    }
+
+    [Test]
     public void Window_UsesNativeResizableChrome()
     {
         var services = new ServiceCollection().BuildServiceProvider();

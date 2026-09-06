@@ -25,6 +25,7 @@ public partial class PluginWindow
     private const uint MonitorDefaultToNearest = 0x00000002;
     private readonly PluginViewModel viewModel;
     private HwndSource? hwndSource;
+    private int activationAttempt;
 
     public PluginWindow(PluginViewModel viewModel)
     {
@@ -44,38 +45,58 @@ public partial class PluginWindow
     }
 
     public string? PluginId { get; private set; }
+    internal bool HasPluginContent => viewModel.CurrentViewModel != null;
 
     /// <summary>
     /// 设置插件并应用详情上下文。窗口首次创建与重复刷新（复用）时都会调用。
     /// </summary>
     public void SetPlugin(NodePlugin plugin, NodePluginDetailContext? context)
     {
+        PreparePluginShell(plugin, context);
+        viewModel.SetPlugin(plugin, context);
+    }
+
+    internal void PreparePluginShell(NodePlugin plugin, NodePluginDetailContext? context)
+    {
         PluginId = plugin.PluginId.Value;
         PluginStatusBar.Visibility = plugin.ShowStatusBarInPluginWindow
             ? Visibility.Visible
             : Visibility.Collapsed;
         ApplyPluginContentMargin();
-        viewModel.SetPlugin(plugin, context);
+        viewModel.SetPluginIdentity(plugin, context);
     }
 
     /// <summary>
     /// 激活窗口并把焦点放入插件详情页的主输入框。
     /// </summary>
-    public async Task ActivatePluginAsync()
+    public async Task ActivatePluginAsync(bool requestForeground = true)
     {
+        var attempt = ++activationAttempt;
         if (WindowState == WindowState.Minimized)
         {
             // Synchronous WPF restore preserves RestoreToMaximized before Activate/Focus run.
             WindowState = WindowState.Normal;
         }
 
+        if (requestForeground) ActivateWindow();
+
+        // Deferred page focus must not repeat a foreground request: the user may
+        // have switched applications while the page was loading.
+        await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
+        if (!IsVisible || attempt != activationAttempt) return;
+        await viewModel.FocusPrimaryInputAsync(PluginContentView);
+    }
+
+    private void ActivateWindow()
+    {
         Activate();
         Focus();
+    }
 
-        // 与 SearchWindow.FocusNodePluginPrimaryInputAsync 一致：等待 dispatcher 空闲，
-        // 让 WebView2 初始化 / 导航有机会完成后再聚焦。
-        await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
-        await viewModel.FocusPrimaryInputAsync(PluginContentView);
+    internal void ActivateShellFromHotKey()
+    {
+        if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
+        ActivateWindow();
     }
 
     private async void PluginWindow_Loaded(object sender, RoutedEventArgs e)

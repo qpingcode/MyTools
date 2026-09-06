@@ -52,9 +52,9 @@ namespace MyTools.Desktop.Services
             
         }
         
-        public int RegisterHotKey(Key key, ModifierKeys modifiers, Action callback)
+        public int RegisterHotKey(Key key, ModifierKeys modifiers, Action callback, Action? foregroundCallback = null)
         {
-            return _hotKeyMessageHandler.Register(key, modifiers, callback);
+            return _hotKeyMessageHandler.Register(key, modifiers, callback, foregroundCallback);
         }
 
         public void RegisterClipboardHotKey(HotKeyConfig? hotKey, Action callback)

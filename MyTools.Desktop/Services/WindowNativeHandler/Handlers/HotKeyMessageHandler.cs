@@ -10,6 +10,7 @@ namespace MyTools.Desktop.Services;
 public class HotKeyMessageHandler: IWindowMessageHandler, IWindowHandleAware
 {
     private readonly Dictionary<int, Action> _callbacks = new();
+    private readonly Dictionary<int, Action> _foregroundCallbacks = new();
     private readonly Dictionary<int, (Key key, ModifierKeys modifiers, Action callback)> _registrations = new();
     private readonly Action<Action>? _callbackScheduler;
     private IntPtr _messageWindowHandle;
@@ -34,8 +35,21 @@ public class HotKeyMessageHandler: IWindowMessageHandler, IWindowHandleAware
         int id = wParam.ToInt32();
         if (_callbacks.TryGetValue(id, out var callback))
         {
-            ScheduleCallback(callback);
             handled = true;
+            // Only the small window-shell activation belongs in WM_HOTKEY.
+            // Plugin content and WebView2 initialization remain deferred.
+            if (_foregroundCallbacks.TryGetValue(id, out var foregroundCallback))
+            {
+                try
+                {
+                    foregroundCallback();
+                }
+                catch (Exception)
+                {
+                    // Fall back to the normal deferred open below if shell activation fails.
+                }
+            }
+            ScheduleCallback(callback);
         }
     }
 
@@ -54,9 +68,7 @@ public class HotKeyMessageHandler: IWindowMessageHandler, IWindowHandleAware
             return;
         }
 
-        // Do not create or activate WPF/WebView2 windows while the native
-        // WM_HOTKEY call stack is still active. The dispatcher runs this after
-        // NativeMessageWindowHost.WndProc has returned to the message loop.
+        // Keep plugin loading and WebView2 work outside the native WM_HOTKEY stack.
         _ = dispatcher.BeginInvoke(DispatcherPriority.Normal, callback);
     }
 
@@ -67,11 +79,12 @@ public class HotKeyMessageHandler: IWindowMessageHandler, IWindowHandleAware
 
     public void UnregisterCallback(int id)
     {
-        if (!_callbacks.ContainsKey(id))
+        if (!_callbacks.ContainsKey(id) && !_registrations.ContainsKey(id))
             return;
 
         HotKeyNativeMethods.UnregisterHotKey(_messageWindowHandle, id);
         _callbacks.Remove(id);
+        _foregroundCallbacks.Remove(id);
         _registrations.Remove(id);
     }
 
@@ -83,6 +96,7 @@ public class HotKeyMessageHandler: IWindowMessageHandler, IWindowHandleAware
         }
         _callbacks.Clear();
         _registrations.Clear();
+        _foregroundCallbacks.Clear();
     }
 
     /// <summary>
@@ -120,7 +134,7 @@ public class HotKeyMessageHandler: IWindowMessageHandler, IWindowHandleAware
         }
     }
 
-    public int Register(Key key, ModifierKeys modifiers, Action callback)
+    public int Register(Key key, ModifierKeys modifiers, Action callback, Action? foregroundCallback = null)
     {
         _currentId++;
         uint vk = (uint)KeyInterop.VirtualKeyFromKey(key);
@@ -134,6 +148,7 @@ public class HotKeyMessageHandler: IWindowMessageHandler, IWindowHandleAware
         }
 
         _callbacks[_currentId] = callback;
+        if (foregroundCallback != null) _foregroundCallbacks[_currentId] = foregroundCallback;
         _registrations[_currentId] = (key, modifiers, callback);
         return _currentId;
     }

@@ -12,16 +12,19 @@ public sealed class PluginHotKeyService : IPluginHotKeyRegistry
     private readonly HotKeyManager hotKeyManager;
     private readonly PluginOverrideProvider overrideProvider;
     private readonly ILogger<PluginHotKeyService> logger;
+    private readonly PluginWindowManager pluginWindowManager;
     private readonly Dictionary<PluginId, int> hotKeyIds = new();
 
     public PluginHotKeyService(
         HotKeyManager hotKeyManager,
         PluginOverrideProvider overrideProvider,
-        ILogger<PluginHotKeyService> logger)
+        ILogger<PluginHotKeyService> logger,
+        PluginWindowManager pluginWindowManager)
     {
         this.hotKeyManager = hotKeyManager;
         this.overrideProvider = overrideProvider;
         this.logger = logger;
+        this.pluginWindowManager = pluginWindowManager;
     }
 
     public void RegisterAll(IEnumerable<NodePlugin> nodePlugins, Action<NodePlugin> openDetail)
@@ -50,7 +53,8 @@ public sealed class PluginHotKeyService : IPluginHotKeyRegistry
                 var id = hotKeyManager.RegisterHotKey(
                     hotKey.Key,
                     hotKey.Modifiers,
-                    () => openDetail(plugin));
+                    () => openDetail(plugin),
+                    () => pluginWindowManager.ActivateHotKeyShell(plugin));
                 hotKeyIds[plugin.PluginId] = id;
                 logger.LogInformation("Registered hotkey {HotKey} for plugin {PluginId}.", hotKeyText, plugin.PluginId);
             }

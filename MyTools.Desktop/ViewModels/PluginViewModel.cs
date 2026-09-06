@@ -18,7 +18,7 @@ namespace MyTools.Desktop.ViewModels;
 public partial class PluginViewModel : ObservableObject, ISearchViewModelCallback, IDisposable
 {
     [ObservableProperty]
-    private object currentViewModel;
+    private object? currentViewModel;
 
     [ObservableProperty]
     private string? pluginName;
@@ -50,7 +50,6 @@ public partial class PluginViewModel : ObservableObject, ISearchViewModelCallbac
         // 与 SearchViewModel 一致：把自身作为 ISearchViewModelCallback 传入，
         // 避免 NodePluginDetailViewModel 与 callback 之间的循环依赖。
         detailViewModel = ActivatorUtilities.CreateInstance<NodePluginDetailViewModel>(serviceProvider, this);
-        CurrentViewModel = detailViewModel;
     }
 
     /// <summary>
@@ -58,10 +57,16 @@ public partial class PluginViewModel : ObservableObject, ISearchViewModelCallbac
     /// </summary>
     public void SetPlugin(NodePlugin plugin, NodePluginDetailContext? context)
     {
-        PluginName = plugin.GetDisplayName();
-        PluginVersion = string.IsNullOrWhiteSpace(context?.Version) ? null : context.Version;
+        SetPluginIdentity(plugin, context);
         CurrentNodePluginDetailId = context?.PluginId;
         detailViewModel.SetContext(context);
+        CurrentViewModel = detailViewModel;
+    }
+
+    internal void SetPluginIdentity(NodePlugin plugin, NodePluginDetailContext? context)
+    {
+        PluginName = plugin.GetDisplayName();
+        PluginVersion = string.IsNullOrWhiteSpace(context?.Version) ? null : context.Version;
     }
 
     public async Task FocusPrimaryInputAsync(System.Windows.DependencyObject? hostView)
@@ -148,12 +153,13 @@ public partial class PluginViewModel : ObservableObject, ISearchViewModelCallbac
     {
         var effectiveKey = key == Key.System ? systemKey : key;
         var hotkey = ResultActionBarHotkeys.ToHotkey(effectiveKey, modifiers);
-        if (hotkey == null || SelectedResultActions.All(action => action.Hotkey != hotkey.Value))
+        if (CurrentViewModel is not ISwitchableViewModel actionViewModel
+            || hotkey == null || SelectedResultActions.All(action => action.Hotkey != hotkey.Value))
         {
             return false;
         }
 
-        ((ISwitchableViewModel)CurrentViewModel).ExecuteAction(
+        actionViewModel.ExecuteAction(
             SelectedResultActions.First(action => action.Hotkey == hotkey.Value));
         return true;
     }
@@ -161,12 +167,12 @@ public partial class PluginViewModel : ObservableObject, ISearchViewModelCallbac
     [RelayCommand]
     private void ExecuteAction(IActionWithHotkey? action)
     {
-        if (disposed || action == null)
+        if (disposed || action == null || CurrentViewModel is not ISwitchableViewModel actionViewModel)
         {
             return;
         }
 
-        ((ISwitchableViewModel)CurrentViewModel).ExecuteAction(action);
+        actionViewModel.ExecuteAction(action);
     }
 
     public void Dispose()

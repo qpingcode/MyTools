@@ -15,6 +15,7 @@ using MyTools.Common.DependencyInjection;
 using MyTools.Common.Localization;
 using MyTools.Common.Theming;
 using MyTools.Desktop.Services;
+using MyTools.Desktop.Utils;
 using MyTools.Desktop.Themes;
 using MyTools.Host.Core.Bus;
 using MyTools.Host.Core.Sessions;
@@ -39,6 +40,7 @@ public partial class NodePluginDetailView : UserControl
     private string? loadedEntryPath;
     private bool browserReady;
     private bool focusPrimaryInputWhenReady;
+    private Window? focusOwner;
     private readonly ILocalizationService localizationService;
     private readonly IThemeService themeService;
     private readonly MessageBus? _bus;
@@ -69,6 +71,9 @@ public partial class NodePluginDetailView : UserControl
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
+        if (focusOwner != null) focusOwner.Activated -= OnFocusOwnerActivated;
+        focusOwner = Window.GetWindow(this);
+        if (focusOwner != null) focusOwner.Activated += OnFocusOwnerActivated;
         localizationService.LocaleChanged -= OnLocaleChanged;
         localizationService.LocaleChanged += OnLocaleChanged;
         themeService.ThemeChanged -= OnThemeChanged;
@@ -85,6 +90,9 @@ public partial class NodePluginDetailView : UserControl
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
+        if (focusOwner != null) focusOwner.Activated -= OnFocusOwnerActivated;
+        focusOwner = null;
+        focusPrimaryInputWhenReady = false;
         localizationService.LocaleChanged -= OnLocaleChanged;
         themeService.ThemeChanged -= OnThemeChanged;
         TearDownWebTransport();
@@ -721,12 +729,20 @@ public partial class NodePluginDetailView : UserControl
 
     public async Task FocusPrimaryInputAsync()
     {
-        PluginBrowser.Focus();
-        if (!browserReady || PluginBrowser.CoreWebView2 == null)
+        focusPrimaryInputWhenReady = true;
+        if (!IsLoaded || !WindowForeground.IsForeground(Window.GetWindow(this)))
         {
-            focusPrimaryInputWhenReady = true;
             return;
         }
+        if (!browserReady || PluginBrowser.CoreWebView2 == null)
+        {
+            return;
+        }
+
+        PluginBrowser.Focus();
+        // WebView2 hosts a native child window; WPF Focus() can return false even
+        // after native focus moves. Foreground ownership remains the safety check.
+        if (!WindowForeground.IsForeground(Window.GetWindow(this))) return;
 
         focusPrimaryInputWhenReady = false;
         await PluginBrowser.CoreWebView2.ExecuteScriptAsync("""
@@ -743,6 +759,23 @@ public partial class NodePluginDetailView : UserControl
                 }
             })();
             """);
+    }
+
+    private async void OnFocusOwnerActivated(object? sender, EventArgs e)
+    {
+        // Check native foreground state after the activation event has returned.
+        await Dispatcher.Yield(DispatcherPriority.Input);
+        if (IsLoaded && focusPrimaryInputWhenReady)
+        {
+            try
+            {
+                await FocusPrimaryInputAsync();
+            }
+            catch (Exception)
+            {
+                // Page focus is best effort; navigation or closing can invalidate the browser.
+            }
+        }
     }
 
     public void SendHostKey(string key)

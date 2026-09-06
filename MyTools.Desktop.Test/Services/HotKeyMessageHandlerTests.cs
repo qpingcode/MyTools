@@ -7,6 +7,44 @@ namespace MyTools.Desktop.Test.Services;
 [TestFixture]
 public class HotKeyMessageHandlerTests
 {
+    private static readonly FieldInfo ForegroundCallbacksField = typeof(HotKeyMessageHandler)
+        .GetField("_foregroundCallbacks", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+    [Test]
+    public void Handle_ActivatesShellBeforeReturningButDefersPluginContent()
+    {
+        var phases = new List<string>();
+        Action? scheduled = null;
+        var handler = new HotKeyMessageHandler(callback => scheduled = callback);
+        ((Dictionary<int, Action>)CallbacksField.GetValue(handler)!)[42] = () => phases.Add("content");
+        ((Dictionary<int, Action>)ForegroundCallbacksField.GetValue(handler)!)[42] = () => phases.Add("foreground");
+        var handled = false;
+
+        handler.Handle(0, new IntPtr(42), IntPtr.Zero, ref handled);
+
+        Assert.That(handled, Is.True);
+        Assert.That(phases, Is.EqualTo(new[] { "foreground" }));
+        Assert.That(scheduled, Is.Not.Null);
+        scheduled!();
+        Assert.That(phases, Is.EqualTo(new[] { "foreground", "content" }));
+    }
+
+    [Test]
+    public void Handle_ForegroundFailureStillSchedulesNormalOpen()
+    {
+        Action? scheduled = null;
+        var handler = new HotKeyMessageHandler(callback => scheduled = callback);
+        Action content = () => { };
+        ((Dictionary<int, Action>)CallbacksField.GetValue(handler)!)[42] = content;
+        ((Dictionary<int, Action>)ForegroundCallbacksField.GetValue(handler)!)[42] =
+            () => throw new InvalidOperationException("Activation failed");
+        var handled = false;
+
+        Assert.DoesNotThrow(() => handler.Handle(0, new IntPtr(42), IntPtr.Zero, ref handled));
+        Assert.That(handled, Is.True);
+        Assert.That(scheduled, Is.SameAs(content));
+    }
+
     private static readonly FieldInfo CallbacksField = typeof(HotKeyMessageHandler)
         .GetField("_callbacks", BindingFlags.Instance | BindingFlags.NonPublic)
         ?? throw new InvalidOperationException("Could not find HotKeyMessageHandler._callbacks.");
