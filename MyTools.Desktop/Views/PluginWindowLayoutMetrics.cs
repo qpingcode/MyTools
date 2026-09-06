@@ -1,7 +1,10 @@
+using System.Windows;
+
 namespace MyTools.Desktop.Views;
 
 internal static class PluginWindowLayoutMetrics
 {
+    public const double ResizeBorderThickness = 8;
     public const double LeadingDragRegionWidth = 16;
     public const double CaptionButtonWidth = 46;
     public const int CaptionButtonCount = 3;
@@ -13,6 +16,22 @@ internal static class PluginWindowLayoutMetrics
         LeadingDragRegionWidth +
         CaptionButtonsWidth +
         MinimumTitleIdentityRegionWidth;
+
+    public static Thickness GetPluginContentMargin(WindowState windowState, bool isStatusBarVisible)
+    {
+        if (windowState == WindowState.Maximized)
+        {
+            return new Thickness(0);
+        }
+
+        // WebView2 owns a child HWND. Keep it out of WindowChrome's resize hit-test
+        // area, otherwise the child window consumes pointer input at these edges.
+        return new Thickness(
+            ResizeBorderThickness,
+            0,
+            ResizeBorderThickness,
+            isStatusBarVisible ? 0 : ResizeBorderThickness);
+    }
 
     public static int DipToDevicePixels(double dip, double dpiScale)
     {

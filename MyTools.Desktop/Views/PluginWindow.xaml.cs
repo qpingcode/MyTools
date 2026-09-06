@@ -55,6 +55,7 @@ public partial class PluginWindow
         PluginStatusBar.Visibility = plugin.ShowStatusBarInPluginWindow
             ? Visibility.Visible
             : Visibility.Collapsed;
+        ApplyPluginContentMargin();
         viewModel.SetPlugin(plugin, context);
     }
 
@@ -203,6 +204,7 @@ public partial class PluginWindow
     {
         var state = PluginWindowChromeState.From(WindowState);
         WindowFrame.CornerRadius = state.CornerRadius;
+        ApplyPluginContentMargin();
         MaximizeIcon.Visibility = state.ShowRestoreIcon ? Visibility.Collapsed : Visibility.Visible;
         RestoreIcon.Visibility = state.ShowRestoreIcon ? Visibility.Visible : Visibility.Collapsed;
         var maximizeRestoreCaption = state.ShowRestoreIcon
@@ -210,6 +212,13 @@ public partial class PluginWindow
             : LanguageService.GetCaption("PluginWindow.Maximize", "Maximize");
         MaximizeRestoreButton.ToolTip = maximizeRestoreCaption;
         AutomationProperties.SetName(MaximizeRestoreButton, maximizeRestoreCaption);
+    }
+
+    private void ApplyPluginContentMargin()
+    {
+        PluginContentView.Margin = PluginWindowLayoutMetrics.GetPluginContentMargin(
+            WindowState,
+            PluginStatusBar.Visibility == Visibility.Visible);
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)

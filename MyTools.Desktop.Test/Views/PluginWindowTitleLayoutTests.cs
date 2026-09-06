@@ -211,7 +211,7 @@ public class PluginWindowTitleLayoutTests
     }
 
     [Test]
-    public void TitleBar_SitsFlushToWindowChromeAndContentFillsRemainingFrame()
+    public void TitleBar_SitsFlushAndPluginContentLeavesSideResizeHitAreas()
     {
         var services = new ServiceCollection().BuildServiceProvider();
         var window = new PluginWindow(new PluginViewModel(services));
@@ -231,11 +231,11 @@ public class PluginWindowTitleLayoutTests
             Assert.That(titleBarGrid is null ? -1 : Grid.GetRow(titleBarGrid), Is.EqualTo(0));
             Assert.That(pluginContentView is null ? -1 : Grid.GetRow(pluginContentView), Is.EqualTo(1));
             Assert.That(titleBarGrid?.ActualHeight, Is.EqualTo(34).Within(0.5));
-            Assert.That(pluginContentView?.Margin, Is.EqualTo(new Thickness(0)));
+            Assert.That(pluginContentView?.Margin, Is.EqualTo(new Thickness(8, 0, 8, 0)));
             Assert.That(titleBarGrid!.Margin, Is.EqualTo(new Thickness(0)));
             Assert.That(MeasureRightGap(captionButtonsPanel!, windowFrame!), Is.EqualTo(0).Within(0.5));
-            Assert.That(MeasureRightGap(pluginContentView!, windowFrame!), Is.EqualTo(0).Within(0.5));
-            Assert.That(MeasureLeftGap(pluginContentView!, windowFrame!), Is.EqualTo(0).Within(0.5));
+            Assert.That(MeasureRightGap(pluginContentView!, windowFrame!), Is.EqualTo(8).Within(0.5));
+            Assert.That(MeasureLeftGap(pluginContentView!, windowFrame!), Is.EqualTo(8).Within(0.5));
             Assert.That(titleBarGrid.TranslatePoint(new Point(0, 0), windowFrame).Y, Is.EqualTo(0).Within(0.5));
             Assert.That(pluginContentView!.TranslatePoint(new Point(0, 0), windowFrame).Y,
                 Is.EqualTo(titleBarGrid.ActualHeight).Within(0.5));
