@@ -11,6 +11,7 @@ import type { KeymapPlugin } from "../types";
 const plugins = computed(() => store.keymapPlugins || []);
 const tableQuery = ref("");
 const editingAliasKey = ref<string | null>(null);
+const aliasDraft = ref("");
 const aliasInputRef = ref<{ focus: () => void } | null>(null);
 
 const filteredPlugins = computed(() => {
@@ -60,11 +61,13 @@ function conflictOf(pluginId: string): string {
 }
 
 function onKeywords(plugin: KeymapPlugin, value: string): void {
+    aliasDraft.value = value;
     const keywords = value.split(",").map((item) => item.trim()).filter(Boolean).slice(0, 3);
     markKeymapDirty(plugin.overrideKey, { keywords });
 }
 
 async function startAliasEdit(plugin: KeymapPlugin): Promise<void> {
+    aliasDraft.value = keywordsOf(plugin);
     editingAliasKey.value = plugin.overrideKey;
     await nextTick();
     aliasInputRef.value?.focus();
@@ -72,6 +75,7 @@ async function startAliasEdit(plugin: KeymapPlugin): Promise<void> {
 
 function stopAliasEdit(): void {
     editingAliasKey.value = null;
+    aliasDraft.value = "";
 }
 
 function searchHotKey(): string | undefined {
@@ -173,7 +177,7 @@ async function refreshDevelopmentPlugins(): Promise<void> {
                     <n-input
                         v-if="editingAliasKey === plugin.overrideKey"
                         ref="aliasInputRef"
-                        :value="keywordsOf(plugin)"
+                        :value="aliasDraft"
                         :placeholder="t('Plugin.Settings.Keymap.KeywordsPlaceholder', 'e.g. git, repo')"
                         :title="t('Plugin.Settings.Keymap.KeywordsPlaceholder', 'e.g. git, repo')"
                         size="small"

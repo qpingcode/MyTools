@@ -205,10 +205,10 @@ export async function loadSpecialPanels(): Promise<void> {
     await Promise.allSettled([loadPluginOverrides(), loadGestures()]);
 }
 
-export async function loadPluginOverrides(): Promise<void> {
+export async function loadPluginOverrides(preserveDirty = false): Promise<void> {
     const data = await bus.call<{ plugins: KeymapPlugin[] }>("getPluginOverrides");
     store.keymapPlugins = data.plugins || [];
-    store.keymapDirty.clear();
+    if (!preserveDirty) store.keymapDirty.clear();
     store.keymapConflicts = [];
     refreshDirty();
 }
@@ -325,13 +325,16 @@ export async function saveSettings(): Promise<void> {
 async function savePluginOverridesInternal(): Promise<boolean> {
     if (store.keymapDirty.size === 0 || !store.keymapPlugins) return true;
 
+    // Keep the exact objects submitted by this request. Edits made while the
+    // request is in flight replace their map entry and must survive completion.
+    const dirtySnapshot = new Map(store.keymapDirty);
     const keymapOverrides: Record<string, KeymapDirty> = {};
     const hotKeysToValidate: Record<string, string | null> = {};
     const keywordsToValidate: Record<string, string[] | null> = {};
     let hasKeymapChanges = false;
 
     for (const plugin of store.keymapPlugins) {
-        const dirty = store.keymapDirty.get(plugin.overrideKey);
+        const dirty = dirtySnapshot.get(plugin.overrideKey);
         if (!dirty) continue;
         if (dirty.keywords !== undefined
             || dirty.isEnabled !== undefined
@@ -377,8 +380,12 @@ async function savePluginOverridesInternal(): Promise<boolean> {
     if (Object.keys(hotKeysToValidate).length > 0) {
         await bus.call("saveHotKeys", { hotKeys: hotKeysToValidate });
     }
-    store.keymapDirty.clear();
-    await loadPluginOverrides();
+    for (const [overrideKey, submitted] of dirtySnapshot) {
+        if (store.keymapDirty.get(overrideKey) === submitted) {
+            store.keymapDirty.delete(overrideKey);
+        }
+    }
+    await loadPluginOverrides(true);
     refreshDirty();
     return true;
 }
