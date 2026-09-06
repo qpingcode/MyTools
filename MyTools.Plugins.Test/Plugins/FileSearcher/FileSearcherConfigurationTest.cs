@@ -1,13 +1,21 @@
 using System.Text.Json;
+using Lucene.Net.Analysis.Standard;
+using Lucene.Net.Documents;
+using Lucene.Net.Index;
+using Lucene.Net.Search;
+using Lucene.Net.Util;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
+using RamDirectory = Lucene.Net.Store.RAMDirectory;
 
 namespace MyTools.Plugins.Test.Plugins.FileSearcher;
 
 [TestFixture]
 public class FileSearcherConfigurationTest
 {
+    private const LuceneVersion TestLuceneVersion = LuceneVersion.LUCENE_48;
+
     [Test]
     public void IndexStoragePaths_BelongToFileSearcherPluginDataDirectory()
     {
@@ -95,6 +103,60 @@ public class FileSearcherConfigurationTest
     public void IsIgnoreRulesFile_OnlyMatchesIgnoreFiles(string path, bool expected)
     {
         Assert.That(MyTools.Plugins.FileSearcher.IsIgnoreRulesFile(path), Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void SearchQuery_MatchesMultipleDirectoryPathTerms()
+    {
+        using var directory = new RamDirectory();
+        using var analyzer = new StandardAnalyzer(TestLuceneVersion);
+        using (var writer = new IndexWriter(directory, new IndexWriterConfig(TestLuceneVersion, analyzer)))
+        {
+            writer.AddDocument(new Document
+            {
+                new StringField("id", "path-match", Field.Store.YES),
+                new TextField("searchPath", @"C:\repos\MyTools\src", Field.Store.NO)
+            });
+            writer.Commit();
+        }
+
+        using var reader = DirectoryReader.Open(directory);
+        var searcher = new IndexSearcher(reader);
+        var hits = searcher.Search(MyTools.Plugins.FileSearcher.BuildSearchQuery(@"repos\MyTools"), 10);
+
+        Assert.That(hits.ScoreDocs, Has.Length.EqualTo(1));
+        Assert.That(searcher.Doc(hits.ScoreDocs[0].Doc).Get("id"), Is.EqualTo("path-match"));
+    }
+
+    [Test]
+    public void SearchQuery_WeightsFilenameAboveDirectoryPath()
+    {
+        using var directory = new RamDirectory();
+        using var analyzer = new StandardAnalyzer(TestLuceneVersion);
+        using (var writer = new IndexWriter(directory, new IndexWriterConfig(TestLuceneVersion, analyzer)))
+        {
+            writer.AddDocument(new Document
+            {
+                new StringField("id", "path-match", Field.Store.YES),
+                new TextField("searchPath", @"C:\repos\mytools", Field.Store.NO)
+            });
+            writer.AddDocument(new Document
+            {
+                new StringField("id", "filename-match", Field.Store.YES),
+                new StringField("searchFilename", "mytools", Field.Store.NO),
+                new TextField("searchPossibles", "mytools", Field.Store.NO),
+                new TextField("searchPath", @"C:\apps", Field.Store.NO)
+            });
+            writer.Commit();
+        }
+
+        using var reader = DirectoryReader.Open(directory);
+        var searcher = new IndexSearcher(reader);
+        var hits = searcher.Search(MyTools.Plugins.FileSearcher.BuildSearchQuery("mytools"), 10);
+
+        Assert.That(hits.ScoreDocs, Has.Length.EqualTo(2));
+        Assert.That(searcher.Doc(hits.ScoreDocs[0].Doc).Get("id"), Is.EqualTo("filename-match"));
+        Assert.That(hits.ScoreDocs[0].Score, Is.GreaterThan(hits.ScoreDocs[1].Score));
     }
 
     [TestCase("scratch.tmp", false)]

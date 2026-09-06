@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Lucene.Net.Analysis;
 using Lucene.Net.Analysis.Standard;
 using Lucene.Net.Documents;
@@ -40,8 +41,12 @@ public sealed class FileSearcher : PluginBase, IDisposable
     private const string IndexDir = "FileSearcherIndex";
     private const string IndexedRootsFileName = "FileSearcherIndexedRoots.json";
     private const string RootField = "root";
+    private const string SearchPathField = "searchPath";
     private static readonly TimeSpan WatchDebounce = TimeSpan.FromSeconds(10);
     private static readonly StringComparer PathComparer = StringComparer.OrdinalIgnoreCase;
+    private static readonly Regex SearchTermPattern = new(
+        @"[\p{L}\p{N}]+",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     private readonly ILogger<FileSearcher> logger;
     private readonly IMemoryCache cache;
@@ -458,7 +463,8 @@ public sealed class FileSearcher : PluginBase, IDisposable
                 new StringField("indexedTime", file.IndexedTime, Field.Store.YES),
                 new StringField("searchFilename", file.FileName.ToLowerInvariant(), Field.Store.NO),
                 new StringField("searchInitials", file.SearchInitials, Field.Store.NO),
-                new TextField("searchPossibles", file.FileName, Field.Store.NO)
+                new TextField("searchPossibles", file.FileName, Field.Store.NO),
+                new TextField(SearchPathField, Path.GetDirectoryName(file.Path) ?? string.Empty, Field.Store.NO)
             });
         }
         if (commit) writer.Commit();
@@ -792,17 +798,8 @@ public sealed class FileSearcher : PluginBase, IDisposable
 
             using (reader)
             {
-                query = query.ToLowerInvariant();
                 var searcher = new IndexSearcher(reader);
-                var prefixQuery1 = new PrefixQuery(new Term("searchInitials", query)) { Boost = 10.0f };
-                var prefixQuery2 = new PrefixQuery(new Term("searchFilename", query)) { Boost = 2.0f };
-                var prefixQuery3 = new PrefixQuery(new Term("searchPossibles", query)) { Boost = 2.0f };
-                var combineQuery = new BooleanQuery
-                {
-                    { prefixQuery1, Occur.SHOULD },
-                    { prefixQuery2, Occur.SHOULD },
-                    { prefixQuery3, Occur.SHOULD }
-                };
+                var combineQuery = BuildSearchQuery(query);
 
                 var results = new List<ResultItem>();
                 foreach (var hit in searcher.Search(combineQuery, 30).ScoreDocs)
@@ -825,6 +822,33 @@ public sealed class FileSearcher : PluginBase, IDisposable
         {
             return Task.FromResult(Result.CreateFailure(ex.Message, ex));
         }
+    }
+
+    internal static Query BuildSearchQuery(string query)
+    {
+        var normalizedQuery = query.ToLowerInvariant();
+        var combineQuery = new BooleanQuery
+        {
+            { new PrefixQuery(new Term("searchInitials", normalizedQuery)) { Boost = 10.0f }, Occur.SHOULD },
+            { new PrefixQuery(new Term("searchFilename", normalizedQuery)) { Boost = 2.0f }, Occur.SHOULD },
+            { new PrefixQuery(new Term("searchPossibles", normalizedQuery)) { Boost = 2.0f }, Occur.SHOULD }
+        };
+
+        var pathTerms = SearchTermPattern.Matches(normalizedQuery)
+            .Select(match => match.Value)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        if (pathTerms.Length > 0)
+        {
+            var pathQuery = new BooleanQuery { Boost = 0.5f };
+            foreach (var term in pathTerms)
+            {
+                pathQuery.Add(new PrefixQuery(new Term(SearchPathField, term)), Occur.MUST);
+            }
+            combineQuery.Add(pathQuery, Occur.SHOULD);
+        }
+
+        return combineQuery;
     }
 
     private Icon GetFileIcon(string path)
