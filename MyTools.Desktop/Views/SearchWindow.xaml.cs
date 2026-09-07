@@ -81,8 +81,7 @@ namespace MyTools.Desktop.Views
 
         public void SetPluginWindow(IPlugin? plugin)
         {
-            viewModel.ForcePlugin = plugin;
-            viewModel.ResetViewModelIfNeeded(plugin);
+            viewModel.SetForcedPlugin(plugin);
         }
 
         internal void PreparePersistentShell(WindowPlacementService placement)

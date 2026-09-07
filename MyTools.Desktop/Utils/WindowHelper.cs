@@ -21,13 +21,9 @@ public static class WindowHelper
         var searchWindow = ServiceLocator.GetRequiredService<SearchWindow>();
         Prepare(searchWindow);
         RestorePlacement(searchWindow);
-        if (searchWindow.CurrentPlugin != plugin)
-        {
-            searchWindow.SetPluginWindow(plugin);
-        }
-
         WindowForeground.TryActivate(searchWindow);
         FocusSearchInput(searchWindow, text);
+        searchWindow.SetPluginWindow(plugin);
     }
 
     internal static void ActivateSearchWindowFromHotKey(IPlugin? plugin = null)
@@ -39,14 +35,11 @@ public static class WindowHelper
         var logger = ServiceLocator.GetRequiredService<ILogger<SearchWindow>>();
         WindowForeground.TryActivateFromHotKey(searchWindow, logger);
         FocusSearchInput(searchWindow, text: null);
-        if (searchWindow.CurrentPlugin != plugin)
+        _ = searchWindow.Dispatcher.BeginInvoke(() =>
         {
-            _ = searchWindow.Dispatcher.BeginInvoke(() =>
-            {
-                searchWindow.SetPluginWindow(plugin);
-                FocusSearchInput(searchWindow, text: null);
-            });
-        }
+            searchWindow.SetPluginWindow(plugin);
+            FocusSearchInput(searchWindow, text: null);
+        });
     }
 
     private static void Prepare(SearchWindow searchWindow)

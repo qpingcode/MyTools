@@ -343,6 +343,12 @@ namespace MyTools.Desktop.ViewModels
             PerformSearch();
         }
 
+        public void SetForcedPlugin(IPlugin? plugin)
+        {
+            ForcePlugin = plugin;
+            Refresh();
+        }
+
         private void OnNodePluginDetailRequested(NodePluginDetailContext context)
         {
             Application.Current.Dispatcher.Invoke(() =>
