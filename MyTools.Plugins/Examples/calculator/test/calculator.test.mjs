@@ -4,6 +4,7 @@ import { addHistoryEntry, evaluate, normalizeHistory } from "../dist/backend/ind
 
 test("evaluate handles supported arithmetic", () => {
   assert.equal(evaluate("(2 + 3) * 4"), 20);
+  assert.equal(evaluate("2*2(4-7)"), -12);
   assert.throws(() => evaluate("1 / 0"));
 });
 

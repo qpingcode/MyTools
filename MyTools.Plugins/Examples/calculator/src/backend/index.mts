@@ -22,7 +22,10 @@ type CalculatorItem = CalculationHistoryEntry & {
 };
 
 export function evaluate(expression: string): number {
-  const value = Function(`"use strict"; return (${expression});`)();
+  const normalized = expression
+    .replace(/([\d.)])\s*\(/g, "$1*(")
+    .replace(/\)\s*(?=[\d.])/g, ")*");
+  const value = Function(`"use strict"; return (${normalized});`)();
   if (typeof value !== "number" || !Number.isFinite(value)) {
     throw new Error("invalid");
   }
