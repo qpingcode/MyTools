@@ -36,6 +36,12 @@ public class ClipBoardPlugin(ILogger<ClipBoardPlugin> logger) : PluginBase, IWin
     private ConfigurationSetting? maxHistoryCountSetting;
     private readonly SemaphoreSlim sequentialPasteLock = new(1, 1);
 
+    internal ClipBoardPlugin(ILogger<ClipBoardPlugin> logger, string dbPath) : this(logger)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(dbPath);
+        _dbPath = dbPath;
+    }
+
     public override string Name => GetCaption("Plugin.ClipBoard.Name", "Clipboard History");
     public override string Description => GetCaption("Plugin.ClipBoard.Description", "Clipboard history management plugin");
     public override List<IActionWithHotkey> Actions =>
