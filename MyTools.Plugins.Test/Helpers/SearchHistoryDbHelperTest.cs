@@ -96,6 +96,25 @@ public class SearchHistoryDbHelperTest
         Assert.That(disabled.SearchCalls, Is.Zero);
     }
 
+    [Test]
+    public async Task HomePage_ExcludesPluginsNotIncludedInGlobalSearch()
+    {
+        var helper = new SearchHistoryDbHelper(_dbPath);
+        var plugin = new FakePlugin(isGlobalSearchPlugin: false);
+        var searcher = new Searcher(new FakeGlobalSearchRegistry(plugin), helper, NullLogger<Searcher>.Instance);
+        var pluginResult = await ((ISearcher)searcher).SearchAsync(plugin, "q", CancellationToken.None);
+
+        helper.RecordSelection(pluginResult.Items.Single(item => item.ResultKey == "fav"));
+
+        var result = await ((ISearcher)searcher).SearchAsync(null, "", CancellationToken.None);
+
+        Assert.That(result.Items, Is.Empty);
+        Assert.That(helper.GetRecentSelections(), Is.Empty);
+        Assert.That(helper.GetSelectionBoosts("q"), Contains.Key(
+            SearchHistoryDbHelper.CombineKey(plugin.PluginId.Value, "fav")));
+        Assert.That(plugin.SearchCalls, Is.EqualTo(1));
+    }
+
     [TestCase(false)]
     [TestCase(true)]
     public async Task HomePage_ClickRechecksPluginAndRemovesUnavailableResult(bool disableAfterDisplay)
@@ -232,7 +251,7 @@ public class SearchHistoryDbHelperTest
         }
     }
 
-    private sealed class FakePlugin : PluginBase
+    private sealed class FakePlugin(bool isGlobalSearchPlugin = true) : PluginBase
     {
         public int SearchCalls { get; private set; }
         public string? ExecutedValue { get; private set; }
@@ -263,7 +282,7 @@ public class SearchHistoryDbHelperTest
             new ActionWithHotkey(new TestAction(this), Hotkey.Enter),
             new ActionWithHotkey(new SecondaryAction(), Hotkey.Ctrl(HotkeyKey.O))
         ];
-        public override bool IsGlobalSearchPlugin => true;
+        public override bool IsGlobalSearchPlugin => isGlobalSearchPlugin;
 
         public override Task<Result> SearchAsync(string query, CancellationToken cancellationToken, SearchOptions? searchOptions = null)
         {

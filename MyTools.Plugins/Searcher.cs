@@ -42,9 +42,12 @@ public class Searcher(IGlobalSearchRegistry globalSearchRegistry, SearchHistoryD
         .Where(plugin => plugin.IsEnabled && (plugin is not NodePlugin node || node.HasInstalledEntry))
         .DistinctBy(plugin => plugin.PluginId.Value);
 
+    private IEnumerable<IPlugin> HomePagePlugins =>
+        AvailablePlugins.Where(plugin => plugin.IsGlobalSearchPlugin);
+
     private Result ReadHomePage(CancellationToken cancellationToken)
     {
-        var plugins = AvailablePlugins.ToDictionary(plugin => plugin.PluginId.Value);
+        var plugins = HomePagePlugins.ToDictionary(plugin => plugin.PluginId.Value);
         var items = new List<ResultItem>();
         foreach (var entry in searchHistoryDbHelper.GetRecentSelections())
         {
@@ -216,6 +219,7 @@ public class Searcher(IGlobalSearchRegistry globalSearchRegistry, SearchHistoryD
             resultItem.SourcePluginName = plugin.Name;
             resultItem.SearchQuery = query;
             resultItem.SearchFrom = searchFrom;
+            resultItem.IncludeInHomePageHistory = plugin.IsGlobalSearchPlugin;
             resultItem.ResultKey = string.IsNullOrWhiteSpace(resultItem.ResultKey)
                 ? BuildResultKey(resultItem)
                 : resultItem.ResultKey;

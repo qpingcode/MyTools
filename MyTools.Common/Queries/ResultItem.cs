@@ -24,6 +24,7 @@ public sealed partial class ResultItem(Icon icon, string title, string subTitle,
     public Plugins.SearchFrom SearchFrom { get; set; } = Plugins.SearchFrom.Global;
     public DateTime? CreatedAt { get; set; }
     public bool IgnoreSelectionHistoryBoost { get; set; }
+    public bool IncludeInHomePageHistory { get; set; } = true;
 
     public string ContentAsString
     {
@@ -67,6 +68,7 @@ public sealed partial class ResultItem(Icon icon, string title, string subTitle,
             LocalizedSubTitle = LocalizedSubTitle,
             CreatedAt = CreatedAt,
             IgnoreSelectionHistoryBoost = IgnoreSelectionHistoryBoost,
+            IncludeInHomePageHistory = IncludeInHomePageHistory,
         };
     }
 }

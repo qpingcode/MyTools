@@ -49,7 +49,8 @@ ON CONFLICT(normalized_query) DO UPDATE SET
 
     public void RecordSelection(ResultItem item)
         => RecordSelection(item.SearchQuery, item.SourcePluginId, item.ResultKey, item.SearchFrom,
-            snapshot: item.Args is SearchResultSnapshot ? null : SearchResultSnapshot.Create(item));
+            snapshot: item.Args is SearchResultSnapshot ? null : SearchResultSnapshot.Create(item),
+            includeInHomePageHistory: item.IncludeInHomePageHistory);
 
     public void UpdateSnapshot(ResultItem item)
     {
@@ -71,7 +72,8 @@ ON CONFLICT(plugin_id, result_key) DO UPDATE SET snapshot = excluded.snapshot;";
     }
 
     public void RecordSelection(string? query, string pluginId, string resultKey,
-        SearchFrom searchFrom = SearchFrom.Global, DateTime? selectedAt = null, SearchResultSnapshot? snapshot = null)
+        SearchFrom searchFrom = SearchFrom.Global, DateTime? selectedAt = null, SearchResultSnapshot? snapshot = null,
+        bool includeInHomePageHistory = true)
     {
         if (string.IsNullOrWhiteSpace(pluginId) || string.IsNullOrWhiteSpace(resultKey))
         {
@@ -90,7 +92,8 @@ INSERT INTO {SelectionHistoryTable} (normalized_query, plugin_id, result_key, se
 VALUES (@query, @pluginId, @resultKey, 1, @ts)
 ON CONFLICT(normalized_query, plugin_id, result_key) DO UPDATE SET
     selected_count = selected_count + 1,
-    last_selected_at = excluded.last_selected_at;
+    last_selected_at = excluded.last_selected_at;"
+        + (includeInHomePageHistory ? @"
 INSERT INTO search_selection_daily (plugin_id, result_key, selection_day, selected_count, last_selected_at, query, search_from)
 VALUES (@pluginId, @resultKey, @day, 1, @ts, @rawQuery, @searchFrom)
 ON CONFLICT(plugin_id, result_key, selection_day) DO UPDATE SET
@@ -98,17 +101,20 @@ ON CONFLICT(plugin_id, result_key, selection_day) DO UPDATE SET
     last_selected_at = excluded.last_selected_at,
     query = excluded.query,
     search_from = excluded.search_from;
-DELETE FROM search_selection_daily WHERE selection_day < @oldestDay;";
+DELETE FROM search_selection_daily WHERE selection_day < @oldestDay;" : string.Empty);
         cmd.Parameters.AddWithValue("@query", NormalizeQuery(query));
         cmd.Parameters.AddWithValue("@pluginId", pluginId);
         cmd.Parameters.AddWithValue("@resultKey", resultKey);
         cmd.Parameters.AddWithValue("@ts", timestamp.ToString("o"));
-        cmd.Parameters.AddWithValue("@day", timestamp.ToString("yyyy-MM-dd"));
-        cmd.Parameters.AddWithValue("@oldestDay", timestamp.Date.AddDays(-29).ToString("yyyy-MM-dd"));
-        cmd.Parameters.AddWithValue("@rawQuery", query ?? string.Empty);
-        cmd.Parameters.AddWithValue("@searchFrom", (int)searchFrom);
+        if (includeInHomePageHistory)
+        {
+            cmd.Parameters.AddWithValue("@day", timestamp.ToString("yyyy-MM-dd"));
+            cmd.Parameters.AddWithValue("@oldestDay", timestamp.Date.AddDays(-29).ToString("yyyy-MM-dd"));
+            cmd.Parameters.AddWithValue("@rawQuery", query ?? string.Empty);
+            cmd.Parameters.AddWithValue("@searchFrom", (int)searchFrom);
+        }
         cmd.ExecuteNonQuery();
-        if (snapshot != null)
+        if (snapshot != null && includeInHomePageHistory)
         {
             using var save = conn.CreateCommand();
             save.Transaction = transaction;
