@@ -23,8 +23,10 @@ public class MouseGestureDetector : IDisposable
     private const int InitialValidMove = 5;
     private bool _initialMoveValid;
     private readonly MouseHelper _mouseHelper;
+    private readonly Func<Native.POINT, bool> _isTaskbarAt;
     private volatile bool _suspended;
     private int _isRunning;
+    private bool _bypassRightButtonSequence;
     private Func<string?, MoveDirection[], string?>? _findActionName;
     private Func<string?, MoveDirection[]?, int, List<PossibleGesture>>? _getPossibleGestures;
 
@@ -51,7 +53,7 @@ public class MouseGestureDetector : IDisposable
     }
 
     public MouseGestureDetector(MouseHelper mouseHelper, ILogger<MouseGestureDetector> logger, ILogger<MouseTrailWindow> trailWindowLogger)
-        : this(mouseHelper, logger, trailWindowLogger, new MouseHook(logger))
+        : this(mouseHelper, logger, trailWindowLogger, new MouseHook(logger), TaskbarWindowDetector.IsTaskbarAt)
     {
     }
 
@@ -59,7 +61,8 @@ public class MouseGestureDetector : IDisposable
         MouseHelper mouseHelper,
         ILogger<MouseGestureDetector> logger,
         ILogger<MouseTrailWindow> trailWindowLogger,
-        IMouseHook mouseHook)
+        IMouseHook mouseHook,
+        Func<Native.POINT, bool>? isTaskbarAt = null)
     {
         _logger = logger;
         _trailWindowLogger = trailWindowLogger;
@@ -67,6 +70,7 @@ public class MouseGestureDetector : IDisposable
         _gestureDirectionStorage = new();
         _mouseHook.MouseHookEvent += OnMouseHookEvent;
         _mouseHelper = mouseHelper;
+        _isTaskbarAt = isTaskbarAt ?? TaskbarWindowDetector.IsTaskbarAt;
     }
 
     private void OnMouseHookEvent(MouseHook.MouseHookEventArgs e)
@@ -85,29 +89,38 @@ public class MouseGestureDetector : IDisposable
         switch (message)
         {
             case Native.MouseMsg.WM_RBUTTONDOWN:
-                _startPoint = GetCurrentPoint();
+                _bypassRightButtonSequence = _isTaskbarAt(e.ScreenPoint);
+                if (_bypassRightButtonSequence)
+                {
+                    return;
+                }
+
+                _startPoint = ToPoint(e.ScreenPoint);
                 _point = _startPoint;
                 Post(GestureMessage.GestureButtonDown);
                 e.Handled = true;
                 break;
             case Native.MouseMsg.WM_MOUSEMOVE:
+                if (_bypassRightButtonSequence) break;
                 if (Throttling()) break;
-                _point = GetCurrentPoint();
+                _point = ToPoint(e.ScreenPoint);
                 Post(GestureMessage.GestureButtonMove);
                 break;
             case Native.MouseMsg.WM_RBUTTONUP:
-                _point = GetCurrentPoint();
+                if (_bypassRightButtonSequence)
+                {
+                    _bypassRightButtonSequence = false;
+                    return;
+                }
+
+                _point = ToPoint(e.ScreenPoint);
                 Post(GestureMessage.GestureButtonUp);
                 e.Handled = true;
                 break;
         }
     }
 
-    private Point GetCurrentPoint()
-    {
-        Native.GetCursorPos(out var point);
-        return new Point(point.x, point.y);
-    }
+    private static Point ToPoint(Native.POINT point) => new(point.x, point.y);
 
     private int maxAllowedIntervalMilliseconds = 60;
 

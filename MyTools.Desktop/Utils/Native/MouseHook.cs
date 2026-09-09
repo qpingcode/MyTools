@@ -60,7 +60,10 @@ public class MouseHook : IMouseHook
         }
         
         var hookStruct = (Native.MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(Native.MSLLHOOKSTRUCT))!;
-        var args = new MouseHookEventArgs((Native.MouseMsg)wParam, hookStruct.dwExtraInfo.ToInt64());
+        var args = new MouseHookEventArgs(
+            (Native.MouseMsg)wParam,
+            hookStruct.dwExtraInfo.ToInt64(),
+            hookStruct.pt);
         
         try
         {
@@ -76,12 +79,16 @@ public class MouseHook : IMouseHook
     
    
 
-    public class MouseHookEventArgs(Native.MouseMsg mouseMsg, long extraInfo) : EventArgs
+    public class MouseHookEventArgs(
+        Native.MouseMsg mouseMsg,
+        long extraInfo,
+        Native.POINT screenPoint) : EventArgs
     {
         public Native.MouseMsg Msg { get; } = mouseMsg;
 
         public bool Handled { get; set; }
         public long ExtraInfo { get; } = extraInfo;
+        public Native.POINT ScreenPoint { get; } = screenPoint;
     }
 
     public void Dispose()

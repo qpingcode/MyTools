@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace MyTools.Desktop.Utils;
 
@@ -61,6 +62,15 @@ public class Native
 
     [DllImport("user32.dll")]
     public static extern bool GetCursorPos(out POINT lpPoint);
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr WindowFromPoint(POINT point);
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetAncestor(IntPtr hWnd, uint gaFlags);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    public static extern int GetClassName(IntPtr hWnd, StringBuilder className, int maxCount);
     
     [StructLayout(LayoutKind.Sequential)]
     public struct INPUT

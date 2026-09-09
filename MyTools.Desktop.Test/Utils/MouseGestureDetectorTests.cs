@@ -8,6 +8,44 @@ namespace MyTools.Desktop.Test.Utils;
 [TestFixture]
 public sealed class MouseGestureDetectorTests
 {
+    [TestCase("Shell_TrayWnd")]
+    [TestCase("Shell_SecondaryTrayWnd")]
+    public void TaskbarWindowDetector_RecognizesTaskbarClasses(string className)
+    {
+        Assert.That(TaskbarWindowDetector.IsTaskbarClassName(className), Is.True);
+    }
+
+    [TestCase("MSTaskListWClass")]
+    [TestCase("CabinetWClass")]
+    [TestCase("")]
+    public void TaskbarWindowDetector_RejectsOtherClasses(string className)
+    {
+        Assert.That(TaskbarWindowDetector.IsTaskbarClassName(className), Is.False);
+    }
+
+    [Test]
+    public void TaskbarRightClick_PassesThroughEntireButtonSequence()
+    {
+        var hook = new TestMouseHook();
+        using var detector = CreateDetector(new MouseHelper(), hook, _ => true);
+        var listenerThread = Start(detector);
+        Assert.That(hook.WaitForStart(TimeSpan.FromSeconds(2)), Is.True);
+
+        var down = hook.Raise(Native.MouseMsg.WM_RBUTTONDOWN, new Native.POINT { x = 10, y = 20 });
+        var move = hook.Raise(Native.MouseMsg.WM_MOUSEMOVE, new Native.POINT { x = 20, y = 20 });
+        var up = hook.Raise(Native.MouseMsg.WM_RBUTTONUP, new Native.POINT { x = 20, y = 20 });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(down.Handled, Is.False);
+            Assert.That(move.Handled, Is.False);
+            Assert.That(up.Handled, Is.False);
+        });
+
+        detector.Stop();
+        Assert.That(listenerThread.Join(TimeSpan.FromSeconds(2)), Is.True);
+    }
+
     [Test]
     public void Registry_EnableAndDisable_ControlsListenerLifetime()
     {
@@ -58,12 +96,16 @@ public sealed class MouseGestureDetectorTests
         Assert.That(hook.DisposeCount, Is.EqualTo(2));
     }
 
-    private static MouseGestureDetector CreateDetector(MouseHelper mouseHelper, IMouseHook hook)
+    private static MouseGestureDetector CreateDetector(
+        MouseHelper mouseHelper,
+        IMouseHook hook,
+        Func<Native.POINT, bool>? isTaskbarAt = null)
         => new(
             mouseHelper,
             NullLogger<MouseGestureDetector>.Instance,
             NullLogger<global::MyTools.Desktop.Views.MouseTrailWindow>.Instance,
-            hook);
+            hook,
+            isTaskbarAt);
 
     private static Thread Start(MouseGestureDetector detector)
     {
@@ -76,9 +118,7 @@ public sealed class MouseGestureDetectorTests
     {
         private readonly ManualResetEventSlim started = new(false);
 
-#pragma warning disable CS0067
         public event MouseHook.MouseHookEventHandler? MouseHookEvent;
-#pragma warning restore CS0067
 
         public int StartCount { get; private set; }
         public int DisposeCount { get; private set; }
@@ -92,6 +132,13 @@ public sealed class MouseGestureDetectorTests
         public bool WaitForStart(TimeSpan timeout) => started.Wait(timeout);
 
         public void ResetStarted() => started.Reset();
+
+        public MouseHook.MouseHookEventArgs Raise(Native.MouseMsg message, Native.POINT point)
+        {
+            var args = new MouseHook.MouseHookEventArgs(message, 0, point);
+            MouseHookEvent?.Invoke(args);
+            return args;
+        }
 
         public void Dispose()
         {
