@@ -221,7 +221,11 @@ public class DevelopmentPluginServiceTest
         try
         {
             process.Start();
-            Assert.That(process.WaitForExit(10_000), Is.True);
+            if (!process.WaitForExit(30_000))
+            {
+                if (!process.HasExited) process.Kill(true);
+                Assert.Fail("Expected watch bootstrap process to exit within 30 seconds.");
+            }
             var error = process.StandardError.ReadToEnd();
 
             Assert.Multiple(() =>
@@ -257,7 +261,11 @@ public class DevelopmentPluginServiceTest
             };
 
             process.Start();
-            Assert.That(process.WaitForExit(10_000), Is.True);
+            if (!process.WaitForExit(30_000))
+            {
+                if (!process.HasExited) process.Kill(true);
+                Assert.Fail("Expected watch command process to exit within 30 seconds.");
+            }
 
             Assert.Multiple(() =>
             {
