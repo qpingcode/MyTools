@@ -29,6 +29,7 @@
         <NodeRuntimeVersion Condition="'$(NodeRuntimeVersion)' == ''">24.19.0</NodeRuntimeVersion>
         <NodeRuntimeSha256 Condition="'$(NodeRuntimeSha256)' == ''">57f71ab3652e797d84acddc79c81cc9ff1c6ddb2a1974cdb83f00fee9bff4c73</NodeRuntimeSha256>
         <VelopackChannel Condition="'$(VelopackChannel)' == ''">stable</VelopackChannel>
+        <MyToolsDistributionFlavor Condition="'$(MyToolsDistributionFlavor)' == ''">Full</MyToolsDistributionFlavor>
         <VelopackDeltaMode Condition="'$(VelopackDeltaMode)' == ''">BestSpeed</VelopackDeltaMode>
         <VelopackRepositoryRoot>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..'))</VelopackRepositoryRoot>
         <VelopackToolManifest>$(VelopackRepositoryRoot)\.config\dotnet-tools.json</VelopackToolManifest>
@@ -40,6 +41,10 @@
         <NodeRuntimeBundleScript>$(VelopackRepositoryRoot)\build\bundle-node-runtime.ps1</NodeRuntimeBundleScript>
         <NodeRuntimePreferredExe Condition="'$(NodeRuntimePreferredExe)' == ''">$(MYTOOLS_PREFERRED_NODE_EXE)</NodeRuntimePreferredExe>
     </PropertyGroup>
+
+    <ItemGroup>
+        <AssemblyMetadata Include="MyToolsDistributionFlavor" Value="$(MyToolsDistributionFlavor)" />
+    </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\MyTools.AI\MyTools.AI.csproj"/>
@@ -126,6 +131,12 @@
                Text="The Velopack tool manifest was not found at '$(VelopackToolManifest)'." />
         <Error Condition="'$(Version)' == ''"
                Text="A release version must be provided with -p:Version or defined in the project." />
+        <Error Condition="'$(MyToolsDistributionFlavor)' != 'Full' and '$(MyToolsDistributionFlavor)' != 'Lite'"
+               Text="MyToolsDistributionFlavor must be Full or Lite." />
+        <Error Condition="'$(MyToolsDistributionFlavor)' == 'Full' and ('$(SelfContained)' != 'true' or '$(BundleNodeRuntime)' != 'true')"
+               Text="The Full distribution must bundle both the .NET and Node.js runtimes." />
+        <Error Condition="'$(MyToolsDistributionFlavor)' == 'Lite' and ('$(SelfContained)' != 'false' or '$(BundleNodeRuntime)' != 'false')"
+               Text="The Lite distribution must omit both the .NET and Node.js runtimes." />
         <Message Importance="high"
                  Text="Preparing MyTools $(Version) for $(VelopackRuntime) (self-contained: $(SelfContained))." />
         <RemoveDir Directories="$(VelopackPublishDirectory)" />

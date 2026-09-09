@@ -495,6 +495,16 @@ public class AppBootstrapper : IDisposable
                 localization.GetCaption("Configuration.General.HubUrl.Title", "MyTools Hub URL"),
                 localization.GetCaption("Configuration.General.HubUrl.Description", "Public MyTools Hub used for sign-in, the plugin store, and settings sync"),
                 GeneralSettings.DefaultHubUrl);
+
+            var distributionName = DistributionInfo.Current == DistributionFlavor.Lite
+                ? localization.GetCaption("Configuration.General.DistributionType.Lite", "Lite")
+                : localization.GetCaption("Configuration.General.DistributionType.Full", "Full");
+            registry.AddSetting(generalCategory, "DistributionType",
+                localization.GetCaption("Configuration.General.DistributionType.Title", "Distribution type"),
+                localization.GetCaption("Configuration.General.DistributionType.Description", "Determined by the installer and cannot be changed here"),
+                distributionName,
+                serializer: null,
+                options: SettingOptions.ReadOnly | SettingOptions.DisplayOnly);
             
             registry.AddSetting(generalCategory, "UpdateChannel",
                 localization.GetCaption("Configuration.General.UpdateChannel.Title", "Update channel"),

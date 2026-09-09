@@ -82,7 +82,9 @@ public sealed class UpdateService(
                 return new UpdateCheckResult(UpdateCheckStatus.NotInstalled);
             }
 
-            var channel = ResolveChannel(GetStringSetting(GeneralSettings.UpdateChannel));
+            var channel = ResolveChannel(
+                GetStringSetting(GeneralSettings.UpdateChannel),
+                DistributionInfo.Current);
             var includePrereleases = IncludeGitHubPrereleases(channel);
             var options = new UpdateOptions
             {
@@ -180,19 +182,16 @@ public sealed class UpdateService(
         return configurationRegistry.FindSetting(path)?.GetValue<string>();
     }
 
-    internal static string ResolveChannel(string? channel)
+    internal static string ResolveChannel(string? channel, DistributionFlavor flavor = DistributionFlavor.Full)
     {
-        if (string.IsNullOrWhiteSpace(channel))
-        {
-            return DefaultChannel;
-        }
-
-        return channel.Trim();
+        var updateRing = channel?.Trim() ?? DefaultChannel;
+        return DistributionInfo.ResolveVelopackChannel(updateRing, flavor);
     }
 
     internal static bool IncludeGitHubPrereleases(string channel)
     {
-        return channel.Equals(BetaChannel, StringComparison.OrdinalIgnoreCase);
+        return channel.Equals(BetaChannel, StringComparison.OrdinalIgnoreCase)
+               || channel.EndsWith($"-{BetaChannel}", StringComparison.OrdinalIgnoreCase);
     }
 
     private static UpdateManager CreateUpdateManager(

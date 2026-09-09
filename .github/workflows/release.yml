@@ -290,7 +290,7 @@ jobs:
         shell: pwsh
         run: |
           Remove-Item .\Releases -Recurse -Force -ErrorAction SilentlyContinue
-          New-Item -ItemType Directory -Path .\Releases | Out-Null
+          New-Item -ItemType Directory -Path .\Releases\full, .\Releases\lite, .\Releases\previous | Out-Null
 
       - name: Download previous full package for delta generation
         if: steps.version.outputs.previous_tag != ''
@@ -302,11 +302,30 @@ jobs:
           gh release download $env:PREVIOUS_TAG `
             --repo $env:GITHUB_REPOSITORY `
             --pattern 'MyTools-*-full.nupkg' `
-            --dir .\Releases
+            --dir .\Releases\previous
 
           if ($LASTEXITCODE -ne 0) {
               Write-Host 'No package from the previous MyTools release on this channel was found. Starting without a delta base.'
               $global:LASTEXITCODE = 0
+          }
+
+          $ring = '${{ steps.channel.outputs.velopack }}'
+          $channels = @{
+              full = $ring
+              lite = "lite-$ring"
+          }
+          foreach ($flavor in $channels.Keys) {
+              $channel = $channels[$flavor]
+              $previousPackage = Get-ChildItem .\Releases\previous -File -ErrorAction SilentlyContinue |
+                  Where-Object { $_.Name -match "^MyTools-\d+\.\d+\.\d+-$([regex]::Escape($channel))-full\.nupkg$" } |
+                  Sort-Object LastWriteTimeUtc -Descending |
+                  Select-Object -First 1
+              if ($null -ne $previousPackage) {
+                  Copy-Item $previousPackage.FullName ".\Releases\$flavor\$($previousPackage.Name)"
+                  Write-Host "Delta base for $flavor ($channel): $($previousPackage.Name)"
+              } else {
+                  Write-Host "No delta base found for $flavor ($channel)."
+              }
           }
 
       - name: Cache bundled Node runtime zip
@@ -351,7 +370,7 @@ jobs:
               Write-Host ("{0,12} bytes  {1}" -f $file.Length, $file.FullName)
           }
 
-      - name: Create Velopack packages
+      - name: Create full Velopack packages
         shell: pwsh
         env:
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
@@ -362,7 +381,29 @@ jobs:
           --runtime win-x64
           --self-contained true
           --property:CreateVelopackRelease=true
+          --property:BundleNodeRuntime=true
+          --property:MyToolsDistributionFlavor=Full
           --property:VelopackChannel=$env:VELOPACK_CHANNEL
+          --property:VelopackReleaseDirectory=$env:GITHUB_WORKSPACE\Releases\full
+          --property:VelopackPublishDirectory=$env:GITHUB_WORKSPACE\artifacts\publish-velopack-full
+          --property:Version=$env:RELEASE_VERSION
+
+      - name: Create lite Velopack packages
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+          VELOPACK_CHANNEL: lite-${{ steps.channel.outputs.velopack }}
+        run: >-
+          dotnet publish .\MyTools.Desktop\MyTools.Desktop.csproj
+          --configuration Release
+          --runtime win-x64
+          --self-contained false
+          --property:CreateVelopackRelease=true
+          --property:BundleNodeRuntime=false
+          --property:MyToolsDistributionFlavor=Lite
+          --property:VelopackChannel=$env:VELOPACK_CHANNEL
+          --property:VelopackReleaseDirectory=$env:GITHUB_WORKSPACE\Releases\lite
+          --property:VelopackPublishDirectory=$env:GITHUB_WORKSPACE\artifacts\publish-velopack-lite
           --property:Version=$env:RELEASE_VERSION
 
       - name: Verify release outputs
@@ -371,17 +412,7 @@ jobs:
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
           VELOPACK_CHANNEL: ${{ steps.channel.outputs.velopack }}
         run: |
-          $channel = $env:VELOPACK_CHANNEL
-          $installerName = "MyTools-$channel-Setup.exe"
-          $portableName = "MyTools-$channel-Portable.zip"
-          $installerAssetName = "MyTools-$env:RELEASE_VERSION-windows-x64-setup.exe"
-          $portableAssetName = "MyTools-$env:RELEASE_VERSION-windows-x64-portable.zip"
-          $assetsManifestName = "assets.$channel.json"
-          $releasesManifestName = "releases.$channel.json"
-          $fullPackage = Get-ChildItem .\Releases -File |
-              Where-Object { $_.Name -like "MyTools-$env:RELEASE_VERSION-*-full.nupkg" -or $_.Name -eq "MyTools-$env:RELEASE_VERSION-full.nupkg" } |
-              Select-Object -First 1
-          $bundledNode = Join-Path $PWD 'MyTools.Desktop\bin\Release\net8.0-windows\win-x64\publish-velopack\runtime\node\node.exe'
+          $bundledNode = Join-Path $PWD 'artifacts\publish-velopack-full\runtime\node\node.exe'
           if (-not (Test-Path $bundledNode -PathType Leaf)) {
               throw "Bundled Node runtime is missing: $bundledNode"
           }
@@ -391,7 +422,7 @@ jobs:
               throw "Bundled npm runtime is missing beside: $bundledNode"
           }
 
-          $publishRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $bundledNode))
+          $publishRoot = Join-Path $PWD 'artifacts\publish-velopack-full'
           $skillRoot = Join-Path $publishRoot 'skills\create-plugin'
           $requiredSkillFiles = @(
               (Join-Path $skillRoot 'SKILL.md'),
@@ -406,39 +437,54 @@ jobs:
               }
           }
 
-          $requiredFiles = @(
-              $installerName,
-              $portableName,
-              $assetsManifestName,
-              $releasesManifestName
+          $liteNode = Join-Path $PWD 'artifacts\publish-velopack-lite\runtime\node\node.exe'
+          if (Test-Path $liteNode -PathType Leaf) {
+              throw "Lite publish unexpectedly contains bundled Node: $liteNode"
+          }
+
+          $variants = @(
+              @{ Flavor = 'full'; Channel = $env:VELOPACK_CHANNEL },
+              @{ Flavor = 'lite'; Channel = "lite-$env:VELOPACK_CHANNEL" }
           )
+          foreach ($variant in $variants) {
+              $flavor = $variant.Flavor
+              $channel = $variant.Channel
+              $directory = Join-Path .\Releases $flavor
+              $installerName = "MyTools-$channel-Setup.exe"
+              $portableName = "MyTools-$channel-Portable.zip"
+              $installerAssetName = "MyTools-$env:RELEASE_VERSION-windows-x64-$flavor-setup.exe"
+              $portableAssetName = "MyTools-$env:RELEASE_VERSION-windows-x64-$flavor-portable.zip"
+              $assetsManifestName = "assets.$channel.json"
+              $releasesManifestName = "releases.$channel.json"
+              $fullPackage = Get-ChildItem $directory -File |
+                  Where-Object { $_.Name -eq "MyTools-$env:RELEASE_VERSION-$channel-full.nupkg" } |
+                  Select-Object -First 1
 
-          foreach ($fileName in $requiredFiles) {
-              if (-not (Test-Path (Join-Path .\Releases $fileName) -PathType Leaf)) {
-                  Get-ChildItem .\Releases -File | Sort-Object Name | Format-Table Name, Length
-                  throw "Required Velopack output is missing: $fileName"
+              foreach ($fileName in @($installerName, $portableName, $assetsManifestName, $releasesManifestName)) {
+                  if (-not (Test-Path (Join-Path $directory $fileName) -PathType Leaf)) {
+                      Get-ChildItem $directory -File | Sort-Object Name | Format-Table Name, Length
+                      throw "Required $flavor Velopack output is missing: $fileName"
+                  }
               }
-          }
-
-          if ($null -eq $fullPackage) {
-              Get-ChildItem .\Releases -File | Sort-Object Name | Format-Table Name, Length
-              throw "Required Velopack full package is missing for version $env:RELEASE_VERSION"
-          }
-
-          Copy-Item (Join-Path .\Releases $installerName) (Join-Path .\Releases $installerAssetName)
-          Copy-Item (Join-Path .\Releases $portableName) (Join-Path .\Releases $portableAssetName)
-
-          $assetsManifestPath = Join-Path .\Releases $assetsManifestName
-          $assetsManifest = Get-Content $assetsManifestPath -Raw | ConvertFrom-Json
-          foreach ($asset in $assetsManifest) {
-              switch ($asset.Type) {
-                  'Installer' { $asset.RelativeFileName = $installerAssetName }
-                  'Portable' { $asset.RelativeFileName = $portableAssetName }
+              if ($null -eq $fullPackage) {
+                  throw "Required $flavor updater package is missing for $env:RELEASE_VERSION ($channel)"
               }
-          }
-          $assetsManifest | ConvertTo-Json -Compress | Set-Content $assetsManifestPath -Encoding utf8
 
-          Get-ChildItem .\Releases -File | Sort-Object Name | Format-Table Name, Length
+              Copy-Item (Join-Path $directory $installerName) (Join-Path $directory $installerAssetName)
+              Copy-Item (Join-Path $directory $portableName) (Join-Path $directory $portableAssetName)
+
+              $assetsManifestPath = Join-Path $directory $assetsManifestName
+              $assetsManifest = Get-Content $assetsManifestPath -Raw | ConvertFrom-Json
+              foreach ($asset in $assetsManifest) {
+                  switch ($asset.Type) {
+                      'Installer' { $asset.RelativeFileName = $installerAssetName }
+                      'Portable' { $asset.RelativeFileName = $portableAssetName }
+                  }
+              }
+              $assetsManifest | ConvertTo-Json -Compress | Set-Content $assetsManifestPath -Encoding utf8
+          }
+
+          Get-ChildItem .\Releases\full, .\Releases\lite -File | Sort-Object FullName | Format-Table Name, Length
 
       - name: Create GitHub release
         shell: pwsh
@@ -451,49 +497,59 @@ jobs:
           VELOPACK_CHANNEL: ${{ steps.channel.outputs.velopack }}
           IS_PRERELEASE: ${{ steps.channel.outputs.prerelease }}
         run: |
-          $channel = $env:VELOPACK_CHANNEL
-          $installerName = "MyTools-$env:RELEASE_VERSION-windows-x64-setup.exe"
-          $portableName = "MyTools-$env:RELEASE_VERSION-windows-x64-portable.zip"
-          $fullPackage = Get-ChildItem .\Releases -File |
-              Where-Object { $_.Name -like "MyTools-$env:RELEASE_VERSION-*-full.nupkg" -or $_.Name -eq "MyTools-$env:RELEASE_VERSION-full.nupkg" } |
-              Select-Object -First 1
-          $deltaPackage = Get-ChildItem .\Releases -File |
-              Where-Object { $_.Name -like "MyTools-$env:RELEASE_VERSION-*-delta.nupkg" -or $_.Name -eq "MyTools-$env:RELEASE_VERSION-delta.nupkg" } |
-              Select-Object -First 1
-
-          $assets = @(
-              "$(Resolve-Path (Join-Path .\Releases $installerName))#Windows x64 Installer (Recommended)"
-              "$(Resolve-Path (Join-Path .\Releases $portableName))#Windows x64 Portable"
-              "$(Resolve-Path $fullPackage.FullName)#Automatic updater package"
-              "$(Resolve-Path (Join-Path .\Releases "assets.$channel.json"))#Automatic updater asset metadata"
-              "$(Resolve-Path (Join-Path .\Releases "releases.$channel.json"))#Automatic updater release metadata"
+          $variants = @(
+              @{ Flavor = 'full'; Channel = $env:VELOPACK_CHANNEL; Label = 'Full' },
+              @{ Flavor = 'lite'; Channel = "lite-$env:VELOPACK_CHANNEL"; Label = 'Lite' }
           )
+          $assets = @()
+          foreach ($variant in $variants) {
+              $directory = Join-Path .\Releases $variant.Flavor
+              $channel = $variant.Channel
+              $installerName = "MyTools-$env:RELEASE_VERSION-windows-x64-$($variant.Flavor)-setup.exe"
+              $portableName = "MyTools-$env:RELEASE_VERSION-windows-x64-$($variant.Flavor)-portable.zip"
+              $fullPackage = Get-ChildItem $directory -File |
+                  Where-Object { $_.Name -eq "MyTools-$env:RELEASE_VERSION-$channel-full.nupkg" } |
+                  Select-Object -First 1
+              $deltaPackage = Get-ChildItem $directory -File |
+                  Where-Object { $_.Name -eq "MyTools-$env:RELEASE_VERSION-$channel-delta.nupkg" } |
+                  Select-Object -First 1
 
-          if ($null -ne $deltaPackage) {
-              $assets += "$(Resolve-Path $deltaPackage.FullName)#Automatic updater delta package"
-          }
+              $assets += @(
+                  "$(Resolve-Path (Join-Path $directory $installerName))#Windows x64 $($variant.Label) Installer"
+                  "$(Resolve-Path (Join-Path $directory $portableName))#Windows x64 $($variant.Label) Portable"
+                  "$(Resolve-Path $fullPackage.FullName)#$($variant.Label) automatic updater package"
+                  "$(Resolve-Path (Join-Path $directory "assets.$channel.json"))#$($variant.Label) updater asset metadata"
+                  "$(Resolve-Path (Join-Path $directory "releases.$channel.json"))#$($variant.Label) updater release metadata"
+              )
+              if ($null -ne $deltaPackage) {
+                  $assets += "$(Resolve-Path $deltaPackage.FullName)#$($variant.Label) automatic updater delta package"
+              }
 
-          $legacyReleasesPath = Join-Path .\Releases 'RELEASES'
-          if (Test-Path $legacyReleasesPath -PathType Leaf) {
-              $assets += "$(Resolve-Path $legacyReleasesPath)#Automatic updater metadata"
-          }
-
-          $legacyChannelReleasesPath = Join-Path .\Releases "RELEASES-$channel"
-          if (Test-Path $legacyChannelReleasesPath -PathType Leaf) {
-              $assets += "$(Resolve-Path $legacyChannelReleasesPath)#Automatic updater metadata"
+              $legacyChannelReleasesPath = Join-Path $directory "RELEASES-$channel"
+              if (Test-Path $legacyChannelReleasesPath -PathType Leaf) {
+                  $assets += "$(Resolve-Path $legacyChannelReleasesPath)#$($variant.Label) legacy updater metadata"
+              }
           }
 
           $repositoryUrl = "https://github.com/$env:GITHUB_REPOSITORY"
           $downloadBaseUrl = "$repositoryUrl/releases/download/$env:RELEASE_TAG"
+          $fullInstallerName = "MyTools-$env:RELEASE_VERSION-windows-x64-full-setup.exe"
+          $fullPortableName = "MyTools-$env:RELEASE_VERSION-windows-x64-full-portable.zip"
+          $liteInstallerName = "MyTools-$env:RELEASE_VERSION-windows-x64-lite-setup.exe"
+          $litePortableName = "MyTools-$env:RELEASE_VERSION-windows-x64-lite-portable.zip"
           $releaseNotesPath = Join-Path $env:RUNNER_TEMP 'release-notes.md'
           @"
           ## Download
 
-          **[Download Windows x64 Installer (Recommended)]($downloadBaseUrl/$installerName)**
+          **[Download Windows x64 Full Installer (Recommended)]($downloadBaseUrl/$fullInstallerName)**
 
-          [Download Windows x64 Portable]($downloadBaseUrl/$portableName)
+          [Download Windows x64 Full Portable]($downloadBaseUrl/$fullPortableName)
 
-          Channel: **$env:RELEASE_LABEL** ($channel)
+          [Download Windows x64 Lite Installer]($downloadBaseUrl/$liteInstallerName) — requires .NET 8 Desktop Runtime; Node.js is not bundled
+
+          [Download Windows x64 Lite Portable]($downloadBaseUrl/$litePortableName) — requires .NET 8 Desktop Runtime; Node.js is not bundled
+
+          Update ring: **$env:RELEASE_LABEL**
 
           > The `.nupkg`, `.json`, and `RELEASES` assets are used by the automatic updater. Most users do not need to download them.
 
@@ -554,22 +610,34 @@ jobs:
               if ($null -eq $match) {
                   return [pscustomobject]@{
                       Version = '—'
-                      InstallerUrl = ''
-                      PortableUrl = ''
+                      FullInstallerUrl = ''
+                      FullPortableUrl = ''
+                      LiteInstallerUrl = ''
+                      LitePortableUrl = ''
                   }
               }
 
               $details = gh release view $match.tagName --repo $env:GITHUB_REPOSITORY --json assets,tagName,name | ConvertFrom-Json
-              $installer = $details.assets | Where-Object { $_.name -like '*-windows-x64-setup.exe' } | Select-Object -First 1
-              $portable = $details.assets | Where-Object { $_.name -like '*-windows-x64-portable.zip' } | Select-Object -First 1
-              $versionMatch = [regex]::Match("$($details.name) $($installer?.name)", '(?<version>(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))')
+              $fullInstaller = $details.assets | Where-Object { $_.name -like '*-windows-x64-full-setup.exe' } | Select-Object -First 1
+              $fullPortable = $details.assets | Where-Object { $_.name -like '*-windows-x64-full-portable.zip' } | Select-Object -First 1
+              if ($null -eq $fullInstaller) {
+                  $fullInstaller = $details.assets | Where-Object { $_.name -like '*-windows-x64-setup.exe' } | Select-Object -First 1
+              }
+              if ($null -eq $fullPortable) {
+                  $fullPortable = $details.assets | Where-Object { $_.name -like '*-windows-x64-portable.zip' } | Select-Object -First 1
+              }
+              $liteInstaller = $details.assets | Where-Object { $_.name -like '*-windows-x64-lite-setup.exe' } | Select-Object -First 1
+              $litePortable = $details.assets | Where-Object { $_.name -like '*-windows-x64-lite-portable.zip' } | Select-Object -First 1
+              $versionMatch = [regex]::Match("$($details.name) $($fullInstaller?.name)", '(?<version>(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))')
               $version = if ($versionMatch.Success) { $versionMatch.Groups['version'].Value } else { $details.tagName }
               $downloadBase = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/$($details.tagName)"
 
               return [pscustomobject]@{
                   Version = $version
-                  InstallerUrl = if ($null -eq $installer) { '' } else { "$downloadBase/$($installer.name)" }
-                  PortableUrl = if ($null -eq $portable) { '' } else { "$downloadBase/$($portable.name)" }
+                  FullInstallerUrl = if ($null -eq $fullInstaller) { '' } else { "$downloadBase/$($fullInstaller.name)" }
+                  FullPortableUrl = if ($null -eq $fullPortable) { '' } else { "$downloadBase/$($fullPortable.name)" }
+                  LiteInstallerUrl = if ($null -eq $liteInstaller) { '' } else { "$downloadBase/$($liteInstaller.name)" }
+                  LitePortableUrl = if ($null -eq $litePortable) { '' } else { "$downloadBase/$($litePortable.name)" }
               }
           }
 
@@ -584,10 +652,13 @@ jobs:
           function Update-DownloadMatrix {
               param(
                   [string] $Path,
+                  [string] $TypeHeader,
                   [string] $ChannelHeader,
                   [string] $VersionHeader,
                   [string] $InstallerHeader,
                   [string] $PortableHeader,
+                  [string] $FullText,
+                  [string] $LiteText,
                   [string] $DownloadText,
                   [string] $MissingText,
                   $Stable,
@@ -606,10 +677,12 @@ jobs:
               $newline = if ($content.Contains("`r`n")) { "`r`n" } else { "`n" }
               $table = @"
           $start
-          | $ChannelHeader | $VersionHeader | $InstallerHeader | $PortableHeader |
-          | --- | --- | --- | --- |
-          | **Stable** | $($Stable.Version) | $(Format-Link $Stable.InstallerUrl $DownloadText $MissingText) | $(Format-Link $Stable.PortableUrl $DownloadText $MissingText) |
-          | **Beta** | $($Beta.Version) | $(Format-Link $Beta.InstallerUrl $DownloadText $MissingText) | $(Format-Link $Beta.PortableUrl $DownloadText $MissingText) |
+          | $TypeHeader | $ChannelHeader | $VersionHeader | $InstallerHeader | $PortableHeader |
+          | --- | --- | --- | --- | --- |
+          | **$FullText** | **Stable** | $($Stable.Version) | $(Format-Link $Stable.FullInstallerUrl $DownloadText $MissingText) | $(Format-Link $Stable.FullPortableUrl $DownloadText $MissingText) |
+          | **$LiteText** | **Stable** | $($Stable.Version) | $(Format-Link $Stable.LiteInstallerUrl $DownloadText $MissingText) | $(Format-Link $Stable.LitePortableUrl $DownloadText $MissingText) |
+          | **$FullText** | **Beta** | $($Beta.Version) | $(Format-Link $Beta.FullInstallerUrl $DownloadText $MissingText) | $(Format-Link $Beta.FullPortableUrl $DownloadText $MissingText) |
+          | **$LiteText** | **Beta** | $($Beta.Version) | $(Format-Link $Beta.LiteInstallerUrl $DownloadText $MissingText) | $(Format-Link $Beta.LitePortableUrl $DownloadText $MissingText) |
           $end
           "@
               $table = ($table -replace "`r`n", "`n" -replace "`n", $newline).TrimEnd()
@@ -626,10 +699,13 @@ jobs:
 
           Update-DownloadMatrix `
               -Path .\README.md `
+              -TypeHeader 'Type' `
               -ChannelHeader 'Channel' `
               -VersionHeader 'Version' `
-              -InstallerHeader 'Installer (full setup)' `
+              -InstallerHeader 'Installer' `
               -PortableHeader 'Portable' `
+              -FullText 'Full' `
+              -LiteText 'Lite' `
               -DownloadText 'Download' `
               -MissingText 'Not published yet' `
               -Stable $stable `
@@ -637,10 +713,13 @@ jobs:
 
           Update-DownloadMatrix `
               -Path .\README.zh-CN.md `
+              -TypeHeader '类型' `
               -ChannelHeader '通道' `
               -VersionHeader '版本' `
               -InstallerHeader '完整安装包' `
               -PortableHeader '便携版' `
+              -FullText '完整版' `
+              -LiteText '精简版' `
               -DownloadText '下载' `
               -MissingText '尚未发布' `
               -Stable $stable `

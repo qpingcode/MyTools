@@ -41,6 +41,7 @@ public sealed class SettingDto
     public string? CurrentValue { get; init; }
     public string? DefaultValue { get; init; }
     public bool RequiresRestart { get; init; }
+    public bool ReadOnly { get; init; }
     public string? UiHint { get; init; }
     public string? Visibility { get; init; }
     public SettingSchemaDto? Schema { get; init; }

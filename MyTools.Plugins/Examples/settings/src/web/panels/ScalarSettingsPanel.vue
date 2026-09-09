@@ -153,6 +153,7 @@ function onHotKey(setting: Setting, value: string | null): void {
                 <div v-else-if="setting.valueType === 'Bool' && !setting.uiHint" class="control-bool">
                     <n-switch
                         :value="currentValue(setting) === 'True'"
+                        :disabled="setting.readOnly"
                         @update:value="onBool(setting, !!$event)"
                     />
                 </div>
@@ -164,6 +165,7 @@ function onHotKey(setting: Setting, value: string | null): void {
                     label-field="label"
                     size="small"
                     class="control-select"
+                    :disabled="setting.readOnly"
                     @update:value="onText(setting, $event as string)"
                 />
                 <HotKeyRecorder
@@ -190,6 +192,7 @@ function onHotKey(setting: Setting, value: string | null): void {
                     type="number"
                     size="small"
                     class="control-input"
+                    :disabled="setting.readOnly"
                     @update:value="onText(setting, $event)"
                 />
                 <n-input
@@ -197,6 +200,7 @@ function onHotKey(setting: Setting, value: string | null): void {
                     :value="currentValue(setting)"
                     size="small"
                     class="control-input"
+                    :disabled="setting.readOnly"
                     @update:value="onText(setting, $event)"
                 />
             </div>

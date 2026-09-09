@@ -109,6 +109,10 @@
   <data name="Theme.dark" xml:space="preserve"><value>Sombre</value></data>
   <data name="Configuration.General.Theme.Title" xml:space="preserve"><value>Thème</value></data>
   <data name="Configuration.General.Theme.Description" xml:space="preserve"><value>Choisir le thème de couleur</value></data>
+  <data name="Configuration.General.DistributionType.Title" xml:space="preserve"><value>Type de distribution</value></data>
+  <data name="Configuration.General.DistributionType.Description" xml:space="preserve"><value>Déterminé par le programme d’installation et non modifiable ici</value></data>
+  <data name="Configuration.General.DistributionType.Full" xml:space="preserve"><value>Complète</value></data>
+  <data name="Configuration.General.DistributionType.Lite" xml:space="preserve"><value>Allégée</value></data>
   <data name="Configuration.General.SearchHotKey.Title" xml:space="preserve"><value>Raccourci de recherche</value></data>
   <data name="Configuration.General.SearchHotKey.Description" xml:space="preserve"><value>Raccourci clavier ouvrant la recherche MyTools</value></data>
   <data name="PluginPage.HandshakeFailed" xml:space="preserve"><value>La page du plugin n’a pas pu se connecter</value></data>

@@ -210,6 +210,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
             CurrentValue = ConfigurationSettingValues.ToDtoString(setting.CurrentValue),
             DefaultValue = ConfigurationSettingValues.ToDtoString(setting.DefaultValue),
             RequiresRestart = (setting.Options & SettingOptions.RequiresRestart) != 0,
+            ReadOnly = (setting.Options & SettingOptions.ReadOnly) != 0,
             UiHint = setting.UiHint,
             Visibility = setting.Visibility,
             Schema = MapSchema(setting.Schema)
@@ -301,9 +302,9 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         foreach (var change in request.Changes)
         {
             var setting = registry.FindSetting(change.Key);
-            if (setting == null || setting.IsDisplayOnly)
+            if (setting == null || setting.IsDisplayOnly || (setting.Options & SettingOptions.ReadOnly) != 0)
             {
-                logger.LogWarning("Setting not found: {Key}", change.Key);
+                logger.LogWarning("Setting not found or not writable: {Key}", change.Key);
                 continue;
             }
 

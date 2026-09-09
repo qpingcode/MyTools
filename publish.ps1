@@ -29,7 +29,7 @@
 
       --property:SelfContained=true|false
           true 表示发布包自带 .NET Runtime；false 表示目标电脑必须安装 .NET Desktop Runtime。
-          启用 CreateVelopackRelease 且未指定时，默认值为 false。
+          完整版使用 true，精简版使用 false。
 
       --property:CreateVelopackRelease=true
           显式启用项目中的 Velopack MSBuild Target。没有该参数时只执行普通 dotnet publish，
@@ -41,7 +41,11 @@
           但手动 dotnet publish 不会自动执行 patch + 1。
 
       --property:VelopackChannel=<channel>
-          指定更新通道，例如 stable 或 beta；默认值为 stable。客户端的 UpdateChannel 必须与之匹配。
+          完整版使用 stable 或 beta；精简版使用 lite-stable 或 lite-beta。
+
+      --property:MyToolsDistributionFlavor=Full|Lite
+          Full 表示完整版并内置 .NET 和 Node.js；Lite 表示精简版且不内置两种运行时。
+          精简版的实际 Velopack 通道应使用 lite-stable 或 lite-beta。
 
     可选 MSBuild 属性：
       --property:VelopackDeltaMode=BestSpeed
@@ -109,11 +113,11 @@ function Read-Channel {
         }
 
         $value = $value.Trim()
-        if ($value -match '^[A-Za-z0-9][A-Za-z0-9._-]*$') {
-            return $value
+        if ($value -in @("stable", "beta")) {
+            return $value.ToLowerInvariant()
         }
 
-        Write-Warning "更新通道只能包含字母、数字、点、下划线和连字符。"
+        Write-Warning "更新通道只能是 stable 或 beta。"
     }
 }
 
@@ -149,18 +153,24 @@ if (-not (Test-Path -LiteralPath $versionFile -PathType Leaf)) {
 $currentVersion = (Get-Content -LiteralPath $versionFile -Raw).Trim()
 $releaseVersion = Get-NextPatchVersion -CurrentVersion $currentVersion
 $channel = "stable"
-$frameworkDependent = $true
-$selfContained = if ($frameworkDependent) { "false" } else { "true" }
+$distributionFlavor = "Full"
+$selfContained = "true"
+$bundleNodeRuntime = "true"
 
 Write-Host "MyTools 交互式发布"
 Write-Host "最近发布版本: $currentVersion"
 Write-Host "默认发布版本: $releaseVersion（patch + 1）"
-Write-Host "默认设置: channel=$channel, runtime=win-x64, self-contained=$selfContained"
+Write-Host "默认设置: type=$distributionFlavor, channel=$channel, runtime=win-x64, self-contained=$selfContained"
 
 if (Read-YesNo -Prompt "是否修改默认发布设置？") {
     $releaseVersion = Read-Version -DefaultVersion $releaseVersion
     $channel = Read-Channel -DefaultChannel $channel
-    $frameworkDependent = Read-YesNo -Prompt "是否发布为 framework-dependent（目标机需要安装 .NET Desktop Runtime）？"
+    if (Read-YesNo -Prompt "是否发布精简版（不内置 .NET 和 Node.js 运行时）？") {
+        $distributionFlavor = "Lite"
+        $selfContained = "false"
+        $bundleNodeRuntime = "false"
+        $channel = "lite-$channel"
+    }
 }
 
 
@@ -171,6 +181,8 @@ $publishArguments = @(
     "--runtime", "win-x64",
     "--property:SelfContained=$selfContained",
     "--property:CreateVelopackRelease=true",
+    "--property:BundleNodeRuntime=$bundleNodeRuntime",
+    "--property:MyToolsDistributionFlavor=$distributionFlavor",
     "--property:VelopackChannel=$channel",
     "--property:Version=$releaseVersion"
 )

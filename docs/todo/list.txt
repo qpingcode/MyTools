@@ -8,12 +8,10 @@
 
 待定：
 5. mouse gesture 增加一个嗅探功能（可以在process文本框旁边加按钮） 点击后隐藏settings窗口可以点击显示process名称， 按esc退出嗅探
-  - bug: 当鼠标右键单机windows底部toolbar时候 如果toolbar下面有个重叠(且在toolbar后面)的窗口， 右击会穿透窗口，给下面的窗口发送右击事件. 我希望的是右击toolbar, 先调查,有没有好的方案
 7. 是否要支持拼音搜索
 8. 搜索出来的文件可以拖拽到其他软件
 
 插件待开发：
-2. todo list， 可以叫做things 创建/查询/导出（复制到剪切板）
 3. postman简单版本
 4. 数据库查询工具
 5. ssh工具

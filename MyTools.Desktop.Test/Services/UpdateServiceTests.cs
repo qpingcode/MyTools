@@ -34,9 +34,24 @@ public class UpdateServiceTests
         Assert.That(UpdateService.ResolveChannel(channel), Is.EqualTo(expected));
     }
 
+    [TestCase(null, DistributionFlavor.Lite, "lite-stable")]
+    [TestCase("stable", DistributionFlavor.Lite, "lite-stable")]
+    [TestCase("beta", DistributionFlavor.Lite, "lite-beta")]
+    [TestCase("custom", DistributionFlavor.Lite, "lite-stable")]
+    [TestCase("custom", DistributionFlavor.Full, "stable")]
+    public void ResolveChannel_CombinesFixedDistributionWithSupportedRing(
+        string? channel,
+        DistributionFlavor flavor,
+        string expected)
+    {
+        Assert.That(UpdateService.ResolveChannel(channel, flavor), Is.EqualTo(expected));
+    }
+
     [TestCase("stable", false)]
     [TestCase("beta", true)]
     [TestCase("BETA", true)]
+    [TestCase("lite-stable", false)]
+    [TestCase("lite-beta", true)]
     public void IncludeGitHubPrereleases_IsEnabledForBeta(string channel, bool expected)
     {
         Assert.That(UpdateService.IncludeGitHubPrereleases(channel), Is.EqualTo(expected));

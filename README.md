@@ -25,13 +25,15 @@ MyTools is a Windows desktop productivity application built with .NET 8 and WPF.
 
 ## Installation
 
-MyTools is published on two channels:
+MyTools is published as a Full build (bundled .NET and Node.js runtimes) and a Lite build (requires .NET 8 Desktop Runtime and does not bundle Node.js). Each build stays on its own update track.
 
 <!-- mytools-downloads:start -->
-| Channel | Version | Installer (full setup) | Portable |
-| --- | --- | --- | --- |
-| **Stable** | — | Not published yet | Not published yet |
-| **Beta** | 0.0.48 | [Download](https://github.com/qpingcode/MyTools/releases/download/v0.0.48/MyTools-0.0.48-windows-x64-setup.exe) | [Download](https://github.com/qpingcode/MyTools/releases/download/v0.0.48/MyTools-0.0.48-windows-x64-portable.zip) |
+| Type | Channel | Version | Installer | Portable |
+| --- | --- | --- | --- | --- |
+| **Full** | **Stable** | — | Not published yet | Not published yet |
+| **Lite** | **Stable** | — | Not published yet | Not published yet |
+| **Full** | **Beta** | 0.0.48 | [Download](https://github.com/qpingcode/MyTools/releases/download/v0.0.48/MyTools-0.0.48-windows-x64-setup.exe) | [Download](https://github.com/qpingcode/MyTools/releases/download/v0.0.48/MyTools-0.0.48-windows-x64-portable.zip) |
+| **Lite** | **Beta** | 0.0.48 | Not published yet | Not published yet |
 <!-- mytools-downloads:end -->
 
 

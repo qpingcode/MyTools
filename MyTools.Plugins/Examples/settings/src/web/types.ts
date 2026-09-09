@@ -23,6 +23,7 @@ export type Setting = {
     currentValue?: string;
     defaultValue?: string;
     requiresRestart: boolean;
+    readOnly: boolean;
     uiHint?: string;
     visibility?: string;
     schema?: SettingSchema;
