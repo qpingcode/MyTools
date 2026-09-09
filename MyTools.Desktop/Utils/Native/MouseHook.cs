@@ -5,7 +5,14 @@ using Microsoft.Extensions.Logging;
 
 namespace MyTools.Desktop.Utils;
 
-public class MouseHook : IDisposable
+internal interface IMouseHook : IDisposable
+{
+    event MouseHook.MouseHookEventHandler? MouseHookEvent;
+
+    void StartListening();
+}
+
+public class MouseHook : IMouseHook
 {
     private const int WH_MOUSE_LL = 14;
     private Native.LowLevelMouseProc? _proc;

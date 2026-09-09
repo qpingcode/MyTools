@@ -7,12 +7,17 @@ namespace MyTools.Desktop.Services;
 
 public class GestureRegistry : IDisposable
 {
-    private MouseGestureDetector mouseGestureDetector;
+    private readonly MouseGestureDetector mouseGestureDetector;
+    private readonly ILogger<GestureRegistry> logger;
+    private readonly object lifecycleLock = new();
+    private readonly object actionsLock = new();
+    private Thread? gestureThread;
     private readonly Dictionary<GestureKey, Action<MouseGestureEventArgs>> gestureActions = new();
     private readonly Dictionary<GestureKey, string> gestureActionNames = new();
     
     public GestureRegistry(ILogger<GestureRegistry> logger, MouseGestureDetector mouseGestureDetector)
     {
+        this.logger = logger;
         this.mouseGestureDetector = mouseGestureDetector;
         // 设置查找 actionName 的方法，使用 Func 解耦依赖
         mouseGestureDetector.SetActionNameFinder(FindActionName);
@@ -20,22 +25,74 @@ public class GestureRegistry : IDisposable
         mouseGestureDetector.SetPossibleGesturesFinder(GetPossibleGestures);
         mouseGestureDetector.GestureDetected += (_, args) =>
         {
-            if (gestureActions.TryGetValue(new GestureKey(args.ProcessName ?? "", args.Gesture), out var action))
+            Action<MouseGestureEventArgs>? action;
+            string matchedProcessName;
+            lock (actionsLock)
             {
-                logger.LogDebug("Trigger Gesture: {Gestures} for {ProcessName}", args.Gesture, args.ProcessName);
-                action.Invoke(args);
+                if (gestureActions.TryGetValue(new GestureKey(args.ProcessName ?? "", args.Gesture), out action))
+                {
+                    matchedProcessName = args.ProcessName ?? "";
+                }
+                else if (gestureActions.TryGetValue(new GestureKey("*", args.Gesture), out action))
+                {
+                    matchedProcessName = "*";
+                }
+                else
+                {
+                    return;
+                }
             }
-            else if (gestureActions.TryGetValue(new GestureKey("*", args.Gesture), out action))
-            {
-                logger.LogDebug("Trigger Gesture: {Gestures} for {ProcessName}", args.Gesture, "*");
-                action.Invoke(args);
-            }
+
+            logger.LogDebug("Trigger Gesture: {Gestures} for {ProcessName}", args.Gesture, matchedProcessName);
+            action.Invoke(args);
         };
     }
     
-    public void StartListening()
+    public void EnableDetection(IEnumerable<GestureConfig> configs, MouseHelper mouseHelper)
     {
-        mouseGestureDetector.Start();
+        lock (lifecycleLock)
+        {
+            ReloadFromConfigs(configs, mouseHelper);
+            if (gestureThread?.IsAlive == true)
+            {
+                return;
+            }
+
+            gestureThread = new Thread(mouseGestureDetector.Start)
+            {
+                Name = "Gesture Thread",
+                IsBackground = true
+            };
+            gestureThread.SetApartmentState(ApartmentState.STA);
+            gestureThread.Start();
+            if (!SpinWait.SpinUntil(
+                    () => mouseGestureDetector.IsRunning || gestureThread?.IsAlive != true,
+                    TimeSpan.FromSeconds(5)))
+            {
+                logger.LogWarning("Gesture detection thread did not report startup within the timeout.");
+            }
+        }
+    }
+
+    public void DisableDetection()
+    {
+        lock (lifecycleLock)
+        {
+            ClearGestures();
+            mouseGestureDetector.Stop();
+
+            if (gestureThread is { IsAlive: true } thread
+                && !ReferenceEquals(thread, Thread.CurrentThread)
+                && !thread.Join(TimeSpan.FromSeconds(5)))
+            {
+                logger.LogWarning("Gesture detection thread did not stop within the timeout.");
+            }
+
+            if (gestureThread?.IsAlive != true)
+            {
+                gestureThread = null;
+            }
+        }
     }
 
     /// <summary>
@@ -59,8 +116,11 @@ public class GestureRegistry : IDisposable
     /// </summary>
     public void ClearGestures()
     {
-        gestureActions.Clear();
-        gestureActionNames.Clear();
+        lock (actionsLock)
+        {
+            gestureActions.Clear();
+            gestureActionNames.Clear();
+        }
     }
 
     /// <summary>
@@ -68,10 +128,13 @@ public class GestureRegistry : IDisposable
     /// </summary>
     public void ReloadFromConfigs(IEnumerable<GestureConfig> configs, MouseHelper mouseHelper)
     {
-        ClearGestures();
-        foreach (var config in configs)
+        lock (actionsLock)
         {
-            RegisterFromConfig(config, mouseHelper);
+            ClearGestures();
+            foreach (var config in configs)
+            {
+                RegisterFromConfig(config, mouseHelper);
+            }
         }
     }
 
@@ -128,8 +191,11 @@ public class GestureRegistry : IDisposable
         }
         
         var gestureKey = new GestureKey(processName, gesture);
-        gestureActions[gestureKey] = action;
-        gestureActionNames[gestureKey] = actionName;
+        lock (actionsLock)
+        {
+            gestureActions[gestureKey] = action;
+            gestureActionNames[gestureKey] = actionName;
+        }
     }
 
     /// <summary>
@@ -144,46 +210,48 @@ public class GestureRegistry : IDisposable
         }
 
         var processNameLower = processName?.ToLower() ?? "";
-        
-        // 先尝试精确匹配当前进程名
-        var exactKey = new GestureKey(processNameLower, currentDirections);
-        if (gestureActionNames.TryGetValue(exactKey, out var actionName))
+        lock (actionsLock)
         {
-            return actionName;
-        }
-        
-        // 尝试匹配通配符 "*"
-        var wildcardKey = new GestureKey("*", currentDirections);
-        if (gestureActionNames.TryGetValue(wildcardKey, out actionName))
-        {
-            return actionName;
-        }
-        
-        // 尝试部分匹配（当前手势是某个已注册手势的前缀）
-        foreach (var kvp in gestureActionNames)
-        {
-            var key = kvp.Key;
-            // 检查进程名是否匹配（精确匹配或通配符）
-            if (key.ProcessName != processNameLower && key.ProcessName != "*")
+            // 先尝试精确匹配当前进程名
+            var exactKey = new GestureKey(processNameLower, currentDirections);
+            if (gestureActionNames.TryGetValue(exactKey, out var actionName))
             {
-                continue;
+                return actionName;
             }
-            
-            // 检查当前手势是否是已注册手势的前缀
-            if (key.Gestures.Length >= currentDirections.Length)
+
+            // 尝试匹配通配符 "*"
+            var wildcardKey = new GestureKey("*", currentDirections);
+            if (gestureActionNames.TryGetValue(wildcardKey, out actionName))
             {
-                bool isPrefix = true;
-                for (int i = 0; i < currentDirections.Length; i++)
+                return actionName;
+            }
+
+            // 尝试部分匹配（当前手势是某个已注册手势的前缀）
+            foreach (var kvp in gestureActionNames)
+            {
+                var key = kvp.Key;
+                // 检查进程名是否匹配（精确匹配或通配符）
+                if (key.ProcessName != processNameLower && key.ProcessName != "*")
                 {
-                    if (key.Gestures[i] != currentDirections[i])
-                    {
-                        isPrefix = false;
-                        break;
-                    }
+                    continue;
                 }
-                if (isPrefix)
+
+                // 检查当前手势是否是已注册手势的前缀
+                if (key.Gestures.Length >= currentDirections.Length)
                 {
-                    return kvp.Value;
+                    bool isPrefix = true;
+                    for (int i = 0; i < currentDirections.Length; i++)
+                    {
+                        if (key.Gestures[i] != currentDirections[i])
+                        {
+                            isPrefix = false;
+                            break;
+                        }
+                    }
+                    if (isPrefix)
+                    {
+                        return kvp.Value;
+                    }
                 }
             }
         }
@@ -206,7 +274,13 @@ public class GestureRegistry : IDisposable
         var processNameLower = processName?.ToLower() ?? "";
         currentDirections ??= Array.Empty<MoveDirection>();
 
-        foreach (var kvp in gestureActionNames)
+        KeyValuePair<GestureKey, string>[] registeredGestures;
+        lock (actionsLock)
+        {
+            registeredGestures = gestureActionNames.ToArray();
+        }
+
+        foreach (var kvp in registeredGestures)
         {
             var key = kvp.Key;
             // 检查进程名是否匹配（精确匹配或通配符）
@@ -292,6 +366,7 @@ public class GestureRegistry : IDisposable
     
     public void Dispose()
     {
+        DisableDetection();
         mouseGestureDetector.Dispose();
     }
 

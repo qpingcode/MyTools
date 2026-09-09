@@ -202,22 +202,14 @@ public class AppBootstrapper : IDisposable
     private void InitializeGestureDetection()
     {
         var enableGesture = registry.FindSetting("Gestures.EnableGesture")?.GetValue<bool>() ?? false;
-        if (!enableGesture)
+        if (enableGesture)
         {
-            return;
+            gestureRegistry.EnableDetection(gestureConfigProvider.GetAll(), mouseHelper);
         }
-
-        var configs = gestureConfigProvider.GetAll();
-        gestureRegistry.ReloadFromConfigs(configs, mouseHelper);
-
-        var gestureThread = new Thread(() =>
+        else
         {
-            gestureRegistry.StartListening();
-        })
-        { Name = "Gesture Thread", IsBackground = true };
-
-        gestureThread.SetApartmentState(ApartmentState.STA);
-        gestureThread.Start();
+            gestureRegistry.DisableDetection();
+        }
     }
 
     private void RegisterGlobalHotKey(HotKeyConfig SearchHotKey)
@@ -529,8 +521,7 @@ public class AppBootstrapper : IDisposable
             registry.AddSetting(gesturesCategory, "EnableGesture",
                 localization.GetCaption("Configuration.Gestures.Enable.Title", "Enable"),
                 string.Empty,
-                false,
-                options: SettingOptions.RequiresRestart);
+                false);
 
             // Add Plugin Settings
             registry.AddCategory(

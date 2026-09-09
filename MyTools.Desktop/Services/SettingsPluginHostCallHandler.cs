@@ -295,6 +295,8 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         // Record the value of Language before saving, to determine if it actually changed (rather than merely being written back by the frontend with the same value).
         var languageSetting = registry.FindSetting(GeneralSettings.LanguagePath);
         var previousLanguage = languageSetting?.GetValue<string>();
+        var gestureSetting = registry.FindSetting("Gestures.EnableGesture");
+        var gesturesWereEnabled = gestureSetting?.GetValue<bool>() ?? false;
 
         foreach (var change in request.Changes)
         {
@@ -318,6 +320,11 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
 
         registry.SaveChanges();
         pluginLoader.LoadedPlugins.OfType<ClipBoardPlugin>().FirstOrDefault()?.ApplyRetentionSettings();
+        var gesturesAreEnabled = gestureSetting?.GetValue<bool>() ?? false;
+        if (gesturesWereEnabled != gesturesAreEnabled)
+        {
+            ApplyGestureEnabledState();
+        }
 
         // Hot App Theme / LogLevel / AutoStart: These operations trigger events such as ThemeChanged.
         // Event subscribers (e.g., App.OnThemeChanged → UpdateNotifyIconMenu) access WPF controls and must execute on the UI thread.
@@ -391,11 +398,22 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
 
         gestureConfigProvider.Save(gestures);
 
-        // Hot apply: re-register on the gesture detection thread. Dictionary operations and
-        // StartListening in GestureRegistry are thread-safe (the detection thread only reads the dictionary), so writes can be done on any thread.
-        gestureRegistry.ReloadFromConfigs(gestures, mouseHelper);
+        ApplyGestureEnabledState();
 
         return JsonSerializer.SerializeToElement(new { success = true }, JsonCamelCaseOptions);
+    }
+
+    private void ApplyGestureEnabledState()
+    {
+        var enabled = registry.FindSetting("Gestures.EnableGesture")?.GetValue<bool>() ?? false;
+        if (enabled)
+        {
+            gestureRegistry.EnableDetection(gestureConfigProvider.GetAll(), mouseHelper);
+        }
+        else
+        {
+            gestureRegistry.DisableDetection();
+        }
     }
 
     private JsonElement GetKeymap()

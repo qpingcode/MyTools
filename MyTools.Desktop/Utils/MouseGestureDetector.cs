@@ -14,7 +14,7 @@ public class MouseGestureDetector : IDisposable
     
     private string? _previousProcessName;
     private bool _isCapturing;
-    private readonly MouseHook _mouseHook;
+    private readonly IMouseHook _mouseHook;
     private MouseTrailWindow? _trailWindow;
     private MouseTrailViewModel? _trailViewModel;
     private readonly GestureDirectionStorage _gestureDirectionStorage;
@@ -24,10 +24,13 @@ public class MouseGestureDetector : IDisposable
     private bool _initialMoveValid;
     private readonly MouseHelper _mouseHelper;
     private volatile bool _suspended;
+    private int _isRunning;
     private Func<string?, MoveDirection[], string?>? _findActionName;
     private Func<string?, MoveDirection[]?, int, List<PossibleGesture>>? _getPossibleGestures;
 
     public event EventHandler<MouseGestureEventArgs>? GestureDetected;
+
+    internal bool IsRunning => Volatile.Read(ref _isRunning) != 0;
 
     /// <summary>
     /// 设置查找 actionName 的方法
@@ -48,10 +51,19 @@ public class MouseGestureDetector : IDisposable
     }
 
     public MouseGestureDetector(MouseHelper mouseHelper, ILogger<MouseGestureDetector> logger, ILogger<MouseTrailWindow> trailWindowLogger)
+        : this(mouseHelper, logger, trailWindowLogger, new MouseHook(logger))
+    {
+    }
+
+    internal MouseGestureDetector(
+        MouseHelper mouseHelper,
+        ILogger<MouseGestureDetector> logger,
+        ILogger<MouseTrailWindow> trailWindowLogger,
+        IMouseHook mouseHook)
     {
         _logger = logger;
         _trailWindowLogger = trailWindowLogger;
-        _mouseHook = new MouseHook(logger);
+        _mouseHook = mouseHook;
         _gestureDirectionStorage = new();
         _mouseHook.MouseHookEvent += OnMouseHookEvent;
         _mouseHelper = mouseHelper;
@@ -146,26 +158,75 @@ public class MouseGestureDetector : IDisposable
 
     public void Start()
     {
-        _mouseHook.StartListening();
-        _logger.LogInformation("MouseGestureDetector started");
-
-        while (true)
+        if (Interlocked.CompareExchange(ref _isRunning, 1, 0) != 0)
         {
-            var message = WaitForMessage();
-            switch (message)
+            return;
+        }
+
+        _suspended = false;
+        try
+        {
+            _mouseHook.StartListening();
+            _logger.LogInformation("MouseGestureDetector started");
+
+            while (true)
             {
-                case GestureMessage.GestureButtonDown:
-                    OnMouseDown();
+                var message = WaitForMessage();
+                if (message == GestureMessage.Stop)
+                {
                     break;
-                case GestureMessage.GestureButtonMove:
-                    OnMouseMove();
-                    break;
-                case GestureMessage.GestureButtonUp:
-                    OnMouseUp();
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
+                }
+
+                // Messages already queued when detection is suspended or stopped must not
+                // create a trail window or execute a gesture.
+                if (_suspended)
+                {
+                    continue;
+                }
+
+                switch (message)
+                {
+                    case GestureMessage.GestureButtonDown:
+                        OnMouseDown();
+                        break;
+                    case GestureMessage.GestureButtonMove:
+                        OnMouseMove();
+                        break;
+                    case GestureMessage.GestureButtonUp:
+                        OnMouseUp();
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
             }
+        }
+        finally
+        {
+            _mouseHook.Dispose();
+            lock (_msgQueue)
+            {
+                _msgQueue.Clear();
+            }
+            Interlocked.Exchange(ref _isRunning, 0);
+            _logger.LogInformation("MouseGestureDetector stopped");
+        }
+    }
+
+    public void Stop()
+    {
+        _suspended = true;
+        CancelCapture();
+
+        if (Volatile.Read(ref _isRunning) == 0)
+        {
+            return;
+        }
+
+        lock (_msgQueue)
+        {
+            _msgQueue.Clear();
+            _msgQueue.Enqueue(GestureMessage.Stop);
+            Monitor.PulseAll(_msgQueue);
         }
     }
     
@@ -174,7 +235,7 @@ public class MouseGestureDetector : IDisposable
         GestureMessage gestureMessage;
         lock (_msgQueue)
         {
-            if (_msgQueue.Count == 0) Monitor.Wait(_msgQueue);
+            while (_msgQueue.Count == 0) Monitor.Wait(_msgQueue);
             gestureMessage = _msgQueue.Dequeue();
         }
         return gestureMessage;
@@ -320,6 +381,11 @@ public class MouseGestureDetector : IDisposable
     {
         lock (_msgQueue)
         {
+            if (_suspended || Volatile.Read(ref _isRunning) == 0)
+            {
+                return;
+            }
+
             _msgQueue.Enqueue(msg);
             Monitor.Pulse(_msgQueue);
         }
@@ -330,6 +396,7 @@ public class MouseGestureDetector : IDisposable
         GestureButtonDown = 1,
         GestureButtonUp = 2,
         GestureButtonMove = 3,
+        Stop = 4,
     }
 
     private void UpdatePossibleGestures()
@@ -367,8 +434,33 @@ public class MouseGestureDetector : IDisposable
 
     public void Dispose()
     {
-        _trailWindow?.Close();
-        _mouseHook.Dispose();
+        Stop();
+        _mouseHook.MouseHookEvent -= OnMouseHookEvent;
+    }
+
+    private void CancelCapture()
+    {
+        _isCapturing = false;
+        ResetInvalidMove();
+        _gestureDirectionStorage.Reset();
+
+        var trailWindow = _trailWindow;
+        _trailWindow = null;
+        _trailViewModel = null;
+        if (trailWindow == null)
+        {
+            return;
+        }
+
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher == null || dispatcher.CheckAccess())
+        {
+            trailWindow.Close();
+        }
+        else
+        {
+            _ = dispatcher.BeginInvoke(trailWindow.Close);
+        }
     }
 }
 
