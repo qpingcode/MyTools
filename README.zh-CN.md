@@ -28,13 +28,14 @@ MyTools 是一款使用 .NET 8 和 WPF 开发的 Windows 桌面效率工具。�
 MyTools 提供完整版（内置 .NET 和 Node.js 运行时）与精简版（需要 .NET 8 Desktop Runtime，且不内置 Node.js）。两种版本各自保持独立的更新路径。
 
 <!-- mytools-downloads:start -->
-| 类型 | 通道 | 版本 | 安装包 | 便携版 |
+| 类型 | 通道 | 版本 | 完整安装包 | 便携版 |
 | --- | --- | --- | --- | --- |
 | **完整版** | **Stable** | — | 尚未发布 | 尚未发布 |
 | **精简版** | **Stable** | — | 尚未发布 | 尚未发布 |
-| **完整版** | **Beta** | 0.0.48 | [下载](https://github.com/qpingcode/MyTools/releases/download/v0.0.48/MyTools-0.0.48-windows-x64-setup.exe) | [下载](https://github.com/qpingcode/MyTools/releases/download/v0.0.48/MyTools-0.0.48-windows-x64-portable.zip) |
-| **精简版** | **Beta** | 0.0.48 | 尚未发布 | 尚未发布 |
+| **完整版** | **Beta** | 0.0.49 | [下载](https://github.com/qpingcode/MyTools/releases/download/v0.0.49/MyTools-0.0.49-windows-x64-full-setup.exe) | [下载](https://github.com/qpingcode/MyTools/releases/download/v0.0.49/MyTools-0.0.49-windows-x64-full-portable.zip) |
+| **精简版** | **Beta** | 0.0.49 | [下载](https://github.com/qpingcode/MyTools/releases/download/v0.0.49/MyTools-0.0.49-windows-x64-lite-setup.exe) | [下载](https://github.com/qpingcode/MyTools/releases/download/v0.0.49/MyTools-0.0.49-windows-x64-lite-portable.zip) |
 <!-- mytools-downloads:end -->
+
 
 
 
