@@ -11,6 +11,9 @@ namespace MyTools.Plugins;
 
 public class Searcher(IGlobalSearchRegistry globalSearchRegistry, SearchHistoryDbHelper searchHistoryDbHelper, ILogger<Searcher> logger, IEnumerable<IPlugin>? builtInPlugins = null) : ISearcher
 {
+    private const string SuggestionPluginId = "plugin-search";
+    private const int HomePageSuggestionLimit = 10;
+
     async Task<Result> ISearcher.SearchAsync(IPlugin? plugin, string searchText, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -32,7 +35,7 @@ public class Searcher(IGlobalSearchRegistry globalSearchRegistry, SearchHistoryD
 
         if (string.IsNullOrWhiteSpace(searchText))
         {
-            return ReadHomePage(cancellationToken);
+            return await ReadHomePageAsync(cancellationToken);
         }
 
         return await GlobalSearchAsync(searchText, cancellationToken);
@@ -45,7 +48,7 @@ public class Searcher(IGlobalSearchRegistry globalSearchRegistry, SearchHistoryD
     private IEnumerable<IPlugin> HomePagePlugins =>
         AvailablePlugins.Where(plugin => plugin.IsGlobalSearchPlugin);
 
-    private Result ReadHomePage(CancellationToken cancellationToken)
+    private async Task<Result> ReadHomePageAsync(CancellationToken cancellationToken)
     {
         var plugins = HomePagePlugins.ToDictionary(plugin => plugin.PluginId.Value);
         var items = new List<ResultItem>();
@@ -74,6 +77,31 @@ public class Searcher(IGlobalSearchRegistry globalSearchRegistry, SearchHistoryD
                 logger.LogWarning(ex, "Invalid snapshot for {PluginId}/{ResultKey}.", entry.PluginId, entry.ResultKey);
             }
         }
+
+        if (items.Count > 0
+            || !plugins.TryGetValue(SuggestionPluginId, out var suggestionPlugin))
+        {
+            return new Result(true, null, items);
+        }
+
+        var suggestions = await suggestionPlugin.SearchAsync(
+            string.Empty,
+            cancellationToken,
+            new SearchOptions(SearchFrom.Plugin));
+        if (!suggestions.Success)
+        {
+            logger.LogWarning(
+                "Home page suggestions failed for plugin {PluginName}: {ErrorMessage}",
+                suggestionPlugin.Name,
+                suggestions.ErrorMessage);
+            return new Result(true, null, items);
+        }
+
+        items.AddRange(PrepareResultItems(
+            suggestions.Items,
+            suggestionPlugin,
+            string.Empty,
+            SearchFrom.Plugin).Take(HomePageSuggestionLimit));
         return new Result(true, null, items);
     }
 

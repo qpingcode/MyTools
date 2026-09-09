@@ -115,6 +115,24 @@ public class SearchHistoryDbHelperTest
         Assert.That(plugin.SearchCalls, Is.EqualTo(1));
     }
 
+    [Test]
+    public async Task HomePage_UsesPluginSearchResultsWhenHistoryIsEmpty()
+    {
+        var helper = new SearchHistoryDbHelper(_dbPath);
+        var plugin = new FakePlugin(pluginId: "plugin-search", suggestionCount: 12);
+        var searcher = new Searcher(new FakeGlobalSearchRegistry(plugin), helper, NullLogger<Searcher>.Instance);
+
+        var result = await ((ISearcher)searcher).SearchAsync(null, "", CancellationToken.None);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Items.Select(item => item.ResultKey),
+                Is.EqualTo(Enumerable.Range(1, 10).Select(index => $"suggestion-{index}")));
+            Assert.That(result.Items, Has.All.Property(nameof(ResultItem.SearchFrom)).EqualTo(SearchFrom.Plugin));
+            Assert.That(plugin.SearchCalls, Is.EqualTo(1));
+        });
+    }
+
     [TestCase(false)]
     [TestCase(true)]
     public async Task HomePage_ClickRechecksPluginAndRemovesUnavailableResult(bool disableAfterDisplay)
@@ -251,7 +269,10 @@ public class SearchHistoryDbHelperTest
         }
     }
 
-    private sealed class FakePlugin(bool isGlobalSearchPlugin = true) : PluginBase
+    private sealed class FakePlugin(
+        bool isGlobalSearchPlugin = true,
+        string? pluginId = null,
+        int? suggestionCount = null) : PluginBase
     {
         public int SearchCalls { get; private set; }
         public string? ExecutedValue { get; private set; }
@@ -273,7 +294,7 @@ public class SearchHistoryDbHelperTest
             public Task<ActionResult> ExecuteAsync(IActionParams args) =>
                 Task.FromResult(ActionResult.CreateSuccess(""));
         }
-        public override PluginId PluginId => new(GetType().FullName!);
+        public override PluginId PluginId => new(pluginId ?? GetType().FullName!);
 
         public override string Name => "Fake";
         public override string Description => "Fake";
@@ -287,6 +308,21 @@ public class SearchHistoryDbHelperTest
         public override Task<Result> SearchAsync(string query, CancellationToken cancellationToken, SearchOptions? searchOptions = null)
         {
             SearchCalls++;
+            if (suggestionCount.HasValue)
+            {
+                var suggestions = Enumerable.Range(1, suggestionCount.Value)
+                    .Select(index => new ResultItem(
+                        StringIcon.Empty,
+                        $"suggestion-{index}",
+                        $"suggestion-{index}",
+                        ActionStringParam.From($"suggestion-{index}"),
+                        100)
+                    {
+                        ResultKey = $"suggestion-{index}"
+                    });
+                return Task.FromResult(Result.CreateSuccessResult(suggestions));
+            }
+
             var results = new[]
             {
                 new ResultItem(StringIcon.Empty, "default", "default", ActionStringParam.From("default"), 100)

@@ -31,7 +31,7 @@ function matches(item: PluginListItem, query: string): boolean {
 }
 
 function priority(item: PluginListItem, query: string): number {
-  if (!query) return 80;
+  if (!query) return (item.hotKey || "").trim() ? 90 : 80;
   const name = (item.name || "").toLowerCase();
   const aliases = (item.aliases || []).map((alias) => String(alias || "").toLowerCase());
   if (name === query) return 100;
@@ -93,7 +93,8 @@ async function search(params: PluginSearchParams) {
         if (!mapped) return null;
         return { ...mapped, priority: priority(item, query) };
       })
-      .filter((item) => item != null),
+      .filter((item) => item != null)
+      .sort((left, right) => right.priority - left.priority),
   };
 }
 
