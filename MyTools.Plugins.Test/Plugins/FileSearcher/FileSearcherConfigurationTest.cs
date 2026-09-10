@@ -130,6 +130,29 @@ public class FileSearcherConfigurationTest
     }
 
     [Test]
+    public void WatcherNotifyFilter_OnlyObservesNameChanges()
+    {
+        var filter = MyTools.Plugins.FileSearcher.WatcherNotifyFilter;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(filter, Is.EqualTo(NotifyFilters.FileName | NotifyFilters.DirectoryName));
+            Assert.That(filter.HasFlag(NotifyFilters.LastWrite), Is.False);
+            Assert.That(filter.HasFlag(NotifyFilters.CreationTime), Is.False);
+        });
+    }
+
+    [TestCase(@"C:\Users\example\file.txt", @"C:\Users\example")]
+    [TestCase(@"C:\Users\example\AppData\Local\cache.db", @"C:\Users\example\AppData")]
+    [TestCase(@"C:\Users\example\.codex\state.db", @"C:\Users\example\.codex")]
+    public void GetWatchEventBucket_GroupsChangesByTopLevelDirectory(string path, string expected)
+    {
+        Assert.That(
+            MyTools.Plugins.FileSearcher.GetWatchEventBucket(@"C:\Users\example", path),
+            Is.EqualTo(expected));
+    }
+
+    [Test]
     public void SearchQuery_MatchesMultipleDirectoryPathTerms()
     {
         using var directory = new RamDirectory();

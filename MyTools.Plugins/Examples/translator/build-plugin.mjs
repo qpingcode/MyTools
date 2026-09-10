@@ -11,6 +11,9 @@ await build({
   platform: "node",
   format: "esm",
   target: "es2024",
+  banner: {
+    js: 'import { createRequire as __createRequire } from "node:module"; const require = __createRequire(import.meta.url);',
+  },
   outbase: "src/backend",
   outdir: "dist/backend",
   outExtension: { ".js": ".mjs" },

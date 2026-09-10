@@ -17,7 +17,9 @@
     ]
   },
   "entry": "backend/Translator/index.mjs",
-  "capabilities": [],
+  "capabilities": [
+    "network.proxy.read"
+  ],
   "alias": [
     "ff"
   ],

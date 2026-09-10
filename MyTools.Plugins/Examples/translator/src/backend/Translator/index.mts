@@ -11,6 +11,14 @@ import {
   writeCache,
   writeJsonFile,
 } from "../common/storage.mjs";
+import {
+  LocalTranslationError,
+  cancelLocalResourceInstall,
+  getLocalResourceStatus,
+  installLocalResources,
+  lookupEnglishWord,
+  translateWithHyMt,
+} from "./local-translation.mjs";
 
 const DEEPSEEK_API_URL = process.env.DEEPSEEK_API_URL || "https://api.deepseek.com/chat/completions";
 const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat";
@@ -45,6 +53,8 @@ type TranslationState = JsonRecord & {
   isFavorite: boolean;
   fromCache: boolean;
   tokenUsage: TokenUsage | null;
+  translationService: string;
+  localSource: string;
   sendMode: string;
   isExpanded: boolean;
   error: string;
@@ -65,16 +75,23 @@ type CacheEntry = JsonRecord & {
 };
 
 type PluginSettings = {
+  translationService: TranslationService;
   sendMode: string;
   isExpanded: boolean;
 };
+
+type NetworkProxySettings = {
+  proxyUrl?: unknown;
+};
+
+type TranslationService = "deepseek" | "local";
 
 function isWord(text: unknown): boolean {
   const normalized = normalizeText(text);
   return /^[A-Za-z][A-Za-z'-]*$/.test(normalized);
 }
 
-function createInitialState(query: unknown, status = "idle"): TranslationState {
+function createInitialState(query: unknown, status = "idle", service: TranslationService = getConfiguredTranslationService()): TranslationState {
   const text = normalizeText(query);
   return {
     input: text,
@@ -88,6 +105,8 @@ function createInitialState(query: unknown, status = "idle"): TranslationState {
     isFavorite: false,
     fromCache: false,
     tokenUsage: null,
+    translationService: service,
+    localSource: "",
     sendMode: getConfiguredSendMode(),
     isExpanded: getConfiguredIsExpanded(),
     error: "",
@@ -224,9 +243,14 @@ function normalizeSendMode(mode: unknown): string {
   return mode === "realtime" ? "realtime" : "enter";
 }
 
+function normalizeTranslationService(service: unknown): TranslationService {
+  return service === "local" ? "local" : "deepseek";
+}
+
 function readSettings(): PluginSettings {
-  const settings = readJsonFile(SETTINGS_PATH, { sendMode: "enter", isExpanded: false });
+  const settings = readJsonFile(SETTINGS_PATH, { translationService: "deepseek", sendMode: "enter", isExpanded: false });
   return {
+    translationService: normalizeTranslationService(settings.translationService),
     sendMode: normalizeSendMode(settings.sendMode),
     isExpanded: settings.isExpanded === true,
   };
@@ -237,6 +261,16 @@ function writeSettings(settings: PluginSettings): void {
 }
 
 const pluginSettings = readSettings();
+
+function getConfiguredTranslationService(): TranslationService {
+  return normalizeTranslationService(pluginSettings.translationService);
+}
+
+function setConfiguredTranslationService(service: unknown): TranslationService {
+  pluginSettings.translationService = normalizeTranslationService(service);
+  writeSettings(pluginSettings);
+  return pluginSettings.translationService;
+}
 
 function getConfiguredSendMode(): string {
   return pluginSettings.sendMode;
@@ -302,8 +336,9 @@ function persistFavoriteEntries(): void {
   writeFavoriteEntriesToDisk([...favoriteEntriesByWord.values()]);
 }
 
-function getCacheKey(text: string, word: boolean): string {
-  return `${word ? "word" : "sentence"}:${word ? text.toLowerCase() : text}`;
+function getCacheKey(text: string, word: boolean, service: TranslationService = getConfiguredTranslationService()): string {
+  const legacyKey = `${word ? "word" : "sentence"}:${word ? text.toLowerCase() : text}`;
+  return service === "deepseek" ? legacyKey : `${service}:${legacyKey}`;
 }
 
 function pruneCacheEntries(entries: CacheEntry[], now = Date.now()): CacheEntry[] {
@@ -319,14 +354,14 @@ function pruneCacheEntries(entries: CacheEntry[], now = Date.now()): CacheEntry[
   });
 }
 
-function getCachedTranslation(text: string, word: boolean): TranslationState | null {
+function getCachedTranslation(text: string, word: boolean, service: TranslationService = getConfiguredTranslationService()): TranslationState | null {
   const cache = readCache();
   const prunedEntries = pruneCacheEntries(toCacheEntries(cache.entries));
   if (prunedEntries.length !== cache.entries.length) {
     writeCache({ entries: prunedEntries });
   }
 
-  const key = getCacheKey(text, word);
+  const key = getCacheKey(text, word, service);
   const entry = prunedEntries.find((item) => item.key === key);
   if (!entry?.state) {
     return null;
@@ -338,12 +373,13 @@ function getCachedTranslation(text: string, word: boolean): TranslationState | n
     fromCache: true,
     sendMode: getConfiguredSendMode(),
     isExpanded: getConfiguredIsExpanded(),
+    translationService: service,
   };
 }
 
-function cacheTranslation(text: string, word: boolean, state: TranslationState): void {
+function cacheTranslation(text: string, word: boolean, state: TranslationState, service: TranslationService): void {
   const cache = readCache();
-  const key = getCacheKey(text, word);
+  const key = getCacheKey(text, word, service);
   const stateToCache = {
     ...state,
     isFavorite: false,
@@ -358,6 +394,16 @@ function cacheTranslation(text: string, word: boolean, state: TranslationState):
     state: stateToCache,
   });
   writeCache({ entries: pruneCacheEntries(entries) });
+}
+
+function updateTranslationService(service: unknown, state: TranslationState): TranslationState {
+  const selected = setConfiguredTranslationService(service);
+  return {
+    ...(state || createInitialState("", "idle", selected)),
+    translationService: selected,
+    sendMode: getConfiguredSendMode(),
+    isExpanded: getConfiguredIsExpanded(),
+  };
 }
 
 function isFavoriteWord(text: unknown): boolean {
@@ -509,21 +555,99 @@ async function callDeepSeekTranslate(text: string, word: boolean): Promise<{ par
   return { parsed, tokenUsage };
 }
 
-async function translate(text: unknown): Promise<TranslationState> {
+function localErrorMessage(error: LocalTranslationError): string {
+  switch (error.code) {
+    case "missing-server":
+      return mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.LocalMissingServer", {
+        defaultValue: "Local translator could not find llama-server at {{path}}.",
+        path: error.detail,
+      });
+    case "missing-model":
+      return mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.LocalMissingModel", {
+        defaultValue: "Local translator could not find the HY-MT2 model at {{path}}.",
+        path: error.detail,
+      });
+    case "missing-dictionary":
+      return mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.LocalMissingDictionary", {
+        defaultValue: "Local translator could not open the ECDICT database at {{path}}.",
+        path: error.detail,
+      });
+    case "server-start":
+      return mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.LocalServerStart", {
+        defaultValue: "The local translation service failed to start: {{detail}}",
+        detail: error.detail,
+      });
+    case "request-failed":
+      return mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.LocalRequestFailed", {
+        defaultValue: "Local translation failed: {{detail}}",
+        detail: error.detail,
+      });
+    default:
+      return mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.LocalEmptyResult", {
+        defaultValue: "The local translation model returned an empty result.",
+      });
+  }
+}
+
+async function translateLocally(normalized: string, word: boolean): Promise<TranslationState> {
+  if (word) {
+    const entry = lookupEnglishWord(normalized);
+    const state: TranslationState = {
+      ...createInitialState(normalized, "done", "local"),
+      inputType: "word",
+      phonetic: entry?.phonetic || "",
+      definitions: entry?.definitions || [],
+      chineseTranslation: entry?.chineseTranslation || "",
+      isValidWord: entry !== null,
+      isFavorite: isFavoriteWord(normalized),
+      localSource: "dictionary",
+    };
+    cacheTranslation(normalized, true, state, "local");
+    return state;
+  }
+
+  const translated = await translateWithHyMt(normalized);
+  const state: TranslationState = {
+    ...createInitialState(normalized, "done", "local"),
+    inputType: "sentence",
+    translation: translated,
+    isFavorite: isFavoriteWord(normalized),
+    localSource: "model",
+  };
+  cacheTranslation(normalized, false, state, "local");
+  return state;
+}
+
+async function translate(text: unknown, requestedService?: unknown): Promise<TranslationState> {
   const normalized = normalizeText(text);
+  const service = normalizeTranslationService(requestedService ?? getConfiguredTranslationService());
   if (!normalized) {
-    return createInitialState("", "idle");
+    return createInitialState("", "idle", service);
   }
 
   const word = isWord(normalized);
-  const cached = getCachedTranslation(normalized, word);
+  const cached = getCachedTranslation(normalized, word, service);
   if (cached) {
     return cached;
   }
 
+  if (service === "local") {
+    try {
+      return await translateLocally(normalized, word);
+    } catch (error) {
+      if (error instanceof LocalTranslationError) {
+        return {
+          ...createInitialState(normalized, "error", service),
+          error: localErrorMessage(error),
+        };
+      }
+      throw error;
+    }
+  }
+
   if (!DEEPSEEK_API_KEY) {
     return {
-      ...createInitialState(normalized, "error"),
+      ...createInitialState(normalized, "error", service),
       error: mytoolsI18n.t("Plugin.DeepSeekTranslator.Error.MissingApiKey", {
         defaultValue: "Missing DEEPSEEK_API_KEY environment variable.",
       }),
@@ -565,11 +689,13 @@ async function translate(text: unknown): Promise<TranslationState> {
     isFavorite: isFavoriteWord(normalized),
     fromCache: false,
     tokenUsage,
+    translationService: service,
+    localSource: "",
     sendMode: getConfiguredSendMode(),
     isExpanded: getConfiguredIsExpanded(),
     error: "",
   };
-  cacheTranslation(normalized, word, state);
+  cacheTranslation(normalized, word, state, service);
   return state;
 }
 
@@ -602,6 +728,8 @@ function asTranslationState(value: unknown, fallbackInput = ""): TranslationStat
     isFavorite: state.isFavorite === true,
     fromCache: state.fromCache === true,
     tokenUsage: normalizeTokenUsage(state.tokenUsage),
+    translationService: normalizeTranslationService(state.translationService),
+    localSource: normalizeText(state.localSource),
     sendMode: normalizeSendMode(state.sendMode),
     isExpanded: state.isExpanded === true,
     error: normalizeText(state.error),
@@ -680,10 +808,10 @@ plugin
     const data = payloadRecord(payload);
     const text = normalizeText(data.text || context.query || "");
     try {
-      return await translate(text);
+      return await translate(text, data.translationService);
     } catch (error) {
       return {
-        ...createInitialState(text, "error"),
+        ...createInitialState(text, "error", normalizeTranslationService(data.translationService)),
         error: error instanceof Error ? error.message : String(error),
       };
     }
@@ -700,6 +828,28 @@ plugin
   .handle("setSendMode", (payload) => {
     const data = payloadRecord(payload);
     return updateSendMode(data.sendMode, data.state ? asTranslationState(data.state) : createInitialState(""));
+  })
+  .handle("setTranslationService", (payload) => {
+    const data = payloadRecord(payload);
+    return updateTranslationService(
+      data.translationService,
+      data.state ? asTranslationState(data.state) : createInitialState(""),
+    );
+  })
+  .handle("getLocalResourceStatus", () => getLocalResourceStatus())
+  .handle("getTranslatorSettings", () => ({
+    translationService: getConfiguredTranslationService(),
+    sendMode: getConfiguredSendMode(),
+    isExpanded: getConfiguredIsExpanded(),
+  }))
+  .handle("installLocalResources", async () => {
+    const proxySettings = await plugin.hostCall("network.proxy.read") as NetworkProxySettings;
+    void installLocalResources(normalizeText(proxySettings?.proxyUrl));
+    return getLocalResourceStatus();
+  })
+  .handle("cancelLocalResourceInstall", () => {
+    cancelLocalResourceInstall();
+    return getLocalResourceStatus();
   })
   .handle("setExpanded", (payload) => {
     const data = payloadRecord(payload);

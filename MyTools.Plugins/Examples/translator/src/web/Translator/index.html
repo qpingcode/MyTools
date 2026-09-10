@@ -8,11 +8,15 @@
 </head>
 <body>
     <main class="page">
-        <section class="toolbar" aria-label="Translator toolbar">
+        <section class="toolbar" data-i18n="[aria-label]Plugin.DeepSeekTranslator.Toolbar.AriaLabel"
+                 data-i18n-default-value="Translator toolbar">
             <label class="toolbar-field">
                 <span data-i18n="[text]Plugin.DeepSeekTranslator.Toolbar.Service" data-i18n-default-value="Translation service"></span>
                 <select id="translationService">
-                    <option value="deepseek">DeepSeek</option>
+                    <option value="deepseek" data-i18n="[text]Plugin.DeepSeekTranslator.Service.DeepSeek"
+                            data-i18n-default-value="DeepSeek (online)"></option>
+                    <option value="local" data-i18n="[text]Plugin.DeepSeekTranslator.Service.Local"
+                            data-i18n-default-value="Local model"></option>
                 </select>
             </label>
             <label class="toolbar-field">
@@ -68,12 +72,39 @@
             <aside id="drawer" class="drawer" hidden tabindex="-1" aria-modal="false">
                 <header class="drawer-header">
                     <h2 id="drawerTitle"></h2>
-                    <button id="drawerCloseButton" class="drawer-close" type="button" aria-label="Close">×</button>
+                    <button id="drawerCloseButton" class="drawer-close" type="button"
+                            data-i18n="[aria-label]Plugin.DeepSeekTranslator.Detail.Close"
+                            data-i18n-default-value="Close">×</button>
                 </header>
                 <div id="drawerList" class="drawer-list" role="listbox"></div>
             </aside>
         </div>
     </main>
+
+    <dialog id="localInstallDialog" class="install-dialog" aria-labelledby="localInstallTitle"
+            aria-describedby="localInstallDescription">
+        <form method="dialog" class="install-card">
+            <h2 id="localInstallTitle" data-i18n="[text]Plugin.DeepSeekTranslator.LocalInstall.Title"
+                data-i18n-default-value="Install local translation"></h2>
+            <p id="localInstallDescription" data-i18n="[text]Plugin.DeepSeekTranslator.LocalInstall.Description"
+               data-i18n-default-value="Download HY-MT2, ECDICT, and the local runtime. At least 2 GB of free disk space is recommended."></p>
+            <div id="localInstallProgressArea" hidden>
+                <progress id="localInstallProgress" max="1" value="0"
+                          data-i18n="[aria-label]Plugin.DeepSeekTranslator.LocalInstall.ProgressLabel"
+                          data-i18n-default-value="Download progress"></progress>
+                <div id="localInstallStatus" class="install-status"></div>
+            </div>
+            <div id="localInstallError" class="install-error" hidden></div>
+            <div class="install-actions">
+                <button id="localInstallCancel" type="button"
+                        data-i18n="[text]Plugin.DeepSeekTranslator.LocalInstall.Cancel"
+                        data-i18n-default-value="Cancel"></button>
+                <button id="localInstallStart" type="button" class="primary"
+                        data-i18n="[text]Plugin.DeepSeekTranslator.LocalInstall.Download"
+                        data-i18n-default-value="Download and install"></button>
+            </div>
+        </form>
+    </dialog>
 
     <script src="../common/speech.js"></script>
     <script src="main.js"></script>

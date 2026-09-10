@@ -13,7 +13,7 @@
             return voice.lang && voice.lang.toLowerCase() === "en-us";
         }) || voices.find(function (voice) {
             return voice.lang && voice.lang.toLowerCase().indexOf("en") === 0;
-        }) || null;fcf
+        }) || null;
     }
 
     function canSpeak() {
@@ -63,8 +63,9 @@
             var button = document.createElement("button");
             button.className = current.buttonClassName || "pronounce-button";
             button.type = "button";
-            button.title = "Play pronunciation";
-            button.setAttribute("aria-label", "Play pronunciation");
+            var pronunciationLabel = normalize(current.pronunciationLabel) || "Play pronunciation";
+            button.title = pronunciationLabel;
+            button.setAttribute("aria-label", pronunciationLabel);
             button.textContent = "🔊";
             button.addEventListener("click", function () {
                 speakWord(word);

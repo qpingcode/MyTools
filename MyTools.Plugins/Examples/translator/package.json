@@ -7,10 +7,14 @@
   "scripts": {
     "clean": "rimraf dist",
     "build": "npm run check && node build-plugin.mjs",
-    "check": "tsc -p tsconfig.json --noEmit"
+    "check": "tsc -p tsconfig.json --noEmit",
+    "prepare-local-release": "node scripts/prepare-local-release.mjs local-package translator-local-v1"
   },
   "dependencies": {
-    "@qping/plugin-bus": "0.8.0"
+    "@qping/plugin-bus": "0.8.0",
+    "http-proxy-agent": "^9.1.0",
+    "https-proxy-agent": "^9.1.0",
+    "socks-proxy-agent": "^10.1.0"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",

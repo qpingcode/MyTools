@@ -2015,6 +2015,132 @@
       "placeholders": [],
       "references": [],
       "existingTranslations": { "zh-CN": "删除" }
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.Toolbar.AriaLabel",
+      "defaultValue": "Translator toolbar",
+      "placeholders": [], "references": [],
+      "existingTranslations": { "zh-CN": "翻译工具栏" }
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.Service.DeepSeek",
+      "defaultValue": "DeepSeek (online)",
+      "placeholders": [], "references": [],
+      "existingTranslations": { "zh-CN": "DeepSeek（在线）" }
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.Service.Local",
+      "defaultValue": "Local model",
+      "placeholders": [], "references": [],
+      "existingTranslations": { "zh-CN": "本地模型" }
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.LocalInstall.Title",
+      "defaultValue": "Install local translation",
+      "placeholders": [], "references": [],
+      "existingTranslations": { "zh-CN": "安装本地翻译" }
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.LocalInstall.Description",
+      "defaultValue": "Download HY-MT2, ECDICT, and the local runtime. At least 2 GB of free disk space is recommended.",
+      "placeholders": [], "references": [],
+      "existingTranslations": { "zh-CN": "下载 HY-MT2、ECDICT 和本地运行时，建议至少保留 2 GB 可用磁盘空间。" }
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.LocalInstall.ProgressLabel",
+      "defaultValue": "Download progress",
+      "placeholders": [], "references": [],
+      "existingTranslations": { "zh-CN": "下载进度" }
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.LocalInstall.Download",
+      "defaultValue": "Download and install",
+      "placeholders": [], "references": [],
+      "existingTranslations": { "zh-CN": "下载并安装" }
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.LocalInstall.Cancel",
+      "defaultValue": "Cancel",
+      "placeholders": [], "references": [],
+      "existingTranslations": { "zh-CN": "取消" }
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.LocalInstall.Progress",
+      "defaultValue": "{{downloaded}} / {{total}} · {{file}}",
+      "placeholders": ["downloaded", "file", "total"], "references": [],
+      "existingTranslations": { "zh-CN": "{{downloaded}} / {{total}} · {{file}}" }
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.LocalInstall.Calculating",
+      "defaultValue": "Calculating",
+      "placeholders": [], "references": [],
+      "existingTranslations": { "zh-CN": "正在计算" }
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.LocalInstall.Failed",
+      "defaultValue": "Download failed: {{error}}",
+      "placeholders": ["error"], "references": [],
+      "existingTranslations": { "zh-CN": "下载失败：{{error}}" }
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.Error.LocalMissingServer",
+      "defaultValue": "Local translator could not find llama-server at {{path}}.",
+      "placeholders": ["path"], "references": [],
+      "existingTranslations": { "zh-CN": "本地翻译未找到 llama-server：{{path}}。" }
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.Error.LocalMissingModel",
+      "defaultValue": "Local translator could not find the HY-MT2 model at {{path}}.",
+      "placeholders": ["path"], "references": [],
+      "existingTranslations": { "zh-CN": "本地翻译未找到 HY-MT2 模型：{{path}}。" }
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.Error.LocalMissingDictionary",
+      "defaultValue": "Local translator could not open the ECDICT database at {{path}}.",
+      "placeholders": ["path"], "references": [],
+      "existingTranslations": { "zh-CN": "本地翻译无法打开 ECDICT 数据库：{{path}}。" }
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.Error.LocalServerStart",
+      "defaultValue": "The local translation service failed to start: {{detail}}",
+      "placeholders": ["detail"], "references": [],
+      "existingTranslations": { "zh-CN": "本地翻译服务启动失败：{{detail}}" }
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.Error.LocalRequestFailed",
+      "defaultValue": "Local translation failed: {{detail}}",
+      "placeholders": ["detail"], "references": [],
+      "existingTranslations": { "zh-CN": "本地翻译失败：{{detail}}" }
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.Error.LocalEmptyResult",
+      "defaultValue": "The local translation model returned an empty result.",
+      "placeholders": [], "references": [],
+      "existingTranslations": { "zh-CN": "本地翻译模型返回了空结果。" }
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.Detail.Source.LocalModel",
+      "defaultValue": "From local model",
+      "placeholders": [], "references": [],
+      "existingTranslations": { "zh-CN": "来自本地模型" }
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.Detail.Source.Dictionary",
+      "defaultValue": "From ECDICT",
+      "placeholders": [], "references": [],
+      "existingTranslations": { "zh-CN": "来自 ECDICT" }
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.Detail.Close",
+      "defaultValue": "Close",
+      "placeholders": [], "references": [],
+      "existingTranslations": { "zh-CN": "关闭" }
+    },
+    {
+      "key": "Plugin.DeepSeekTranslator.Detail.PlayPronunciation",
+      "defaultValue": "Play pronunciation",
+      "placeholders": [], "references": [],
+      "existingTranslations": { "zh-CN": "播放读音" }
     }
   ]
 }

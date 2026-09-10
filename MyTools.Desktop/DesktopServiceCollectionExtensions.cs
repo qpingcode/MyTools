@@ -85,6 +85,9 @@ public static class DesktopServiceCollectionExtensions
             sp.GetRequiredService<RestartPluginHostCallHandler>());
         serviceCollection.AddSingleton<DevelopmentPluginService>();
         serviceCollection.AddSingleton<IPluginCreationProxyProvider, PluginCreationProxyProvider>();
+        serviceCollection.AddSingleton<NetworkProxyPluginHostCallHandler>();
+        serviceCollection.AddSingleton<IPluginHostCapabilityHandler>(sp =>
+            sp.GetRequiredService<NetworkProxyPluginHostCallHandler>());
         serviceCollection.AddSingleton<HostCityService>();
         serviceCollection.AddSingleton<IHostCityProvider>(sp => sp.GetRequiredService<HostCityService>());
         serviceCollection.AddSingleton<LocationPluginHostCallHandler>();

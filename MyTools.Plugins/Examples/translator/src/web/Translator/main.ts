@@ -40,10 +40,20 @@ import type {
         isFavorite?: boolean;
         fromCache?: boolean;
         tokenUsage?: TokenUsage | null;
+        translationService?: string;
+        localSource?: string;
         sendMode?: string;
         isExpanded?: boolean;
         error?: string;
         entries?: TranslationEntry[];
+    };
+
+    type LocalResourceStatus = {
+        state?: "missing" | "downloading" | "installed" | "error" | "cancelled";
+        downloadedBytes?: number;
+        totalBytes?: number;
+        currentFile?: string;
+        error?: string;
     };
 
     const bus = createWebBusClient();
@@ -53,6 +63,7 @@ import type {
     var resultTitle = document.getElementById("resultTitle") as HTMLElement;
     var sourceStatus = document.getElementById("sourceStatus") as HTMLElement;
     var sendMode = document.getElementById("sendMode") as HTMLSelectElement;
+    var translationService = document.getElementById("translationService") as HTMLSelectElement;
     var translateButton = document.getElementById("translateButton") as HTMLButtonElement;
     var historyButton = document.getElementById("historyButton") as HTMLButtonElement;
     var favoriteListButton = document.getElementById("favoriteListButton") as HTMLButtonElement;
@@ -61,6 +72,13 @@ import type {
     var drawerTitle = document.getElementById("drawerTitle") as HTMLElement;
     var drawerList = document.getElementById("drawerList") as HTMLElement;
     var drawerCloseButton = document.getElementById("drawerCloseButton") as HTMLButtonElement;
+    var localInstallDialog = document.getElementById("localInstallDialog") as HTMLDialogElement;
+    var localInstallProgressArea = document.getElementById("localInstallProgressArea") as HTMLElement;
+    var localInstallProgress = document.getElementById("localInstallProgress") as HTMLProgressElement;
+    var localInstallStatus = document.getElementById("localInstallStatus") as HTMLElement;
+    var localInstallError = document.getElementById("localInstallError") as HTMLElement;
+    var localInstallCancel = document.getElementById("localInstallCancel") as HTMLButtonElement;
+    var localInstallStart = document.getElementById("localInstallStart") as HTMLButtonElement;
     var debounceTimer: number | null = null;
     var loadingTimer: number | null = null;
     var loadingStartedAt = 0;
@@ -73,6 +91,7 @@ import type {
     var copiedTimer: number | null = null;
     var titleBeforeCopy: string | null = null;
     var actionHotkeys = new Map<string, string>();
+    var localInstallPollTimer: number | null = null;
 
     function normalize(value: unknown): string {
         return typeof value === "string" ? value.trim() : "";
@@ -233,11 +252,120 @@ import type {
     function showSourceStatus(current: TranslationState): void {
         stopLoadingTimer();
         sourceStatus.hidden = false;
-        sourceStatus.textContent = current.fromCache
-            ? t("Plugin.DeepSeekTranslator.Detail.Source.Cache", "From Cache")
-            : formatApiStatus(current.tokenUsage);
-        sourceStatus.title = current.fromCache ? "" : formatTokenUsageTitle(current.tokenUsage);
-        sourceStatus.className = current.fromCache ? "source-status cache" : "source-status api";
+        if (current.fromCache) {
+            sourceStatus.textContent = t("Plugin.DeepSeekTranslator.Detail.Source.Cache", "From Cache");
+            sourceStatus.title = "";
+            sourceStatus.className = "source-status cache";
+            return;
+        }
+        if (current.translationService === "local") {
+            sourceStatus.textContent = current.localSource === "dictionary"
+                ? t("Plugin.DeepSeekTranslator.Detail.Source.Dictionary", "From ECDICT")
+                : t("Plugin.DeepSeekTranslator.Detail.Source.LocalModel", "From local model");
+            sourceStatus.title = "";
+            sourceStatus.className = "source-status local";
+            return;
+        }
+        sourceStatus.textContent = formatApiStatus(current.tokenUsage);
+        sourceStatus.title = formatTokenUsageTitle(current.tokenUsage);
+        sourceStatus.className = "source-status api";
+    }
+
+    function normalizeTranslationService(value: unknown): "deepseek" | "local" {
+        return value === "local" ? "local" : "deepseek";
+    }
+
+    function setTranslationService(value: unknown): void {
+        translationService.value = normalizeTranslationService(value);
+    }
+
+    function formatBytes(value: unknown): string {
+        var bytes = typeof value === "number" && Number.isFinite(value) ? value : 0;
+        if (bytes < 1024 * 1024) return Math.round(bytes / 1024) + " KB";
+        if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+        return (bytes / (1024 * 1024 * 1024)).toFixed(2) + " GB";
+    }
+
+    function stopLocalInstallPolling(): void {
+        if (localInstallPollTimer !== null) {
+            window.clearTimeout(localInstallPollTimer);
+            localInstallPollTimer = null;
+        }
+    }
+
+    async function applyInstalledLocalService(): Promise<void> {
+        var state = await bus.call<TranslationState>("setTranslationService", {
+            translationService: "local",
+            state: currentState || { input: sourceText.value, status: "idle" }
+        });
+        updateState(state);
+        if (localInstallDialog.open) localInstallDialog.close();
+        handleInputChanged();
+    }
+
+    function renderLocalInstallStatus(status: LocalResourceStatus): void {
+        var downloading = status.state === "downloading";
+        localInstallProgressArea.hidden = !downloading;
+        localInstallStart.disabled = downloading;
+        localInstallError.hidden = status.state !== "error";
+        if (status.state === "error") {
+            localInstallError.textContent = t(
+                "Plugin.DeepSeekTranslator.LocalInstall.Failed",
+                "Download failed: {{error}}",
+                { error: status.error || "" }
+            );
+        }
+        var total = Number(status.totalBytes) || 0;
+        var downloaded = Number(status.downloadedBytes) || 0;
+        localInstallProgress.max = total || 1;
+        localInstallProgress.value = Math.min(downloaded, total || 1);
+        localInstallStatus.textContent = t(
+            "Plugin.DeepSeekTranslator.LocalInstall.Progress",
+            "{{downloaded}} / {{total}} · {{file}}",
+            {
+                downloaded: formatBytes(downloaded),
+                total: total ? formatBytes(total) : t("Plugin.DeepSeekTranslator.LocalInstall.Calculating", "Calculating"),
+                file: status.currentFile || ""
+            }
+        );
+    }
+
+    function localInstallErrorHidden(hidden: boolean): void {
+        localInstallError.hidden = hidden;
+        if (hidden) localInstallError.textContent = "";
+    }
+
+    async function pollLocalInstall(): Promise<void> {
+        stopLocalInstallPolling();
+        var status = await bus.call<LocalResourceStatus>("getLocalResourceStatus");
+        renderLocalInstallStatus(status);
+        if (status.state === "installed") {
+            await applyInstalledLocalService();
+            return;
+        }
+        if (status.state === "downloading") {
+            localInstallPollTimer = window.setTimeout(function () { void pollLocalInstall(); }, 500);
+        }
+    }
+
+    async function chooseTranslationService(): Promise<void> {
+        var selected = normalizeTranslationService(translationService.value);
+        if (selected === "local") {
+            var status = await bus.call<LocalResourceStatus>("getLocalResourceStatus");
+            if (status.state === "installed") {
+                await applyInstalledLocalService();
+                return;
+            }
+            renderLocalInstallStatus(status);
+            localInstallDialog.showModal();
+            return;
+        }
+        var state = await bus.call<TranslationState>("setTranslationService", {
+            translationService: selected,
+            state: currentState || { input: sourceText.value, status: "idle" }
+        });
+        updateState(state);
+        handleInputChanged();
     }
 
     function formatApiStatus(usage: TokenUsage | null | undefined): string {
@@ -391,7 +519,8 @@ import type {
 
         window.DeepSeekTranslatorSpeech.appendPhoneticRow(parent, {
             phonetic: current.phonetic,
-            word: current.input
+            word: current.input,
+            pronunciationLabel: t("Plugin.DeepSeekTranslator.Detail.PlayPronunciation", "Play pronunciation")
         });
     }
 
@@ -595,12 +724,18 @@ import type {
         if (!entry) {
             return;
         }
-        var restored = entry.state || {
-            status: "done",
-            input: entry.input,
-            inputType: entry.inputType,
-            translation: entry.translation,
-            phonetic: entry.phonetic
+        var restored = {
+            ...(entry.state || {
+                status: "done",
+                input: entry.input,
+                inputType: entry.inputType,
+                translation: entry.translation,
+                phonetic: entry.phonetic
+            }),
+            // History and favorites are stored results. Restoring one must neither switch the
+            // user's active translation service nor present the result as a fresh API response.
+            fromCache: true,
+            translationService: normalizeTranslationService(translationService.value)
         };
         closeDrawer();
         updateState(restored);
@@ -637,6 +772,9 @@ import type {
 
         if (current.sendMode) {
             setSendMode(current.sendMode);
+        }
+        if (current.translationService) {
+            setTranslationService(current.translationService);
         }
 
         if (sourceText.value !== text && text) {
@@ -702,7 +840,10 @@ import type {
     function sendTranslateAfterPaint(text: string): void {
         window.setTimeout(async function () {
             try {
-                var state = await bus.call<{ input?: string }>("translate", { text: text }, 45000);
+                var state = await bus.call<{ input?: string }>("translate", {
+                    text: text,
+                    translationService: normalizeTranslationService(translationService.value)
+                }, normalizeTranslationService(translationService.value) === "local" ? 120000 : 45000);
                 if (normalize(state && state.input) !== normalize(lastRequestedText)) {
                     return;
                 }
@@ -796,6 +937,7 @@ import type {
     }
 
     setSendMode("enter");
+    setTranslationService("deepseek");
     favoriteButton.addEventListener("click", function () {
         void toggleFavorite();
     });
@@ -807,6 +949,31 @@ import type {
             state: getStateForModeChange()
         });
         handleInputChanged();
+    });
+
+    translationService.addEventListener("change", function () {
+        void chooseTranslationService();
+    });
+
+    localInstallStart.addEventListener("click", async function () {
+        localInstallErrorHidden(true);
+        renderLocalInstallStatus(await bus.call<LocalResourceStatus>("installLocalResources"));
+        await pollLocalInstall();
+    });
+
+    localInstallCancel.addEventListener("click", async function () {
+        var status = await bus.call<LocalResourceStatus>("getLocalResourceStatus");
+        if (status.state === "downloading") {
+            await bus.call("cancelLocalResourceInstall");
+        }
+        stopLocalInstallPolling();
+        localInstallDialog.close();
+        setTranslationService(currentState?.translationService || "deepseek");
+    });
+
+    localInstallDialog.addEventListener("cancel", function (event) {
+        event.preventDefault();
+        localInstallCancel.click();
     });
 
     translateButton.addEventListener("click", translateNow);
@@ -859,9 +1026,17 @@ import type {
         applyActionDefinitions(payload.actions);
         setInput(payload.query || "", false);
         updateState(payload.initialState || {});
-        if (normalize(payload.query || "")) {
-            handleInputChanged();
-        }
+        void bus.call<TranslationState>("getTranslatorSettings").then(function (settings) {
+            currentState = { ...(currentState || {}), ...settings };
+            setTranslationService(settings.translationService);
+            setSendMode(settings.sendMode);
+        }).catch(function () {
+            // Keep the UI defaults when settings cannot be read.
+        }).finally(function () {
+            if (normalize(payload.query || "")) {
+                handleInputChanged();
+            }
+        });
     });
     bus.on<MyToolsHostDetailActionPayload>(HostEvents.DetailAction, function (payload) {
         if (payload.action === "translate") {

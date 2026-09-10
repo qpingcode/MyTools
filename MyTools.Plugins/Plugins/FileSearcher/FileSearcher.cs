@@ -43,6 +43,10 @@ public sealed class FileSearcher : PluginBase, IDisposable
     private const string RootField = "root";
     private const string SearchPathField = "searchPath";
     private static readonly TimeSpan WatchDebounce = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan WatchEventRateWindow = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan HotWatchCooldown = TimeSpan.FromMinutes(30);
+    private static readonly TimeSpan HotWatchRescanInterval = TimeSpan.FromMinutes(5);
+    private const int HotWatchEventThreshold = 512;
     private static readonly StringComparer PathComparer = StringComparer.OrdinalIgnoreCase;
     private static readonly Regex SearchTermPattern = new(
         @"[\p{L}\p{N}]+",
@@ -58,6 +62,9 @@ public sealed class FileSearcher : PluginBase, IDisposable
     private readonly CancellationTokenSource disposeCancellation = new();
     private readonly CancellationToken disposeToken;
     private readonly Dictionary<string, FileSystemWatcher> watchers = new(PathComparer);
+    private readonly Dictionary<string, WatchEventStatistics> watchEventStatistics = new(PathComparer);
+    private readonly Dictionary<string, DateTimeOffset> hotWatcherRoots = new(PathComparer);
+    private readonly Dictionary<string, CancellationTokenSource> hotRescanLoops = new(PathComparer);
     private readonly Dictionary<string, CancellationTokenSource> pendingReindexes = new(PathComparer);
     private HashSet<string> configuredDirectories = new(PathComparer);
     private FileSearchConfiguration currentConfiguration = FileSearchConfiguration.Empty;
@@ -572,49 +579,34 @@ public sealed class FileSearcher : PluginBase, IDisposable
     {
         if (!SystemDirectory.Exists(rootDirectory)) return;
 
+        lock (watcherLock)
+        {
+            if (disposed || !configuredDirectories.Contains(rootDirectory)) return;
+            if (hotWatcherRoots.TryGetValue(rootDirectory, out var hotUntil))
+            {
+                if (hotUntil > DateTimeOffset.UtcNow)
+                {
+                    EnsureHotRescanLoopLocked(rootDirectory);
+                    return;
+                }
+                hotWatcherRoots.Remove(rootDirectory);
+            }
+        }
+
         try
         {
             var watcher = new FileSystemWatcher(rootDirectory)
             {
                 IncludeSubdirectories = true,
-                NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName
-                               | NotifyFilters.LastWrite | NotifyFilters.CreationTime,
+                // The index stores names and paths. CreationTime adds duplicate notifications,
+                // and LastWrite observes content edits that cannot affect this index.
+                NotifyFilter = WatcherNotifyFilter,
                 InternalBufferSize = 64 * 1024
             };
-            watcher.Changed += (_, args) =>
-            {
-                // The index contains paths and file names, not file contents. Ordinary writes do
-                // not change searchable data; only ignore-file content changes require a rebuild.
-                if (IsIgnoreRulesFile(args.FullPath))
-                {
-                    ScheduleDirectoryReindex(rootDirectory, args.ChangeType, args.FullPath);
-                }
-            };
-            watcher.Created += (_, args) =>
-            {
-                if (ShouldReindexForChange(rootDirectory, args.FullPath))
-                    ScheduleDirectoryReindex(rootDirectory, args.ChangeType, args.FullPath);
-            };
-            watcher.Deleted += (_, args) =>
-            {
-                if (ShouldReindexForChange(rootDirectory, args.FullPath))
-                    ScheduleDirectoryReindex(rootDirectory, args.ChangeType, args.FullPath);
-            };
-            watcher.Renamed += (_, args) =>
-            {
-                if (ShouldReindexForChange(rootDirectory, args.FullPath)
-                    || ShouldReindexForChange(rootDirectory, args.OldFullPath))
-                {
-                    ScheduleDirectoryReindex(rootDirectory, args.ChangeType, args.FullPath);
-                }
-            };
-            watcher.Error += (_, args) =>
-            {
-                PauseWatching(rootDirectory);
-                logger.LogWarning(args.GetException(),
-                    "FileSearcher watcher error for {Directory}; rebuilding that directory.", rootDirectory);
-                ScheduleDirectoryReindex(rootDirectory, WatcherChangeTypes.All, rootDirectory);
-            };
+            watcher.Created += (_, args) => HandleWatcherChange(rootDirectory, args);
+            watcher.Deleted += (_, args) => HandleWatcherChange(rootDirectory, args);
+            watcher.Renamed += (_, args) => HandleWatcherRename(rootDirectory, args);
+            watcher.Error += (_, args) => HandleWatcherError(rootDirectory, args.GetException());
 
             lock (watcherLock)
             {
@@ -634,15 +626,120 @@ public sealed class FileSearcher : PluginBase, IDisposable
         }
     }
 
+    internal static NotifyFilters WatcherNotifyFilter =>
+        NotifyFilters.FileName | NotifyFilters.DirectoryName;
+
+    private void HandleWatcherChange(string rootDirectory, FileSystemEventArgs args)
+    {
+        if (RecordWatcherEvent(rootDirectory, args.FullPath)) return;
+        if (ShouldReindexForChange(rootDirectory, args.FullPath))
+        {
+            ScheduleDirectoryReindex(rootDirectory, args.ChangeType, args.FullPath);
+        }
+    }
+
+    private void HandleWatcherRename(string rootDirectory, RenamedEventArgs args)
+    {
+        if (RecordWatcherEvent(rootDirectory, args.FullPath)) return;
+        if (ShouldReindexForChange(rootDirectory, args.FullPath)
+            || ShouldReindexForChange(rootDirectory, args.OldFullPath))
+        {
+            ScheduleDirectoryReindex(rootDirectory, args.ChangeType, args.FullPath);
+        }
+    }
+
+    private bool RecordWatcherEvent(string rootDirectory, string changedPath)
+    {
+        var becameHot = false;
+        string hotspotDirectory;
+        var hotspotEventCount = 0;
+        lock (watcherLock)
+        {
+            if (disposed || hotWatcherRoots.ContainsKey(rootDirectory)) return true;
+            var now = DateTimeOffset.UtcNow;
+            if (!watchEventStatistics.TryGetValue(rootDirectory, out var statistics)
+                || now - statistics.WindowStarted >= WatchEventRateWindow)
+            {
+                statistics = new WatchEventStatistics(now);
+                watchEventStatistics[rootDirectory] = statistics;
+            }
+            hotspotDirectory = GetWatchEventBucket(rootDirectory, changedPath);
+            statistics.TotalEventCount++;
+            statistics.EventsByDirectory[hotspotDirectory] =
+                statistics.EventsByDirectory.GetValueOrDefault(hotspotDirectory) + 1;
+            if (statistics.TotalEventCount >= HotWatchEventThreshold)
+            {
+                var hotspot = statistics.EventsByDirectory.MaxBy(pair => pair.Value);
+                hotspotDirectory = hotspot.Key;
+                hotspotEventCount = hotspot.Value;
+                PauseWatchingLocked(rootDirectory);
+                hotWatcherRoots[rootDirectory] = now + HotWatchCooldown;
+                EnsureHotRescanLoopLocked(rootDirectory);
+                becameHot = true;
+            }
+        }
+
+        if (becameHot)
+        {
+            logger.LogWarning(
+                "FileSearcher watcher for {RootDirectory} received {EventCount} events in {WindowSeconds} seconds; busiest top-level scope {HotspotDirectory} produced {HotspotEventCount}; pausing real-time monitoring and using periodic scans.",
+                rootDirectory,
+                HotWatchEventThreshold,
+                WatchEventRateWindow.TotalSeconds,
+                hotspotDirectory,
+                hotspotEventCount);
+            ScheduleDirectoryReindex(
+                rootDirectory,
+                WatcherChangeTypes.All,
+                hotspotDirectory);
+        }
+        return becameHot;
+    }
+
+    private void HandleWatcherError(string rootDirectory, Exception exception)
+    {
+        string hotspotDirectory;
+        lock (watcherLock)
+        {
+            if (disposed) return;
+            PauseWatchingLocked(rootDirectory);
+            hotspotDirectory = watchEventStatistics.TryGetValue(rootDirectory, out var statistics)
+                && statistics.EventsByDirectory.Count > 0
+                    ? statistics.EventsByDirectory.MaxBy(pair => pair.Value).Key
+                    : rootDirectory;
+            hotWatcherRoots[rootDirectory] = DateTimeOffset.UtcNow + HotWatchCooldown;
+            EnsureHotRescanLoopLocked(rootDirectory);
+        }
+        logger.LogWarning(exception,
+            "FileSearcher watcher error for {RootDirectory}; recent hotspot {HotspotDirectory}; using periodic scans temporarily.",
+            rootDirectory,
+            hotspotDirectory);
+        ScheduleDirectoryReindex(
+            rootDirectory,
+            WatcherChangeTypes.All,
+            hotspotDirectory);
+    }
+
+    internal static string GetWatchEventBucket(string rootDirectory, string changedPath)
+    {
+        var relativePath = NormalizeRelativePath(Path.GetRelativePath(rootDirectory, changedPath));
+        var separator = relativePath.IndexOf('/');
+        return separator < 0
+            ? rootDirectory
+            : Path.Combine(rootDirectory, relativePath[..separator]);
+    }
+
     private void PauseWatching(string rootDirectory)
     {
         lock (watcherLock)
         {
-            if (watchers.TryGetValue(rootDirectory, out var watcher))
-            {
-                watcher.EnableRaisingEvents = false;
-            }
+            PauseWatchingLocked(rootDirectory);
         }
+    }
+
+    private void PauseWatchingLocked(string rootDirectory)
+    {
+        if (watchers.TryGetValue(rootDirectory, out var watcher)) watcher.EnableRaisingEvents = false;
     }
 
     private bool ShouldReindexForChange(string rootDirectory, string path)
@@ -678,6 +775,65 @@ public sealed class FileSearcher : PluginBase, IDisposable
             {
                 pending.Cancel();
             }
+            if (hotRescanLoops.Remove(rootDirectory, out var hotRescan))
+            {
+                hotRescan.Cancel();
+            }
+            hotWatcherRoots.Remove(rootDirectory);
+            watchEventStatistics.Remove(rootDirectory);
+        }
+    }
+
+    private void EnsureHotRescanLoopLocked(string rootDirectory)
+    {
+        if (hotRescanLoops.ContainsKey(rootDirectory)) return;
+        var cancellation = CancellationTokenSource.CreateLinkedTokenSource(disposeToken);
+        hotRescanLoops[rootDirectory] = cancellation;
+        _ = RunHotRescanLoopAsync(rootDirectory, cancellation);
+    }
+
+    private async Task RunHotRescanLoopAsync(string rootDirectory, CancellationTokenSource cancellation)
+    {
+        try
+        {
+            while (true)
+            {
+                await Task.Delay(HotWatchRescanInterval, cancellation.Token);
+                var resumeRealtime = false;
+                lock (watcherLock)
+                {
+                    if (disposed || !configuredDirectories.Contains(rootDirectory)) return;
+                    if (!hotWatcherRoots.TryGetValue(rootDirectory, out var hotUntil)) return;
+                    if (hotUntil <= DateTimeOffset.UtcNow)
+                    {
+                        hotWatcherRoots.Remove(rootDirectory);
+                        watchEventStatistics.Remove(rootDirectory);
+                        resumeRealtime = true;
+                    }
+                }
+
+                if (resumeRealtime)
+                {
+                    StartWatching(rootDirectory);
+                    return;
+                }
+                ScheduleDirectoryReindex(rootDirectory, WatcherChangeTypes.All, rootDirectory);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        finally
+        {
+            lock (watcherLock)
+            {
+                if (hotRescanLoops.TryGetValue(rootDirectory, out var current)
+                    && ReferenceEquals(current, cancellation))
+                {
+                    hotRescanLoops.Remove(rootDirectory);
+                }
+            }
+            cancellation.Dispose();
         }
     }
 
@@ -992,6 +1148,12 @@ public sealed class FileSearcher : PluginBase, IDisposable
         string Path,
         string RelativePath,
         FileSearchIgnoreMatcher.ScopedRules Rules);
+    private sealed class WatchEventStatistics(DateTimeOffset windowStarted)
+    {
+        public DateTimeOffset WindowStarted { get; } = windowStarted;
+        public int TotalEventCount { get; set; }
+        public Dictionary<string, int> EventsByDirectory { get; } = new(PathComparer);
+    }
     private sealed record FileSearchConfiguration(
         IReadOnlySet<string> Directories,
         IReadOnlyList<string> IgnorePatterns,
@@ -1034,6 +1196,10 @@ public sealed class FileSearcher : PluginBase, IDisposable
                 pending.Cancel();
             }
             pendingReindexes.Clear();
+            foreach (var hotRescan in hotRescanLoops.Values) hotRescan.Cancel();
+            hotRescanLoops.Clear();
+            hotWatcherRoots.Clear();
+            watchEventStatistics.Clear();
             configuredDirectories.Clear();
         }
 
