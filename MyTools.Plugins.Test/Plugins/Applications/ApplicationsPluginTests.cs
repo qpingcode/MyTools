@@ -168,4 +168,46 @@ public class ApplicationsPluginTests
         Assert.That((await plugin.SearchAsync("", CancellationToken.None)).Items, Is.Empty);
         Assert.ThrowsAsync<OperationCanceledException>(async () => await plugin.SearchAsync("app", new CancellationToken(true)));
     }
+
+    [Test]
+    public async Task SearchMatchesApplicationNameInitials()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "ApplicationsInitials-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        using var plugin = new ApplicationsPlugin(NullLogger<ApplicationsPlugin>.Instance, cache, Mock.Of<ILocalizationService>());
+        try
+        {
+            await File.WriteAllTextAsync(Path.Combine(root, "Visual Studio Code.exe"), "");
+            await plugin.RescanAsync(JsonSerializer.SerializeToElement(new[] { new { Path = root } }));
+
+            foreach (var query in new[] { "vsc", "visualstudiocode", "studiocode" })
+            {
+                var result = await plugin.SearchAsync(query, CancellationToken.None);
+                Assert.That(result.Items.Single().Title, Is.EqualTo("Visual Studio Code"), query);
+            }
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Test]
+    public async Task SearchMatchesChinesePinyinAndInitialPrefixes()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "ApplicationsPinyin-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        using var plugin = new ApplicationsPlugin(NullLogger<ApplicationsPlugin>.Instance, cache, Mock.Of<ILocalizationService>());
+        try
+        {
+            await File.WriteAllTextAsync(Path.Combine(root, "微信.exe"), "");
+            await plugin.RescanAsync(JsonSerializer.SerializeToElement(new[] { new { Path = root } }));
+
+            foreach (var query in new[] { "weixin", "weix", "wx", "w" })
+            {
+                var result = await plugin.SearchAsync(query, CancellationToken.None);
+                Assert.That(result.Items.Single().Title, Is.EqualTo("微信"), query);
+            }
+        }
+        finally { Directory.Delete(root, true); }
+    }
 }

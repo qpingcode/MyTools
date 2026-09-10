@@ -23,6 +23,7 @@
     <PackageReference Include="Newtonsoft.Json" />
     <PackageReference Include="Syn.Oryzer" />
     <PackageReference Include="System.Drawing.Common" />
+    <PackageReference Include="ToolGood.Words.Pinyin" />
   </ItemGroup>
 
   <ItemGroup>

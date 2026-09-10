@@ -9,8 +9,10 @@ using MyTools.Common.Config.Interfaces;
 using MyTools.Common.Config.Models;
 using MyTools.Common.Localization;
 using MyTools.Common.Plugins;
+using MyTools.Common.Utils;
 using MyTools.Plugins.NodePlugins;
 using MyTools.Plugins.Param;
+using ToolGood.Words.Pinyin;
 
 namespace MyTools.Plugins;
 
@@ -23,7 +25,14 @@ public sealed class ApplicationsPlugin(
     private IConfigurationRegistry? registry;
     private ConfigurationSetting? scopesSetting;
     private ApplicationEntry[] indexedPaths = [];
-    private sealed record ApplicationEntry(string Path, string Identity);
+    private sealed record ApplicationEntry(
+        string Path,
+        string Identity,
+        string Name,
+        string CompactName,
+        string Initials,
+        string Pinyin,
+        string PinyinInitials);
     private long revision;
     private bool initialized;
     private bool disposed;
@@ -117,7 +126,18 @@ public sealed class ApplicationsPlugin(
                             try
                             {
                                 var identity = GetApplicationIdentity(fullPath);
-                                if (identity != null) entries.Add(new ApplicationEntry(fullPath, identity));
+                                if (identity != null)
+                                {
+                                    var name = Path.GetFileNameWithoutExtension(fullPath);
+                                    entries.Add(new ApplicationEntry(
+                                        fullPath,
+                                        identity,
+                                        name,
+                                        NormalizeSearchText(name),
+                                        StringUtils.GetInitialsFromWords(name),
+                                        NormalizeSearchText(WordsHelper.GetPinyin(name)),
+                                        NormalizeSearchText(WordsHelper.GetFirstPinyin(name))));
+                                }
                             }
                             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                             {
@@ -200,16 +220,33 @@ public sealed class ApplicationsPlugin(
             : Path.GetExtension(path).ToUpperInvariant() + ":" + Convert.ToHexString(SHA256.HashData(stream));
     }
 
+    private static string NormalizeSearchText(string value) =>
+        string.Concat(value.Where(char.IsLetterOrDigit)).ToLowerInvariant();
+
+    private static bool MatchesNormalizedName(ApplicationEntry entry, string query) =>
+        query.Length > 0
+        && (entry.CompactName.Contains(query, StringComparison.OrdinalIgnoreCase)
+            || entry.Initials.StartsWith(query, StringComparison.OrdinalIgnoreCase)
+            || entry.Pinyin.StartsWith(query, StringComparison.OrdinalIgnoreCase)
+            || entry.PinyinInitials.StartsWith(query, StringComparison.OrdinalIgnoreCase));
+
     public override Task<Result> SearchAsync(string query, CancellationToken cancellationToken, SearchOptions? searchOptions = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
         ApplicationEntry[] paths;
         lock (scanLock) paths = indexedPaths;
         var terms = query.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
-        var matches = paths.Where(entry => terms.All(term => Path.GetFileNameWithoutExtension(entry.Path)
-                .Contains(term, StringComparison.OrdinalIgnoreCase)))
+        var trimmedQuery = query.Trim();
+        var normalizedQuery = NormalizeSearchText(trimmedQuery);
+        var matches = paths.Where(entry =>
+                terms.All(term => entry.Name.Contains(term, StringComparison.OrdinalIgnoreCase))
+                || MatchesNormalizedName(entry, normalizedQuery))
             .Where(entry => File.Exists(entry.Path))
-            .OrderByDescending(entry => Path.GetFileNameWithoutExtension(entry.Path).StartsWith(query.Trim(), StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(entry => entry.Name.StartsWith(trimmedQuery, StringComparison.OrdinalIgnoreCase))
+            .ThenByDescending(entry => entry.CompactName.StartsWith(normalizedQuery, StringComparison.OrdinalIgnoreCase))
+            .ThenByDescending(entry => entry.Initials.StartsWith(normalizedQuery, StringComparison.OrdinalIgnoreCase))
+            .ThenByDescending(entry => entry.Pinyin.StartsWith(normalizedQuery, StringComparison.OrdinalIgnoreCase))
+            .ThenByDescending(entry => entry.PinyinInitials.StartsWith(normalizedQuery, StringComparison.OrdinalIgnoreCase))
             .ThenByDescending(entry => Path.GetExtension(entry.Path).Equals(".lnk", StringComparison.OrdinalIgnoreCase))
             .DistinctBy(entry => entry.Identity, StringComparer.Ordinal)
             .Take(50);
@@ -231,7 +268,7 @@ public sealed class ApplicationsPlugin(
             })!;
             items.Add(new ResultItem(
                 icon,
-                Path.GetFileNameWithoutExtension(path),
+                match.Name,
                 path,
                 ActionStringParam.From(path),
                 ResultItemPriorities.Highest)
