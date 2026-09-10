@@ -40,6 +40,7 @@ namespace MyTools.Desktop.Views
             Closing += Window_OnClosing;
             Closed += Window_OnClosed;
             Deactivated += Window_OnDeactivated;
+            IsVisibleChanged += Window_OnIsVisibleChanged;
 
             MouseLeftButtonDown += (s, e) => DragMove();
             
@@ -131,8 +132,29 @@ namespace MyTools.Desktop.Views
         {
             Closing -= Window_OnClosing;
             Deactivated -= Window_OnDeactivated;
+            IsVisibleChanged -= Window_OnIsVisibleChanged;
             WeakReferenceMessenger.Default.UnregisterAll(this);
             viewModel.Dispose();
+        }
+
+        private void Window_OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (e.NewValue is not true)
+            {
+                return;
+            }
+
+            _ = Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
+            {
+                if (!IsVisible)
+                {
+                    return;
+                }
+
+                SearchTextBox.Focus();
+                Keyboard.Focus(SearchTextBox);
+                SearchTextBox.SelectAll();
+            });
         }
 
         private void Window_OnDeactivated(object? sender, EventArgs e)
