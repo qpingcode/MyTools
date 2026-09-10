@@ -153,7 +153,7 @@
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="{loc:Loc Search.Actions.Overflow, DefaultValue=Actions}"
                                FontFamily="{StaticResource UiFontFamily}"
-                               FontSize="12"
+                               FontSize="{StaticResource FontSizeSmall}"
                                VerticalAlignment="Center"/>
                     <components:HotkeyKeycaps Hotkey="{x:Static components:ResultActionBar.OverflowHotkey}"/>
                 </StackPanel>

@@ -70,7 +70,7 @@
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="8,4"/>
             <Setter Property="Margin" Value="2,0"/>
-            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -177,7 +177,7 @@
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="8,4"/>
-            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -211,7 +211,7 @@
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="8,6"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
-            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -243,7 +243,7 @@
             <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="16,12,16,16"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
             <Setter Property="AcceptsReturn" Value="True"/>
             <Setter Property="IsReadOnly" Value="True"/>
@@ -276,7 +276,7 @@
         <Grid Grid.Column="2">
             <TextBlock Text="{loc:Loc Search.Detail.PreviewEmpty, DefaultValue=Select an item to preview}"
                        Foreground="{DynamicResource TextTertiaryBrush}"
-                       FontSize="13"
+                       FontSize="{StaticResource FontSizeBody}"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center"/>
 
@@ -299,13 +299,13 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="{Binding Converter={StaticResource ResultPreviewMetaConverter}}"
                                                Foreground="{DynamicResource TextTertiaryBrush}"
-                                               FontSize="12"
+                                               FontSize="{StaticResource FontSizeSmall}"
                                                TextTrimming="CharacterEllipsis"
                                                VerticalAlignment="Center"/>
                                     <TextBlock Grid.Column="1"
                                                Text="{Binding Converter={StaticResource ResultPreviewTimestampConverter}}"
                                                Foreground="{DynamicResource TextTertiaryBrush}"
-                                               FontSize="12"
+                                               FontSize="{StaticResource FontSizeSmall}"
                                                Margin="16,0,0,0"
                                                VerticalAlignment="Center"/>
                                 </Grid>

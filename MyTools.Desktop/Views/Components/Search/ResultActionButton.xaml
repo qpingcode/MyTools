@@ -31,7 +31,7 @@
         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
             <TextBlock Text="{Binding Name}"
                        FontFamily="{StaticResource UiFontFamily}"
-                       FontSize="12"
+                       FontSize="{StaticResource FontSizeSmall}"
                        VerticalAlignment="Center"/>
             <components:HotkeyKeycaps Hotkey="{Binding Hotkey}"/>
         </StackPanel>

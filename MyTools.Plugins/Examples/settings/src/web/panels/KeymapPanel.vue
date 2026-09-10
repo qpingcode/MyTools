@@ -237,8 +237,8 @@ async function refreshDevelopmentPlugins(): Promise<void> {
 .plugin-toolbar { display: flex; align-items: center; gap: 8px; }
 .plugin-toolbar > :first-child { flex: 1; }
 .refresh-icon { font-size: 20px; line-height: 1; }
-.development-badge { margin-left: 6px; padding: 2px 6px; border-radius: 999px; background: #4f7cff22; color: #7ea0ff; font-size: 10px; vertical-align: middle; }
-.duplicate-id { margin-top: 3px; overflow: hidden; color: #f0a020; font-size: 10px; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
+.development-badge { margin-left: 6px; padding: 2px 6px; border-radius: 999px; background: #4f7cff22; color: #7ea0ff; font-size: var(--mt-font-size-caption, 11px); vertical-align: middle; }
+.duplicate-id { margin-top: 3px; overflow: hidden; color: #f0a020; font-size: var(--mt-font-size-caption, 11px); font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
 
 .keymap-header,
 .keymap-row {
@@ -250,7 +250,7 @@ async function refreshDevelopmentPlugins(): Promise<void> {
 .keymap-header {
     padding: 8px 0 10px;
     border-bottom: 1px solid var(--mt-border, #404040);
-    font-size: 12px;
+    font-size: var(--mt-font-size-small, 12px);
     font-weight: 600;
     color: var(--mt-text-tertiary, #aaaaaa);
 }
@@ -304,7 +304,7 @@ async function refreshDevelopmentPlugins(): Promise<void> {
 
 .keymap-conflict {
     color: #f44336;
-    font-size: 12px;
+    font-size: var(--mt-font-size-small, 12px);
     padding: 0 4px 10px;
 }
 

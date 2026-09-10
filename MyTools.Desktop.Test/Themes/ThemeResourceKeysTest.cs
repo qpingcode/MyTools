@@ -103,4 +103,41 @@ public class ThemeResourceKeysTest
             Assert.That(WebThemeTokens.Dark["--mt-accent-foreground"], Is.EqualTo("#FFFFFF"));
         });
     }
+
+    [Test]
+    public void Typography_HasMatchingWpfAndWebSemanticSizes()
+    {
+        var typography = LoadThemeDictionary("Typography");
+        var expected = new Dictionary<string, string>
+        {
+            ["FontSizeCaption"] = "--mt-font-size-caption",
+            ["FontSizeSmall"] = "--mt-font-size-small",
+            ["FontSizeBody"] = "--mt-font-size-body",
+            ["FontSizeSubheading"] = "--mt-font-size-subheading",
+            ["FontSizeHeading2"] = "--mt-font-size-heading-2",
+            ["FontSizeHeading1"] = "--mt-font-size-heading-1",
+            ["FontSizeDisplay"] = "--mt-font-size-display"
+        };
+
+        foreach (var pair in expected)
+        {
+            Assert.That(typography.Contains(pair.Key), Is.True, pair.Key);
+            Assert.That(WebTypographyTokens.All, Contains.Key(pair.Value));
+            Assert.That(
+                WebTypographyTokens.All[pair.Value],
+                Is.EqualTo($"{Convert.ToDouble(typography[pair.Key], System.Globalization.CultureInfo.InvariantCulture):0.###}px"));
+        }
+    }
+
+    [Test]
+    public void Typography_IsIndependentFromColorThemes()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(WebThemeTokens.Light.Keys, Has.None.StartsWith("--mt-font-"));
+            Assert.That(WebThemeTokens.Dark.Keys, Has.None.StartsWith("--mt-font-"));
+            Assert.That(WebTypographyTokens.All, Contains.Key("--mt-font-family-ui"));
+            Assert.That(WebTypographyTokens.All, Contains.Key("--mt-font-size-body"));
+        });
+    }
 }

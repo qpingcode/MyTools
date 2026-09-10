@@ -189,7 +189,7 @@
                                    Text="{Binding PluginName}"
                                    FontFamily="{StaticResource UiFontFamily}"
                                    Foreground="{DynamicResource TextPrimaryBrush}"
-                                   FontSize="14"
+                                   FontSize="{StaticResource FontSizeBody}"
                                    FontWeight="SemiBold"
                                    MaxWidth="320"
                                    TextWrapping="NoWrap"

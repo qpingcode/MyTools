@@ -264,7 +264,7 @@ function removeRow(index: number): void {
     padding: 28px 8px;
     text-align: center;
     color: var(--mt-text-tertiary, #aaaaaa);
-    font-size: 13px;
+    font-size: var(--mt-font-size-body, 14px);
 }
 
 .array-table-scroll {
@@ -306,7 +306,7 @@ function removeRow(index: number): void {
 .table-head {
     padding: 8px 0 10px;
     border-bottom: 1px solid var(--mt-border, #404040);
-    font-size: 12px;
+    font-size: var(--mt-font-size-small, 12px);
     font-weight: 600;
     color: var(--mt-text-tertiary, #aaaaaa);
 }
@@ -435,7 +435,7 @@ function removeRow(index: number): void {
 }
 
 .editor-title {
-    font-size: 17px;
+    font-size: var(--mt-font-size-heading-2, 18px);
     font-weight: 650;
     line-height: 1.25;
     color: var(--mt-text, #fff);
@@ -446,7 +446,7 @@ function removeRow(index: number): void {
     margin-top: 3px;
     overflow: hidden;
     color: var(--mt-text-tertiary, #aaaaaa);
-    font-size: 12px;
+    font-size: var(--mt-font-size-small, 12px);
     line-height: 1.25;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -516,7 +516,7 @@ function removeRow(index: number): void {
 
 .form-label {
     padding-top: 7px;
-    font-size: 13px;
+    font-size: var(--mt-font-size-body, 14px);
     font-weight: 600;
     line-height: 1.35;
     color: var(--mt-text-secondary, var(--mt-text, #fff));

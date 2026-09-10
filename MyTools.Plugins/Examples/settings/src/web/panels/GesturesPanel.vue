@@ -492,7 +492,7 @@ onBeforeUnmount(() => {
 }
 
 .enable-title {
-    font-size: 14px;
+    font-size: var(--mt-font-size-body, 14px);
     font-weight: 600;
     line-height: 1.35;
     color: var(--mt-text, #fff);
@@ -518,7 +518,7 @@ onBeforeUnmount(() => {
 .gesture-header {
     padding: 8px 0 10px;
     border-bottom: 1px solid var(--mt-border, #404040);
-    font-size: 12px;
+    font-size: var(--mt-font-size-small, 12px);
     font-weight: 600;
     color: var(--mt-text-tertiary, #aaaaaa);
 }
@@ -640,7 +640,7 @@ onBeforeUnmount(() => {
 
 .gesture-record-hint {
     color: var(--mt-text, #1e1e1e);
-    font-size: 18px;
+    font-size: var(--mt-font-size-heading-2, 18px);
     font-weight: 500;
     margin-bottom: 20px;
     padding: 12px 28px;
@@ -653,7 +653,7 @@ onBeforeUnmount(() => {
 .gesture-record-trail {
     color: #ffffff;
     font-size: 48px;
-    font-family: "Cascadia Code", Consolas, monospace;
+    font-family: var(--mt-font-family-mono, "Cascadia Mono", Consolas, monospace);
     letter-spacing: 8px;
     min-height: 64px;
     text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);

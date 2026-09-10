@@ -138,7 +138,7 @@
             <Setter Property="Padding" Value="10"/>
             <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToolTip">
@@ -212,7 +212,7 @@
                                      Visibility="{Binding DataContext.IsCtrlPressed, ElementName=root, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <TextBlock Text="{Binding NumberLabel}"
                                            Foreground="{DynamicResource TextPrimaryBrush}"
-                                           FontSize="16"
+                                            FontSize="{StaticResource FontSizeSubheading}"
                                            VerticalAlignment="Center"
                                            HorizontalAlignment="Center"
                                 />
@@ -239,7 +239,7 @@
 
                             <!-- 内容 -->
                             <TextBlock Foreground="{DynamicResource TextPrimaryBrush}"
-                                       FontSize="16"
+                                       FontSize="{StaticResource FontSizeSubheading}"
                                        ToolTip="{Binding Title}">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
@@ -261,7 +261,7 @@
                             </TextBlock>
                             <TextBlock Grid.Row="1"
                                        Foreground="{DynamicResource TextTertiaryBrush}"
-                                       FontSize="12"
+                                       FontSize="{StaticResource FontSizeSmall}"
                                        Margin="0,2,0,0"
                                        Visibility="{Binding SubTitle, Converter={StaticResource StringToVisibilityConverter}}">
                                 <TextBlock.Style>
@@ -297,14 +297,14 @@
                         MaxWidth="420">
                 <TextBlock Text="{Binding EmptyStateTitle}"
                            FontFamily="{StaticResource UiFontFamily}"
-                           FontSize="18"
+                           FontSize="{StaticResource FontSizeHeading2}"
                            FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            TextAlignment="Center"/>
                 <TextBlock Text="{Binding EmptyStateDescription}"
                            Margin="0,8,0,0"
                            FontFamily="{StaticResource UiFontFamily}"
-                           FontSize="13"
+                           FontSize="{StaticResource FontSizeBody}"
                            Foreground="{DynamicResource TextTertiaryBrush}"
                            TextAlignment="Center"
                            TextWrapping="Wrap"/>

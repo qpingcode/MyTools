@@ -1,6 +1,8 @@
 body {
   margin: 0;
-  font-family: "Segoe UI", sans-serif;
+  font-family: var(--mt-font-family-ui, "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", sans-serif);
+  font-size: var(--mt-font-size-body, 14px);
+  line-height: var(--mt-line-height-body, 1.5);
   background: var(--mt-surface-bg, #141414);
   color: var(--mt-text, #f4f4f4);
 }
@@ -14,6 +16,6 @@ main {
   box-shadow: 0 12px 32px var(--mt-shadow, rgba(0, 0, 0, .28));
 }
 
-h1 { margin: 0 0 20px; font-size: 28px; }
-.label { margin: 0 0 6px; color: var(--mt-text-muted, #c4c9d4); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+h1 { margin: 0 0 20px; font-size: var(--mt-font-size-heading-1, 24px); line-height: var(--mt-line-height-heading-1, 1.25); }
+.label { margin: 0 0 6px; color: var(--mt-text-muted, #c4c9d4); font-size: var(--mt-font-size-small, 12px); text-transform: uppercase; letter-spacing: .08em; }
 #query { margin: 0; padding: 12px; border-radius: 8px; background: var(--mt-surface-alt, #202020); color: var(--mt-text, #f4f4f4); }

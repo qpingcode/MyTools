@@ -138,7 +138,7 @@
                            Margin="16,0,12,0"
                            VerticalAlignment="Center"
                            FontFamily="{StaticResource UiFontFamily}"
-                           FontSize="14"
+                           FontSize="{StaticResource FontSizeBody}"
                            FontWeight="SemiBold"
                            TextTrimming="CharacterEllipsis"
                            Foreground="{DynamicResource TextPrimaryBrush}"
@@ -205,7 +205,7 @@
                                VerticalAlignment="Center"
                                TextAlignment="Center"
                                TextWrapping="Wrap"
-                               FontSize="16"
+                                FontSize="{StaticResource FontSizeSubheading}"
                                Foreground="{DynamicResource TextTertiaryBrush}"
                                FontStyle="Italic"
                                Text="{loc:Loc InputActionCapture.Recording, DefaultValue=Press shortcut...}"/>
@@ -214,7 +214,7 @@
                 <TextBlock x:Name="MessageText"
                            Grid.Row="2"
                            Margin="0,10,0,0"
-                           FontSize="12"
+                           FontSize="{StaticResource FontSizeSmall}"
                            TextWrapping="Wrap"
                            Visibility="Collapsed"/>
 

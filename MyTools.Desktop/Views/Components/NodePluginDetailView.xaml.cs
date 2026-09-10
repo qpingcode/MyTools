@@ -222,7 +222,9 @@ public partial class NodePluginDetailView : UserControl
     /// </summary>
     private static string BuildThemeBootstrapScript(ThemeKind theme)
     {
-        var tokens = WebThemeTokens.For(theme);
+        var tokens = WebThemeTokens.For(theme)
+            .Concat(WebTypographyTokens.All)
+            .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
         var tokenJs = string.Join(
             ",",
             tokens.OrderBy(kv => kv.Key, StringComparer.Ordinal)

@@ -64,6 +64,11 @@ public static class WebThemeTokens
     public static IReadOnlyDictionary<string, string> For(ThemeKind theme) =>
         theme == ThemeKind.Light ? Light : Dark;
 
+    private static IReadOnlyDictionary<string, string> ForPage(ThemeKind theme) =>
+        For(theme)
+            .Concat(WebTypographyTokens.All)
+            .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+
     /// <summary>
     /// The file name used for a theme-specific HTML variant, e.g. "index.dark.html".
     /// </summary>
@@ -82,7 +87,7 @@ public static class WebThemeTokens
     /// </summary>
     public static string InjectThemeStyle(string html, ThemeKind theme)
     {
-        var tokens = For(theme);
+        var tokens = ForPage(theme);
         var declarations = string.Join("\n        ",
             tokens.OrderBy(kv => kv.Key, StringComparer.Ordinal)
                   .Select(kv => $"{kv.Key}: {kv.Value};"));

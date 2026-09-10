@@ -21,7 +21,7 @@
         <DockPanel Grid.Row="0" Margin="0,0,0,8">
             <TextBlock DockPanel.Dock="Left"
                        Text="{Binding WindowTitle}"
-                       FontSize="20"
+                       FontSize="{StaticResource FontSizeHeading2}"
                        FontWeight="SemiBold"
                        VerticalAlignment="Center" />
             <StackPanel DockPanel.Dock="Right"

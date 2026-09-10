@@ -42,7 +42,8 @@ public static class ThemeManager
             var source = merged[i].Source?.OriginalString;
             if (source == null
                 || !source.Contains(ThemePathFragment, StringComparison.OrdinalIgnoreCase)
-                || source.EndsWith("Shared.xaml", StringComparison.OrdinalIgnoreCase))
+                || source.EndsWith("Shared.xaml", StringComparison.OrdinalIgnoreCase)
+                || source.EndsWith("Typography.xaml", StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }

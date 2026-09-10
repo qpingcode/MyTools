@@ -34,7 +34,7 @@
                     <Grid>
                         <TextBlock Text="{Binding Text}"
                                    FontFamily="{StaticResource UiFontFamily}"
-                                   FontSize="11"
+                                   FontSize="{StaticResource FontSizeCaption}"
                                    Foreground="{DynamicResource TextTertiaryBrush}"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center">

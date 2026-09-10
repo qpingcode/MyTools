@@ -6,7 +6,9 @@ body {
 }
 
 body {
-    font-family: "Segoe UI", sans-serif;
+    font-family: var(--mt-font-family-ui, "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", sans-serif);
+    font-size: var(--mt-font-size-body, 14px);
+    line-height: var(--mt-line-height-body, 1.5);
     background: var(--mt-surface-bg, #1e1e1e);
     color: var(--mt-text, #ffffff);
 }
@@ -40,7 +42,7 @@ body {
 }
 
 .label {
-    font-size: 11px;
+    font-size: var(--mt-font-size-caption, 11px);
     text-transform: uppercase;
     color: var(--mt-text-muted, #cccccc);
     letter-spacing: 0.08em;
@@ -100,7 +102,7 @@ body {
     border-radius: 999px;
     color: var(--mt-text-tertiary, #aaaaaa);
     padding: 1px 7px;
-    font-size: 10px;
+    font-size: var(--mt-font-size-caption, 11px);
 }
 
 .card-host {
@@ -123,7 +125,7 @@ body {
     max-width: 100%;
     overflow-wrap: anywhere;
     color: var(--mt-text-tertiary, #aaaaaa);
-    font-size: 12px;
+    font-size: var(--mt-font-size-small, 12px);
     margin-bottom: 10px;
 }
 
@@ -131,8 +133,8 @@ body {
     max-width: 100%;
     overflow-wrap: anywhere;
     word-break: break-word;
-    font-size: 22px;
-    line-height: 1.35;
+    font-size: var(--mt-font-size-heading-1, 24px);
+    line-height: var(--mt-line-height-heading-1, 1.25);
     margin-bottom: 14px;
 }
 
@@ -145,7 +147,7 @@ body {
 
 .phonetic {
     color: var(--mt-text-tertiary, #aaaaaa);
-    font-size: 16px;
+    font-size: var(--mt-font-size-subheading, 16px);
 }
 
 .pronounce-button {
@@ -159,7 +161,7 @@ body {
     background: var(--mt-surface-alt, #333333);
     color: var(--mt-text-muted, #cccccc);
     padding: 0;
-    font-size: 13px;
+    font-size: var(--mt-font-size-body, 14px);
     line-height: 1;
     cursor: pointer;
 }
@@ -362,7 +364,7 @@ body {
 
 .countdown {
     color: var(--mt-accent, #60a5fa);
-    font-size: 13px;
+    font-size: var(--mt-font-size-body, 14px);
 }
 
 .countdown-row {
@@ -379,7 +381,7 @@ body {
     color: var(--mt-text-muted, #cccccc);
     padding: 3px 10px;
     font: inherit;
-    font-size: 12px;
+    font-size: var(--mt-font-size-small, 12px);
     line-height: 1.2;
     cursor: pointer;
 }
@@ -406,7 +408,7 @@ body {
     word-break: break-word;
     margin-top: 12px;
     color: var(--mt-text-muted, #cccccc);
-    font-size: 14px;
+    font-size: var(--mt-font-size-body, 14px);
 }
 
 .answer.back {
@@ -422,7 +424,7 @@ body {
     display: grid;
     gap: 4px;
     color: var(--mt-text-tertiary, #aaaaaa);
-    font-size: 12px;
+    font-size: var(--mt-font-size-small, 12px);
 }
 
 .form-control {

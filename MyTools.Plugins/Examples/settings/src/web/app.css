@@ -3,9 +3,10 @@ html, body, #app {
     width: 100%;
     margin: 0;
     overflow: hidden;
-    font-size: 14px;
+    font-size: var(--mt-font-size-body, 14px);
     line-height: 1.4;
-    font-family: var(--mt-font-ui);
+    font-family: var(--mt-font-family-ui, "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", sans-serif);
+    line-height: var(--mt-line-height-body, 1.5);
     background: var(--mt-surface-bg, #1e1e1e);
     color: var(--mt-text, #e0e0e0);
 }
@@ -14,7 +15,6 @@ html, body, #app {
     --settings-accent: #22c55e;
     --settings-accent-hover: #16a34a;
     --settings-accent-pressed: #15803d;
-    --mt-font-ui: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
 }
 
 #app {

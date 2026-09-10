@@ -105,6 +105,6 @@ async function browse(): Promise<void> {
 .path-error {
     margin-top: 6px;
     color: #f44336;
-    font-size: 12px;
+    font-size: var(--mt-font-size-small, 12px);
 }
 </style>

@@ -214,7 +214,7 @@ function onHotKey(setting: Setting, value: string | null): void {
     padding: 48px 8px;
     text-align: center;
     color: var(--mt-text-tertiary, #aaaaaa);
-    font-size: 13px;
+    font-size: var(--mt-font-size-body, 14px);
 }
 
 .setting-heading {
@@ -226,7 +226,7 @@ function onHotKey(setting: Setting, value: string | null): void {
 }
 
 .setting-heading-h2 .heading-title {
-    font-size: 14px;
+    font-size: var(--mt-font-size-subheading, 16px);
     font-weight: 600;
     line-height: 1.35;
     color: var(--mt-text, #fff);
@@ -234,7 +234,7 @@ function onHotKey(setting: Setting, value: string | null): void {
 
 .heading-description {
     margin-top: 6px;
-    font-size: 13px;
+    font-size: var(--mt-font-size-small, 12px);
     line-height: 1.45;
     color: var(--mt-text-tertiary, #aaaaaa);
     white-space: pre-line;
@@ -267,7 +267,7 @@ function onHotKey(setting: Setting, value: string | null): void {
 }
 
 .setting-title {
-    font-size: 14px;
+    font-size: var(--mt-font-size-body, 14px);
     font-weight: 600;
     line-height: 1.35;
     color: var(--mt-text, #fff);
@@ -275,7 +275,7 @@ function onHotKey(setting: Setting, value: string | null): void {
 
 .setting-description {
     margin-top: 4px;
-    font-size: 13px;
+    font-size: var(--mt-font-size-small, 12px);
     line-height: 1.45;
     color: var(--mt-text-tertiary, #aaaaaa);
     white-space: pre-line;

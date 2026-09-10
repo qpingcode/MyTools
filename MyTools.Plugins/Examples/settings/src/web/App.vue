@@ -278,7 +278,7 @@ async function externalLogin(provider: string): Promise<void> {
     max-height: 100vh;
     overflow: hidden;
     font-family: inherit;
-    font-size: 14px;
+    font-size: var(--mt-font-size-body, 14px);
     background: var(--mt-surface-bg, #1e1e1e);
     color: var(--mt-text, #e0e0e0);
 }
@@ -360,7 +360,7 @@ async function externalLogin(provider: string): Promise<void> {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 13px;
+    font-size: var(--mt-font-size-body, 14px);
 }
 
 .account-logout {
@@ -387,7 +387,7 @@ async function externalLogin(provider: string): Promise<void> {
 
 .nav-group {
     margin: 16px 8px 6px;
-    font-size: 11px;
+    font-size: var(--mt-font-size-caption, 11px);
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -436,7 +436,7 @@ async function externalLogin(provider: string): Promise<void> {
 }
 
 .nav-label {
-    font-size: 13.5px;
+    font-size: var(--mt-font-size-body, 14px);
     line-height: 1.3;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -467,7 +467,7 @@ async function externalLogin(provider: string): Promise<void> {
 .empty {
     padding: 32px 8px;
     text-align: center;
-    font-size: 13px;
+    font-size: var(--mt-font-size-body, 14px);
     color: var(--mt-text-tertiary, #aaaaaa);
 }
 

@@ -27,9 +27,11 @@
             -->
             <Style TargetType="{x:Type Window}">
                 <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
+                <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
             </Style>
             <Style TargetType="{x:Type UserControl}">
                 <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
+                <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
             </Style>
             <Style TargetType="{x:Type TextBlock}">
                 <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />

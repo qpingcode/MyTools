@@ -25,6 +25,11 @@ body {
     padding: 22px;
 }
 
+.install-card h2 {
+    font-size: var(--mt-font-size-heading-2, 18px);
+    line-height: var(--mt-line-height-heading-2, 1.3);
+}
+
 .install-card h2,
 .install-card p {
     margin: 0;
@@ -33,6 +38,8 @@ body {
 .install-card p,
 .install-status {
     color: var(--mt-text-secondary, #cccccc);
+    font-size: var(--mt-font-size-body, 14px);
+    line-height: var(--mt-line-height-body, 1.5);
 }
 
 .install-card progress {
@@ -41,6 +48,8 @@ body {
 
 .install-error {
     color: var(--mt-danger, #cf222e);
+    font-size: var(--mt-font-size-small, 12px);
+    line-height: var(--mt-line-height-small, 1.4);
     white-space: pre-wrap;
 }
 
@@ -57,6 +66,8 @@ body {
     border-radius: 7px;
     background: var(--mt-surface-alt, #292929);
     color: var(--mt-text, #ffffff);
+    font: inherit;
+    font-size: var(--mt-font-size-body, 14px);
     cursor: pointer;
 }
 
@@ -70,7 +81,9 @@ body {
 }
 
 body {
-    font-family: "Segoe UI", sans-serif;
+    font-family: var(--mt-font-family-ui, "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", sans-serif);
+    font-size: var(--mt-font-size-body, 14px);
+    line-height: var(--mt-line-height-body, 1.5);
     background: var(--mt-surface-bg, #1e1e1e);
     color: var(--mt-text, #ffffff);
 }
@@ -100,7 +113,7 @@ body {
     display: grid;
     gap: 3px;
     color: var(--mt-text-tertiary, #aaaaaa);
-    font-size: 10px;
+    font-size: var(--mt-font-size-caption, 11px);
 }
 
 .toolbar-field select,
@@ -114,7 +127,7 @@ body {
     color: var(--mt-text, #ffffff);
     padding: 0 9px;
     font: inherit;
-    font-size: 12px;
+    font-size: var(--mt-font-size-small, 12px);
 }
 
 .toolbar-field select {
@@ -152,7 +165,7 @@ body {
     padding: 1px 5px;
     border: 1px solid var(--mt-border-subtle, var(--mt-border, #555555));
     border-radius: 5px;
-    font-size: 11px;
+    font-size: var(--mt-font-size-caption, 11px);
     font-weight: 400;
     line-height: 16px;
 }
@@ -207,7 +220,7 @@ body {
 
 .label {
     margin-bottom: 8px;
-    font-size: 11px;
+    font-size: var(--mt-font-size-caption, 11px);
     text-transform: uppercase;
     color: var(--mt-text-muted, #cccccc);
     letter-spacing: 0.08em;
@@ -249,8 +262,8 @@ textarea {
     background: var(--mt-surface, #222222);
     color: var(--mt-text, #ffffff);
     font: inherit;
-    font-size: 16px;
-    line-height: 1.4;
+    font-size: var(--mt-font-size-subheading, 16px);
+    line-height: var(--mt-line-height-subheading, 1.4);
 }
 
 textarea::placeholder {
@@ -266,8 +279,8 @@ textarea::placeholder {
     word-break: break-word;
     color: var(--mt-text, #ffffff);
     overflow: auto;
-    font-size: 18px;
-    line-height: 1.45;
+    font-size: var(--mt-font-size-heading-2, 18px);
+    line-height: var(--mt-line-height-heading-2, 1.3);
 }
 
 .translation.empty {
@@ -314,7 +327,7 @@ textarea::placeholder {
 
 .drawer-header h2 {
     margin: 0;
-    font-size: 14px;
+    font-size: var(--mt-font-size-body, 14px);
     font-weight: 600;
 }
 
@@ -385,8 +398,8 @@ textarea::placeholder {
 
 .history-input {
     color: var(--mt-text, #ffffff);
-    font-size: 16px;
-    line-height: 1.35;
+    font-size: var(--mt-font-size-subheading, 16px);
+    line-height: var(--mt-line-height-subheading, 1.4);
     overflow-wrap: anywhere;
 }
 
@@ -400,14 +413,14 @@ textarea::placeholder {
 .history-meta {
     margin-top: 3px;
     color: var(--mt-text-tertiary, #aaaaaa);
-    font-size: 11px;
+    font-size: var(--mt-font-size-caption, 11px);
 }
 
 .history-translation {
     margin-top: 5px;
     color: var(--mt-text-muted, #cccccc);
-    font-size: 14px;
-    line-height: 1.35;
+    font-size: var(--mt-font-size-body, 14px);
+    line-height: var(--mt-line-height-body, 1.5);
     overflow-wrap: anywhere;
 }
 
@@ -423,7 +436,7 @@ textarea::placeholder {
     border-radius: 999px;
     padding: 1px 6px;
     color: var(--mt-text-tertiary, #aaaaaa);
-    font-size: 9px;
+    font-size: var(--mt-font-size-caption, 11px);
     font-weight: 600;
     line-height: 1.3;
     letter-spacing: 0.04em;
@@ -550,7 +563,7 @@ textarea::placeholder {
 
 .phonetic {
     color: var(--mt-text-tertiary, #aaaaaa);
-    font-size: 16px;
+    font-size: var(--mt-font-size-subheading, 16px);
 }
 
 .pronounce-button {
@@ -577,8 +590,8 @@ textarea::placeholder {
 
 .invalid-word {
     color: #fca5a5;
-    font-size: 16px;
-    line-height: 1.4;
+    font-size: var(--mt-font-size-subheading, 16px);
+    line-height: var(--mt-line-height-subheading, 1.4);
 }
 
 .definition-item {
@@ -586,15 +599,15 @@ textarea::placeholder {
 }
 
 .definition {
-    font-size: 17px;
-    line-height: 1.4;
+    font-size: var(--mt-font-size-subheading, 16px);
+    line-height: var(--mt-line-height-subheading, 1.4);
 }
 
 .example {
     margin-top: 4px;
     color: var(--mt-text-muted, #cccccc);
-    font-size: 15px;
-    line-height: 1.35;
+    font-size: var(--mt-font-size-body, 14px);
+    line-height: var(--mt-line-height-body, 1.5);
 }
 
 .expand-button {
@@ -606,13 +619,13 @@ textarea::placeholder {
     color: var(--mt-text-muted, #cccccc);
     padding: 5px 10px;
     font: inherit;
-    font-size: 13px;
+    font-size: var(--mt-font-size-body, 14px);
     cursor: pointer;
 }
 
 .chinese-meaning {
     margin-top: 8px;
     color: var(--mt-text, #ffffff);
-    font-size: 16px;
-    line-height: 1.4;
+    font-size: var(--mt-font-size-subheading, 16px);
+    line-height: var(--mt-line-height-subheading, 1.4);
 }

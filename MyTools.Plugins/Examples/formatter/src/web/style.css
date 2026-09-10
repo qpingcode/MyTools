@@ -31,7 +31,9 @@ body {
   overflow: hidden;
   background: var(--mt-surface-bg, #111);
   color: var(--mt-text, #f4f4f4);
-  font-family: "Segoe UI", sans-serif;
+  font-family: var(--mt-font-family-ui, "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", sans-serif);
+  font-size: var(--mt-font-size-body, 14px);
+  line-height: var(--mt-line-height-body, 1.5);
 }
 
 .page {
@@ -60,7 +62,7 @@ body {
   display: grid;
   gap: 3px;
   color: var(--mt-text-tertiary, #aaa);
-  font-size: 10px;
+  font-size: var(--mt-font-size-caption, 11px);
 }
 
 .toolbar-field select,
@@ -72,7 +74,8 @@ body {
   outline: none;
   background: var(--mt-surface-alt, #292929);
   color: var(--mt-text, #fff);
-  font: 12px inherit;
+  font-family: inherit;
+  font-size: var(--mt-font-size-small, 12px);
 }
 
 .toolbar-field select {
@@ -121,7 +124,7 @@ body {
   padding: 1px 4px;
   border: 1px solid var(--mt-border-subtle, var(--mt-border, #555));
   border-radius: 5px;
-  font-size: 10px;
+  font-size: var(--mt-font-size-caption, 11px);
   line-height: 15px;
 }
 
@@ -161,7 +164,7 @@ body {
   border-radius: 8px;
   background: rgba(255, 99, 99, 0.12);
   color: var(--mt-danger, #ff8b8b);
-  font-size: 12px;
+  font-size: var(--mt-font-size-small, 12px);
   white-space: pre-wrap;
 }
 

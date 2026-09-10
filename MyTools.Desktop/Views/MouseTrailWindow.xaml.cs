@@ -24,6 +24,9 @@ public partial class MouseTrailWindow
         System.Windows.Application.Current?.TryFindResource("UiFontFamily") as FontFamily
         ?? new FontFamily("Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI, Microsoft YaHei");
 
+    private static double TypographySize(string resourceKey, double fallback) =>
+        System.Windows.Application.Current?.TryFindResource(resourceKey) is double value ? value : fallback;
+
     private int _originalTop;
     private int _originalLeft;
 
@@ -77,7 +80,7 @@ public partial class MouseTrailWindow
             Text = string.Empty,
             Foreground = Brushes.White,
             FontFamily = UiFontFamily,
-            FontSize = 24,
+            FontSize = TypographySize("FontSizeHeading1", 24),
             FontWeight = FontWeights.Normal,
             Background = Brushes.Transparent,
             Padding = new Thickness(5),
@@ -120,7 +123,7 @@ public partial class MouseTrailWindow
             Text = string.Empty,
             Foreground = Brushes.Orange,
             FontFamily = UiFontFamily,
-            FontSize = 24,
+            FontSize = TypographySize("FontSizeHeading1", 24),
             FontWeight = FontWeights.Normal,
             Background = Brushes.Transparent,
             Padding = new Thickness(5),
@@ -201,7 +204,7 @@ public partial class MouseTrailWindow
         var tempTextBlock = new TextBlock
         {
             FontFamily = UiFontFamily,
-            FontSize = 24,
+            FontSize = TypographySize("FontSizeHeading1", 24),
             FontWeight = FontWeights.Normal
         };
         
@@ -232,7 +235,7 @@ public partial class MouseTrailWindow
                 Text = gesture.ActionName,
                 Foreground = Brushes.LightGreen,
                 FontFamily = UiFontFamily,
-                FontSize = 24,
+                FontSize = TypographySize("FontSizeHeading1", 24),
                 FontWeight = FontWeights.Normal,
                 VerticalAlignment = VerticalAlignment.Center,
                 Width = _maxActionNameWidth,

@@ -14,9 +14,16 @@ export function readThemeOverrides(): GlobalThemeOverrides {
     return {
         common: {
             fontFamily: cssVar(
-                "--mt-font-ui",
+                "--mt-font-family-ui",
                 '"Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif',
             ),
+            fontSize: cssVar("--mt-font-size-body", "14px"),
+            fontSizeMini: cssVar("--mt-font-size-small", "12px"),
+            fontSizeTiny: cssVar("--mt-font-size-small", "12px"),
+            fontSizeSmall: cssVar("--mt-font-size-body", "14px"),
+            fontSizeMedium: cssVar("--mt-font-size-body", "14px"),
+            fontSizeLarge: cssVar("--mt-font-size-subheading", "16px"),
+            fontSizeHuge: cssVar("--mt-font-size-subheading", "16px"),
             primaryColor: accent,
             primaryColorHover: accentHover,
             primaryColorPressed: accentPressed,

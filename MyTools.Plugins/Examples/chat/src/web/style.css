@@ -8,7 +8,9 @@ body {
 }
 
 body {
-    font-family: "Segoe UI", sans-serif;
+    font-family: var(--mt-font-family-ui, "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", sans-serif);
+    font-size: var(--mt-font-size-body, 14px);
+    line-height: var(--mt-line-height-body, 1.5);
     background: var(--mt-surface-bg, #1e1e1e);
     color: var(--mt-text, #ffffff);
 }
@@ -47,7 +49,7 @@ body {
 
 .recent-label {
     margin: 18px 9px 7px;
-    font-size: 11px;
+    font-size: var(--mt-font-size-caption, 11px);
     text-transform: uppercase;
     color: var(--mt-text-tertiary, #777777);
     letter-spacing: 0.07em;
@@ -64,7 +66,7 @@ body {
     color: var(--mt-text, #eeeeee);
     padding: 8px 10px;
     font: inherit;
-    font-size: 13px;
+    font-size: var(--mt-font-size-body, 14px);
     line-height: 1.2;
     cursor: pointer;
 }
@@ -103,7 +105,7 @@ body {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     line-height: 1.45;
-    font-size: 15px;
+    font-size: var(--mt-font-size-body, 14px);
 }
 
 .message.markdown {
@@ -117,8 +119,8 @@ body {
     --borderColor-muted: var(--mt-border-subtle, #333333);
     color: var(--mt-text, #eeeeee);
     background: transparent;
-    font-family: "Segoe UI", sans-serif;
-    font-size: 15px;
+    font-family: inherit;
+    font-size: var(--mt-font-size-body, 14px);
     line-height: 1.65;
     white-space: normal;
 }
@@ -172,7 +174,7 @@ body {
 .conversation-list-empty {
     padding: 8px 9px;
     color: var(--mt-text-tertiary, #666666);
-    font-size: 12px;
+    font-size: var(--mt-font-size-small, 12px);
 }
 
 .panel {
@@ -194,7 +196,7 @@ body {
 .conversation-title {
     overflow: hidden;
     color: var(--mt-text-muted, #b8b8b8);
-    font-size: 13px;
+    font-size: var(--mt-font-size-body, 14px);
     line-height: 38px;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -209,15 +211,15 @@ body {
 }
 
 .message.markdown h1 {
-    font-size: 1.55em;
+    font-size: var(--mt-font-size-heading-1, 24px);
 }
 
 .message.markdown h2 {
-    font-size: 1.35em;
+    font-size: var(--mt-font-size-heading-2, 18px);
 }
 
 .message.markdown h3 {
-    font-size: 1.18em;
+    font-size: var(--mt-font-size-subheading, 16px);
 }
 
 .message.markdown pre {
@@ -253,7 +255,7 @@ body {
 .mermaid-error {
     margin: -0.5em 0 1em;
     color: var(--mt-text-muted, #b8b8b8);
-    font-size: 12px;
+    font-size: var(--mt-font-size-small, 12px);
 }
 
 .code-toolbar {
@@ -300,7 +302,7 @@ body {
 }
 
 .message.markdown code {
-    font-family: Consolas, "Cascadia Code", monospace;
+    font-family: var(--mt-font-family-mono, "Cascadia Mono", Consolas, monospace);
 }
 
 .message.markdown pre code.hljs {
@@ -417,13 +419,13 @@ body {
 .status-message {
     margin: 2px 0 10px;
     color: var(--mt-text-tertiary, #888888);
-    font-size: 12px;
+    font-size: var(--mt-font-size-small, 12px);
 }
 
 .token-usage {
     margin: -5px 0 10px 5px;
     color: var(--mt-text-tertiary, #777777);
-    font-size: 11px;
+    font-size: var(--mt-font-size-caption, 11px);
     font-variant-numeric: tabular-nums;
 }
 
@@ -439,14 +441,14 @@ body {
 .interaction-heading {
     padding: 12px 14px 2px;
     color: var(--mt-text, #f0f0f0);
-    font-size: 14px;
+    font-size: var(--mt-font-size-body, 14px);
     font-weight: 600;
 }
 
 .interaction-progress {
     padding: 3px 14px 10px;
     color: var(--mt-text-tertiary, #777777);
-    font-size: 11px;
+    font-size: var(--mt-font-size-caption, 11px);
     font-variant-numeric: tabular-nums;
 }
 
@@ -457,7 +459,7 @@ body {
 .interaction-prompt {
     margin-bottom: 10px;
     color: var(--mt-text, #eeeeee);
-    font-size: 14px;
+    font-size: var(--mt-font-size-body, 14px);
     line-height: 1.45;
 }
 
@@ -476,7 +478,7 @@ body {
     padding: 8px 9px;
     background: var(--mt-surface, #292929);
     color: var(--mt-text-muted, #c5c5c5);
-    font-size: 13px;
+    font-size: var(--mt-font-size-body, 14px);
     cursor: pointer;
 }
 
@@ -598,13 +600,13 @@ body {
 
 .interaction-summary-status {
     color: #57b982;
-    font-size: 13px;
+    font-size: var(--mt-font-size-body, 14px);
 }
 
 .interaction-summary-text {
     flex: 1;
     color: var(--mt-text-muted, #aaaaaa);
-    font-size: 12px;
+    font-size: var(--mt-font-size-small, 12px);
 }
 
 .interaction-summary-toggle {
@@ -630,7 +632,7 @@ body {
 .interaction-summary-title {
     margin-bottom: 8px;
     color: var(--mt-text-muted, #bbbbbb);
-    font-size: 12px;
+    font-size: var(--mt-font-size-small, 12px);
     font-weight: 600;
 }
 
@@ -640,13 +642,13 @@ body {
 
 .interaction-summary-prompt {
     color: var(--mt-text-tertiary, #888888);
-    font-size: 11px;
+    font-size: var(--mt-font-size-caption, 11px);
 }
 
 .interaction-summary-value {
     margin: 2px 0 0 13px;
     color: var(--mt-text-muted, #c3c3c3);
-    font-size: 12px;
+    font-size: var(--mt-font-size-small, 12px);
 }
 
 .composer {
@@ -669,7 +671,7 @@ body {
     align-items: center;
     gap: 7px;
     color: var(--mt-text-muted, #cccccc);
-    font-size: 12px;
+    font-size: var(--mt-font-size-small, 12px);
 }
 
 .model-row select {
