@@ -79,6 +79,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
         _logger = logger;
         _ids = ids ?? new GuidIdGenerator();
         _sessionManager.SessionReplaced += OnSessionReplaced;
+        _sessionManager.SessionUnavailable += OnSessionUnavailable;
         _logger.LogInformation("NodePluginBusHost created for plugin={PluginId}", manifest.Id);
     }
 
@@ -162,6 +163,36 @@ internal sealed class NodePluginBusHost : INodePluginHost
         _nodeEndpoint = new EndpointId(_manifest.Id, _session.SessionId,
             EndpointIds.NodeMain, IsNode: true);
         BindHostEndpoint();
+        Volatile.Write(ref _started, 1);
+    }
+
+    private void OnSessionUnavailable(object? sender, PluginSessionUnavailableEventArgs e)
+    {
+        if (e.PluginId != _manifest.Id || e.WillRestart)
+        {
+            return;
+        }
+
+        var current = _session;
+        if (current is null || !string.Equals(current.SessionId, e.SessionId, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _logger.LogWarning(
+            "Session unavailable for plugin={PluginId} session={SessionId}; auto-restart budget exhausted",
+            e.PluginId,
+            e.SessionId);
+
+        try { _heartbeatCts?.Cancel(); } catch { /* ignore */ }
+        _heartbeatCts?.Dispose();
+        _heartbeatCts = null;
+
+        FailLocalPending(ErrorCode.TransportDisconnected, "node session stopped");
+        UnbindHostEndpoint();
+        _session = null;
+        _nodeEndpoint = null;
+        Volatile.Write(ref _started, 0);
     }
 
     private void BindHostEndpoint()
@@ -194,7 +225,11 @@ internal sealed class NodePluginBusHost : INodePluginHost
     {
         foreach (var (_, tcs) in _pending)
         {
-            tcs.TrySetException(new BusCallException(code, message));
+            if (tcs.TrySetException(new BusCallException(code, message)))
+            {
+                // Ensure faulted tasks without awaiters do not surface as UnobservedTaskException.
+                _ = tcs.Task.Exception;
+            }
         }
 
         _pending.Clear();
@@ -394,6 +429,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
         try
         {
             _sessionManager.SessionReplaced -= OnSessionReplaced;
+            _sessionManager.SessionUnavailable -= OnSessionUnavailable;
 
             try { _heartbeatCts?.Cancel(); } catch { /* ignore */ }
             _heartbeatCts?.Dispose();

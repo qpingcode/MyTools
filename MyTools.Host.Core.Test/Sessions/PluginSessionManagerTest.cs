@@ -135,6 +135,7 @@ public class PluginSessionManagerTest
         var args = await unavailable.Task.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.That(args.PluginId, Is.EqualTo("settings"));
         Assert.That(args.SessionId, Is.EqualTo(session.SessionId));
+        Assert.That(args.WillRestart, Is.False);
         Assert.That(args.FailureDetails, Is.EqualTo("[stderr] backend exploded"));
     }
 

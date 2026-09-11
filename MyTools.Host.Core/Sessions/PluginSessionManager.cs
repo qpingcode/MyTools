@@ -28,6 +28,7 @@ public sealed class PluginSessionUnavailableEventArgs : EventArgs
 {
     public required string PluginId { get; init; }
     public required string SessionId { get; init; }
+    public required bool WillRestart { get; init; }
     public string? FailureDetails { get; init; }
 }
 
@@ -228,6 +229,7 @@ public sealed class PluginSessionManager
             {
                 PluginId = session.PluginId,
                 SessionId = session.SessionId,
+                WillRestart = shouldRestart,
                 FailureDetails = session.Controller?.FailureDetails,
             });
         });

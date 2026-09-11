@@ -257,6 +257,73 @@ public class NodePluginBusHostTest
         Assert.That(host.SessionId, Is.Not.Null.And.Not.EqualTo(sessionId));
     }
 
+    [Test]
+    public async Task Disconnect_WhenRestartBudgetExhausted_ShouldRestartOnNextCall()
+    {
+        var gateway = new CapabilityGateway();
+        var diagnostics = new PluginDiagnosticsService();
+        var bus = new MessageBus(gateway, diagnostics: diagnostics);
+        var factory = new FakeFactory();
+        var manager = new PluginSessionManager(
+            bus,
+            gateway,
+            factory,
+            restartPolicyFactory: () => new RestartPolicy(
+                TimeSpan.Zero,
+                TimeSpan.Zero,
+                TimeSpan.FromMinutes(5),
+                maxRestartsPerWindow: 0,
+                jitter: 0));
+        var host = new NodePluginBusHost(Manifest(), manager, bus, diagnostics, NullLogger<NodePluginBusHost>.Instance);
+
+        await host.StartAsync("node", CancellationToken.None);
+        var oldSessionId = host.SessionId;
+        var oldTransport = (InMemoryTransport)factory.LastController!.Transport!;
+
+        oldTransport.Disconnect();
+        Assert.That(await WaitForAsync(() => host.SessionId is null), Is.True);
+
+        var searchTask = host.SearchAsync("hello", "global", "en-US", "en-US", "dark", CancellationToken.None);
+        InMemoryTransport? newTransport = null;
+        Envelope? sentRequest = null;
+        for (var i = 0; i < 40 && sentRequest is null; i++)
+        {
+            await Task.Delay(25);
+            if (factory.LastController?.Transport is not InMemoryTransport candidate
+                || ReferenceEquals(candidate, oldTransport))
+            {
+                continue;
+            }
+
+            newTransport = candidate;
+            sentRequest = candidate.Sent.FirstOrDefault(e => e.Route == "plugin.call.search");
+        }
+
+        Assert.That(newTransport, Is.Not.Null);
+        Assert.That(sentRequest, Is.Not.Null);
+
+        newTransport!.Deliver(new Envelope
+        {
+            Version = ProtocolVersion.Current,
+            Id = "resp-after-exhausted",
+            CorrelationId = sentRequest!.Id,
+            TraceId = sentRequest.TraceId,
+            SessionId = sentRequest.SessionId,
+            PluginId = "settings",
+            EndpointId = "node-main",
+            Kind = MessageKind.Response,
+            Route = "plugin.call.search",
+            Payload = JsonNode.Parse("""{"items":[{"id":"1","title":"Recovered","subtitle":"","priority":0}]}"""),
+        });
+
+        var response = await searchTask;
+        Assert.That(response.Items, Has.Count.EqualTo(1));
+        Assert.That(response.Items[0].Title, Is.EqualTo("Recovered"));
+        Assert.That(host.SessionId, Is.Not.Null.And.Not.EqualTo(oldSessionId));
+
+        await host.DisposeAsync();
+    }
+
     private static async Task<(NodePluginBusHost host, InMemoryTransport nodeT, string sessionId, PluginDiagnosticsService diagnostics)>
         CreateStartedHostAsync(IReadOnlyList<string>? capabilities = null,
             Func<RestartPolicy>? restartPolicyFactory = null)
@@ -288,6 +355,22 @@ public class NodePluginBusHostTest
         var session = host.Session!;
         var nodeT = (InMemoryTransport)factory.LastController!.Transport!;
         return (host, nodeT, session.SessionId, diagnostics);
+    }
+
+    private static async Task<bool> WaitForAsync(Func<bool> predicate, int timeoutMs = 5000)
+    {
+        var deadline = Environment.TickCount64 + timeoutMs;
+        while (Environment.TickCount64 < deadline)
+        {
+            if (predicate())
+            {
+                return true;
+            }
+
+            await Task.Delay(20);
+        }
+
+        return predicate();
     }
 
     private sealed class FakeController : INodeProcessController
