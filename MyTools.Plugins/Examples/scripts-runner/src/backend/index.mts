@@ -1,3 +1,4 @@
+import { ensureCommandIds } from "./commandIdentity.mjs";
 import {
   createPlugin,
   HostAction,
@@ -7,9 +8,17 @@ import {
   type RunSpec,
 } from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
-import { isSubsequence } from "@qping/plugin-bus/search";
+import { matchesSearchText } from "@qping/plugin-bus/search";
+
+const ownConfigurationMethods = {
+  read: "configuration.readOwn",
+  write: "configuration.writeOwn",
+} as const;
+const commandResultIdPrefix = "scripts-runner:";
+const pluginLocalCommandPriority = 100;
 
 type CommandConfig = {
+  id?: string;
   name?: string;
   command?: string;
   args?: string;
@@ -47,10 +56,7 @@ function normalizeScripts(scripts: string | string[] | undefined): string[] {
 }
 
 function matches(config: CommandConfig, query: string): boolean {
-  if (!query) return true;
-  var name = config.name || "";
-  if (name.toLowerCase().includes(query.toLowerCase())) return true;
-  return isSubsequence(query, name);
+  return matchesSearchText(query, config.name || mytoolsI18n.t("Plugin.CommandRunner.Untitled", { defaultValue: "Untitled command" }));
 }
 
 function subtitle(config: CommandConfig): string {
@@ -72,11 +78,21 @@ function toRunSpec(config: CommandConfig): RunSpec {
   };
 }
 
-async function loadCommands(): Promise<CommandConfig[]> {
+let commandLoad: Promise<CommandConfig[]> | undefined;
+function loadCommands(): Promise<CommandConfig[]> {
+  // Concurrent searches share migration, preventing competing UUID writes.
+  if (!commandLoad) commandLoad = readCommands().finally(() => { commandLoad = undefined; });
+  return commandLoad;
+}
+
+async function readCommands(): Promise<CommandConfig[]> {
   try {
-    const result = (await plugin.hostCall("configuration.readOwn")) as OwnConfiguration;
+    const result = (await plugin.hostCall(ownConfigurationMethods.read)) as OwnConfiguration;
     const commands = result?.values?.Commands;
-    return Array.isArray(commands) ? commands : [];
+    if (!Array.isArray(commands)) return [];
+    const changed = ensureCommandIds(commands);
+    if (changed) await plugin.hostCall(ownConfigurationMethods.write, { values: { Commands: commands } });
+    return commands;
   } catch {
     return [];
   }
@@ -85,11 +101,11 @@ async function loadCommands(): Promise<CommandConfig[]> {
 async function search(params: PluginSearchParams) {
   const query = (params.query || "").trim();
   var commands = await loadCommands();
-  var items = commands.filter((config) => matches(config, query)).map((config, index) => ({
-    id: `scripts-runner:${index}:${config.name || ""}`,
+  var items = commands.filter((config) => matches(config, query)).map((config) => ({
+    id: `${commandResultIdPrefix}${config.id}`,
     title: config.name || mytoolsI18n.t("Plugin.CommandRunner.Untitled", { defaultValue: "Untitled command" }),
     subtitle: subtitle(config),
-    priority: 100,
+    priority: pluginLocalCommandPriority,
     icon: { kind: "emoji", value: "🚀" },
     command: toRunSpec(config),
     actions: ["run", "runWithOverrides"],

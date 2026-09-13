@@ -1,4 +1,4 @@
-﻿using MyTools.Common.Localization;
+using MyTools.Common.Localization;
 
 namespace MyTools.Common;
 
@@ -14,6 +14,10 @@ public class Result(bool success, string? errorMessages, IEnumerable<ResultItem>
     public string? EmptyStateDescription { get; } = emptyStateDescription;
     
     public Exception? Exception { get; } = exception;
+
+    public static Result CreateOrderedSuccessResult(
+        IEnumerable<ResultItem> items, string? emptyStateTitle = null, string? emptyStateDescription = null)
+        => new(true, null, items.ToArray(), emptyStateTitle: emptyStateTitle, emptyStateDescription: emptyStateDescription);
 
     public static Result CreateEmpty()
         => new Result(true, null, Enumerable.Empty<ResultItem>());

@@ -35,7 +35,8 @@ public static class StringUtils
             {
                 continue;
             }
-            initials.Append(word[0]);
+            // A Unicode character can span two UTF-16 code units (for example emoji).
+            initials.Append(word.EnumerateRunes().First().ToString());
         }
         return initials.ToString().ToLower();
     }

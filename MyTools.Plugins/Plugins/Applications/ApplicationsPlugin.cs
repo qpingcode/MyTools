@@ -220,6 +220,8 @@ public sealed class ApplicationsPlugin(
             : Path.GetExtension(path).ToUpperInvariant() + ":" + Convert.ToHexString(SHA256.HashData(stream));
     }
 
+    private readonly SearchTextMatcher searchMatcher = new();
+
     private static string NormalizeSearchText(string value) =>
         string.Concat(value.Where(char.IsLetterOrDigit)).ToLowerInvariant();
 
@@ -240,7 +242,8 @@ public sealed class ApplicationsPlugin(
         var normalizedQuery = NormalizeSearchText(trimmedQuery);
         var matches = paths.Where(entry =>
                 terms.All(term => entry.Name.Contains(term, StringComparison.OrdinalIgnoreCase))
-                || MatchesNormalizedName(entry, normalizedQuery))
+                || MatchesNormalizedName(entry, normalizedQuery)
+                || searchMatcher.Match(query, entry.Name).Tier != SearchMatchTier.Fallback)
             .Where(entry => File.Exists(entry.Path))
             .OrderByDescending(entry => entry.Name.StartsWith(trimmedQuery, StringComparison.OrdinalIgnoreCase))
             .ThenByDescending(entry => entry.CompactName.StartsWith(normalizedQuery, StringComparison.OrdinalIgnoreCase))

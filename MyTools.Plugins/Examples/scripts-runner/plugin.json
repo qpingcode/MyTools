@@ -24,6 +24,7 @@
       "uiHint": "table",
       "schema": {
         "properties": [
+          { "key": "id", "type": "hidden" },
           {
             "key": "name",
             "type": "string",
@@ -99,7 +100,8 @@
   ],
   "entry": "backend/index.mjs",
   "capabilities": [
-    "configuration.readOwn"
+    "configuration.readOwn",
+    "configuration.writeOwn"
   ],
   "alias": [],
   "search": {

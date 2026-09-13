@@ -11,6 +11,7 @@ public sealed class SearchHistoryDbHelper
 {
     private const string QueryHistoryTable = "search_query_history";
     private const string SelectionHistoryTable = "search_selection_history";
+    private const string StableKeyLengthSeparator = ":";
     private readonly string _dbPath;
 
     public SearchHistoryDbHelper(string? dbPath = null)
@@ -21,7 +22,7 @@ public sealed class SearchHistoryDbHelper
 
     public static string NormalizeQuery(string? query)
     {
-        return query?.Trim().ToLowerInvariant() ?? string.Empty;
+        return SearchTextMatcher.Normalize(query);
     }
 
     public void RecordSearch(string? query)
@@ -177,6 +178,31 @@ ORDER BY last_selected_at DESC, recent.plugin_id, recent.result_key;";
         cmd.ExecuteNonQuery();
     }
 
+    public IReadOnlyList<SearchUsage> GetQuerySelections(string? query) => ReadUsage(NormalizeQuery(query))
+        .GroupBy(r => (r.PluginId, r.ResultKey))
+        .Select(g => new SearchUsage(g.Key.PluginId, g.Key.ResultKey, g.Sum(r => r.Count), g.Max(r => r.LastSelectedAt))).ToArray();
+
+    // Return each query bucket separately so old uses decay independently of recent queries.
+    public IReadOnlyList<SearchUsage> GetResultUsage() => ReadUsage(null);
+
+    private IReadOnlyList<SearchUsage> ReadUsage(string? normalizedQuery)
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = $"SELECT plugin_id, result_key, selected_count, last_selected_at FROM {SelectionHistoryTable}"
+            + (normalizedQuery == null ? "" : " WHERE normalized_query = @query");
+        if (normalizedQuery != null) cmd.Parameters.AddWithValue("@query", normalizedQuery);
+        var records = new List<SearchUsage>();
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
+        {
+            records.Add(new SearchUsage(reader.GetString(reader.GetOrdinal("plugin_id")), reader.GetString(reader.GetOrdinal("result_key")), reader.GetInt64(reader.GetOrdinal("selected_count")),
+                DateTime.Parse(reader.GetString(reader.GetOrdinal("last_selected_at")), null, System.Globalization.DateTimeStyles.RoundtripKind)));
+        }
+        return records;
+    }
+
     public IReadOnlyDictionary<string, double> GetSelectionBoosts(string? query)
     {
         using var conn = CreateConnection();
@@ -221,7 +247,7 @@ GROUP BY plugin_id, result_key;";
 
     public static string CombineKey(string pluginId, string resultKey)
     {
-        return pluginId + "::" + resultKey;
+        return pluginId.Length + StableKeyLengthSeparator + pluginId + resultKey;
     }
 
     private void Initialize()
@@ -281,6 +307,40 @@ WHERE last_selected_at >= @oldestDay
 GROUP BY plugin_id, result_key;";
         cmd.Parameters.AddWithValue("@oldestDay", DateTime.UtcNow.Date.AddDays(-29).ToString("yyyy-MM-dd"));
         cmd.ExecuteNonQuery();
+        NormalizeSelectionQueries(conn);
+    }
+
+    private static void NormalizeSelectionQueries(SqliteConnection conn)
+    {
+        // Stable plugin/result keys stay intact; only equivalent query spellings merge.
+        using var transaction = conn.BeginTransaction();
+        using var read = conn.CreateCommand();
+        read.Transaction = transaction;
+        read.CommandText = $"SELECT normalized_query, plugin_id, result_key, selected_count, last_selected_at FROM {SelectionHistoryTable}";
+        var changed = new List<(string Query, string Plugin, string Key, long Count, string Time)>();
+        using (var reader = read.ExecuteReader())
+            while (reader.Read())
+                if (NormalizeQuery(reader.GetString(reader.GetOrdinal("normalized_query"))) != reader.GetString(reader.GetOrdinal("normalized_query")))
+                    changed.Add((reader.GetString(reader.GetOrdinal("normalized_query")), reader.GetString(reader.GetOrdinal("plugin_id")), reader.GetString(reader.GetOrdinal("result_key")), reader.GetInt64(reader.GetOrdinal("selected_count")), reader.GetString(reader.GetOrdinal("last_selected_at"))));
+        foreach (var row in changed)
+        {
+            using var write = conn.CreateCommand();
+            write.Transaction = transaction;
+            write.CommandText = $@"DELETE FROM {SelectionHistoryTable}
+WHERE normalized_query = @old AND plugin_id = @plugin AND result_key = @key;
+INSERT INTO {SelectionHistoryTable} VALUES (@query, @plugin, @key, @count, @time)
+ON CONFLICT(normalized_query, plugin_id, result_key) DO UPDATE SET
+selected_count = selected_count + excluded.selected_count,
+last_selected_at = MAX(last_selected_at, excluded.last_selected_at);";
+            write.Parameters.AddWithValue("@old", row.Query);
+            write.Parameters.AddWithValue("@query", NormalizeQuery(row.Query));
+            write.Parameters.AddWithValue("@plugin", row.Plugin);
+            write.Parameters.AddWithValue("@key", row.Key);
+            write.Parameters.AddWithValue("@count", row.Count);
+            write.Parameters.AddWithValue("@time", row.Time);
+            write.ExecuteNonQuery();
+        }
+        transaction.Commit();
     }
 
     private SqliteConnection CreateConnection()

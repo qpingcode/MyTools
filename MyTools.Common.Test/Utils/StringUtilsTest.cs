@@ -5,6 +5,13 @@ namespace MyTools.Common.Test;
 
 public class StringUtilsTest
 {
+    [TestCase("\U0001F680 Launch", "\U0001F680l")]
+    [TestCase("\U00020000 File", "\U00020000f")]
+    public void InitialsPreserveCompleteSupplementaryCharacters(string input, string expected)
+    {
+        Assert.That(StringUtils.GetInitialsFromWords(input), Is.EqualTo(expected));
+    }
+
     [Test]
     public void TestGetInitialsFromWords()
     {

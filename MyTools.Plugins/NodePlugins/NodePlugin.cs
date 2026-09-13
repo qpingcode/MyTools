@@ -527,7 +527,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
             new NodePluginActionArgs(item.Id, query),
             item.Priority)
         {
-            ResultKey = string.IsNullOrWhiteSpace(item.Id) ? $"{manifest.Id}-{index}" : item.Id,
+            ResultKey = string.IsNullOrWhiteSpace(item.Id) ? string.Empty : item.Id,
         };
 
         resultItem.AllowedActions = BuildActions(item.Actions);

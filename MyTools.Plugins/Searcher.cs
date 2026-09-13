@@ -9,8 +9,9 @@ using MyTools.Plugins.NodePlugins;
 
 namespace MyTools.Plugins;
 
-public class Searcher(IGlobalSearchRegistry globalSearchRegistry, SearchHistoryDbHelper searchHistoryDbHelper, ILogger<Searcher> logger, IEnumerable<IPlugin>? builtInPlugins = null) : ISearcher
+public class Searcher(IGlobalSearchRegistry globalSearchRegistry, SearchHistoryDbHelper searchHistoryDbHelper, ILogger<Searcher> logger, IEnumerable<IPlugin>? builtInPlugins = null, ILocalizationService? localization = null) : ISearcher
 {
+    private readonly GlobalResultRanker globalRanker = new(searchHistoryDbHelper, localization);
     private const string SuggestionPluginId = "plugin-search";
     private const int HomePageSuggestionLimit = 10;
 
@@ -28,8 +29,7 @@ public class Searcher(IGlobalSearchRegistry globalSearchRegistry, SearchHistoryD
                 "Search completed: query={Query} plugin={PluginName} total={TotalMs}ms",
                 searchText, plugin.Name, pluginStopwatch.ElapsedMilliseconds);
             var prepared = PrepareResultItems(result.Items, plugin, searchText, SearchFrom.Plugin).ToList();
-            ApplyHistoryBoosts(prepared, searchText);
-            return Result.CreateSuccessResult(
+            return Result.CreateOrderedSuccessResult(
                 prepared, result.EmptyStateTitle, result.EmptyStateDescription);
         }
 
@@ -232,8 +232,11 @@ public class Searcher(IGlobalSearchRegistry globalSearchRegistry, SearchHistoryD
             .SelectMany(pair => PrepareResultItems(pair.Result.Items, pair.Plugin, query))
             .ToList();
 
-        ApplyHistoryBoosts(items, query);
-        return Result.CreateSuccessResult(items);
+        var ranked = globalRanker.Rank(items, query);
+        foreach (var rank in ranked)
+            logger.LogDebug("Search rank: key={Key} group={Group} band={Band} tier={Tier} file={File} quality={Quality} reuse={Reuse} last={Last} usage={Usage}",
+                rank.StableKey, rank.Group, rank.TitleBand, rank.MatchTier, rank.IsFile, rank.TextQuality, rank.ReuseEligible, rank.LastSelectedAt, rank.UsageValue);
+        return Result.CreateOrderedSuccessResult(ranked.Select(rank => rank.Item));
     }
 
     private IEnumerable<ResultItem> PrepareResultItems(IEnumerable<ResultItem> items, IPlugin plugin, string query, SearchFrom searchFrom = SearchFrom.Global)
@@ -253,18 +256,6 @@ public class Searcher(IGlobalSearchRegistry globalSearchRegistry, SearchHistoryD
                 : resultItem.ResultKey;
             resultItem.SortScore = resultItem.Priority;
             yield return resultItem;
-        }
-    }
-
-    private void ApplyHistoryBoosts(IEnumerable<ResultItem> items, string query)
-    {
-        var boosts = searchHistoryDbHelper.GetSelectionBoosts(query);
-        foreach (var item in items)
-        {
-            var key = SearchHistoryDbHelper.CombineKey(item.SourcePluginId, item.ResultKey);
-            item.SortScore = item.IgnoreSelectionHistoryBoost
-                ? item.Priority
-                : item.Priority + boosts.GetValueOrDefault(key, 0);
         }
     }
 

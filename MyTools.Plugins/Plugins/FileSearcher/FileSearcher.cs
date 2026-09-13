@@ -37,9 +37,24 @@ public sealed class FileSearcher : PluginBase, IDisposable
     public const string KeepFilesFromRemovedVolumesSettingPath = "file-searcher.KeepFilesFromRemovedVolumes";
 
     private const LuceneVersion LuceneVersion = Lucene.Net.Util.LuceneVersion.LUCENE_48;
-    private const string PluginDataId = "file-searcher";
+    public const string BuiltInPluginId = "file-searcher";
     private const string IndexDir = "FileSearcherIndex";
     private const string IndexedRootsFileName = "FileSearcherIndexedRoots.json";
+    internal const string PathField = "path";
+    internal const string FilenameField = "filename";
+    internal const string IndexedTimeField = "indexedTime";
+    internal const string SearchFilenameField = "searchFilename";
+    internal const string SearchInitialsField = "searchInitials";
+    internal const string SearchPinyinField = "searchPinyin";
+    internal const string SearchPinyinInitialsField = "searchPinyinInitials";
+    internal const string SearchPossiblesField = "searchPossibles";
+    private const int CandidateLimit = 30;
+    private const double PluginPriorityScoreScale = 1000;
+    private const float InitialsPrefixBoost = 10;
+    private const float FilenamePrefixBoost = 2;
+    private const float DirectoryPathBoost = .5f;
+    private const string AnyCharactersPattern = ".*";
+    private const string RegexEscape = "\\";
     private const string RootField = "root";
     private const string SearchPathField = "searchPath";
     private static readonly TimeSpan WatchDebounce = TimeSpan.FromSeconds(10);
@@ -89,7 +104,7 @@ public sealed class FileSearcher : PluginBase, IDisposable
         disposeToken = disposeCancellation.Token;
     }
 
-    public override PluginId PluginId => new(PluginDataId);
+    public override PluginId PluginId => new(BuiltInPluginId);
     public override string Name => GetCaption("Plugin.FileSearcher.Name", "File Searcher");
     public override string Description => GetCaption("Plugin.FileSearcher.Description", "Search indexed files");
     protected override string SettingsCategoryName => Name;
@@ -421,10 +436,10 @@ public sealed class FileSearcher : PluginBase, IDisposable
     }
 
     internal static string GetIndexDirectory(string pluginsDataRoot) =>
-        Path.Combine(ConfigPath.PluginDataDirectory(pluginsDataRoot, PluginDataId), IndexDir);
+        Path.Combine(ConfigPath.PluginDataDirectory(pluginsDataRoot, BuiltInPluginId), IndexDir);
 
     internal static string GetIndexedRootsPath(string pluginsDataRoot) =>
-        Path.Combine(ConfigPath.PluginDataDirectory(pluginsDataRoot, PluginDataId), IndexedRootsFileName);
+        Path.Combine(ConfigPath.PluginDataDirectory(pluginsDataRoot, BuiltInPluginId), IndexedRootsFileName);
 
     private static HashSet<string> ReadIndexedRoots(string path)
     {
@@ -464,12 +479,14 @@ public sealed class FileSearcher : PluginBase, IDisposable
             writer.AddDocument(new Document
             {
                 new StringField(RootField, prepared.RootDirectory, Field.Store.NO),
-                new StoredField("path", file.Path),
-                new StoredField("filename", file.FileName),
-                new StringField("indexedTime", file.IndexedTime, Field.Store.YES),
-                new StringField("searchFilename", file.FileName.ToLowerInvariant(), Field.Store.NO),
-                new StringField("searchInitials", file.SearchInitials, Field.Store.NO),
-                new TextField("searchPossibles", file.FileName, Field.Store.NO),
+                new StoredField(PathField, file.Path),
+                new StoredField(FilenameField, file.FileName),
+                new StringField(IndexedTimeField, file.IndexedTime, Field.Store.YES),
+                new StringField(SearchFilenameField, SearchTextMatcher.Normalize(file.FileName), Field.Store.NO),
+                new StringField(SearchInitialsField, SearchTextMatcher.Normalize(file.SearchInitials), Field.Store.NO),
+                new StringField(SearchPinyinField, SearchTextMatcher.Normalize(ToolGood.Words.Pinyin.WordsHelper.GetPinyin(file.FileName)), Field.Store.NO),
+                new StringField(SearchPinyinInitialsField, SearchTextMatcher.Normalize(ToolGood.Words.Pinyin.WordsHelper.GetFirstPinyin(file.FileName)), Field.Store.NO),
+                new TextField(SearchPossiblesField, file.FileName, Field.Store.NO),
                 new TextField(SearchPathField, Path.GetDirectoryName(file.Path) ?? string.Empty, Field.Store.NO)
             });
         }
@@ -957,14 +974,15 @@ public sealed class FileSearcher : PluginBase, IDisposable
                 var combineQuery = BuildSearchQuery(query);
 
                 var results = new List<ResultItem>();
-                foreach (var hit in searcher.Search(combineQuery, 30).ScoreDocs)
+                foreach (var hit in searcher.Search(combineQuery, CandidateLimit).ScoreDocs)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     var doc = searcher.Doc(hit.Doc);
-                    var title = doc.Get("filename");
-                    var path = doc.Get("path");
-                    var score = (int)Math.Ceiling(hit.Score * 1000);
-                    results.Add(new ResultItem(GetFileIcon(path), title, path, ActionStringParam.From(path), score));
+                    var title = doc.Get(FilenameField);
+                    var path = doc.Get(PathField);
+                    if (!File.Exists(path)) continue;
+                    var score = (int)Math.Ceiling(hit.Score * PluginPriorityScoreScale);
+                    results.Add(new ResultItem(GetFileIcon(path), title, path, ActionStringParam.From(path), score) { ResultKey = Path.GetFullPath(path).ToUpperInvariant() });
                 }
                 return Task.FromResult(Result.CreateSuccessResult(results));
             }
@@ -981,13 +999,30 @@ public sealed class FileSearcher : PluginBase, IDisposable
 
     internal static Query BuildSearchQuery(string query)
     {
-        var normalizedQuery = query.ToLowerInvariant();
+        var normalizedQuery = SearchTextMatcher.Normalize(query);
         var combineQuery = new BooleanQuery
         {
-            { new PrefixQuery(new Term("searchInitials", normalizedQuery)) { Boost = 10.0f }, Occur.SHOULD },
-            { new PrefixQuery(new Term("searchFilename", normalizedQuery)) { Boost = 2.0f }, Occur.SHOULD },
-            { new PrefixQuery(new Term("searchPossibles", normalizedQuery)) { Boost = 2.0f }, Occur.SHOULD }
+            { new PrefixQuery(new Term(SearchInitialsField, normalizedQuery)) { Boost = InitialsPrefixBoost }, Occur.SHOULD },
+            { new PrefixQuery(new Term(SearchFilenameField, normalizedQuery)) { Boost = FilenamePrefixBoost }, Occur.SHOULD },
+            { new PrefixQuery(new Term(SearchPossiblesField, normalizedQuery)) { Boost = FilenamePrefixBoost }, Occur.SHOULD }
         };
+
+        if (normalizedQuery.Length > 0)
+        {
+            // Lucene term automata recall ordered characters without comparing Lucene scores across plugins.
+            var pattern = AnyCharactersPattern + string.Join(AnyCharactersPattern, normalizedQuery.Select(c => RegexEscape + c)) + AnyCharactersPattern;
+            foreach (var field in new[] { SearchFilenameField, SearchInitialsField, SearchPinyinField, SearchPinyinInitialsField })
+                combineQuery.Add(new RegexpQuery(new Term(field, pattern)), Occur.SHOULD);
+        }
+
+        var titleTerms = normalizedQuery.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (titleTerms.Length > 1)
+        {
+            var titleQuery = new BooleanQuery();
+            foreach (var term in titleTerms)
+                titleQuery.Add(new RegexpQuery(new Term(SearchFilenameField, AnyCharactersPattern + string.Concat(term.Select(c => RegexEscape + c)) + AnyCharactersPattern)), Occur.MUST);
+            combineQuery.Add(titleQuery, Occur.SHOULD);
+        }
 
         var pathTerms = SearchTermPattern.Matches(normalizedQuery)
             .Select(match => match.Value)
@@ -995,7 +1030,7 @@ public sealed class FileSearcher : PluginBase, IDisposable
             .ToArray();
         if (pathTerms.Length > 0)
         {
-            var pathQuery = new BooleanQuery { Boost = 0.5f };
+            var pathQuery = new BooleanQuery { Boost = DirectoryPathBoost };
             foreach (var term in pathTerms)
             {
                 pathQuery.Add(new PrefixQuery(new Term(SearchPathField, term)), Occur.MUST);

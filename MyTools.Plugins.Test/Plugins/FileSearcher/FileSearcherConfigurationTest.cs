@@ -175,6 +175,30 @@ public class FileSearcherConfigurationTest
         Assert.That(searcher.Doc(hits.ScoreDocs[0].Doc).Get("id"), Is.EqualTo("path-match"));
     }
 
+    [TestCase("qidong", "启动开发环境")]
+    [TestCase("qdkf", "启动开发环境")]
+    [TestCase("gthb", "GitHub")]
+    [TestCase("ＤＥＶ", "Device Manager")]
+    [TestCase("vice", "Device Manager")]
+    [TestCase("manager device", "Device Manager")]
+    public void SearchQuery_RecallsHostTitleMatches(string query, string title)
+    {
+        using var directory = new RamDirectory();
+        using var analyzer = new StandardAnalyzer(TestLuceneVersion);
+        using (var writer = new IndexWriter(directory, new IndexWriterConfig(TestLuceneVersion, analyzer)))
+        {
+            writer.AddDocument(new Document {
+                new StringField(MyTools.Plugins.FileSearcher.SearchFilenameField, SearchTextMatcher.Normalize(title), Field.Store.NO),
+                new StringField(MyTools.Plugins.FileSearcher.SearchPinyinField, SearchTextMatcher.Normalize(ToolGood.Words.Pinyin.WordsHelper.GetPinyin(title)), Field.Store.NO),
+                new StringField(MyTools.Plugins.FileSearcher.SearchPinyinInitialsField, SearchTextMatcher.Normalize(ToolGood.Words.Pinyin.WordsHelper.GetFirstPinyin(title)), Field.Store.NO)
+            });
+            writer.Commit();
+        }
+        using var reader = DirectoryReader.Open(directory);
+        Assert.That(new IndexSearcher(reader).Search(MyTools.Plugins.FileSearcher.BuildSearchQuery(query), 30).ScoreDocs, Has.Length.EqualTo(1));
+        Assert.That(new SearchTextMatcher().Match(query, title).Tier, Is.Not.EqualTo(SearchMatchTier.Fallback));
+    }
+
     [Test]
     public void SearchQuery_WeightsFilenameAboveDirectoryPath()
     {
@@ -190,8 +214,8 @@ public class FileSearcherConfigurationTest
             writer.AddDocument(new Document
             {
                 new StringField("id", "filename-match", Field.Store.YES),
-                new StringField("searchFilename", "mytools", Field.Store.NO),
-                new TextField("searchPossibles", "mytools", Field.Store.NO),
+                new StringField(MyTools.Plugins.FileSearcher.SearchFilenameField, "mytools", Field.Store.NO),
+                new TextField(MyTools.Plugins.FileSearcher.SearchPossiblesField, "mytools", Field.Store.NO),
                 new TextField("searchPath", @"C:\apps", Field.Store.NO)
             });
             writer.Commit();
