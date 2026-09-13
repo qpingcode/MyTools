@@ -273,7 +273,7 @@ try {
   await page.getByRole('button', { name: 'Send', exact: true }).click();
   await page.locator('.response pre').filter({ hasText: 'abc' }).waitFor();
   const settingsTab = page.getByRole('tab', {
-    name: 'Execution settings',
+    name: 'Settings',
     exact: true,
   });
   const cookiesButton = page.getByRole('button', {
@@ -302,12 +302,12 @@ try {
   assert.equal(workspace.collections[0].requests.at(-1).params.length, 0);
   // Configuration tabs retain their fields and support keyboard navigation.
   await page
-    .getByRole('tab', { name: 'Query parameters', exact: true })
+    .getByRole('tab', { name: 'Parameters', exact: true })
     .press('ArrowRight');
   const config = page.getByRole('tabpanel');
   assert.equal(await config.getByRole('button', { name: 'Add', exact: true }).count(), 0);
   await config
-    .getByRole('textbox', { name: 'Name', exact: true })
+    .getByRole('combobox', { name: 'Name', exact: true })
     .fill('X-Test');
   await config
     .getByRole('textbox', { name: 'Value', exact: true })
@@ -326,22 +326,22 @@ try {
     .first()
     .fill('tab-state');
   assert.equal(await config.locator('.pair').count(), 2);
-  await page.getByRole('tab', { name: 'Request body', exact: true }).click();
+  await page.getByRole('tab', { name: 'Body', exact: true }).click();
   await config
-    .getByRole('combobox', { name: 'Request body', exact: true })
+    .getByRole('combobox', { name: 'Body', exact: true })
     .selectOption('json');
   await config
-    .getByRole('textbox', { name: 'Request body', exact: true })
+    .getByRole('textbox', { name: 'Body', exact: true })
     .fill('{"value":1}');
   await page
-    .getByRole('tab', { name: 'Execution settings', exact: true })
+    .getByRole('tab', { name: 'Settings', exact: true })
     .click();
   await config.getByRole('checkbox').first().check();
   assert.equal(
     await config.getByRole('spinbutton').inputValue(),
     String(workspace.defaults.timeoutMs),
   );
-  await page.getByRole('tab', { name: /^Request headers/ }).click();
+  await page.getByRole('tab', { name: /^Headers/ }).click();
   assert.equal(
     await config
       .getByRole('textbox', { name: 'Value', exact: true })
@@ -349,15 +349,15 @@ try {
       .inputValue(),
     'tab-state',
   );
-  await page.getByRole('tab', { name: 'Request body', exact: true }).click();
+  await page.getByRole('tab', { name: 'Body', exact: true }).click();
   assert.equal(
     await config
-      .getByRole('textbox', { name: 'Request body', exact: true })
+      .getByRole('textbox', { name: 'Body', exact: true })
       .inputValue(),
     '{"value":1}',
   );
   await config
-    .getByRole('combobox', { name: 'Request body', exact: true })
+    .getByRole('combobox', { name: 'Body', exact: true })
     .selectOption('none');
 
   await page.getByRole('tab', { name: 'Authentication', exact: true }).click();
@@ -368,9 +368,6 @@ try {
   await auth
     .getByRole('textbox', { name: 'Token', exact: true })
     .fill('{{token}}');
-  await page.getByRole('tab', { name: 'Assertions', exact: true }).click();
-  const assertions = page.getByRole('tabpanel');
-  await assertions.getByRole('button', { name: 'Add', exact: true }).click();
   await save();
   await page.getByRole('button', { name: 'Send', exact: true }).click();
   await page

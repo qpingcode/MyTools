@@ -561,7 +561,7 @@
     },
     {
       "key": "Plugin.ApiTester.Params",
-      "defaultValue": "Query parameters",
+      "defaultValue": "Parameters",
       "placeholders": [],
       "references": [
         {
@@ -571,12 +571,12 @@
         }
       ],
       "existingTranslations": {
-        "zh-CN": "查询参数"
+        "zh-CN": "参数"
       }
     },
     {
       "key": "Plugin.ApiTester.Headers",
-      "defaultValue": "Request headers",
+      "defaultValue": "Headers",
       "placeholders": [],
       "references": [
         {
@@ -606,7 +606,7 @@
     },
     {
       "key": "Plugin.ApiTester.Body",
-      "defaultValue": "Request body",
+      "defaultValue": "Body",
       "placeholders": [],
       "references": [
         {
@@ -651,7 +651,7 @@
     },
     {
       "key": "Plugin.ApiTester.Settings",
-      "defaultValue": "Execution settings",
+      "defaultValue": "Settings",
       "placeholders": [],
       "references": [
         {
@@ -661,7 +661,22 @@
         }
       ],
       "existingTranslations": {
-        "zh-CN": "执行设置"
+        "zh-CN": "设置"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.RequestSections",
+      "defaultValue": "Request",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 211,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "请求"
       }
     },
     {
@@ -2093,11 +2108,10 @@
     },
     {
       "key": "Plugin.ApiTester.FileInfo",
-      "defaultValue": "{{name}} · {{size}} bytes · {{type}}",
+      "defaultValue": "{{name}} · {{size}} bytes",
       "placeholders": [
         "name",
-        "size",
-        "type"
+        "size"
       ],
       "references": [
         {
@@ -2107,7 +2121,7 @@
         }
       ],
       "existingTranslations": {
-        "zh-CN": "{{name}} · {{size}} 字节 · {{type}}"
+        "zh-CN": "{{name}} · {{size}} 字节"
       }
     },
     {

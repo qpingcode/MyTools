@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import IconButton from './IconButton.vue';
-import { ref } from 'vue';
+import {ref} from 'vue';
 import {
   HttpHeader,
   Routes,
@@ -9,8 +9,8 @@ import {
   Limits,
   type RequestResult,
 } from '../shared/model.js';
-import { rpc, errorText, notification } from './rpc.js';
-import { useText } from './locale.js';
+import {rpc, errorText, notification} from './rpc.js';
+import {useText} from './locale.js';
 
 const props = defineProps<{
   result: RequestResult;
@@ -50,9 +50,9 @@ async function fullBody(): Promise<Uint8Array<ArrayBuffer>> {
 async function copy() {
   const bytes = await fullBody();
   const type =
-    props.result.headers.find(
-      (h) => h.name.toLowerCase() === HttpHeader.ContentType,
-    )?.value || '';
+      props.result.headers.find(
+          (h) => h.name.toLowerCase() === HttpHeader.ContentType,
+      )?.value || '';
   const charset = /charset\s*=\s*["']?([^\s;"']+)/i.exec(type)?.[1] || 'utf-8';
   try {
     await navigator.clipboard.writeText(new TextDecoder(charset).decode(bytes));
@@ -74,9 +74,9 @@ async function save() {
 function format() {
   try {
     formattedText.value = JSON.stringify(
-      JSON.parse(props.result.preview),
-      null,
-      2,
+        JSON.parse(props.result.preview),
+        null,
+        2,
     ).slice(0, Limits.previewBytes);
     formatted.value = true;
   } catch {
@@ -86,12 +86,12 @@ function format() {
 
 async function copyHeaders() {
   await navigator.clipboard.writeText(
-    props.result.headers.map((h) => `${h.name}: ${h.value}`).join('\r\n'),
+      props.result.headers.map((h) => `${h.name}: ${h.value}`).join('\r\n'),
   );
 }
 
 const panel = ref<'Body' | 'ResponseHeaders' | 'RequestHeaders' | 'Assertions'>(
-  'Body',
+    'Body',
 );
 const responsePanels = [
   'Body',
@@ -104,12 +104,12 @@ const responsePanels = [
   <div class="response-panel">
     <div class="response-meta" :title="result.url">
       <span class="status-badge" :data-state="result.execution"
-        >{{ result.status ?? execution(result.execution) }}
+      >{{ result.status ?? execution(result.execution) }}
         {{ result.statusText }}</span
       ><span class="result-badge" :data-state="result.test">{{
         test(result.test)
       }}</span
-      ><span class="muted">{{
+    ><span class="muted">{{
         t.Summary({
           status: result.status ?? '—',
           elapsed: Math.round(result.elapsedMs),
@@ -125,98 +125,104 @@ const responsePanels = [
     <div class="response-toolbar">
       <div class="config-tabs response-tabs">
         <button
-          v-for="item in responsePanels"
-          :key="item"
-          :class="{ selected: panel === item }"
-          :aria-pressed="panel === item"
-          @click="panel = item"
+            v-for="item in responsePanels"
+            :key="item"
+            :class="{ selected: panel === item }"
+            :aria-pressed="panel === item"
+            @click="panel = item"
         >
           {{ item === 'Body' ? t.ResponseBody() : t[item]() }}
         </button>
       </div>
       <div class="icon-actions">
         <IconButton
-          icon="copy"
-          :label="t.Copy()"
-          :disabled="result.binary || !result.bodyAvailable"
-          @click="copy"
-        /><IconButton
-          icon="file"
-          :label="t.CopyHeaders()"
-          @click="copyHeaders"
-        /><IconButton
-          icon="download"
-          :label="t.SaveBody()"
-          :disabled="!result.bodyAvailable"
-          @click="save"
+            icon="copy"
+            :label="t.Copy()"
+            :disabled="result.binary || !result.bodyAvailable"
+            @click="copy"
+        />
+        <IconButton
+            icon="file"
+            :label="t.CopyHeaders()"
+            @click="copyHeaders"
+        />
+        <IconButton
+            icon="download"
+            :label="t.SaveBody()"
+            :disabled="!result.bodyAvailable"
+            @click="save"
         />
       </div>
     </div>
     <template v-if="panel === 'Body'"
-      ><div class="body-toolbar">
+    >
+      <div class="body-toolbar">
         <button :class="{ selected: !formatted }" @click="formatted = false">
-          {{ t.Raw() }}</button
-        ><button
-          :class="{ selected: formatted }"
-          :disabled="
+          {{ t.Raw() }}
+        </button
+        >
+        <button
+            :class="{ selected: formatted }"
+            :disabled="
             result.binary ||
             result.truncated ||
             result.previewAvailable === false
           "
-          @click="format"
+            @click="format"
         >
           {{ t.Formatted() }}
         </button>
       </div>
       <p v-if="result.truncated" class="muted">{{ t.PreviewLimit() }}</p>
       <pre class="response-code">{{
-        result.previewAvailable === false
-          ? t.CacheError()
-          : result.binary
-            ? t.BinaryResponse()
-            : formatted
-              ? formattedText
-              : result.preview
-      }}</pre>
+          result.previewAvailable === false
+              ? t.CacheError()
+              : result.binary
+                  ? t.BinaryResponse()
+                  : formatted
+                      ? formattedText
+                      : result.preview
+        }}</pre>
     </template>
     <table v-if="panel === 'ResponseHeaders' || panel === 'RequestHeaders'">
       <thead>
-        <tr>
-          <th>{{ t.Key() }}</th>
-          <th>{{ t.Value() }}</th>
-        </tr>
+      <tr>
+        <th>{{ t.Key() }}</th>
+        <th>{{ t.Value() }}</th>
+      </tr>
       </thead>
       <tbody>
-        <tr
+      <tr
           v-for="(header, index) in panel === 'ResponseHeaders'
             ? result.headers
             : result.requestHeaders"
           :key="index"
-        >
-          <td>{{ header.name }}</td>
-          <td>{{ header.value }}</td>
-        </tr>
+      >
+        <td>{{ header.name }}</td>
+        <td>{{ header.value }}</td>
+      </tr>
       </tbody>
     </table>
     <table v-if="panel === 'Assertions' && result.assertions.length">
       <thead>
-        <tr>
-          <th>{{ t.Assertions() }}</th>
-          <th>{{ t.Actual() }}</th>
-          <th>{{ t.Expected() }}</th>
-        </tr>
+      <tr>
+        <th>{{ t.Assertions() }}</th>
+        <th>{{ t.Actual() }}</th>
+        <th>{{ t.Expected() }}</th>
+      </tr>
       </thead>
       <tbody>
-        <tr v-for="(assertion, index) in result.assertions" :key="index">
-          <td :class="assertion.passed ? 'pass' : 'error'">
-            {{ assertion.passed ? t.Pass() : t.Fail() }} · {{ assertion.name }}
-          </td>
-          <td>
-            {{ assertion.actualMissing ? t.Missing() : assertion.actual }}
-            <pre v-if="assertion.detail">{{ assertion.detail }}</pre>
-          </td>
-          <td>{{ assertion.expected }}</td>
-        </tr>
+      <tr v-for="(assertion, index) in result.assertions" :key="index">
+        <td :class="assertion.passed ? 'pass' : 'error'">
+          {{ assertion.passed ? t.Pass() : t.Fail() }} ·
+          {{ assertion.name || t.Status() }}
+        </td>
+        <td>
+          {{ assertion.actualMissing ? t.Missing() : assertion.actual }}
+          <pre v-if="assertion.detail">{{ assertion.detail }}</pre>
+        </td>
+        <td>{{ assertion.expected }}</td>
+      </tr>
       </tbody>
     </table>
     <p v-if="panel === 'Assertions' && !result.assertions.length" class="muted">

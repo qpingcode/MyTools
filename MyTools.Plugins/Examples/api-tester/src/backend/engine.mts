@@ -24,8 +24,10 @@ import {
     TestState,
     ErrorKind,
     Limits,
+    DefaultSuccessStatus,
     queryUrl,
     type ApiRequest,
+    type Assertion,
     type Pair,
     type Settings,
     type RequestResult,
@@ -96,7 +98,17 @@ export function evaluateAssertions(request: ApiRequest, response: {
 }): AssertionResult[] {
     let json: unknown;
     let parsed = false;
-    return request.assertions.filter(a => a.enabled).map(assertion => {
+    const enabled = request.assertions.filter(a => a.enabled);
+    const assertions: Assertion[] = enabled.length
+        ? enabled
+        : [{
+            name: '',
+            enabled: true,
+            kind: AssertionKind.Status,
+            path: '',
+            expected: String(DefaultSuccessStatus)
+        }];
+    return assertions.map(assertion => {
         let actual: unknown;
         let expected: unknown = assertion.expected;
         let passed = false;

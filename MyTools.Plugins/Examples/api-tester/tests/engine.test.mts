@@ -17,6 +17,9 @@ import {
     parseQuery,
     queryUrl,
     BodyKind,
+    HttpMethod,
+    ContentType,
+    WarningKind,
     AuthKind,
     KeyLocation,
     AssertionKind,
@@ -33,6 +36,7 @@ const PollIntervalMs = 5;
 const ShortTimeoutMs = 40;
 const ServerDelayMs = 150;
 const TestDeadlineMs = 5_000;
+const VendorJsonType = 'application/vnd.api+json';
 const SuccessStatus = 200;
 const ErrorStatus = 500;
 const RedirectStatus = 302;
@@ -89,7 +93,8 @@ test('HTTP errors remain complete; strict assertions and transactional extractio
         const request = requestAt(server.url);
         const output = await send(request);
         assert.equal(output.result.execution, ExecutionState.Complete);
-        assert.equal(output.result.test, TestState.Untested);
+        assert.equal(output.result.test, TestState.Failed);
+        assert.equal(output.result.assertions[0].passed, false);
         assert.equal(output.result.headers.filter(h => h.name === 'X-Repeat').length, 2);
         request.assertions = [{
             name: 'Strict',
@@ -109,6 +114,43 @@ test('HTTP errors remain complete; strict assertions and transactional extractio
         assert.deepEqual(Object.keys(failedExtraction.writes), []);
         assert.equal(pointer({'a/b': {'~': 1}}, '/a~1b/~0'), 1);
         assert.throws(() => extractVariables(request, '{}'));
+    } finally {
+        await server.close();
+    }
+});
+test('complete responses pass when the status is 200 and fail otherwise', async () => {
+    let status = SuccessStatus;
+    const server = await fixture((_req, res) => {
+        res.writeHead(status, {'Content-Type': 'text/plain'});
+        res.end('ok');
+    });
+    try {
+        const request = requestAt(server.url);
+        assert.equal((await send(request)).result.test, TestState.Passed);
+        status = ErrorStatus;
+        assert.equal((await send(request)).result.test, TestState.Failed);
+    } finally {
+        await server.close();
+    }
+});
+test('JSON uses the default MIME unless a Content-Type header overrides it', async () => {
+    const types: string[] = [];
+    const server = await fixture((req, res) => {
+        types.push(req.headers['content-type'] || '');
+        res.end('ok');
+    });
+    try {
+        const request = requestAt(server.url);
+        request.method = HttpMethod.Post;
+        request.body.kind = BodyKind.Json;
+        request.body.text = '{}';
+        assert.equal((await send(request)).result.execution, ExecutionState.Complete);
+        assert.equal(types[0], ContentType.Json);
+        request.headers = [{name: 'Content-Type', value: VendorJsonType, enabled: true}];
+        const overridden = await send(request);
+        assert.equal(overridden.result.execution, ExecutionState.Complete);
+        assert.equal(types[1], VendorJsonType);
+        assert.deepEqual(overridden.result.warnings, [WarningKind.ContentType]);
     } finally {
         await server.close();
     }

@@ -19,6 +19,7 @@ export const Routes = {
 } as const;
 export const CookieSessionExpiry = 'Infinity';
 export const CookieDefaultPath = '/';
+export const DefaultSuccessStatus = 200;
 export const Limits = {
     timeoutMs: 30_000,
     redirects: 10,
