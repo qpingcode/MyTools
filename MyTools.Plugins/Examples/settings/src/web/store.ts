@@ -5,7 +5,6 @@ import { evaluateVisibility, isTopLevelHeading, settingKey } from "./setting-uti
 import type {
     Category,
     Config,
-    GestureConfig,
     KeymapConflict,
     KeymapDirty,
     KeymapPlugin,
@@ -13,12 +12,11 @@ import type {
     SidebarItem,
 } from "./types";
 
-export const SYSTEM_CATEGORY_KEYS = new Set(["General", "Gestures", "Plugins"]);
-export const SPECIAL_CATEGORY_KEYS = new Set(["Plugins", "Gestures"]);
+export const SYSTEM_CATEGORY_KEYS = new Set(["General", "Plugins"]);
+export const SPECIAL_CATEGORY_KEYS = new Set(["Plugins"]);
 
 const CATEGORY_ICONS: Record<string, string> = {
     General: "mdi-cog-outline",
-    Gestures: "mdi-gesture-swipe",
     Plugins: "mdi-puzzle-outline",
 };
 
@@ -42,12 +40,10 @@ export const store = reactive({
     dirtySettings: new Map<string, string>(),
     keymapDirty: new Map<string, KeymapDirty>(),
     keymapConflicts: [] as KeymapConflict[],
-    gesturesDirty: false,
     dirty: false,
     saving: false,
 
     keymapPlugins: null as KeymapPlugin[] | null,
-    gestureConfigs: null as GestureConfig[] | null,
 
     toast: {
         show: false,
@@ -59,8 +55,7 @@ export const store = reactive({
 
 export function refreshDirty(): void {
     store.dirty = store.dirtySettings.size > 0
-        || store.keymapDirty.size > 0
-        || store.gesturesDirty;
+        || store.keymapDirty.size > 0;
 }
 
 export const isDirty = computed(() => store.dirty);
@@ -107,7 +102,6 @@ export function categorySelfMatches(category: Category): boolean {
         if (settingMatchesSearch(setting)) return true;
     }
     if (category.key === "Plugins" && keymapMatchesSearch()) return true;
-    if (category.key === "Gestures" && gesturesMatchesSearch()) return true;
     return false;
 }
 
@@ -119,13 +113,6 @@ export function shouldShowCategory(category: Category): boolean {
 function keymapMatchesSearch(): boolean {
     if (!store.searchQuery || !store.keymapPlugins) return false;
     return store.keymapPlugins.some((plugin) => plugin.name.toLowerCase().includes(store.searchQuery));
-}
-
-function gesturesMatchesSearch(): boolean {
-    if (!store.searchQuery || !store.gestureConfigs) return false;
-    return store.gestureConfigs.some((gesture) =>
-        gesture.actionName.toLowerCase().includes(store.searchQuery)
-        || gesture.processNames.some((name) => name.toLowerCase().includes(store.searchQuery)));
 }
 
 export const sidebarItems = computed((): SidebarItem[] => {
@@ -202,7 +189,7 @@ export async function loadConfiguration(): Promise<void> {
 }
 
 export async function loadSpecialPanels(): Promise<void> {
-    await Promise.allSettled([loadPluginOverrides(), loadGestures()]);
+    await Promise.allSettled([loadPluginOverrides()]);
 }
 
 export async function loadPluginOverrides(preserveDirty = false): Promise<void> {
@@ -210,13 +197,6 @@ export async function loadPluginOverrides(preserveDirty = false): Promise<void> 
     store.keymapPlugins = data.plugins || [];
     if (!preserveDirty) store.keymapDirty.clear();
     store.keymapConflicts = [];
-    refreshDirty();
-}
-
-export async function loadGestures(): Promise<void> {
-    const data = await bus.call<{ gestures: GestureConfig[] }>("getGestures");
-    store.gestureConfigs = data.gestures || [];
-    store.gesturesDirty = false;
     refreshDirty();
 }
 
@@ -229,12 +209,6 @@ export function markSettingDirty(key: string, value: string): void {
 export function markKeymapDirty(overrideKey: string, change: KeymapDirty): void {
     const existing = store.keymapDirty.get(overrideKey) || {};
     store.keymapDirty.set(overrideKey, { ...existing, ...change });
-    refreshDirty();
-    scheduleSave();
-}
-
-export function markGesturesDirty(): void {
-    store.gesturesDirty = true;
     refreshDirty();
     scheduleSave();
 }
@@ -300,11 +274,6 @@ export async function saveSettings(): Promise<void> {
         if (store.keymapDirty.size > 0) {
             const pluginOverridesSaved = await savePluginOverridesInternal();
             if (!pluginOverridesSaved) return;
-        }
-
-        if (store.gesturesDirty) {
-            await bus.call("saveGestures", { gestures: store.gestureConfigs || [] });
-            store.gesturesDirty = false;
         }
 
         if (requiresRestart) {

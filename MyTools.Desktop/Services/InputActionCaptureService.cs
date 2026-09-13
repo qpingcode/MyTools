@@ -10,26 +10,22 @@ public sealed class InputActionCaptureService
     private readonly LanguageService languageService;
     private readonly IThemeService themeService;
     private readonly HotKeyManager hotKeyManager;
-    private readonly GestureRegistry gestureRegistry;
     private InputActionCaptureWindow? openWindow;
 
     public InputActionCaptureService(
         LanguageService languageService,
         IThemeService themeService,
-        HotKeyManager hotKeyManager,
-        GestureRegistry gestureRegistry)
+        HotKeyManager hotKeyManager)
     {
         this.languageService = languageService;
         this.themeService = themeService;
         this.hotKeyManager = hotKeyManager;
-        this.gestureRegistry = gestureRegistry;
     }
 
     public Task<InputActionCaptureResult?> CaptureAsync(InputActionCaptureOptions options)
     {
         CancelOpenWindow();
         hotKeyManager.SuspendAllHotKeys();
-        gestureRegistry.SuspendDetection();
 
         var window = new InputActionCaptureWindow(languageService, themeService);
         window.Configure(options);
@@ -46,7 +42,6 @@ public sealed class InputActionCaptureService
             {
                 openWindow = null;
                 hotKeyManager.ResumeAllHotKeys();
-                gestureRegistry.ResumeDetection();
             }
 
             completed.TrySetResult(window.Confirmed ? window.Result : null);

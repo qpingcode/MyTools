@@ -25,9 +25,6 @@ namespace MyTools.Desktop;
 public class AppBootstrapper : IDisposable
 {
     private readonly NativeMessageWindowHost nativeMessageWindowHost;
-    private readonly GestureRegistry gestureRegistry;
-    private readonly GestureConfigProvider gestureConfigProvider;
-    private readonly MouseHelper mouseHelper;
     private readonly HotKeyManager hotKeyManager;
     private readonly IReadOnlyList<IPlugin> plugins;
     private readonly NodePluginCatalog nodePluginCatalog;
@@ -49,9 +46,6 @@ public class AppBootstrapper : IDisposable
 
     public AppBootstrapper(
         NativeMessageWindowHost nativeMessageWindowHost,
-        GestureRegistry gestureRegistry,
-        GestureConfigProvider gestureConfigProvider,
-        MouseHelper mouseHelper,
         HotKeyManager hotKeyManager,
         IEnumerable<IPlugin> plugins,
         NodePluginCatalog nodePluginCatalog,
@@ -71,9 +65,6 @@ public class AppBootstrapper : IDisposable
         HubApiClient hubApiClient)
     {
         this.nativeMessageWindowHost = nativeMessageWindowHost;
-        this.gestureRegistry = gestureRegistry;
-        this.gestureConfigProvider = gestureConfigProvider;
-        this.mouseHelper = mouseHelper;
         this.hotKeyManager = hotKeyManager;
         this.plugins = plugins.ToArray();
         this.nodePluginCatalog = nodePluginCatalog;
@@ -117,7 +108,6 @@ public class AppBootstrapper : IDisposable
                                ?? GeneralSettings.DefaultSearchHotKey;
         RegisterGlobalHotKey(new HotKeyConfig(searchHotKeyText));
         
-        InitializeGestureDetection();
 
         RegisterNodePluginHostCallHandlers(nodePlugins);
         RegisterNodePluginOverrides(nodePlugins);
@@ -197,19 +187,6 @@ public class AppBootstrapper : IDisposable
     private void EnsureNativeMessageWindowHost()
     {
         nativeMessageWindowHost.EnsureCreated();
-    }
-
-    private void InitializeGestureDetection()
-    {
-        var enableGesture = registry.FindSetting("Gestures.EnableGesture")?.GetValue<bool>() ?? false;
-        if (enableGesture)
-        {
-            gestureRegistry.EnableDetection(gestureConfigProvider.GetAll(), mouseHelper);
-        }
-        else
-        {
-            gestureRegistry.DisableDetection();
-        }
     }
 
     private void RegisterGlobalHotKey(HotKeyConfig SearchHotKey)
@@ -520,18 +497,6 @@ public class AppBootstrapper : IDisposable
                 localization.GetCaption("Configuration.General.LogLevel.Description", "Minimum level of messages written to the log file"),
                 "Debug",
                 valueType: SettingValueTypes.LogLevel);
-
-            // Mouse Gestures category (rendered as a dedicated list editor in the settings UI)
-            var gesturesCategory = registry.AddCategory(
-                "Gestures",
-                localization.GetCaption("Configuration.Gestures.Name", "Gestures"),
-                localization.GetCaption("Configuration.Gestures.Description", "Hold the right mouse button and draw a gesture, then release it to run the assigned action. Each gesture can be limited to specific processes and mapped to a keyboard shortcut or mouse button."),
-                IsSelectable: true);
-
-            registry.AddSetting(gesturesCategory, "EnableGesture",
-                localization.GetCaption("Configuration.Gestures.Enable.Title", "Enable"),
-                string.Empty,
-                false);
 
             // Add Plugin Settings
             registry.AddCategory(

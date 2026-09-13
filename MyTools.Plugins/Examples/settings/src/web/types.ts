@@ -76,16 +76,6 @@ export type KeymapConflict = {
     conflictsWith: string;
 };
 
-export type GestureConfig = {
-    id: string;
-    directions: string[];
-    actionName: string;
-    actionType: string;
-    hotKey?: string | null;
-    mouseButton?: string | null;
-    processNames: string[];
-    isEnabled: boolean;
-};
 
 export type SidebarItem =
     | { type: "group"; label: string }

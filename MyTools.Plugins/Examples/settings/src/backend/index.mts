@@ -49,19 +49,6 @@ plugin
     const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
     return await plugin.hostCall("hotkeys.validate", params);
   })
-  .handle("getGestures", async () => {
-    return await plugin.hostCall("gestures.read");
-  })
-  .handle("saveGestures", async (payload: any) => {
-    const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
-    return await plugin.hostCall("gestures.write", params);
-  })
-  .handle("suspendGestures", async () => {
-    return await plugin.hostCall("gestures.suspend");
-  })
-  .handle("resumeGestures", async () => {
-    return await plugin.hostCall("gestures.resume");
-  })
   .handle("captureInputAction", async (payload: any) => {
     const params = (payload && typeof payload === "object" ? payload : {}) as Record<string, unknown>;
     return await plugin.hostCall("action.capture", params);

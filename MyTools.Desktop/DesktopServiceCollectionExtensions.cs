@@ -32,7 +32,6 @@ public static class DesktopServiceCollectionExtensions
 
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
-        services.AddSingleton<MouseGestureDetector>();
         services.AddPluginServices();
         services.AddDesktopServices();
         services.AddConfigurationSystem();
@@ -69,8 +68,6 @@ public static class DesktopServiceCollectionExtensions
         serviceCollection.AddSingleton<ILocalizationService>(sp => sp.GetRequiredService<LanguageService>());
         serviceCollection.AddSingleton<ThemeService>();
         serviceCollection.AddSingleton<IThemeService>(sp => sp.GetRequiredService<ThemeService>());
-        serviceCollection.AddSingleton<GestureRegistry>();
-        serviceCollection.AddSingleton<MouseHelper>();
         serviceCollection.AddSingleton<NodePluginDetailNavigator>();
         serviceCollection.AddSingleton<INodePluginDetailNavigator>(sp => sp.GetRequiredService<NodePluginDetailNavigator>());
         serviceCollection.AddSingleton<GlobalExceptionHandler>();
@@ -155,7 +152,6 @@ public static class DesktopServiceCollectionExtensions
             sp.GetRequiredService<HubPluginHostCallHandler>());
         serviceCollection.AddSingleton<InputActionCaptureService>();
         serviceCollection.AddSingleton<PluginOverrideProvider>();
-        serviceCollection.AddSingleton<GestureConfigProvider>();
         serviceCollection.AddSingleton<PluginHotKeyService>();
         serviceCollection.AddSingleton<IPluginHotKeyRegistry>(sp => sp.GetRequiredService<PluginHotKeyService>());
         serviceCollection.AddSingleton<PluginKeymapService>();

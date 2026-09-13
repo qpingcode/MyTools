@@ -2,7 +2,6 @@
 import { HostEvents } from "@qping/plugin-bus/web";
 import { computed, onMounted, ref, watch } from "vue";
 import { createDiscreteApi, darkTheme } from "naive-ui";
-import GesturesPanel from "./panels/GesturesPanel.vue";
 import KeymapPanel from "./panels/KeymapPanel.vue";
 import ScalarSettingsPanel from "./panels/ScalarSettingsPanel.vue";
 import HighlightText from "./components/HighlightText.vue";
@@ -213,7 +212,6 @@ async function externalLogin(provider: string): Promise<void> {
                         </div>
                         <div v-else-if="store.error" class="empty">{{ store.error }}</div>
                         <KeymapPanel v-else-if="store.currentCategoryKey === 'Plugins'" />
-                        <GesturesPanel v-else-if="store.currentCategoryKey === 'Gestures'" />
                         <ScalarSettingsPanel v-else />
                     </div>
                 </section>

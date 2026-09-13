@@ -34,9 +34,6 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     private readonly PluginHotKeyService pluginHotKeyService;
     private readonly PluginKeymapService pluginKeymapService;
     private readonly PluginOverrideProvider pluginOverrideProvider;
-    private readonly GestureConfigProvider gestureConfigProvider;
-    private readonly GestureRegistry gestureRegistry;
-    private readonly MouseHelper mouseHelper;
     private readonly PluginLoader pluginLoader;
     private readonly IKeywordRegistry keywordRegistry;
     private readonly IPluginLauncher pluginLauncher;
@@ -56,7 +53,6 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     [
         "configuration.read", "configuration.write", "configuration.readOwn", "configuration.writeOwn",
         "keymap.read", "keymap.write", "keymap.validate",
-        "gestures.read", "gestures.write", "gestures.suspend", "gestures.resume",
         "hotkeys.read", "hotkeys.write", "hotkeys.suspend", "hotkeys.resume", "hotkeys.validate",
         "action.capture", "plugins.list"
     ];
@@ -70,9 +66,6 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         PluginHotKeyService pluginHotKeyService,
         PluginKeymapService pluginKeymapService,
         PluginOverrideProvider pluginOverrideProvider,
-        GestureConfigProvider gestureConfigProvider,
-        GestureRegistry gestureRegistry,
-        MouseHelper mouseHelper,
         PluginLoader pluginLoader,
         IKeywordRegistry keywordRegistry,
         IPluginLauncher pluginLauncher,
@@ -90,9 +83,6 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         this.pluginHotKeyService = pluginHotKeyService;
         this.pluginKeymapService = pluginKeymapService;
         this.pluginOverrideProvider = pluginOverrideProvider;
-        this.gestureConfigProvider = gestureConfigProvider;
-        this.gestureRegistry = gestureRegistry;
-        this.mouseHelper = mouseHelper;
         this.pluginLoader = pluginLoader;
         this.keywordRegistry = keywordRegistry;
         this.pluginLauncher = pluginLauncher;
@@ -123,10 +113,6 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
                 "keymap.validate" => ValidateKeymap(request.Params),
                 "hotkeys.read" => GetHotKeys(),
                 "hotkeys.write" => SaveHotKeys(request.Params),
-                "gestures.read" => GetGestures(),
-                "gestures.write" => SaveGestures(request.Params),
-                "gestures.suspend" => SuspendGestures(),
-                "gestures.resume" => ResumeGestures(),
                 "hotkeys.suspend" => SuspendHotkeys(),
                 "hotkeys.resume" => ResumeHotkeys(),
                 "hotkeys.validate" => ValidateHotKeys(request.Params),
@@ -296,8 +282,6 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         // Record the value of Language before saving, to determine if it actually changed (rather than merely being written back by the frontend with the same value).
         var languageSetting = registry.FindSetting(GeneralSettings.LanguagePath);
         var previousLanguage = languageSetting?.GetValue<string>();
-        var gestureSetting = registry.FindSetting("Gestures.EnableGesture");
-        var gesturesWereEnabled = gestureSetting?.GetValue<bool>() ?? false;
 
         foreach (var change in request.Changes)
         {
@@ -321,12 +305,6 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
 
         registry.SaveChanges();
         pluginLoader.LoadedPlugins.OfType<ClipBoardPlugin>().FirstOrDefault()?.ApplyRetentionSettings();
-        var gesturesAreEnabled = gestureSetting?.GetValue<bool>() ?? false;
-        if (gesturesWereEnabled != gesturesAreEnabled)
-        {
-            ApplyGestureEnabledState();
-        }
-
         // Hot App Theme / LogLevel / AutoStart: These operations trigger events such as ThemeChanged.
         // Event subscribers (e.g., App.OnThemeChanged → UpdateNotifyIconMenu) access WPF controls and must execute on the UI thread.
         // The hostCall callback runs on the Node stdout reading thread, so a thread switch is required.
@@ -375,46 +353,6 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
 
         return JsonSerializer.SerializeToElement(
             new SaveConfigurationResult { RequiresRestart = requiresRestart }, JsonCamelCaseOptions);
-    }
-
-    private JsonElement GetGestures()
-    {
-        var gestures = gestureConfigProvider.GetAll();
-        return JsonSerializer.SerializeToElement(new GesturesDto { Gestures = gestures }, JsonCamelCaseOptions);
-    }
-
-    private JsonElement SaveGestures(JsonElement payload)
-    {
-        var request = payload.Deserialize<GesturesSaveRequest>(JsonCamelCaseOptions);
-        var gestures = request?.Gestures ?? new List<GestureConfig>();
-
-        // Generate an Id for gestures that are missing one
-        foreach (var g in gestures)
-        {
-            if (string.IsNullOrEmpty(g.Id))
-            {
-                g.Id = Guid.NewGuid().ToString("N");
-            }
-        }
-
-        gestureConfigProvider.Save(gestures);
-
-        ApplyGestureEnabledState();
-
-        return JsonSerializer.SerializeToElement(new { success = true }, JsonCamelCaseOptions);
-    }
-
-    private void ApplyGestureEnabledState()
-    {
-        var enabled = registry.FindSetting("Gestures.EnableGesture")?.GetValue<bool>() ?? false;
-        if (enabled)
-        {
-            gestureRegistry.EnableDetection(gestureConfigProvider.GetAll(), mouseHelper);
-        }
-        else
-        {
-            gestureRegistry.DisableDetection();
-        }
     }
 
     private JsonElement GetKeymap()
@@ -687,18 +625,6 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     private void OpenPluginDetail(NodePlugin plugin)
     {
         pluginLauncher.Open(plugin);
-    }
-
-    private JsonElement SuspendGestures()
-    {
-        gestureRegistry.SuspendDetection();
-        return JsonSerializer.SerializeToElement(new { }, JsonCamelCaseOptions);
-    }
-
-    private JsonElement ResumeGestures()
-    {
-        gestureRegistry.ResumeDetection();
-        return JsonSerializer.SerializeToElement(new { }, JsonCamelCaseOptions);
     }
 
     private JsonElement SuspendHotkeys()
@@ -1066,16 +992,4 @@ public sealed class CaptureInputActionRequest
     public bool ExcludeSearchHotKey { get; init; }
     public bool ExcludeReservedHotKey { get; init; }
     public string? CurrentSearchHotKey { get; init; }
-}
-
-// ── Gestures DTO ──
-
-public sealed class GesturesDto
-{
-    public List<GestureConfig> Gestures { get; init; } = new();
-}
-
-public sealed class GesturesSaveRequest
-{
-    public List<GestureConfig> Gestures { get; init; } = new();
 }

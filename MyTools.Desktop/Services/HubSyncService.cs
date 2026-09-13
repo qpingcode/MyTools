@@ -11,12 +11,11 @@ namespace MyTools.Desktop.Services;
 
 public sealed class HubSyncService : IDisposable
 {
-    private static readonly string[] RootFiles = ["Settings.json", "Gestures.json", "PluginOverrides.json"];
+    private static readonly string[] RootFiles = ["Settings.json", "PluginOverrides.json"];
     private readonly HubApiClient client;
     private readonly IConfigurationStorage storage;
     private readonly IConfigurationRegistry registry;
     private readonly PluginOverrideProvider pluginOverrideProvider;
-    private readonly GestureConfigProvider gestureConfigProvider;
     private readonly ILogger<HubSyncService> logger;
     private readonly FileSystemWatcher rootWatcher;
     private readonly FileSystemWatcher? pluginsWatcher;
@@ -32,14 +31,12 @@ public sealed class HubSyncService : IDisposable
         IConfigurationStorage storage,
         IConfigurationRegistry registry,
         PluginOverrideProvider pluginOverrideProvider,
-        GestureConfigProvider gestureConfigProvider,
         ILogger<HubSyncService> logger)
     {
         this.client = client;
         this.storage = storage;
         this.registry = registry;
         this.pluginOverrideProvider = pluginOverrideProvider;
-        this.gestureConfigProvider = gestureConfigProvider;
         this.logger = logger;
         Directory.CreateDirectory(ConfigPath.Base);
         Directory.CreateDirectory(ConfigPath.PluginsDataPath);
@@ -171,7 +168,6 @@ public sealed class HubSyncService : IDisposable
 
             registry.Reload();
             pluginOverrideProvider.Reload();
-            gestureConfigProvider.Reload();
         }
         finally
         {
