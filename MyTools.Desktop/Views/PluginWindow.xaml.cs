@@ -30,6 +30,8 @@ public partial class PluginWindow
     private readonly ILogger<PluginWindow> logger;
     private HwndSource? hwndSource;
     private int activationAttempt;
+    private bool closeConfirmed;
+    private bool confirmingClose;
 
     public PluginWindow(PluginViewModel viewModel)
         : this(viewModel, NullLogger<PluginWindow>.Instance)
@@ -50,6 +52,7 @@ public partial class PluginWindow
 
         PreviewKeyDown += Window_PreviewKeyDown;
         Closed += Window_OnClosed;
+        Closing += Window_OnClosing;
         Loaded += PluginWindow_Loaded;
         SourceInitialized += Window_OnSourceInitialized;
     }
@@ -177,6 +180,7 @@ public partial class PluginWindow
         StateChanged -= Window_OnStateChanged;
         PreviewKeyDown -= Window_PreviewKeyDown;
         Closed -= Window_OnClosed;
+        Closing -= Window_OnClosing;
         Loaded -= PluginWindow_Loaded;
         viewModel.Dispose();
     }
@@ -184,6 +188,33 @@ public partial class PluginWindow
     private void ViewModel_OnCloseRequested()
     {
         Close();
+    }
+
+    public async Task<bool> ConfirmCloseAsync()
+    {
+        var detail = FindVisualChild<NodePluginDetailView>(PluginContentView);
+        return detail is null || await detail.ConfirmCloseAsync();
+    }
+
+    public void CloseAfterConfirmation()
+    {
+        if (closeConfirmed) return;
+        closeConfirmed = true;
+        Close();
+    }
+
+    private async void Window_OnClosing(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+        if (closeConfirmed) return;
+        e.Cancel = true;
+        if (confirmingClose) return;
+        confirmingClose = true;
+        try
+        {
+            await Dispatcher.Yield(DispatcherPriority.Background);
+            if (await ConfirmCloseAsync()) CloseAfterConfirmation();
+        }
+        finally { confirmingClose = false; }
     }
 
     private void Window_OnSourceInitialized(object? sender, EventArgs e)

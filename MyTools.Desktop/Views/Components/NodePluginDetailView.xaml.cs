@@ -31,6 +31,51 @@ namespace MyTools.Desktop.Components;
 
 public partial class NodePluginDetailView : UserControl
 {
+    private const string BeginCloseGuardScript = """
+        (() => {
+          if (typeof window.mytoolsBeforeClose !== 'function') return false;
+          window.mytoolsCloseGuardResult = null;
+          Promise.resolve().then(() => window.mytoolsBeforeClose())
+            .then(allowed => { window.mytoolsCloseGuardResult = allowed === true; })
+            .catch(() => { window.mytoolsCloseGuardResult = false; });
+          return true;
+        })()
+        """;
+    private const string ReadCloseGuardScript = "window.mytoolsCloseGuardResult";
+    private static readonly TimeSpan CloseGuardPollInterval = TimeSpan.FromMilliseconds(100);
+
+    private Task<bool>? closeConfirmation;
+
+    public async Task<bool> ConfirmCloseAsync()
+    {
+        var pending = closeConfirmation ??= ConfirmCloseCoreAsync();
+        try { return await pending; }
+        finally { if (ReferenceEquals(closeConfirmation, pending)) closeConfirmation = null; }
+    }
+
+    private async Task<bool> ConfirmCloseCoreAsync()
+    {
+        if (!browserReady || PluginBrowser.CoreWebView2 is null) return true;
+        try
+        {
+            var hasGuard = await PluginBrowser.CoreWebView2.ExecuteScriptAsync(BeginCloseGuardScript);
+            if (hasGuard != "true") return true;
+            while (browserReady && PluginBrowser.CoreWebView2 is not null)
+            {
+                var result = await PluginBrowser.CoreWebView2.ExecuteScriptAsync(ReadCloseGuardScript);
+                if (result == "true") return true;
+                if (result == "false") return false;
+                await Task.Delay(CloseGuardPollInterval);
+            }
+            return true;
+        }
+        catch (Exception exception)
+        {
+            StaticLogger.LogWarning(exception, "Could not evaluate plugin close guard");
+            return false;
+        }
+    }
+
     private static readonly ILogger<NodePluginDetailView> StaticLogger =
         ServiceLocator.GetRequiredService<ILogger<NodePluginDetailView>>();
     private static readonly Lazy<Task<CoreWebView2Environment>> WebView2Environment =

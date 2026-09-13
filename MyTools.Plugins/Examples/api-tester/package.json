@@ -1,0 +1,28 @@
+{
+  "name": "mytools-plugin-api-tester",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build-plugin.mjs",
+    "watch": "node build-plugin.mjs --watch",
+    "check": "node scripts/check.mjs -p tsconfig.json --noEmit",
+    "publish:hub": "node scripts/publish-hub.mjs",
+    "test": "node scripts/test.mjs",
+    "test:ui": "node scripts/ui-smoke.mjs"
+  },
+  "dependencies": {
+    "@qping/plugin-bus": "0.9.0",
+    "tough-cookie": "^6.0.0",
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "esbuild": "^0.25.8",
+    "typescript": "^7.0.2",
+    "@vue/compiler-sfc": "^3.5.0",
+    "vue-tsc": "^3.0.0",
+    "typescript-vue": "npm:typescript@^5.9.3",
+    "playwright": "^1.55.0"
+  }
+}

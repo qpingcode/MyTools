@@ -205,7 +205,7 @@ public partial class App
         _notifyIcon.ContextMenu.Items.Add(themeMenu);
 
         var exitItem = new MenuItem { Header = GetCaption("Exit", "Exit") };
-        exitItem.Click += (_, _) => Current.Shutdown();
+        exitItem.Click += async (_, _) => await ExitAfterPluginConfirmationAsync();
         _notifyIcon.ContextMenu.Items.Add(exitItem);
     }
 
@@ -214,6 +214,26 @@ public partial class App
         var updateService = ServiceLocator.GetRequiredService<IUpdateService>();
         var window = new UpdateCheckWindow(updateService);
         window.Show();
+    }
+
+    private bool confirmingPluginExit;
+
+    private async Task ExitAfterPluginConfirmationAsync()
+    {
+        if (confirmingPluginExit) return;
+        confirmingPluginExit = true;
+        try
+        {
+            var pluginWindows = Current.Windows.OfType<PluginWindow>().ToArray();
+            foreach (var window in pluginWindows)
+            {
+                window.Activate();
+                if (!await window.ConfirmCloseAsync()) return;
+            }
+            foreach (var window in pluginWindows) window.CloseAfterConfirmation();
+            Current.Shutdown();
+        }
+        finally { confirmingPluginExit = false; }
     }
     
     private void OpenConfigFolder_Click(object? sender, EventArgs e)

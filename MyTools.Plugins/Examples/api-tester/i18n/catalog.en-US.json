@@ -1,0 +1,2219 @@
+{
+  "schemaVersion": 1,
+  "scope": "plugin:api-tester",
+  "pluginId": "api-tester",
+  "sourceLocale": "en-US",
+  "entries": [
+    {
+      "key": "Plugin.ApiTester.Name",
+      "defaultValue": "API Tester",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 6,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "API 测试"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Subtitle",
+      "defaultValue": "Debug HTTP requests and run simple API tests",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 11,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "调试 HTTP 请求并执行简单 API 测试"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.SelectFile",
+      "defaultValue": "Select a file",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 16,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "选择文件"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Collections",
+      "defaultValue": "Collections",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 21,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "集合"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Environments",
+      "defaultValue": "Environments",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 26,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "环境"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.NewCollection",
+      "defaultValue": "New collection",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 31,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "新建集合"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.NewRequest",
+      "defaultValue": "New request",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 36,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "新建请求"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Rename",
+      "defaultValue": "Rename",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 41,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "重命名"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Delete",
+      "defaultValue": "Delete",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 46,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "删除"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Duplicate",
+      "defaultValue": "Duplicate",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 51,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "复制"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Up",
+      "defaultValue": "Move up",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 56,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "上移"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Down",
+      "defaultValue": "Move down",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 58,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "下移"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Search",
+      "defaultValue": "Search name or URL",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 63,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "搜索名称或 URL"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.NoEnvironment",
+      "defaultValue": "No environment",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 68,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "无环境"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.NewEnvironment",
+      "defaultValue": "New environment",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 73,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "新建环境"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.EditEnvironment",
+      "defaultValue": "Edit environment",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 78,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "编辑环境"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ClearCookies",
+      "defaultValue": "Clear cookies",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 83,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "清除 Cookie"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Cookies",
+      "defaultValue": "Cookies",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 88,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "Cookie"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.CookiesHint",
+      "defaultValue": "Cookies are kept for this environment until you clear them or close the plugin.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 93,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "Cookie 按当前环境保存在会话中，清除或关闭插件后不会保留。"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.CookiesEmpty",
+      "defaultValue": "No cookies stored for the current environment.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 99,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "当前环境没有 Cookie。"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.CookiePath",
+      "defaultValue": "Path",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 104,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "路径"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.CookieExpires",
+      "defaultValue": "Expires",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 109,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "过期时间"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.CookieSession",
+      "defaultValue": "Session",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 114,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "会话"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.CookieHttpOnly",
+      "defaultValue": "HttpOnly",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 119,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "HttpOnly"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.CookieSecure",
+      "defaultValue": "Secure",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 124,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "Secure"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.CookieYes",
+      "defaultValue": "Yes",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 129,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "是"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.CookieNo",
+      "defaultValue": "No",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 134,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "否"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Defaults",
+      "defaultValue": "Default execution settings",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 88,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "默认执行设置"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Save",
+      "defaultValue": "Save",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 93,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "保存"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Cancel",
+      "defaultValue": "Cancel",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 95,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "取消"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Discard",
+      "defaultValue": "Discard",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 100,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "放弃"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Close",
+      "defaultValue": "Close",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 105,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "关闭"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Send",
+      "defaultValue": "Send",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 107,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "发送"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Run",
+      "defaultValue": "Run collection / selected requests",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 109,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "运行集合 / 所选请求"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.StopOnFailure",
+      "defaultValue": "Stop on failure",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 114,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "失败后停止"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Method",
+      "defaultValue": "Method",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 119,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "方法"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Url",
+      "defaultValue": "URL",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 124,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "URL"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Params",
+      "defaultValue": "Query parameters",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 126,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "查询参数"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Headers",
+      "defaultValue": "Request headers",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 131,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "请求头"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Authentication",
+      "defaultValue": "Authentication",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 136,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "认证"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Body",
+      "defaultValue": "Request body",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 141,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "请求体"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Assertions",
+      "defaultValue": "Assertions",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 146,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "断言"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Extractions",
+      "defaultValue": "JSON variable extraction",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 151,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "JSON 变量提取"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Settings",
+      "defaultValue": "Execution settings",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 156,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "执行设置"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Enabled",
+      "defaultValue": "Enabled",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 161,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "启用"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Key",
+      "defaultValue": "Name",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 166,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "名称"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Value",
+      "defaultValue": "Value",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 168,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "值"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Add",
+      "defaultValue": "Add",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 170,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "添加"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.NoEquals",
+      "defaultValue": "No equals sign",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 172,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "无等号"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.File",
+      "defaultValue": "File",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 177,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "文件"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ContentType",
+      "defaultValue": "Content-Type",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 179,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "Content-Type"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.None",
+      "defaultValue": "None",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 184,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "无"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Json",
+      "defaultValue": "JSON",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 186,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "JSON"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Text",
+      "defaultValue": "Raw text",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 188,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "原始文本"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Form",
+      "defaultValue": "URL-encoded form",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 193,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "URL 编码表单"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Multipart",
+      "defaultValue": "Multipart form",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 198,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "Multipart 表单"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Binary",
+      "defaultValue": "Binary file",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 203,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "二进制文件"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Basic",
+      "defaultValue": "Basic Auth",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 208,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "Basic 认证"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Bearer",
+      "defaultValue": "Bearer Token",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 213,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "Bearer 令牌"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ApiKey",
+      "defaultValue": "API Key",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 218,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "API Key"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Username",
+      "defaultValue": "Username",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 223,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "用户名"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Password",
+      "defaultValue": "Password",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 228,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "密码"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Token",
+      "defaultValue": "Token",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 233,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "令牌"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Location",
+      "defaultValue": "Location",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 235,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "位置"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.HeaderLocation",
+      "defaultValue": "Header",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 240,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "请求头"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.QueryLocation",
+      "defaultValue": "Query parameter",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 245,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "查询参数"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Format",
+      "defaultValue": "Format JSON",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 250,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "格式化 JSON"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Timeout",
+      "defaultValue": "Timeout (milliseconds)",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 255,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "超时（毫秒）"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Follow",
+      "defaultValue": "Follow redirects",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 260,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "跟随重定向"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.VerifyTls",
+      "defaultValue": "Verify TLS certificate",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 265,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "校验 TLS 证书"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Override",
+      "defaultValue": "Override defaults for this request",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 270,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "此请求覆盖默认设置"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Path",
+      "defaultValue": "JSON Pointer / header name",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 275,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "JSON Pointer / 请求头名"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Expected",
+      "defaultValue": "Expected value (JSON for JSON equality)",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 280,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "预期值（JSON 值比较需填写 JSON）"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Actual",
+      "defaultValue": "Actual",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 285,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "实际值"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.VariableName",
+      "defaultValue": "Target variable name",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 290,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "目标变量名"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Status",
+      "defaultValue": "Status code",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 295,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "状态码"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Time",
+      "defaultValue": "Response time",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 300,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "响应时间"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.HeaderExists",
+      "defaultValue": "Header exists",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 305,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "请求头存在"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Contains",
+      "defaultValue": "Text contains",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 310,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "文本包含"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.JsonExists",
+      "defaultValue": "JSON field exists",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 315,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "JSON 字段存在"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.JsonValue",
+      "defaultValue": "JSON value equals",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 320,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "JSON 值相等"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.JsonType",
+      "defaultValue": "JSON type",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 325,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "JSON 类型"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Response",
+      "defaultValue": "Response",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 330,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "响应"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Raw",
+      "defaultValue": "Raw",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 335,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "原始"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Formatted",
+      "defaultValue": "Formatted JSON",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 337,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "格式化 JSON"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Copy",
+      "defaultValue": "Copy body",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 342,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "复制正文"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.CopyHeaders",
+      "defaultValue": "Copy headers",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 347,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "复制响应头"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.SaveBody",
+      "defaultValue": "Save body to file",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 352,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "保存正文到文件"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.RequestHeaders",
+      "defaultValue": "Effective request headers",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 357,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "实际发送的请求头"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ResponseHeaders",
+      "defaultValue": "Response headers",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 362,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "响应头"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Results",
+      "defaultValue": "Run results",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 367,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "运行结果"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Complete",
+      "defaultValue": "Complete",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 372,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "完成"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Failed",
+      "defaultValue": "Failed",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 377,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "执行失败"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Cancelled",
+      "defaultValue": "Cancelled",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 382,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "已取消"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Skipped",
+      "defaultValue": "Skipped",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 387,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "已跳过"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Passed",
+      "defaultValue": "Passed",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 392,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "测试通过"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.TestFailed",
+      "defaultValue": "Test failed",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 397,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "测试失败"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Untested",
+      "defaultValue": "Untested",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 402,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "未测试"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.NotApplicable",
+      "defaultValue": "Not applicable",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 407,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "不适用"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Ready",
+      "defaultValue": "Create or select a request to begin",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 412,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "新建或选择请求开始调试"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Running",
+      "defaultValue": "Running: {{name}}",
+      "placeholders": [
+        "name"
+      ],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 417,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "正在运行：{{name}}"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Progress",
+      "defaultValue": "{{done}} / {{total}} requests · {{elapsed}} ms",
+      "placeholders": [
+        "done",
+        "total",
+        "elapsed"
+      ],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 422,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "{{done}} / {{total}} 个请求 · {{elapsed}} 毫秒"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Summary",
+      "defaultValue": "HTTP {{status}} · {{elapsed}} ms · {{size}} bytes · {{time}}",
+      "placeholders": [
+        "status",
+        "elapsed",
+        "size",
+        "time"
+      ],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 427,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "HTTP {{status}} · {{elapsed}} 毫秒 · {{size}} 字节 · {{time}}"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.PreviewLimit",
+      "defaultValue": "Preview limited to 1 MiB; complete body remains available while cached.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 433,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "预览限为 1 MiB；缓存未释放时可使用完整正文。"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.BinaryResponse",
+      "defaultValue": "Binary response. Save the body to inspect it.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 439,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "二进制响应，请保存正文后查看。"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ContentTypeWarning",
+      "defaultValue": "Content-Type differs from the body type.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 444,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "Content-Type 与正文类型不一致。"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Unsaved",
+      "defaultValue": "Save changes to {{name}}?",
+      "placeholders": [
+        "name"
+      ],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 449,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "保存对 {{name}} 的修改？"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.DeleteCollection",
+      "defaultValue": "Delete this collection and its {{count}} requests?",
+      "placeholders": [
+        "count"
+      ],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 454,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "删除此集合及其中 {{count}} 个请求？"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.DeleteItem",
+      "defaultValue": "Delete {{name}}?",
+      "placeholders": [
+        "name"
+      ],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 459,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "删除 {{name}}？"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ReplaceParams",
+      "defaultValue": "Editing the URL will remove disabled parameters. Continue?",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 464,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "修改 URL 将移除禁用参数，是否继续？"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.NamePrompt",
+      "defaultValue": "Enter a name",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 470,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "请输入名称"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.TabLimit",
+      "defaultValue": "Close a tab before opening another (maximum 12).",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 475,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "请先关闭一个标签页（最多 12 个）。"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.SaveTarget",
+      "defaultValue": "Choose a collection to save this request",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 480,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "请选择保存此请求的集合"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ConfigurationError",
+      "defaultValue": "Invalid request configuration",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 485,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "请求配置无效"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.VariableError",
+      "defaultValue": "Undefined variable",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 490,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "变量未定义"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.FileError",
+      "defaultValue": "File missing or unreadable",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 495,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "文件不存在或不可读取"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.DnsError",
+      "defaultValue": "DNS lookup failed",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 500,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "DNS 解析失败"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ConnectionError",
+      "defaultValue": "Connection or response reception failed",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 505,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "连接或响应接收失败"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.TlsError",
+      "defaultValue": "TLS certificate validation failed",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 510,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "TLS 证书校验失败"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.TimeoutError",
+      "defaultValue": "Request timed out",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 515,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "请求超时"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.CancelledError",
+      "defaultValue": "Request cancelled",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 520,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "请求已取消"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.DecodeError",
+      "defaultValue": "Response decoding failed",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 525,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "响应解码失败"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.BodyLimitError",
+      "defaultValue": "Response body exceeds 20 MiB",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 530,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "响应正文超过 20 MiB"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.RedirectLimitError",
+      "defaultValue": "More than 10 redirects",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 535,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "重定向超过 10 次"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ExtractionError",
+      "defaultValue": "JSON variable extraction failed",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 540,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "JSON 变量提取失败"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.StorageError",
+      "defaultValue": "Could not load or save workspace",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 545,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "无法读取或保存工作区"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.CacheError",
+      "defaultValue": "Response cache expired or too many active runs",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 550,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "响应缓存已释放或活动运行过多"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.TransportError",
+      "defaultValue": "Could not communicate with the plugin",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 555,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "无法与插件通信"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.BadJson",
+      "defaultValue": "Invalid JSON",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 560,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "JSON 无效"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Pass",
+      "defaultValue": "Pass",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 565,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "通过"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Fail",
+      "defaultValue": "Fail",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 567,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "失败"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Saved",
+      "defaultValue": "Saved",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 569,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "已保存"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.NoResults",
+      "defaultValue": "No response yet",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 571,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "尚无响应"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.SaveAll",
+      "defaultValue": "Save all and close",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 576,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "全部保存并关闭"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Exit",
+      "defaultValue": "Close workspace",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 581,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "关闭工作区"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.UnsavedAll",
+      "defaultValue": "There are unsaved requests. Choose how to close.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 586,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "存在未保存请求，请选择关闭方式。"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.CloseWorkspace",
+      "defaultValue": "Close workspace",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 591,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "关闭工作区"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.FileFilter",
+      "defaultValue": "All files (*.*)|*.*",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 596,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "所有文件 (*.*)|*.*"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.FileInfo",
+      "defaultValue": "{{name}} · {{size}} bytes · {{type}}",
+      "placeholders": [
+        "name",
+        "size",
+        "type"
+      ],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 601,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "{{name}} · {{size}} 字节 · {{type}}"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Continue",
+      "defaultValue": "Continue",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 606,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "继续"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Missing",
+      "defaultValue": "Missing field",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 611,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "字段缺失"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ResizeSidebar",
+      "defaultValue": "Drag to resize sidebar; double-click to reset",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 616,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "拖动调整侧栏宽度；双击恢复默认"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ResponseBody",
+      "defaultValue": "Body",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 621,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "响应体"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ResizeRequestResponse",
+      "defaultValue": "Drag to resize request and response panes; double-click to reset",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 621,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "拖动调整请求和响应区域高度；双击恢复默认"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.VariableNotInEnvironment",
+      "defaultValue": "Variable is not defined or enabled in the current environment",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 626,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "当前环境未定义或未启用此变量"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.VariableEmptyValue",
+      "defaultValue": "(empty value)",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 630,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "（空值）"
+      }
+    }
+  ]
+}
