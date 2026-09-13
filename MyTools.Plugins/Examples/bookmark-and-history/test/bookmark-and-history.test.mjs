@@ -8,6 +8,7 @@ import {
   asBool,
   isSubsequence,
   itemMatches,
+  itemPriority,
   parseChromiumBookmarksJson,
   parseFirefoxProfilesIni,
   parseSettings,
@@ -199,4 +200,19 @@ test("readSqliteQuery casts Chrome-sized timestamps to text", async () => {
   assert.equal(rows[0].url, "https://github.com/");
   assert.equal(String(rows[0].last_visit_time), "13428031999593552");
   fs.unlinkSync(file);
+});
+
+test("browser titles support unified short-query recall and literal multiword matching", () => {
+  const base = { browser: "chrome", kind: "bookmark", url: "https://example.com/", folderPath: "", profileName: "", visitCount: 0, lastVisit: 0 };
+  for (const [query, title] of [["qidong", "启动开发环境"], ["qdkf", "启动开发环境"],
+    ["orfc", "Open Rider from Clipboard"], ["manager device", "Device Manager"], ["ＤＥＶ", "dev"]])
+    assert.equal(itemMatches({ ...base, title }, query), true, query);
+  const longQuery = "abcdefghijklmnop";
+  assert.equal(itemMatches({ ...base, title: "a-b-c-d-e-f-g-h-i-j-k-l-m-n-o-p" }, longQuery), false);
+  assert.equal(itemMatches({ ...base, title: longQuery }, longQuery), true);
+  assert.equal(itemMatches({ ...base, title: "a--b c--d" }, "ab cd"), false);
+});
+test("new browser title matches get the existing fuzzy ranking below exact matches", () => {
+  const base = { browser: "chrome", kind: "bookmark", url: "https://example.com/", folderPath: "", profileName: "", visitCount: 0, lastVisit: 0 };
+  assert.ok(itemPriority({ ...base, title: "qidong" }, "qidong") > itemPriority({ ...base, title: "启动开发环境" }, "qidong"));
 });

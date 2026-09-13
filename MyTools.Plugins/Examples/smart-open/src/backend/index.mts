@@ -1,3 +1,4 @@
+import { itemMatches } from "./search.mjs";
 import { execFile } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -341,12 +342,6 @@ function hostExecute(filePath: string, argument: string, message: string) {
 
 function invalidClipboardMessage(reason: string, rawClipboard: string): string {
   return `${reason} Clipboard: "${displayClipboardSnippet(rawClipboard)}"`;
-}
-
-function itemMatches(item: { title: string; subtitle: string }, query: string): boolean {
-  if (!query) return true;
-  const q = query.toLowerCase();
-  return item.title.toLowerCase().includes(q) || item.subtitle.toLowerCase().includes(q);
 }
 
 function fail(message: string): never {

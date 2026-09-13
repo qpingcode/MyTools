@@ -1,44 +1,12 @@
 import { createPlugin, HostAction, type PluginSearchParams } from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
-import { isSubsequence } from "@qping/plugin-bus/search";
-
-type PluginListItem = {
-  pluginId?: string;
-  name?: string;
-  aliases?: string[];
-  hotKey?: string;
-};
+import { matches, priority, type PluginListItem } from "./search.mjs";
 
 type PluginListResponse = {
   plugins?: PluginListItem[];
 };
 
 const plugin = createPlugin();
-
-function matches(item: PluginListItem, query: string): boolean {
-  if (!query) return true;
-  const name = item.name || "";
-  const pluginId = item.pluginId || "";
-  const hotKey = item.hotKey || "";
-  const aliases = Array.isArray(item.aliases) ? item.aliases : [];
-  if (name.toLowerCase().includes(query) || isSubsequence(query, name)) return true;
-  if (pluginId.toLowerCase().includes(query)) return true;
-  if (hotKey && hotKey.toLowerCase().includes(query)) return true;
-  return aliases.some((alias) => {
-    const text = String(alias || "");
-    return text.toLowerCase().includes(query) || isSubsequence(query, text);
-  });
-}
-
-function priority(item: PluginListItem, query: string): number {
-  if (!query) return (item.hotKey || "").trim() ? 90 : 80;
-  const name = (item.name || "").toLowerCase();
-  const aliases = (item.aliases || []).map((alias) => String(alias || "").toLowerCase());
-  if (name === query) return 100;
-  if (name.startsWith(query) || aliases.some((alias) => alias === query || alias.startsWith(query))) return 95;
-  if (name.includes(query) || aliases.some((alias) => alias.includes(query))) return 85;
-  return 70;
-}
 
 function displayOrDash(value: string): string {
   return value.trim() ? value.trim() : "—";

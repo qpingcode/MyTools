@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { createPlugin, HostAction, type PluginSearchParams } from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
-import { isSubsequence } from "@qping/plugin-bus/search";
+import { matches } from "./search.mjs";
 
 const execFileAsync = promisify(execFile);
 const CacheTtlMs = 5000;
@@ -136,15 +136,6 @@ function displaySubtitle(processInfo: ProcessInfo): string {
     }));
   }
   return parts.join(" | ");
-}
-
-function matches(processInfo: ProcessInfo, query: string): boolean {
-  if (!query) return true;
-  var asInt = Number.parseInt(query, 10);
-  if (String(asInt) === query && (processInfo.id === asInt || processInfo.port === asInt)) {
-    return true;
-  }
-  return isSubsequence(query, processInfo.name);
 }
 
 async function search(params: PluginSearchParams) {

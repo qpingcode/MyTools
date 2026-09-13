@@ -1,12 +1,6 @@
 import { createPlugin, HostAction, type PluginSearchParams } from "@qping/plugin-bus/node";
 import { mytoolsI18n } from "@qping/plugin-bus/i18n";
-import { isSubsequence } from "@qping/plugin-bus/search";
-
-type Phrase = {
-  trigger?: string;
-  content?: string;
-  timestamp?: string;
-};
+import { priority, matches, type Phrase } from "./search.mjs";
 
 type OwnConfiguration = {
   values?: {
@@ -15,29 +9,13 @@ type OwnConfiguration = {
 };
 
 const plugin = createPlugin();
+const PreviewMaxLength = 80;
+const PreviewSuffix = "...";
+const PreviewTextLength = PreviewMaxLength - PreviewSuffix.length;
 
 function preview(text: string): string {
   const compact = text.replace(/\s+/g, " ").trim();
-  return compact.length > 80 ? `${compact.slice(0, 77)}...` : compact;
-}
-
-function priority(trigger: string, content: string, query: string): number {
-  if (trigger.startsWith(query)) return 100;
-  if (trigger.includes(query)) return 90;
-  if (isSubsequence(query, trigger)) return 80;
-  if (content.includes(query)) return 70;
-  if (isSubsequence(query, content)) return 60;
-  return 0;
-}
-
-function matches(phrase: Phrase, query: string, showAll: boolean): boolean {
-  const trigger = (phrase.trigger || "").toLowerCase();
-  const content = (phrase.content || "").toLowerCase();
-  if (!query) return showAll;
-  return trigger.includes(query)
-    || content.includes(query)
-    || isSubsequence(query, trigger)
-    || isSubsequence(query, content);
+  return compact.length > PreviewMaxLength ? `${compact.slice(0, PreviewTextLength)}${PreviewSuffix}` : compact;
 }
 
 async function loadPhrases(): Promise<Phrase[]> {
@@ -61,7 +39,7 @@ async function search(params: PluginSearchParams) {
   }
 
   const items = phrases
-    .filter((phrase) => matches(phrase, query, showAll))
+    .filter((phrase) => matches(phrase, query, showAll, (phrase.trigger || "").trim() || preview(phrase.content || "")))
     .map((phrase, index) => {
       const trigger = (phrase.trigger || "").trim();
       const content = phrase.content || "";
@@ -70,7 +48,7 @@ async function search(params: PluginSearchParams) {
         id: `quick-text:${index}:${trigger}`,
         title,
         subtitle: preview(content),
-        priority: query ? priority(trigger.toLowerCase(), content.toLowerCase(), query) : 80,
+        priority: priority(title, content, query),
         icon: { kind: "emoji", value: "💬" },
         content,
         actions: ["paste"],

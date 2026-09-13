@@ -64,6 +64,7 @@ public sealed class GlobalResultRankerTests
     [TestCase("manager", "Device Manager", SearchMatchTier.Prefix)]
     [TestCase("vice", "Device Manager", SearchMatchTier.Fuzzy)]
     [TestCase("gthb", "GitHub", SearchMatchTier.Fuzzy)]
+    [TestCase("orfc", "Open Rider from Clipboard", SearchMatchTier.Fuzzy)]
     [TestCase("qidong", "启动开发环境", SearchMatchTier.Fuzzy)]
     [TestCase("qdkf", "启动开发环境", SearchMatchTier.Fuzzy)]
     [TestCase("manager device", "Device Manager", SearchMatchTier.Fuzzy)]
