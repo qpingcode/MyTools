@@ -66,6 +66,10 @@
   <data name="Configuration.General.Language.Description" xml:space="preserve"><value>选择应用程序的显示语言</value></data>
   <data name="Configuration.General.SearchHotKey.Title" xml:space="preserve"><value>搜索热键</value></data>
   <data name="Configuration.General.SearchHotKey.Description" xml:space="preserve"><value>打开 MyTools 搜索窗口的快捷键</value></data>
+  <data name="Configuration.General.PinToggleHotKey.Title" xml:space="preserve"><value>固定窗口热键</value></data>
+  <data name="Configuration.General.PinToggleHotKey.Description" xml:space="preserve"><value>切换当前插件窗口的图钉状态</value></data>
+  <data name="Configuration.General.DetachPluginWindowHotKey.Title" xml:space="preserve"><value>分离插件窗口热键</value></data>
+  <data name="Configuration.General.DetachPluginWindowHotKey.Description" xml:space="preserve"><value>从搜索窗口打开当前插件的独立窗口</value></data>
   <data name="Configuration.General.AutoStart.Title" xml:space="preserve"><value>开机自启</value></data>
   <data name="Configuration.General.AutoStart.Description" xml:space="preserve"><value>系统启动时自动运行 MyTools</value></data>
   <data name="Configuration.General.SearchDelay.Title" xml:space="preserve"><value>搜索延迟</value></data>
@@ -257,4 +261,14 @@
   <data name="Plugin.applications.SearchScopes.Directory" xml:space="preserve">
     <value>目录</value>
   </data>
+  <data name="PluginWindow.Minimize" xml:space="preserve"><value>最小化</value></data>
+  <data name="PluginWindow.Maximize" xml:space="preserve"><value>最大化</value></data>
+  <data name="PluginWindow.Restore" xml:space="preserve"><value>还原</value></data>
+  <data name="PluginWindow.Close" xml:space="preserve"><value>关闭</value></data>
+  <data name="PluginWindow.Pin" xml:space="preserve"><value>固定</value></data>
+  <data name="PluginWindow.Unpin" xml:space="preserve"><value>取消固定</value></data>
+  <data name="PluginWindow.HideToDock" xml:space="preserve"><value>隐藏到停靠栏</value></data>
+  <data name="PluginDock.Restore" xml:space="preserve"><value>显示 {{name}}</value></data>
+  <data name="PluginDock.Hide" xml:space="preserve"><value>隐藏 {{name}}</value></data>
+  <data name="PluginDock.DragHandle" xml:space="preserve"><value>移动停靠栏</value></data>
 </root>

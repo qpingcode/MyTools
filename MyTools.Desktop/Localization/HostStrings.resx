@@ -66,6 +66,10 @@
   <data name="Configuration.General.Language.Description" xml:space="preserve"><value>Select the application display language</value></data>
   <data name="Configuration.General.SearchHotKey.Title" xml:space="preserve"><value>Search hotkey</value></data>
   <data name="Configuration.General.SearchHotKey.Description" xml:space="preserve"><value>Keyboard shortcut that opens MyTools search</value></data>
+  <data name="Configuration.General.PinToggleHotKey.Title" xml:space="preserve"><value>Pin window hotkey</value></data>
+  <data name="Configuration.General.PinToggleHotKey.Description" xml:space="preserve"><value>Keyboard shortcut that pins or unpins the active plugin window</value></data>
+  <data name="Configuration.General.DetachPluginWindowHotKey.Title" xml:space="preserve"><value>Detach plugin window hotkey</value></data>
+  <data name="Configuration.General.DetachPluginWindowHotKey.Description" xml:space="preserve"><value>Keyboard shortcut that opens the current search plugin in its own window</value></data>
   <data name="Configuration.General.AutoStart.Title" xml:space="preserve"><value>Auto start</value></data>
   <data name="Configuration.General.AutoStart.Description" xml:space="preserve"><value>Run MyTools when the system starts</value></data>
   <data name="Configuration.General.SearchDelay.Title" xml:space="preserve"><value>Search delay</value></data>
@@ -257,4 +261,14 @@
   <data name="Plugin.applications.SearchScopes.Directory" xml:space="preserve">
     <value>Directory</value>
   </data>
+  <data name="PluginWindow.Minimize" xml:space="preserve"><value>Minimize</value></data>
+  <data name="PluginWindow.Maximize" xml:space="preserve"><value>Maximize</value></data>
+  <data name="PluginWindow.Restore" xml:space="preserve"><value>Restore</value></data>
+  <data name="PluginWindow.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="PluginWindow.Pin" xml:space="preserve"><value>Pin</value></data>
+  <data name="PluginWindow.Unpin" xml:space="preserve"><value>Unpin</value></data>
+  <data name="PluginWindow.HideToDock" xml:space="preserve"><value>Hide to dock</value></data>
+  <data name="PluginDock.Restore" xml:space="preserve"><value>Show {{name}}</value></data>
+  <data name="PluginDock.Hide" xml:space="preserve"><value>Hide {{name}}</value></data>
+  <data name="PluginDock.DragHandle" xml:space="preserve"><value>Move dock</value></data>
 </root>

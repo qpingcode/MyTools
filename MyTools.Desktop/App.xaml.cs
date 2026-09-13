@@ -227,6 +227,7 @@ public partial class App
             var pluginWindows = Current.Windows.OfType<PluginWindow>().ToArray();
             foreach (var window in pluginWindows)
             {
+                window.EnsureShown();
                 window.Activate();
                 if (!await window.ConfirmCloseAsync()) return;
             }

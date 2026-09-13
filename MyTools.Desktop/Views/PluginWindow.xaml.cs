@@ -9,6 +9,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MyTools.Desktop.Components;
 using MyTools.Desktop.Services;
 using MyTools.Desktop.Utils;
+using MyTools.Common;
+using MyTools.Common.Plugins;
 using MyTools.Desktop.ViewModels;
 using MyTools.Plugins;
 using MyTools.Plugins.NodePlugins;
@@ -26,8 +28,15 @@ public partial class PluginWindow
 {
     private const int WmGetMinMaxInfo = 0x0024;
     private const uint MonitorDefaultToNearest = 0x00000002;
+    public static readonly DependencyProperty IsPinnedProperty = DependencyProperty.Register(
+        nameof(IsPinned),
+        typeof(bool),
+        typeof(PluginWindow),
+        new PropertyMetadata(false));
+
     private readonly PluginViewModel viewModel;
     private readonly ILogger<PluginWindow> logger;
+    private readonly PluginDockManager? dockManager;
     private HwndSource? hwndSource;
     private int activationAttempt;
     private bool closeConfirmed;
@@ -39,6 +48,14 @@ public partial class PluginWindow
     }
 
     public PluginWindow(PluginViewModel viewModel, ILogger<PluginWindow> logger)
+        : this(viewModel, logger, null)
+    {
+    }
+
+    public PluginWindow(
+        PluginViewModel viewModel,
+        ILogger<PluginWindow> logger,
+        PluginDockManager? dockManager)
     {
         InitializeComponent();
         MinWidth = PluginWindowLayoutMetrics.MinimumWindowWidth;
@@ -47,6 +64,7 @@ public partial class PluginWindow
 
         this.viewModel = viewModel;
         this.logger = logger;
+        this.dockManager = dockManager;
         DataContext = viewModel;
         viewModel.CloseRequested += ViewModel_OnCloseRequested;
 
@@ -55,10 +73,20 @@ public partial class PluginWindow
         Closing += Window_OnClosing;
         Loaded += PluginWindow_Loaded;
         SourceInitialized += Window_OnSourceInitialized;
+        IsVisibleChanged += Window_OnIsVisibleChanged;
+    }
+
+    public bool IsPinned
+    {
+        get => (bool)GetValue(IsPinnedProperty);
+        private set => SetValue(IsPinnedProperty, value);
     }
 
     public string? PluginId { get; private set; }
     internal bool HasPluginContent => viewModel.CurrentViewModel != null;
+    internal string PluginDisplayName => viewModel.PluginName ?? PluginId ?? string.Empty;
+    internal Icon PluginIcon { get; private set; } = MdiIcon.PluginFallback;
+    internal bool IsWindowOpen => IsVisible && WindowState != WindowState.Minimized;
 
     /// <summary>
     /// 设置插件并应用详情上下文。窗口首次创建与重复刷新（复用）时都会调用。
@@ -72,6 +100,7 @@ public partial class PluginWindow
     internal void PreparePluginShell(NodePlugin plugin, NodePluginDetailContext? context)
     {
         PluginId = plugin.PluginId.Value;
+        PluginIcon = plugin.GetIcon();
         PluginStatusBar.Visibility = plugin.ShowStatusBarInPluginWindow
             ? Visibility.Visible
             : Visibility.Collapsed;
@@ -85,11 +114,7 @@ public partial class PluginWindow
     public async Task ActivatePluginAsync(bool requestForeground = true)
     {
         var attempt = ++activationAttempt;
-        if (WindowState == WindowState.Minimized)
-        {
-            // Synchronous WPF restore preserves RestoreToMaximized before Activate/Focus run.
-            WindowState = WindowState.Normal;
-        }
+        EnsureShown();
 
         if (requestForeground) ActivateWindow();
 
@@ -107,8 +132,62 @@ public partial class PluginWindow
 
     internal void ActivateShellFromHotKey()
     {
-        if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
+        EnsureShown();
         WindowForeground.TryActivateFromHotKey(this, logger);
+    }
+
+    internal void EnsureShown()
+    {
+        if (WindowState == WindowState.Minimized)
+        {
+            // Synchronous WPF restore preserves RestoreToMaximized before Activate/Focus run.
+            WindowState = WindowState.Normal;
+        }
+
+        if (!IsVisible)
+        {
+            Show();
+        }
+    }
+
+    internal void RestoreFromDock()
+    {
+        EnsureShown();
+        _ = ActivatePluginAsync();
+    }
+
+    internal void HideFromDock()
+    {
+        Hide();
+    }
+
+    internal void TogglePinned()
+    {
+        SetPinned(!IsPinned);
+    }
+
+    internal void SetPinned(bool pinned)
+    {
+        if (IsPinned == pinned)
+        {
+            return;
+        }
+
+        IsPinned = pinned;
+        if (IsPinned)
+        {
+            dockManager?.Dock(this);
+            return;
+        }
+
+        dockManager?.Remove(this);
+    }
+
+    internal void BindPluginIdentity(string pluginId, string displayName, Icon? icon = null)
+    {
+        PluginId = pluginId;
+        viewModel.PluginName = displayName;
+        PluginIcon = icon ?? MdiIcon.PluginFallback;
     }
 
     private async void PluginWindow_Loaded(object sender, RoutedEventArgs e)
@@ -182,6 +261,8 @@ public partial class PluginWindow
         Closed -= Window_OnClosed;
         Closing -= Window_OnClosing;
         Loaded -= PluginWindow_Loaded;
+        IsVisibleChanged -= Window_OnIsVisibleChanged;
+        dockManager?.Remove(this);
         viewModel.Dispose();
     }
 
@@ -206,6 +287,12 @@ public partial class PluginWindow
     private async void Window_OnClosing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
         if (closeConfirmed) return;
+        if (TryHidePinnedWindow())
+        {
+            e.Cancel = true;
+            return;
+        }
+
         e.Cancel = true;
         if (confirmingClose) return;
         confirmingClose = true;
@@ -215,6 +302,27 @@ public partial class PluginWindow
             if (await ConfirmCloseAsync()) CloseAfterConfirmation();
         }
         finally { confirmingClose = false; }
+    }
+
+    internal bool TryHidePinnedWindow()
+    {
+        if (!IsPinned || closeConfirmed)
+        {
+            return false;
+        }
+
+        Hide();
+        return true;
+    }
+
+    private void Window_OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        dockManager?.SyncOpenState(this);
+    }
+
+    private void PinButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        TogglePinned();
     }
 
     private void Window_OnSourceInitialized(object? sender, EventArgs e)
@@ -227,6 +335,7 @@ public partial class PluginWindow
     private void Window_OnStateChanged(object? sender, EventArgs e)
     {
         ApplyWindowChromeState();
+        dockManager?.SyncOpenState(this);
     }
 
     private void MinimizeButton_OnClick(object sender, RoutedEventArgs e)

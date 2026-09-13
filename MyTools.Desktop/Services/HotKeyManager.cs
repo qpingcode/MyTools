@@ -12,6 +12,8 @@ namespace MyTools.Desktop.Services
         private int _copyAndSearchHotKeyId = -1;
         private int _clipboardHotKeyId = -1;
         private int _clipboardSequentialPasteHotKeyId = -1;
+        private int _pinToggleHotKeyId = -1;
+        private int _detachPluginWindowHotKeyId = -1;
         private readonly ILogger<HotKeyManager> _logger;
         private readonly HotKeyMessageHandler _hotKeyMessageHandler;
 
@@ -116,6 +118,41 @@ namespace MyTools.Desktop.Services
         }
 
       
+        public void RegisterPinToggleHotKey(HotKeyConfig? hotKey, Action callback)
+        {
+            RegisterManagedHotKey(ref _pinToggleHotKeyId, hotKey, callback, "Pin toggle");
+        }
+
+        public void RegisterDetachPluginWindowHotKey(HotKeyConfig? hotKey, Action callback)
+        {
+            RegisterManagedHotKey(ref _detachPluginWindowHotKeyId, hotKey, callback, "Detach plugin window");
+        }
+
+        private void RegisterManagedHotKey(ref int id, HotKeyConfig? hotKey, Action callback, string name)
+        {
+            if (id != -1)
+            {
+                UnregisterHotKey(id);
+                id = -1;
+            }
+
+            if (hotKey == null || hotKey.Key == Key.None || hotKey.Modifiers == ModifierKeys.None)
+            {
+                _logger.LogInformation("{Name} hotkey is disabled.", name);
+                return;
+            }
+
+            try
+            {
+                id = RegisterHotKey(hotKey.Key, hotKey.Modifiers, callback);
+                _logger.LogInformation("Registered {Name} hotkey {HotKey}.", name, hotKey);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "Cannot register {Name} hotkey {HotKey}.", name, hotKey);
+            }
+        }
+
         public void UnregisterHotKey(int id)
         {
             _hotKeyMessageHandler.UnregisterCallback(id);

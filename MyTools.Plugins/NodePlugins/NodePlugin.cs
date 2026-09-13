@@ -87,6 +87,13 @@ public sealed class NodePlugin : IPlugin, IDisposable
         return manifest.NameMessage.Resolve(PluginLocalization);
     }
 
+    public Icon GetIcon()
+    {
+        return string.IsNullOrWhiteSpace(manifest.Icon)
+            ? MdiIcon.PluginFallback
+            : new MdiIcon(manifest.Icon);
+    }
+
     /// <summary>
     /// Optional plugin-level description. Settings copy comes from configuration label/description.
     /// </summary>

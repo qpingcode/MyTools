@@ -11,6 +11,7 @@ namespace MyTools.Desktop.Services;
 public sealed class WindowPlacementService
 {
     public const string SearchKey = "search";
+    public const string PluginDockKey = "plugin-dock";
     private static readonly TimeSpan SaveDebounce = TimeSpan.FromMilliseconds(400);
 
     private readonly WindowPlacementStore store;
@@ -60,6 +61,44 @@ public sealed class WindowPlacementService
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Failed to restore window placement for {Key}.", key);
+        }
+    }
+
+    /// <summary>
+    /// Restores only the saved origin. Size stays with the window so a growing or
+    /// shrinking stack does not reuse a previous width and height.
+    /// </summary>
+    internal void RestorePosition(
+        Window window,
+        string key,
+        Func<DipRect, double, double, DipRect> fallback)
+    {
+        try
+        {
+            var target = DisplayWorkAreas.FromCursor() ?? DisplayWorkAreas.Primary();
+            if (target is null)
+            {
+                return;
+            }
+
+            var width = ResolveLaidOutSize(window.ActualWidth, window.Width, window.DesiredSize.Width);
+            var height = ResolveLaidOutSize(window.ActualHeight, window.Height, window.DesiredSize.Height);
+            var record = store.Find(key, target.Value.DeviceName);
+            var fitted = record != null
+                ? WindowPlacementFit.FromRelative(
+                    new DipRect(record.Left, record.Top, width, height),
+                    target.Value.Bounds,
+                    width,
+                    height)
+                : fallback(target.Value.Bounds, width, height);
+
+            window.WindowStartupLocation = WindowStartupLocation.Manual;
+            window.Left = fitted.Left;
+            window.Top = fitted.Top;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to restore window position for {Key}.", key);
         }
     }
 
@@ -174,6 +213,21 @@ public sealed class WindowPlacementService
     private static double FallbackSize(double value, double fallback)
     {
         return value > 0 && !double.IsNaN(value) ? value : fallback;
+    }
+
+    private static double ResolveLaidOutSize(double actual, double declared, double desired)
+    {
+        if (actual > 0 && !double.IsNaN(actual))
+        {
+            return actual;
+        }
+
+        if (declared > 0 && !double.IsNaN(declared))
+        {
+            return declared;
+        }
+
+        return desired > 0 && !double.IsNaN(desired) ? desired : 0;
     }
 
     private static WindowState ParseState(string? value)

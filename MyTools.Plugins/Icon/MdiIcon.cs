@@ -8,11 +8,13 @@ public sealed class MdiIcon(string name) : Icon
 
     public string LigatureName { get; } = ToLigatureName(name);
 
+    public static MdiIcon PluginFallback { get; } = new("mdi-puzzle-outline");
+
     public static MdiIcon ForClipboardKind(ClipboardContentKind kind) => kind switch
     {
         ClipboardContentKind.Image => new("mdi-image-outline"),
         ClipboardContentKind.File => new("mdi-file-outline"),
-        ClipboardContentKind.Mixed => new("mdi-puzzle-outline"),
+        ClipboardContentKind.Mixed => PluginFallback,
         ClipboardContentKind.Other => new("mdi-help-circle-outline"),
         _ => new("mdi-format-text")
     };

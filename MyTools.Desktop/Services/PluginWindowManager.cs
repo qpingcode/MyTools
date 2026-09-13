@@ -101,7 +101,7 @@ public sealed class PluginWindowManager
         {
             if (!current.TryGetValue(pluginId, out var plugin))
             {
-                window.Close();
+                window.CloseAfterConfirmation();
                 continue;
             }
             window.SetPlugin(plugin, plugin.CreateHotKeyDetailContext());
@@ -120,11 +120,23 @@ public sealed class PluginWindowManager
         var plugin = plugins.FirstOrDefault(item => item.PluginId.Equals(id));
         if (plugin is null)
         {
-            window.Close();
+            window.CloseAfterConfirmation();
             return;
         }
 
         window.SetPlugin(plugin, plugin.CreateHotKeyDetailContext());
         _ = window.ActivatePluginAsync();
+    }
+
+    internal void TogglePinOnActiveWindow()
+    {
+        FindPinTarget()?.TogglePinned();
+    }
+
+    internal PluginWindow? FindPinTarget()
+    {
+        return windows.Values.FirstOrDefault(WindowForeground.IsForeground)
+            ?? windows.Values.FirstOrDefault(window => window.IsWindowOpen)
+            ?? windows.Values.FirstOrDefault();
     }
 }

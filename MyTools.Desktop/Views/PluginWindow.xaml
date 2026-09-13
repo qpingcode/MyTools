@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MyTools.Desktop.Components"
+        xmlns:views="clr-namespace:MyTools.Desktop.Views"
         xmlns:converters="clr-namespace:MyTools.Desktop.Converters"
         xmlns:loc="clr-namespace:MyTools.Desktop.Localization"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
@@ -27,6 +28,7 @@
     </shell:WindowChrome.WindowChrome>
     <Window.Resources>
         <converters:IsNullToVisibilityConverter x:Key="IsNullToVisibilityConverter" />
+        <converters:MdiGlyphConverter x:Key="MdiGlyphConverter" />
 
         <Style x:Key="ModernButton"
                TargetType="Button">
@@ -86,6 +88,69 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <Style x:Key="PinWindowControlButtonStyle"
+               TargetType="Button"
+               BasedOn="{StaticResource WindowControlButtonStyle}">
+            <Setter Property="AutomationProperties.Name"
+                    Value="{loc:Loc PluginWindow.Pin, DefaultValue=Pin}" />
+            <Setter Property="ToolTip"
+                    Value="{loc:Loc PluginWindow.Pin, DefaultValue=Pin}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                            </Trigger>
+                            <DataTrigger Binding="{Binding IsPinned, RelativeSource={RelativeSource AncestorType=Window}}"
+                                         Value="True">
+                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                            </DataTrigger>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsPinned, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               Value="True" />
+                                    <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}"
+                                               Value="True" />
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Foreground" Value="{DynamicResource AccentHoverBrush}" />
+                                <Setter Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
+                            </MultiDataTrigger>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsPinned, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               Value="True" />
+                                    <Condition Binding="{Binding IsKeyboardFocused, RelativeSource={RelativeSource Self}}"
+                                               Value="True" />
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Foreground" Value="{DynamicResource AccentHoverBrush}" />
+                                <Setter Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
+                            </MultiDataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsPinned, RelativeSource={RelativeSource AncestorType=Window}}"
+                             Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                    <Setter Property="AutomationProperties.Name"
+                            Value="{loc:Loc PluginWindow.Unpin, DefaultValue=Unpin}" />
+                    <Setter Property="ToolTip"
+                            Value="{loc:Loc PluginWindow.Unpin, DefaultValue=Unpin}" />
+                </DataTrigger>
+            </Style.Triggers>
         </Style>
 
         <Style x:Key="CloseWindowControlButtonStyle"
@@ -204,9 +269,19 @@
                             Orientation="Horizontal"
                             HorizontalAlignment="Right"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Button x:Name="PinButton"
+                            Style="{StaticResource PinWindowControlButtonStyle}"
+                            Click="PinButton_OnClick">
+                        <TextBlock Text="{Binding Source={x:Static views:PluginDockLayoutMetrics.PinIconName}, Converter={StaticResource MdiGlyphConverter}}"
+                                   FontFamily="{DynamicResource MdiFontFamily}"
+                                   FontSize="{x:Static views:PluginDockLayoutMetrics.PinIconFontSize}"
+                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                   Typography.StandardLigatures="True" />
+                    </Button>
+
                     <Button Style="{StaticResource WindowControlButtonStyle}"
                             AutomationProperties.Name="{loc:Loc PluginWindow.Minimize, DefaultValue=Minimize}"
-                            ToolTip="Minimize"
+                            ToolTip="{loc:Loc PluginWindow.Minimize, DefaultValue=Minimize}"
                             Click="MinimizeButton_OnClick">
                         <Rectangle Width="10"
                                    Height="1"
@@ -236,10 +311,24 @@
                     </Button>
 
                     <Button x:Name="CloseButton"
-                            Style="{StaticResource CloseWindowControlButtonStyle}"
-                            AutomationProperties.Name="{loc:Loc PluginWindow.Close, DefaultValue=Close}"
-                            ToolTip="Close"
                             Click="CloseButton_OnClick">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource CloseWindowControlButtonStyle}">
+                                <Setter Property="AutomationProperties.Name"
+                                        Value="{loc:Loc PluginWindow.Close, DefaultValue=Close}" />
+                                <Setter Property="ToolTip"
+                                        Value="{loc:Loc PluginWindow.Close, DefaultValue=Close}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsPinned, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                 Value="True">
+                                        <Setter Property="AutomationProperties.Name"
+                                                Value="{loc:Loc PluginWindow.HideToDock, DefaultValue=Hide to dock}" />
+                                        <Setter Property="ToolTip"
+                                                Value="{loc:Loc PluginWindow.HideToDock, DefaultValue=Hide to dock}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
                         <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                               StrokeThickness="1.2"
                               Data="M2,2 L10,10 M10,2 L2,10" />

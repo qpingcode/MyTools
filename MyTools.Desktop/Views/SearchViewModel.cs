@@ -59,6 +59,8 @@ namespace MyTools.Desktop.ViewModels
 
         public string? CurrentNodePluginDetailId => selectedNodeDetailContext?.PluginId;
 
+        internal NodePluginDetailContext? CurrentDetailContext => selectedNodeDetailContext;
+
         public SearchViewModel(
             IKeywordRegistry keywordRegistry,
             IServiceProvider serviceProvider,

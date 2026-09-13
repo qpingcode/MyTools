@@ -31,7 +31,7 @@ public class AppBootstrapper : IDisposable
     private readonly PluginLoader pluginLoader;
     private readonly ILogger<AppBootstrapper> logger;
     private readonly LogLevelService logLevelService;
-    private readonly IPluginLauncher pluginLauncher;
+    private readonly PluginLauncher pluginLauncher;
     private readonly PluginHotKeyService pluginHotKeyService;
     private readonly PluginKeymapService pluginKeymapService;
     private readonly IConfigurationRegistry registry;
@@ -52,7 +52,7 @@ public class AppBootstrapper : IDisposable
         PluginLoader pluginLoader,
         ILogger<AppBootstrapper> logger,
         LogLevelService logLevelService,
-        IPluginLauncher pluginLauncher,
+        PluginLauncher pluginLauncher,
         PluginHotKeyService pluginHotKeyService,
         PluginKeymapService pluginKeymapService,
         IConfigurationRegistry registry,
@@ -205,6 +205,34 @@ public class AppBootstrapper : IDisposable
         var clipboardPlugin = plugins.OfType<ClipBoardPlugin>().First();
         hotKeyManager.RegisterClipboardSequentialPasteHotKey(sequentialPasteHotKey,
             () => _ = clipboardPlugin.PasteLatestAndRemoveAsync(keyboardHelper));
+
+        RegisterPinAndDetachHotKeys();
+    }
+
+    private void RegisterPinAndDetachHotKeys()
+    {
+        var pinToggleText = registry.FindSetting(GeneralSettings.PinToggleHotKeyPath)?.GetValue<string>()
+                            ?? GeneralSettings.DefaultPinToggleHotKey;
+        hotKeyManager.RegisterPinToggleHotKey(
+            ParseOptionalHotKey(pinToggleText),
+            () => pluginWindowManager.TogglePinOnActiveWindow());
+
+        var detachText = registry.FindSetting(GeneralSettings.DetachPluginWindowHotKeyPath)?.GetValue<string>()
+                         ?? GeneralSettings.DefaultDetachPluginWindowHotKey;
+        hotKeyManager.RegisterDetachPluginWindowHotKey(
+            ParseOptionalHotKey(detachText),
+            () => pluginLauncher.DetachCurrentSearchPlugin());
+    }
+
+    private static HotKeyConfig? ParseOptionalHotKey(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return null;
+        }
+
+        var parsed = new HotKeyConfig(text);
+        return parsed.Key == Key.None || parsed.Modifiers == ModifierKeys.None ? null : parsed;
     }
     
     private List<NodePlugin> LoadNodePlugins()
@@ -454,6 +482,18 @@ public class AppBootstrapper : IDisposable
                 localization.GetCaption("Configuration.General.SearchHotKey.Title", "Search hotkey"),
                 localization.GetCaption("Configuration.General.SearchHotKey.Description", "Keyboard shortcut that opens MyTools search"),
                 GeneralSettings.DefaultSearchHotKey,
+                valueType: SettingValueTypes.HotKey);
+
+            registry.AddSetting(generalCategory, "PinToggleHotKey",
+                localization.GetCaption("Configuration.General.PinToggleHotKey.Title", "Pin window hotkey"),
+                localization.GetCaption("Configuration.General.PinToggleHotKey.Description", "Keyboard shortcut that pins or unpins the active plugin window"),
+                GeneralSettings.DefaultPinToggleHotKey,
+                valueType: SettingValueTypes.HotKey);
+
+            registry.AddSetting(generalCategory, "DetachPluginWindowHotKey",
+                localization.GetCaption("Configuration.General.DetachPluginWindowHotKey.Title", "Detach plugin window hotkey"),
+                localization.GetCaption("Configuration.General.DetachPluginWindowHotKey.Description", "Keyboard shortcut that opens the current search plugin in its own window"),
+                GeneralSettings.DefaultDetachPluginWindowHotKey,
                 valueType: SettingValueTypes.HotKey);
             
             registry.AddSetting(generalCategory, "AutoStart",

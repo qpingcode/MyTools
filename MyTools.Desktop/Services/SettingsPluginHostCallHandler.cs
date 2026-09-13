@@ -36,7 +36,8 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
     private readonly PluginOverrideProvider pluginOverrideProvider;
     private readonly PluginLoader pluginLoader;
     private readonly IKeywordRegistry keywordRegistry;
-    private readonly IPluginLauncher pluginLauncher;
+    private readonly PluginLauncher pluginLauncher;
+    private readonly PluginWindowManager pluginWindowManager;
     private readonly HotKeyManager hotKeyManager;
     private readonly InputActionCaptureService inputActionCaptureService;
     private readonly NodePluginCatalog nodePluginCatalog;
@@ -68,7 +69,8 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         PluginOverrideProvider pluginOverrideProvider,
         PluginLoader pluginLoader,
         IKeywordRegistry keywordRegistry,
-        IPluginLauncher pluginLauncher,
+        PluginLauncher pluginLauncher,
+        PluginWindowManager pluginWindowManager,
         HotKeyManager hotKeyManager,
         InputActionCaptureService inputActionCaptureService,
         ILogger<SettingsPluginHostCallHandler> logger,
@@ -86,6 +88,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         this.pluginLoader = pluginLoader;
         this.keywordRegistry = keywordRegistry;
         this.pluginLauncher = pluginLauncher;
+        this.pluginWindowManager = pluginWindowManager;
         this.hotKeyManager = hotKeyManager;
         this.inputActionCaptureService = inputActionCaptureService;
         this.logger = logger;
@@ -326,6 +329,7 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
 
             ApplySearchHotKeyFromSettings();
             ApplyClipboardHotKeyFromSettings();
+            ApplyPinAndDetachHotKeysFromSettings();
         });
 
         // The language needs to be restarted: prompt only when the value actually changes (rather than merely being written back by the frontend with the same value).
@@ -607,6 +611,20 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
             ?? GeneralSettings.DefaultSearchHotKey;
         pluginNames["__search__"] = languageService.GetCaption(
             "Configuration.General.SearchHotKey.Title", "Search hotkey");
+        AddHostHotKeyForValidation(
+            currentHotKeys,
+            pluginNames,
+            GeneralSettings.PinToggleHotKeyPath,
+            "Configuration.General.PinToggleHotKey.Title",
+            "Pin window hotkey",
+            GeneralSettings.DefaultPinToggleHotKey);
+        AddHostHotKeyForValidation(
+            currentHotKeys,
+            pluginNames,
+            GeneralSettings.DetachPluginWindowHotKeyPath,
+            "Configuration.General.DetachPluginWindowHotKey.Title",
+            "Detach plugin window hotkey",
+            GeneralSettings.DefaultDetachPluginWindowHotKey);
 
         var conflicts = request?.HotKeys == null
             ? []
@@ -709,6 +727,16 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
             "Plugin.ClipBoard.Settings.SequentialPasteHotKey.Title",
             "Sequential paste shortcut",
             ClipBoardPlugin.DefaultSequentialPasteHotKey);
+        AddClipboardHotKeyForInspection(pluginHotKeys, pluginNames,
+            GeneralSettings.PinToggleHotKeyPath,
+            "Configuration.General.PinToggleHotKey.Title",
+            "Pin window hotkey",
+            GeneralSettings.DefaultPinToggleHotKey);
+        AddClipboardHotKeyForInspection(pluginHotKeys, pluginNames,
+            GeneralSettings.DetachPluginWindowHotKeyPath,
+            "Configuration.General.DetachPluginWindowHotKey.Title",
+            "Detach plugin window hotkey",
+            GeneralSettings.DefaultDetachPluginWindowHotKey);
 
         var searchHotKey = request.CurrentSearchHotKey
             ?? registry.FindSetting(GeneralSettings.SearchHotKeyPath)?.CurrentValue as string
@@ -757,6 +785,49 @@ public sealed class SettingsPluginHostCallHandler : IPluginHostCapabilityHandler
         }
 
         hotKeyManager.RegisterySearchHotKey(parsed);
+    }
+
+    private void ApplyPinAndDetachHotKeysFromSettings()
+    {
+        hotKeyManager.RegisterPinToggleHotKey(
+            ReadOptionalHotKey(GeneralSettings.PinToggleHotKeyPath, GeneralSettings.DefaultPinToggleHotKey),
+            () => pluginWindowManager.TogglePinOnActiveWindow());
+        hotKeyManager.RegisterDetachPluginWindowHotKey(
+            ReadOptionalHotKey(
+                GeneralSettings.DetachPluginWindowHotKeyPath,
+                GeneralSettings.DefaultDetachPluginWindowHotKey),
+            () => pluginLauncher.DetachCurrentSearchPlugin());
+    }
+
+    private HotKeyConfig? ReadOptionalHotKey(string path, string defaultValue)
+    {
+        var text = registry.FindSetting(path)?.GetValue<string>()?.Trim() ?? defaultValue;
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return null;
+        }
+
+        var parsed = new HotKeyConfig(text);
+        if (parsed.Key == System.Windows.Input.Key.None
+            || parsed.Modifiers == System.Windows.Input.ModifierKeys.None)
+        {
+            logger.LogWarning("Ignoring invalid hotkey {HotKey} for {Path}.", text, path);
+            return null;
+        }
+
+        return parsed;
+    }
+
+    private void AddHostHotKeyForValidation(
+        IDictionary<string, string?> hotKeys,
+        IDictionary<string, string> names,
+        string path,
+        string captionKey,
+        string defaultCaption,
+        string defaultHotKey)
+    {
+        hotKeys[path] = registry.FindSetting(path)?.CurrentValue as string ?? defaultHotKey;
+        names[path] = languageService.GetCaption(captionKey, defaultCaption);
     }
 
     private void ApplyClipboardHotKeyFromSettings()

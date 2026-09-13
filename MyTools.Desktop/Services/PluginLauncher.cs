@@ -2,6 +2,7 @@ using System.Windows;
 using System.Text.Json;
 using MyTools.Common.Plugins;
 using MyTools.Desktop.Utils;
+using MyTools.Desktop.Views;
 using MyTools.Plugins;
 using MyTools.Plugins.NodePlugins;
 
@@ -11,11 +12,16 @@ public sealed class PluginLauncher : IPluginLauncher
 {
     private readonly PluginLoader pluginLoader;
     private readonly PluginWindowManager pluginWindowManager;
+    private readonly SearchWindow searchWindow;
 
-    public PluginLauncher(PluginLoader pluginLoader, PluginWindowManager pluginWindowManager)
+    public PluginLauncher(
+        PluginLoader pluginLoader,
+        PluginWindowManager pluginWindowManager,
+        SearchWindow searchWindow)
     {
         this.pluginLoader = pluginLoader;
         this.pluginWindowManager = pluginWindowManager;
+        this.searchWindow = searchWindow;
     }
 
     public PluginLaunchKind Open(string pluginId)
@@ -89,6 +95,27 @@ public sealed class PluginLauncher : IPluginLauncher
         // plugin's initial query.
         WindowHelper.ShowSearchWindow(plugin, string.Empty);
         return PluginLaunchKind.SearchWindow;
+    }
+
+    public PluginLaunchKind DetachCurrentSearchPlugin()
+    {
+        return InvokeOnUi(() =>
+        {
+            if (searchWindow.ActivePlugin is not NodePlugin plugin)
+            {
+                return PluginLaunchKind.NotFound;
+            }
+
+            var context = searchWindow.CurrentDetailContext ?? plugin.CreateHotKeyDetailContext();
+            if (context == null)
+            {
+                return PluginLaunchKind.SearchWindow;
+            }
+
+            pluginWindowManager.ShowOrFocus(plugin, context, replaceContext: true);
+            searchWindow.Hide();
+            return PluginLaunchKind.PluginWindow;
+        });
     }
 
     private static PluginLaunchKind InvokeOnUi(Func<PluginLaunchKind> action)

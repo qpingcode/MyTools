@@ -9,6 +9,7 @@ using MyTools.Desktop.Components;
 using MyTools.Desktop.Services;
 using MyTools.Desktop.ViewModels;
 using MyTools.Plugins;
+using MyTools.Plugins.NodePlugins;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 
 namespace MyTools.Desktop.Views
@@ -77,6 +78,10 @@ namespace MyTools.Desktop.Views
         }
 
         public IPlugin? CurrentPlugin => viewModel.ForcePlugin;
+
+        internal IPlugin? ActivePlugin => viewModel.ForcePlugin ?? viewModel.SelectedPlugin;
+
+        internal NodePluginDetailContext? CurrentDetailContext => viewModel.CurrentDetailContext;
 
         public string? CurrentNodePluginDetailId => viewModel.CurrentNodePluginDetailId;
 
