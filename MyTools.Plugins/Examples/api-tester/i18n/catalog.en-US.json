@@ -605,6 +605,21 @@
       }
     },
     {
+      "key": "Plugin.ApiTester.AuthNoneHint",
+      "defaultValue": "This request does not send authentication.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 191,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "此请求不发送认证信息。"
+      }
+    },
+    {
       "key": "Plugin.ApiTester.Body",
       "defaultValue": "Body",
       "placeholders": [],

@@ -188,6 +188,11 @@ export const text = {
             defaultValue: 'Authentication',
             ...values,
         }),
+    AuthNoneHint: (values: Record<string, string | number> = {}) =>
+        bus.i18n.t('Plugin.ApiTester.AuthNoneHint', {
+            defaultValue: 'This request does not send authentication.',
+            ...values,
+        }),
     Body: (values: Record<string, string | number> = {}) =>
         bus.i18n.t('Plugin.ApiTester.Body', {
             defaultValue: 'Body',

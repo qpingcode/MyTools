@@ -363,8 +363,8 @@ try {
   await page.getByRole('tab', { name: 'Authentication', exact: true }).click();
   const auth = page.getByRole('tabpanel');
   await auth
-    .getByRole('combobox', { name: 'Authentication', exact: true })
-    .selectOption('bearer');
+    .getByRole('radio', { name: 'Bearer Token', exact: true })
+    .check();
   await auth
     .getByRole('textbox', { name: 'Token', exact: true })
     .fill('{{token}}');

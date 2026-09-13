@@ -39,6 +39,7 @@
   "Plugin.ApiTester.Params": "参数",
   "Plugin.ApiTester.Headers": "请求头",
   "Plugin.ApiTester.Authentication": "认证",
+  "Plugin.ApiTester.AuthNoneHint": "此请求不发送认证信息。",
   "Plugin.ApiTester.Body": "请求体",
   "Plugin.ApiTester.Assertions": "断言",
   "Plugin.ApiTester.Extractions": "JSON 变量提取",

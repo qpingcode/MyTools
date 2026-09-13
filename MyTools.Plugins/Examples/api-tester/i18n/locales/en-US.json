@@ -39,6 +39,7 @@
   "Plugin.ApiTester.Params": "Parameters",
   "Plugin.ApiTester.Headers": "Headers",
   "Plugin.ApiTester.Authentication": "Authentication",
+  "Plugin.ApiTester.AuthNoneHint": "This request does not send authentication.",
   "Plugin.ApiTester.Body": "Body",
   "Plugin.ApiTester.Assertions": "Assertions",
   "Plugin.ApiTester.Extractions": "JSON variable extraction",
