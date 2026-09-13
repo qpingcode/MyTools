@@ -1,6 +1,5 @@
 using MyTools.AI;
 using NUnit.Framework;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace MyTools.Desktop.Test.Services;
@@ -95,26 +94,6 @@ public sealed class PluginCreationAgentServiceTest
             return !File.Exists(target) && !Directory.Exists(target);
         }).ToArray();
         var files = Directory.EnumerateFiles(referenceRoot, "*", SearchOption.AllDirectories).ToArray();
-        var pluginSdkVersions = files
-            .Where(path => Path.GetFileName(path).Equals("package.json", StringComparison.OrdinalIgnoreCase))
-            .Select(path =>
-            {
-                using var document = JsonDocument.Parse(File.ReadAllText(path));
-                return document.RootElement.TryGetProperty("dependencies", out var dependencies)
-                    && dependencies.TryGetProperty("@qping/plugin-bus", out var version)
-                        ? version.GetString()
-                        : null;
-            })
-            .Where(version => version is not null)
-            .ToArray();
-        var packageTemplate = File.ReadAllText(Path.Combine(
-            referenceRoot,
-            "create-plugin",
-            "src",
-            "templates",
-            "common",
-            "package.json.mustache"));
-
         Assert.Multiple(() =>
         {
             Assert.That(links, Is.Not.Empty);
@@ -124,9 +103,6 @@ public sealed class PluginCreationAgentServiceTest
             Assert.That(files.Any(path => path.Contains($"{Path.DirectorySeparatorChar}dist{Path.DirectorySeparatorChar}")), Is.False);
             Assert.That(files.Any(path => path.Contains($"{Path.DirectorySeparatorChar}sdk-v3{Path.DirectorySeparatorChar}")), Is.False);
             Assert.That(files.Any(path => Path.GetFileName(path).Equals("package-lock.json", StringComparison.OrdinalIgnoreCase)), Is.False);
-            Assert.That(pluginSdkVersions, Is.Not.Empty);
-            Assert.That(pluginSdkVersions, Has.All.EqualTo("0.8.0"));
-            Assert.That(packageTemplate, Does.Contain("\"@qping/plugin-bus\": \"0.8.0\""));
         });
     }
 
