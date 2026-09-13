@@ -44,6 +44,8 @@ public sealed class FileSearcher : PluginBase, IDisposable
     internal const string FilenameField = "filename";
     internal const string IndexedTimeField = "indexedTime";
     internal const string SearchFilenameField = "searchFilename";
+    internal const string SearchFullFilenameField = "searchFullFilename";
+    internal const string SearchFullPathField = "searchFullPath";
     internal const string SearchInitialsField = "searchInitials";
     internal const string SearchPinyinField = "searchPinyin";
     internal const string SearchPinyinInitialsField = "searchPinyinInitials";
@@ -52,6 +54,7 @@ public sealed class FileSearcher : PluginBase, IDisposable
     private const double PluginPriorityScoreScale = 1000;
     private const float InitialsPrefixBoost = 10;
     private const float FilenamePrefixBoost = 2;
+    private const float ExactFileIdentityBoost = 20;
     private const float DirectoryPathBoost = .5f;
     private const string AnyCharactersPattern = ".*";
     private const string RegexEscape = "\\";
@@ -476,24 +479,36 @@ public sealed class FileSearcher : PluginBase, IDisposable
         writer.DeleteDocuments(new Term(RootField, prepared.RootDirectory));
         foreach (var file in prepared.Files)
         {
-            writer.AddDocument(new Document
-            {
-                new StringField(RootField, prepared.RootDirectory, Field.Store.NO),
-                new StoredField(PathField, file.Path),
-                new StoredField(FilenameField, file.FileName),
-                new StringField(IndexedTimeField, file.IndexedTime, Field.Store.YES),
-                new StringField(SearchFilenameField, SearchTextMatcher.Normalize(file.FileName), Field.Store.NO),
-                new StringField(SearchInitialsField, SearchTextMatcher.Normalize(file.SearchInitials), Field.Store.NO),
-                new StringField(SearchPinyinField, SearchTextMatcher.Normalize(ToolGood.Words.Pinyin.WordsHelper.GetPinyin(file.FileName)), Field.Store.NO),
-                new StringField(SearchPinyinInitialsField, SearchTextMatcher.Normalize(ToolGood.Words.Pinyin.WordsHelper.GetFirstPinyin(file.FileName)), Field.Store.NO),
-                new TextField(SearchPossiblesField, file.FileName, Field.Store.NO),
-                new TextField(SearchPathField, Path.GetDirectoryName(file.Path) ?? string.Empty, Field.Store.NO)
-            });
+            writer.AddDocument(CreateFileDocument(prepared.RootDirectory, file.Path, file.IndexedTime));
         }
         if (commit) writer.Commit();
         logger.LogInformation("Indexed {FileCount} files under {Directory}.",
             prepared.Files.Count, prepared.RootDirectory);
     }
+
+    internal static Document CreateFileDocument(string rootDirectory, string path, string indexedTime)
+    {
+        var filename = Path.GetFileName(path);
+        var stem = Path.GetFileNameWithoutExtension(path);
+        return new Document
+        {
+            new StringField(RootField, rootDirectory, Field.Store.NO),
+            new StoredField(PathField, path),
+            new StoredField(FilenameField, filename),
+            new StringField(IndexedTimeField, indexedTime, Field.Store.YES),
+            new StringField(SearchFilenameField, SearchTextMatcher.Normalize(stem), Field.Store.NO),
+            new StringField(SearchFullFilenameField, SearchTextMatcher.Normalize(filename), Field.Store.NO),
+            new StringField(SearchFullPathField, NormalizeSearchPath(path), Field.Store.NO),
+            new StringField(SearchInitialsField, SearchTextMatcher.Normalize(StringUtils.GetInitialsFromWords(stem)), Field.Store.NO),
+            new StringField(SearchPinyinField, SearchTextMatcher.Normalize(ToolGood.Words.Pinyin.WordsHelper.GetPinyin(stem)), Field.Store.NO),
+            new StringField(SearchPinyinInitialsField, SearchTextMatcher.Normalize(ToolGood.Words.Pinyin.WordsHelper.GetFirstPinyin(stem)), Field.Store.NO),
+            new TextField(SearchPossiblesField, stem, Field.Store.NO),
+            new TextField(SearchPathField, Path.GetDirectoryName(path) ?? string.Empty, Field.Store.NO)
+        };
+    }
+
+    private static string NormalizeSearchPath(string path) =>
+        SearchTextMatcher.Normalize(path.Trim().Trim('"').Replace('/', '\\'));
 
     private PreparedDirectoryIndex PrepareDirectoryIndex(
         string rootDirectory,
@@ -512,12 +527,7 @@ public sealed class FileSearcher : PluginBase, IDisposable
                      rootDirectory, configuration.IgnoreMatcher, configuration.UseIgnoreFiles, cancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var fileName = Path.GetFileNameWithoutExtension(file);
-            files.Add(new PreparedFile(
-                file,
-                fileName,
-                StringUtils.GetInitialsFromWords(fileName),
-                indexedTime));
+            files.Add(new PreparedFile(file, indexedTime));
         }
 
         return new PreparedDirectoryIndex(rootDirectory, files, IsAvailable: true);
@@ -1002,6 +1012,10 @@ public sealed class FileSearcher : PluginBase, IDisposable
         var normalizedQuery = SearchTextMatcher.Normalize(query);
         var combineQuery = new BooleanQuery
         {
+            { new TermQuery(new Term(SearchFullFilenameField, normalizedQuery)) { Boost = ExactFileIdentityBoost }, Occur.SHOULD },
+            { new PrefixQuery(new Term(SearchFullFilenameField, normalizedQuery)) { Boost = FilenamePrefixBoost }, Occur.SHOULD },
+            { new TermQuery(new Term(SearchFullPathField, NormalizeSearchPath(query))) { Boost = ExactFileIdentityBoost }, Occur.SHOULD },
+            { new PrefixQuery(new Term(SearchFullPathField, NormalizeSearchPath(query))) { Boost = DirectoryPathBoost }, Occur.SHOULD },
             { new PrefixQuery(new Term(SearchInitialsField, normalizedQuery)) { Boost = InitialsPrefixBoost }, Occur.SHOULD },
             { new PrefixQuery(new Term(SearchFilenameField, normalizedQuery)) { Boost = FilenamePrefixBoost }, Occur.SHOULD },
             { new PrefixQuery(new Term(SearchPossiblesField, normalizedQuery)) { Boost = FilenamePrefixBoost }, Occur.SHOULD }
@@ -1011,7 +1025,7 @@ public sealed class FileSearcher : PluginBase, IDisposable
         {
             // Lucene term automata recall ordered characters without comparing Lucene scores across plugins.
             var pattern = AnyCharactersPattern + string.Join(AnyCharactersPattern, normalizedQuery.Select(c => RegexEscape + c)) + AnyCharactersPattern;
-            foreach (var field in new[] { SearchFilenameField, SearchInitialsField, SearchPinyinField, SearchPinyinInitialsField })
+            foreach (var field in new[] { SearchFilenameField, SearchFullFilenameField, SearchInitialsField, SearchPinyinField, SearchPinyinInitialsField })
                 combineQuery.Add(new RegexpQuery(new Term(field, pattern)), Occur.SHOULD);
         }
 
@@ -1176,8 +1190,6 @@ public sealed class FileSearcher : PluginBase, IDisposable
         bool IsAvailable);
     private sealed record PreparedFile(
         string Path,
-        string FileName,
-        string SearchInitials,
         string IndexedTime);
     private sealed record PendingDirectory(
         string Path,

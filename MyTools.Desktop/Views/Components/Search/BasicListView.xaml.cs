@@ -3,11 +3,16 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using MyTools.Common;
+using MyTools.Desktop.Views;
+using Microsoft.Extensions.Logging;
+using MyTools.Common.DependencyInjection;
 
 namespace MyTools.Desktop.Components;
 
 public partial class BasicListView : IVisibleItemProvider
 {
+    private Point dragStart;
+    private ResultItem? dragCandidate;
     private BasicListViewModel viewModel => (DataContext as BasicListViewModel)!;
     
     public static readonly DependencyProperty IconVisibleProperty =
@@ -78,7 +83,52 @@ public partial class BasicListView : IVisibleItemProvider
     public BasicListView()
     {
         InitializeComponent();
+        ResultsListBox.PreviewMouseLeftButtonDown += ResultsListBox_PreviewMouseLeftButtonDown;
+        ResultsListBox.PreviewMouseMove += ResultsListBox_PreviewMouseMove;
+        ResultsListBox.PreviewMouseLeftButtonUp += (_, _) => dragCandidate = null;
+        ResultsListBox.Unloaded += (_, _) => dragCandidate = null;
         DataContextChanged += BasicListView_DataContextChanged;
+    }
+
+    private void ResultsListBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        dragCandidate = null;
+        if (e.ClickCount != 1 || e.OriginalSource is not DependencyObject source) return;
+        var container = ItemsControl.ContainerFromElement(ResultsListBox, source) as ListBoxItem;
+        dragCandidate = container?.DataContext as ResultItem;
+        dragStart = e.GetPosition(ResultsListBox);
+    }
+
+    private void ResultsListBox_PreviewMouseMove(object sender, MouseEventArgs e)
+    {
+        if (e.LeftButton != MouseButtonState.Pressed)
+        {
+            dragCandidate = null;
+            return;
+        }
+        if (dragCandidate == null) return;
+        var position = e.GetPosition(ResultsListBox);
+        if (Math.Abs(position.X - dragStart.X) < SystemParameters.MinimumHorizontalDragDistance &&
+            Math.Abs(position.Y - dragStart.Y) < SystemParameters.MinimumVerticalDragDistance) return;
+
+        var candidate = dragCandidate;
+        dragCandidate = null;
+        try
+        {
+            var data = ResultFileDragSource.CreateDataObject(candidate.Args);
+            if (data == null) return;
+            e.Handled = true;
+            var searchWindow = Window.GetWindow(this) as SearchWindow;
+            using (searchWindow?.SuppressAutoHide())
+            {
+                DragDrop.DoDragDrop(ResultsListBox, data, DragDropEffects.Copy);
+            }
+        }
+        catch (Exception ex)
+        {
+            ServiceLocator.GetRequiredService<ILogger<BasicListView>>()
+                .LogWarning(ex, "Failed to drag result files.");
+        }
     }
 
     private void BasicListView_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)

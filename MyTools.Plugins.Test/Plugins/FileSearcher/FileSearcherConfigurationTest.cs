@@ -16,6 +16,57 @@ namespace MyTools.Plugins.Test.Plugins.FileSearcher;
 public class FileSearcherConfigurationTest
 {
     private const LuceneVersion TestLuceneVersion = LuceneVersion.LUCENE_48;
+    private const int FileIdentityCandidateLimit = 30;
+    private const int DistractorFileCount = FileIdentityCandidateLimit * 2;
+
+    [TestCase("2")]
+    [TestCase("2.txt")]
+    [TestCase("2.TXT")]
+    [TestCase(@"C:\Users\example\Desktop\2.txt")]
+    [TestCase(@"c:\USERS\EXAMPLE\desktop\2.TXT")]
+    [TestCase("C:/Users/example/Desktop/2.txt")]
+    [TestCase("\"C:\\Users\\example\\Desktop\\2.txt\"")]
+    public void SearchQuery_RecallsCompleteFilenameAndPath(string query)
+    {
+        const string root = @"C:\Users\example";
+        const string targetPath = @"C:\Users\example\Desktop\2.txt";
+        using var directory = new RamDirectory();
+        using var analyzer = new StandardAnalyzer(TestLuceneVersion);
+        using (var writer = new IndexWriter(directory, new IndexWriterConfig(TestLuceneVersion, analyzer)))
+        {
+            for (var i = 0; i < DistractorFileCount; i++)
+                writer.AddDocument(MyTools.Plugins.FileSearcher.CreateFileDocument(
+                    root, $@"{root}\Desktop\report2-{i}.txt", string.Empty));
+            writer.AddDocument(MyTools.Plugins.FileSearcher.CreateFileDocument(root, targetPath, string.Empty));
+            writer.Commit();
+        }
+
+        using var reader = DirectoryReader.Open(directory);
+        var searcher = new IndexSearcher(reader);
+        var hits = searcher.Search(MyTools.Plugins.FileSearcher.BuildSearchQuery(query), FileIdentityCandidateLimit);
+        Assert.That(hits.ScoreDocs.Select(hit => searcher.Doc(hit.Doc).Get(MyTools.Plugins.FileSearcher.PathField)),
+            Does.Contain(targetPath));
+        Assert.That(searcher.Doc(hits.ScoreDocs[0].Doc).Get(MyTools.Plugins.FileSearcher.PathField), Is.EqualTo(targetPath));
+        Assert.That(searcher.Doc(hits.ScoreDocs[0].Doc).Get(MyTools.Plugins.FileSearcher.FilenameField), Is.EqualTo("2.txt"));
+    }
+
+    [TestCase(@"C:\Users\example\My Notes\工作计划.txt", @"C:\Users\example\My Notes\工作计划.txt")]
+    [TestCase("工作计划.txt", @"C:\Users\example\My Notes\工作计划.txt")]
+    [TestCase("gzjh", @"C:\Users\example\My Notes\工作计划.txt")]
+    [TestCase("notes", @"C:\Users\example\Desktop\notes")]
+    public void SearchQuery_RecallsPathsWithSpacesAndUnicodeAndExtensionlessFiles(string query, string path)
+    {
+        using var directory = new RamDirectory();
+        using var analyzer = new StandardAnalyzer(TestLuceneVersion);
+        using (var writer = new IndexWriter(directory, new IndexWriterConfig(TestLuceneVersion, analyzer)))
+        {
+            writer.AddDocument(MyTools.Plugins.FileSearcher.CreateFileDocument(@"C:\Users\example", path, string.Empty));
+            writer.Commit();
+        }
+        using var reader = DirectoryReader.Open(directory);
+        Assert.That(new IndexSearcher(reader).Search(MyTools.Plugins.FileSearcher.BuildSearchQuery(query),
+            FileIdentityCandidateLimit).TotalHits, Is.EqualTo(1));
+    }
 
     [Test]
     public async Task Actions_DefaultToSystemOpenWithoutExecuteActions()
