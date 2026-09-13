@@ -33,9 +33,6 @@ namespace MyTools.Desktop.ViewModels
         private string? pluginName;
 
         [ObservableProperty]
-        private string? pluginVersion;
-
-        [ObservableProperty]
         private UpdateStatus status = UpdateStatus.Idle;
         
         [ObservableProperty]
@@ -161,9 +158,6 @@ namespace MyTools.Desktop.ViewModels
                 PluginName = null;
             }
 
-            var currentPluginVersion = selectedNodeDetailContext?.Version;
-            PluginVersion = string.IsNullOrWhiteSpace(currentPluginVersion) ? null : currentPluginVersion;
-            
             CurrentViewModel = viewmodel;
         }
 

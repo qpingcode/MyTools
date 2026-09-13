@@ -235,33 +235,18 @@
                         Grid.Column="1"
                         Background="Transparent"
                         Padding="4,0,12,0">
-                    <DockPanel HorizontalAlignment="Left"
-                              VerticalAlignment="Center"
-                              LastChildFill="True"
-                              ClipToBounds="True">
-                        <TextBlock x:Name="PluginVersionTextBlock"
-                                  DockPanel.Dock="Right"
-                                  Text="{Binding PluginVersion, StringFormat=v{0}}"
-                                  FontFamily="{StaticResource UiFontFamily}"
-                                  Foreground="{DynamicResource TextTertiaryBrush}"
-                                  Margin="4,0,0,0"
-                                   MaxWidth="160"
-                                   TextWrapping="NoWrap"
-                                   TextTrimming="CharacterEllipsis"
-                                   VerticalAlignment="Center"
-                                   Visibility="{Binding PluginVersion, Converter={StaticResource IsNullToVisibilityConverter}}" />
-                        <TextBlock x:Name="PluginNameTextBlock"
-                                   Text="{Binding PluginName}"
-                                   FontFamily="{StaticResource UiFontFamily}"
-                                   Foreground="{DynamicResource TextPrimaryBrush}"
-                                   FontSize="{StaticResource FontSizeBody}"
-                                   FontWeight="SemiBold"
-                                   MaxWidth="320"
-                                   TextWrapping="NoWrap"
-                                   TextTrimming="CharacterEllipsis"
-                                   VerticalAlignment="Center"
-                                   Visibility="{Binding PluginName, Converter={StaticResource IsNullToVisibilityConverter}}" />
-                    </DockPanel>
+                    <TextBlock x:Name="PluginNameTextBlock"
+                               HorizontalAlignment="Left"
+                               VerticalAlignment="Center"
+                               Text="{Binding PluginName}"
+                               FontFamily="{StaticResource UiFontFamily}"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
+                               FontSize="{StaticResource FontSizeBody}"
+                               FontWeight="SemiBold"
+                               MaxWidth="320"
+                               TextWrapping="NoWrap"
+                               TextTrimming="CharacterEllipsis"
+                               Visibility="{Binding PluginName, Converter={StaticResource IsNullToVisibilityConverter}}" />
                 </Border>
 
                 <StackPanel x:Name="CaptionButtonsPanel"

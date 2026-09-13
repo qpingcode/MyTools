@@ -179,6 +179,132 @@ public class PluginWindowPinTests
         });
     }
 
+    [Test]
+    public void CloseAll_ClosesWindowsAndRemovesDockTiles()
+    {
+        using var services = new ServiceCollection().BuildServiceProvider();
+        var dock = CreateDock();
+        var first = CreatePinnedWindow(services, dock, "api-tester", "API Tester");
+        var second = CreatePinnedWindow(services, dock, "settings", "Settings");
+
+        dock.CloseAll();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(dock.Items, Is.Empty);
+            Assert.That(first.IsPinned, Is.True);
+            Assert.That(second.IsPinned, Is.True);
+        });
+    }
+
+    [Test]
+    public void HideAll_HidesWindowsAndKeepsDockTiles()
+    {
+        using var services = new ServiceCollection().BuildServiceProvider();
+        var dock = CreateDock();
+        var first = CreatePinnedWindow(services, dock, "api-tester", "API Tester");
+        var second = CreatePinnedWindow(services, dock, "settings", "Settings");
+
+        dock.HideAll();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(dock.Items, Has.Count.EqualTo(2));
+            Assert.That(first.IsVisible, Is.False);
+            Assert.That(second.IsVisible, Is.False);
+            Assert.That(dock.Items[0].IsOpen, Is.False);
+            Assert.That(dock.Items[1].IsOpen, Is.False);
+            Assert.That(first.IsPinned, Is.True);
+            Assert.That(second.IsPinned, Is.True);
+        });
+    }
+
+    [Test]
+    public void ShowAll_ShowsWindowsAndKeepsDockTiles()
+    {
+        using var services = new ServiceCollection().BuildServiceProvider();
+        var dock = CreateDock();
+        var first = CreatePinnedWindow(services, dock, "api-tester", "API Tester");
+        var second = CreatePinnedWindow(services, dock, "settings", "Settings");
+        dock.HideAll();
+
+        dock.ShowAll();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(dock.Items, Has.Count.EqualTo(2));
+            Assert.That(first.IsVisible, Is.True);
+            Assert.That(second.IsVisible, Is.True);
+            Assert.That(dock.Items[0].IsOpen, Is.True);
+            Assert.That(dock.Items[1].IsOpen, Is.True);
+            Assert.That(first.IsPinned, Is.True);
+            Assert.That(second.IsPinned, Is.True);
+        });
+
+        dock.CloseAll();
+    }
+
+    [Test]
+    public void ArrangeWindows_MatchesFirstSizeAndCascadesByStep()
+    {
+        using var services = new ServiceCollection().BuildServiceProvider();
+        var dock = CreateDock();
+        var first = CreatePinnedWindow(services, dock, "api-tester", "API Tester");
+        var second = CreatePinnedWindow(services, dock, "settings", "Settings");
+        var third = CreatePinnedWindow(services, dock, "store", "Store");
+        first.Left = 120;
+        first.Top = 80;
+        first.Width = 480;
+        first.Height = 360;
+        second.Left = 10;
+        second.Top = 10;
+        second.Width = 200;
+        second.Height = 180;
+        third.Left = 40;
+        third.Top = 50;
+        third.Width = 220;
+        third.Height = 190;
+
+        dock.ArrangeWindows();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(first.Left, Is.EqualTo(120));
+            Assert.That(first.Top, Is.EqualTo(80));
+            Assert.That(first.Width, Is.EqualTo(480));
+            Assert.That(first.Height, Is.EqualTo(360));
+            Assert.That(second.Left, Is.EqualTo(120 + PluginDockLayoutMetrics.ArrangeCascadeStep));
+            Assert.That(second.Top, Is.EqualTo(80 + PluginDockLayoutMetrics.ArrangeCascadeStep));
+            Assert.That(second.Width, Is.EqualTo(480));
+            Assert.That(second.Height, Is.EqualTo(360));
+            Assert.That(third.Left, Is.EqualTo(120 + PluginDockLayoutMetrics.ArrangeCascadeStep * 2));
+            Assert.That(third.Top, Is.EqualTo(80 + PluginDockLayoutMetrics.ArrangeCascadeStep * 2));
+            Assert.That(third.Width, Is.EqualTo(480));
+            Assert.That(third.Height, Is.EqualTo(360));
+            Assert.That(dock.Items, Has.Count.EqualTo(3));
+            Assert.That(dock.Items[0].PluginId.Value, Is.EqualTo("api-tester"));
+            Assert.That(dock.Items[1].PluginId.Value, Is.EqualTo("settings"));
+            Assert.That(dock.Items[2].PluginId.Value, Is.EqualTo("store"));
+        });
+
+        dock.CloseAll();
+    }
+
+    private static PluginWindow CreatePinnedWindow(
+        ServiceProvider services,
+        PluginDockManager dock,
+        string pluginId,
+        string displayName)
+    {
+        var window = new PluginWindow(
+            new PluginViewModel(services),
+            NullLogger<PluginWindow>.Instance,
+            dock);
+        window.BindPluginIdentity(pluginId, displayName);
+        window.SetPinned(true);
+        return window;
+    }
+
     private static PluginDockManager CreateDock()
     {
         return new PluginDockManager(

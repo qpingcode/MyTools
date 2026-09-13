@@ -161,6 +161,25 @@ public partial class PluginWindow
         Hide();
     }
 
+    internal void ApplyArrangedBounds(DipRect bounds)
+    {
+        WindowStartupLocation = WindowStartupLocation.Manual;
+        if (WindowState != WindowState.Normal)
+        {
+            WindowState = WindowState.Normal;
+        }
+
+        if (!IsVisible)
+        {
+            Show();
+        }
+
+        Left = bounds.Left;
+        Top = bounds.Top;
+        Width = bounds.Width;
+        Height = bounds.Height;
+    }
+
     internal void TogglePinned()
     {
         SetPinned(!IsPinned);

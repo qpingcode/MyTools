@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows;
+using CommunityToolkit.Mvvm.Input;
 using MyTools.Common.Localization;
 using MyTools.Common.Plugins;
 using MyTools.Desktop.ViewModels;
@@ -20,10 +21,22 @@ public sealed class PluginDockManager
         this.windowPlacement = windowPlacement;
         this.localization = localization;
         Items = new ReadOnlyObservableCollection<PluginDockItem>(items);
+        CloseAllCommand = new RelayCommand(CloseAll);
+        ArrangeWindowsCommand = new RelayCommand(ArrangeWindows);
+        HideAllCommand = new RelayCommand(HideAll);
+        ShowAllCommand = new RelayCommand(ShowAll);
         localization.LocaleChanged += (_, _) => RefreshCaptions();
     }
 
     public ReadOnlyObservableCollection<PluginDockItem> Items { get; }
+
+    public IRelayCommand CloseAllCommand { get; }
+
+    public IRelayCommand ArrangeWindowsCommand { get; }
+
+    public IRelayCommand HideAllCommand { get; }
+
+    public IRelayCommand ShowAllCommand { get; }
 
     public void Dock(PluginWindow window)
     {
@@ -95,6 +108,48 @@ public sealed class PluginDockManager
 
         item.RefreshOpenState();
         ApplyItemCaption(item);
+    }
+
+    public void CloseAll()
+    {
+        foreach (var item in items.ToList())
+        {
+            item.Window.CloseAfterConfirmation();
+        }
+    }
+
+    public void HideAll()
+    {
+        foreach (var item in items)
+        {
+            item.Window.HideFromDock();
+            SyncOpenState(item.Window);
+        }
+    }
+
+    public void ShowAll()
+    {
+        foreach (var item in items)
+        {
+            item.Window.EnsureShown();
+            SyncOpenState(item.Window);
+        }
+    }
+
+    public void ArrangeWindows()
+    {
+        if (items.Count == 0)
+        {
+            return;
+        }
+
+        var origin = PluginDockWindowArrangement.CaptureBounds(items[0].Window);
+        for (var index = 0; index < items.Count; index++)
+        {
+            var window = items[index].Window;
+            window.ApplyArrangedBounds(PluginDockWindowArrangement.Place(origin, index));
+            SyncOpenState(window);
+        }
     }
 
     public void Remove(PluginId pluginId)

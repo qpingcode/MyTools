@@ -130,6 +130,18 @@
                     AutomationProperties.Name="{loc:Loc PluginDock.DragHandle, DefaultValue=Move dock}"
                     ToolTip="{loc:Loc PluginDock.DragHandle, DefaultValue=Move dock}"
                     PreviewMouseLeftButtonDown="DragHandle_OnPreviewMouseLeftButtonDown">
+                <Button.ContextMenu>
+                    <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                        <MenuItem Header="{loc:Loc PluginDock.CloseAll, DefaultValue=Close all}"
+                                  Command="{Binding CloseAllCommand}" />
+                        <MenuItem Header="{loc:Loc PluginDock.ArrangeWindows, DefaultValue=Arrange windows}"
+                                  Command="{Binding ArrangeWindowsCommand}" />
+                        <MenuItem Header="{loc:Loc PluginDock.HideAll, DefaultValue=Hide all}"
+                                  Command="{Binding HideAllCommand}" />
+                        <MenuItem Header="{loc:Loc PluginDock.ShowAll, DefaultValue=Show all}"
+                                  Command="{Binding ShowAllCommand}" />
+                    </ContextMenu>
+                </Button.ContextMenu>
                 <StackPanel Orientation="Horizontal">
                     <Ellipse Width="{x:Static views:PluginDockLayoutMetrics.HandleGripDotSize}"
                              Height="{x:Static views:PluginDockLayoutMetrics.HandleGripDotSize}"

@@ -190,4 +190,8 @@
   <data name="PluginDock.Restore" xml:space="preserve"><value>Afficher {{name}}</value></data>
   <data name="PluginDock.Hide" xml:space="preserve"><value>Masquer {{name}}</value></data>
   <data name="PluginDock.DragHandle" xml:space="preserve"><value>Déplacer le dock</value></data>
+  <data name="PluginDock.CloseAll" xml:space="preserve"><value>Tout fermer</value></data>
+  <data name="PluginDock.ArrangeWindows" xml:space="preserve"><value>Réorganiser les fenêtres</value></data>
+  <data name="PluginDock.HideAll" xml:space="preserve"><value>Tout masquer</value></data>
+  <data name="PluginDock.ShowAll" xml:space="preserve"><value>Tout afficher</value></data>
 </root>

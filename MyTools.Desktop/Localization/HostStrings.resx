@@ -271,4 +271,8 @@
   <data name="PluginDock.Restore" xml:space="preserve"><value>Show {{name}}</value></data>
   <data name="PluginDock.Hide" xml:space="preserve"><value>Hide {{name}}</value></data>
   <data name="PluginDock.DragHandle" xml:space="preserve"><value>Move dock</value></data>
+  <data name="PluginDock.CloseAll" xml:space="preserve"><value>Close all</value></data>
+  <data name="PluginDock.ArrangeWindows" xml:space="preserve"><value>Arrange windows</value></data>
+  <data name="PluginDock.HideAll" xml:space="preserve"><value>Hide all</value></data>
+  <data name="PluginDock.ShowAll" xml:space="preserve"><value>Show all</value></data>
 </root>

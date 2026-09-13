@@ -24,9 +24,6 @@ public partial class PluginViewModel : ObservableObject, ISearchViewModelCallbac
     private string? pluginName;
 
     [ObservableProperty]
-    private string? pluginVersion;
-
-    [ObservableProperty]
     private UpdateStatus status = UpdateStatus.Idle;
 
     [ObservableProperty]
@@ -66,7 +63,6 @@ public partial class PluginViewModel : ObservableObject, ISearchViewModelCallbac
     internal void SetPluginIdentity(NodePlugin plugin, NodePluginDetailContext? context)
     {
         PluginName = plugin.GetDisplayName();
-        PluginVersion = string.IsNullOrWhiteSpace(context?.Version) ? null : context.Version;
     }
 
     public async Task FocusPrimaryInputAsync(System.Windows.DependencyObject? hostView)

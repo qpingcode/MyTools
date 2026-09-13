@@ -14,6 +14,7 @@ internal static class PluginDockLayoutMetrics
     public const double FrameCornerRadius = 12;
     public const double WorkAreaMargin = 12;
     public const double PositionSnapTolerance = 0.5;
+    public const double ArrangeCascadeStep = 50;
     public static CornerRadius FrameCorner { get; } = new(FrameCornerRadius);
     public static Thickness FramePaddingThickness { get; } = new(FramePadding);
     public const string PinIconName = "pin";

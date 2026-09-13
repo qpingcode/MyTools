@@ -271,4 +271,8 @@
   <data name="PluginDock.Restore" xml:space="preserve"><value>显示 {{name}}</value></data>
   <data name="PluginDock.Hide" xml:space="preserve"><value>隐藏 {{name}}</value></data>
   <data name="PluginDock.DragHandle" xml:space="preserve"><value>移动停靠栏</value></data>
+  <data name="PluginDock.CloseAll" xml:space="preserve"><value>关闭所有</value></data>
+  <data name="PluginDock.ArrangeWindows" xml:space="preserve"><value>整理窗口</value></data>
+  <data name="PluginDock.HideAll" xml:space="preserve"><value>隐藏所有</value></data>
+  <data name="PluginDock.ShowAll" xml:space="preserve"><value>显示所有</value></data>
 </root>

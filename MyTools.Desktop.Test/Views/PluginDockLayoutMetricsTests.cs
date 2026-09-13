@@ -39,4 +39,24 @@ public class PluginDockLayoutMetricsTests
             Assert.That(placement.Height, Is.EqualTo(PrimaryWorkArea.Height));
         });
     }
+
+    [Test]
+    public void Place_OffsetsEachWindowByCascadeStepTimesIndex()
+    {
+        var first = new DipRect(100, 200, 420, 310);
+
+        var second = PluginDockWindowArrangement.Place(first, 1);
+        var third = PluginDockWindowArrangement.Place(first, 2);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(PluginDockWindowArrangement.Place(first, 0), Is.EqualTo(first));
+            Assert.That(second.Left, Is.EqualTo(first.Left + PluginDockLayoutMetrics.ArrangeCascadeStep));
+            Assert.That(second.Top, Is.EqualTo(first.Top + PluginDockLayoutMetrics.ArrangeCascadeStep));
+            Assert.That(second.Width, Is.EqualTo(first.Width));
+            Assert.That(second.Height, Is.EqualTo(first.Height));
+            Assert.That(third.Left, Is.EqualTo(first.Left + PluginDockLayoutMetrics.ArrangeCascadeStep * 2));
+            Assert.That(third.Top, Is.EqualTo(first.Top + PluginDockLayoutMetrics.ArrangeCascadeStep * 2));
+        });
+    }
 }

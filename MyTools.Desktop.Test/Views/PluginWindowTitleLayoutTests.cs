@@ -96,8 +96,7 @@ public class PluginWindowTitleLayoutTests
         var services = new ServiceCollection().BuildServiceProvider();
         var viewModel = new PluginViewModel(services)
         {
-            PluginName = "A very long plugin name that should not push caption buttons out of view",
-            PluginVersion = "2026.08.11-preview-build-with-extra-metadata"
+            PluginName = "A very long plugin name that should not push caption buttons out of view"
         };
 
         var window = new PluginWindow(viewModel);
@@ -109,7 +108,6 @@ public class PluginWindowTitleLayoutTests
             .SingleOrDefault(child => Grid.GetColumn(child) == 0);
         var titleIdentityRegion = (Border?)window.FindName("TitleIdentityRegion");
         var pluginNameTextBlock = (TextBlock?)window.FindName("PluginNameTextBlock");
-        var pluginVersionTextBlock = (TextBlock?)window.FindName("PluginVersionTextBlock");
         var captionButtonsPanel = (StackPanel?)window.FindName("CaptionButtonsPanel");
 
         Assert.Multiple(() =>
@@ -118,8 +116,8 @@ public class PluginWindowTitleLayoutTests
             Assert.That(leadingDragRegion, Is.Not.Null);
             Assert.That(titleIdentityRegion, Is.Not.Null);
             Assert.That(pluginNameTextBlock, Is.Not.Null);
-            Assert.That(pluginVersionTextBlock, Is.Not.Null);
             Assert.That(captionButtonsPanel, Is.Not.Null);
+            Assert.That(window.FindName("PluginVersionTextBlock"), Is.Null);
             Assert.That(window.MinWidth, Is.EqualTo(PluginWindowLayoutMetrics.MinimumWindowWidth).Within(0.1));
             Assert.That(leadingDragRegion!.ActualWidth, Is.EqualTo(PluginWindowLayoutMetrics.LeadingDragRegionWidth).Within(0.5));
             Assert.That(captionButtonsPanel!.ActualWidth, Is.EqualTo(PluginWindowLayoutMetrics.CaptionButtonsWidth).Within(0.5));
@@ -127,25 +125,18 @@ public class PluginWindowTitleLayoutTests
             Assert.That(leadingDragRegion.ActualWidth + titleIdentityRegion.ActualWidth + captionButtonsPanel.ActualWidth,
                 Is.EqualTo(titleBarGrid!.ActualWidth).Within(1.0));
             Assert.That(pluginNameTextBlock!.ActualWidth, Is.LessThan(MeasureUnconstrainedWidth(pluginNameTextBlock)));
-            Assert.That(pluginVersionTextBlock!.ActualWidth, Is.LessThan(MeasureUnconstrainedWidth(pluginVersionTextBlock)));
-            Assert.That(pluginVersionTextBlock.ActualWidth, Is.LessThanOrEqualTo(pluginVersionTextBlock.MaxWidth).Within(0.5));
-            Assert.That(MeasureRenderedTextGap(pluginNameTextBlock, pluginVersionTextBlock, titleIdentityRegion),
-                Is.EqualTo(4).Within(0.5));
             Assert.That(pluginNameTextBlock.TextWrapping, Is.EqualTo(TextWrapping.NoWrap));
             Assert.That(pluginNameTextBlock.TextTrimming, Is.EqualTo(TextTrimming.CharacterEllipsis));
-            Assert.That(pluginVersionTextBlock.TextWrapping, Is.EqualTo(TextWrapping.NoWrap));
-            Assert.That(pluginVersionTextBlock.TextTrimming, Is.EqualTo(TextTrimming.CharacterEllipsis));
         });
     }
 
     [Test]
-    public void TitleBar_CollapsesVersionTextAndKeepsNameBoundedWhenVersionMissing()
+    public void TitleBar_KeepsNameBounded()
     {
         var services = new ServiceCollection().BuildServiceProvider();
         var viewModel = new PluginViewModel(services)
         {
-            PluginName = "A very long plugin name that should stay bounded and leave a wide draggable title area",
-            PluginVersion = null
+            PluginName = "A very long plugin name that should stay bounded and leave a wide draggable title area"
         };
 
         var window = new PluginWindow(viewModel);
@@ -153,14 +144,12 @@ public class PluginWindowTitleLayoutTests
 
         var titleIdentityRegion = (Border?)window.FindName("TitleIdentityRegion");
         var pluginNameTextBlock = (TextBlock?)window.FindName("PluginNameTextBlock");
-        var pluginVersionTextBlock = (TextBlock?)window.FindName("PluginVersionTextBlock");
 
         Assert.Multiple(() =>
         {
             Assert.That(titleIdentityRegion, Is.Not.Null);
             Assert.That(pluginNameTextBlock, Is.Not.Null);
-            Assert.That(pluginVersionTextBlock, Is.Not.Null);
-            Assert.That(pluginVersionTextBlock!.Visibility, Is.EqualTo(Visibility.Collapsed));
+            Assert.That(window.FindName("PluginVersionTextBlock"), Is.Null);
             Assert.That(pluginNameTextBlock!.ActualWidth,
                 Is.Positive.And.LessThanOrEqualTo(320));
             Assert.That(pluginNameTextBlock.TextWrapping, Is.EqualTo(TextWrapping.NoWrap));
@@ -170,27 +159,24 @@ public class PluginWindowTitleLayoutTests
     }
 
     [Test]
-    public void PluginIdentity_AppearsOnlyInTitleAndUsesCompactVersionSpacing()
+    public void PluginIdentity_AppearsOnlyInTitle()
     {
         var services = new ServiceCollection().BuildServiceProvider();
         var viewModel = new PluginViewModel(services)
         {
-            PluginName = "Settings",
-            PluginVersion = "1.2.3"
+            PluginName = "Settings"
         };
 
         var window = new PluginWindow(viewModel);
         ArrangeWindowContent(window, PluginWindowLayoutMetrics.MinimumWindowWidth);
 
-        var pluginVersionTextBlock = (TextBlock?)window.FindName("PluginVersionTextBlock");
         var statusBarContentGrid = (Grid?)window.FindName("StatusBarContentGrid");
         var statusTextBlock = (TextBlock?)window.FindName("StatusTextBlock");
         var statusActions = (FrameworkElement?)window.FindName("StatusActions");
 
         Assert.Multiple(() =>
         {
-            Assert.That(pluginVersionTextBlock, Is.Not.Null);
-            Assert.That(pluginVersionTextBlock!.Margin.Left, Is.EqualTo(4));
+            Assert.That(window.FindName("PluginVersionTextBlock"), Is.Null);
             Assert.That(statusBarContentGrid, Is.Not.Null);
             Assert.That(statusBarContentGrid?.ColumnDefinitions.Count, Is.EqualTo(3));
             Assert.That(statusBarContentGrid?.Children.OfType<StackPanel>(), Is.Empty);
@@ -198,33 +184,6 @@ public class PluginWindowTitleLayoutTests
             Assert.That(statusTextBlock is null ? -1 : Grid.GetColumn(statusTextBlock), Is.EqualTo(1));
             Assert.That(statusActions, Is.Not.Null);
             Assert.That(statusActions is null ? -1 : Grid.GetColumn(statusActions), Is.EqualTo(2));
-        });
-    }
-
-    [Test]
-    public void TitleBar_PlacesVersionImmediatelyAfterPluginName()
-    {
-        var services = new ServiceCollection().BuildServiceProvider();
-        var viewModel = new PluginViewModel(services)
-        {
-            PluginName = "Settings",
-            PluginVersion = "1.2.3"
-        };
-
-        var window = new PluginWindow(viewModel);
-        ArrangeWindowContent(window, PluginWindowLayoutMetrics.MinimumWindowWidth);
-
-        var titleIdentityRegion = (Border?)window.FindName("TitleIdentityRegion");
-        var pluginNameTextBlock = (TextBlock?)window.FindName("PluginNameTextBlock");
-        var pluginVersionTextBlock = (TextBlock?)window.FindName("PluginVersionTextBlock");
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(titleIdentityRegion, Is.Not.Null);
-            Assert.That(pluginNameTextBlock, Is.Not.Null);
-            Assert.That(pluginVersionTextBlock, Is.Not.Null);
-            Assert.That(MeasureRenderedTextGap(pluginNameTextBlock!, pluginVersionTextBlock!, titleIdentityRegion!),
-                Is.EqualTo(4).Within(0.5));
         });
     }
 
@@ -308,17 +267,6 @@ public class PluginWindowTitleLayoutTests
 
         measurement.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         return measurement.DesiredSize.Width;
-    }
-
-    private static double MeasureRenderedTextGap(
-        TextBlock name,
-        TextBlock version,
-        FrameworkElement relativeTo)
-    {
-        var renderedNameWidth = Math.Min(name.ActualWidth, MeasureUnconstrainedWidth(name));
-        var nameRight = name.TranslatePoint(new Point(renderedNameWidth, 0), relativeTo).X;
-        var versionLeft = version.TranslatePoint(new Point(0, 0), relativeTo).X;
-        return versionLeft - nameRight;
     }
 
     private static double MeasureLeftGap(FrameworkElement inner, FrameworkElement outer)
