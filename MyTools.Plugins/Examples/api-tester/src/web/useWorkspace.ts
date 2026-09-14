@@ -329,13 +329,6 @@ export function useWorkspace() {
     }
   }
 
-  async function renameEnvironment() {
-    const owner = environment.value;
-    if (!owner) return;
-    const value = await name(owner.name);
-    if (value) await mutate(() => (owner.name = value));
-  }
-
   async function duplicateEnvironment() {
     const owner = environment.value;
     if (!owner) return;
@@ -566,7 +559,6 @@ export function useWorkspace() {
     addEnvironment,
     switchEnvironment,
     editEnvironment,
-    renameEnvironment,
     duplicateEnvironment,
     deleteEnvironment,
     defaults,

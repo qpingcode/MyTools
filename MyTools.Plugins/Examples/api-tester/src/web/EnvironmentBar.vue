@@ -9,7 +9,6 @@ const {
   addEnvironment,
   switchEnvironment,
   editEnvironment,
-  renameEnvironment,
   duplicateEnvironment,
   deleteEnvironment,
   defaults,
@@ -99,9 +98,7 @@ onBeforeUnmount(() => {
         <Icon name="more" />
       </summary>
       <div class="menu-popover" @click="dismissAction">
-        <button :disabled="!environment" @click="renameEnvironment">
-          {{ t.Rename() }}</button
-        ><button :disabled="!environment" @click="duplicateEnvironment">
+        <button :disabled="!environment" @click="duplicateEnvironment">
           {{ t.Duplicate() }}</button
         ><button :disabled="!environment" @click="deleteEnvironment">
           {{ t.Delete() }}</button

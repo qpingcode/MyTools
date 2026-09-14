@@ -396,24 +396,6 @@ dialog.workspace-tools-dialog {
     box-shadow: inset 2px 0 var(--accent);
 }
 
-.tree-actions {
-    position: absolute;
-    right: 8px;
-    display: none;
-    align-items: center;
-    background: var(--surface-muted);
-    border: 1px solid var(--border);
-    border-radius: 5px;
-    box-shadow: 0 3px 12px var(--mt-shadow, #0005);
-}
-
-.collection-heading:hover .tree-actions,
-.collection-heading:focus-within .tree-actions,
-.request-row:hover .tree-actions,
-.request-row:focus-within .tree-actions {
-    display: flex;
-}
-
 .method-label {
     font-family: 'Cascadia Code', Consolas, monospace;
     font-size: 10px;
@@ -539,6 +521,10 @@ dialog.workspace-tools-dialog {
 
 .document-tab > button:hover:not(:disabled) {
     background: transparent;
+}
+
+.sidebar .search-box input:focus {
+    outline: none;
 }
 
 .document-tab:hover .tab-name,
@@ -1423,6 +1409,23 @@ dialog.cookies-dialog > .row > button:last-child {
     color: var(--mt-text, #e4e7ec);
     cursor: pointer;
     border: 1px solid transparent;
+}
+
+.sidebar-context-menu {
+    position: fixed;
+    right: auto;
+    max-width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
+    overflow: auto;
+    z-index: 40;
+    color: var(--mt-text, #e4e7ec);
+}
+
+.sidebar-context-menu > .sidebar-context-delete {
+    color: var(--danger);
+    border-top: 1px solid var(--border);
+    border-radius: 0;
+    margin-top: 4px;
 }
 
 .environment-editor {

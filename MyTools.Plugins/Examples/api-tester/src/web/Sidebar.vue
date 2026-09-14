@@ -1,10 +1,35 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
+import SidebarContextMenu from './SidebarContextMenu.vue';
+import { SidebarMenuKind } from './sidebarMenuTypes.js';
 import { useWorkspaceContext } from './context.js';
 import IconButton from './IconButton.vue';
 import CollectionSettings from './CollectionSettings.vue';
 const settingsCollection = ref<Collection>();
 const expanded = ref(new Set<string>());
+const requestMenu = ref<{ request: ApiRequest; owner: Collection; x: number; y: number; trigger: HTMLElement }>();
+const collectionMenu = ref<{ owner: Collection; x: number; y: number; trigger: HTMLElement }>();
+function showCollectionMenu(event: MouseEvent | KeyboardEvent, owner: Collection) {
+  if (event instanceof KeyboardEvent && event.key !== 'ContextMenu' && !(event.shiftKey && event.key === 'F10')) return;
+  event.preventDefault();
+  const trigger = (event.currentTarget as HTMLElement).querySelector<HTMLElement>('.collection-title')!;
+  const bounds = trigger.getBoundingClientRect();
+  requestMenu.value = undefined;
+  collectionMenu.value = { owner, trigger,
+    x: event instanceof MouseEvent ? event.clientX : bounds.left,
+    y: event instanceof MouseEvent ? event.clientY : bounds.bottom };
+}
+function showRequestMenu(event: MouseEvent | KeyboardEvent, request: ApiRequest, owner: Collection) {
+  if (event instanceof KeyboardEvent && event.key !== 'ContextMenu' && !(event.shiftKey && event.key === 'F10')) return;
+  event.preventDefault();
+  const row = event.currentTarget as HTMLElement;
+  const trigger = row.querySelector<HTMLElement>('.request-title')!;
+  const bounds = trigger.getBoundingClientRect();
+  collectionMenu.value = undefined;
+  requestMenu.value = { request, owner, trigger,
+    x: event instanceof MouseEvent ? event.clientX : bounds.left,
+    y: event instanceof MouseEvent ? event.clientY : bounds.bottom };
+}
 const {
   t,
   workspace,
@@ -125,6 +150,8 @@ function toggleSelection(id: string, ownerId: string) {
         <div
           class="collection-heading"
           :class="{ selected: owner.id === collectionId }"
+          @contextmenu="showCollectionMenu($event, owner)"
+          @keydown="showCollectionMenu($event, owner)"
         >
           <button
             class="collection-title"
@@ -140,22 +167,6 @@ function toggleSelection(id: string, ownerId: string) {
             /><Icon name="folder" /><span>{{ owner.name }}</span
             ><span class="muted">{{ owner.requests.length }}</span>
           </button>
-          <div class="tree-actions">
-            <IconButton icon="more" :label="t.CollectionSettings()" @click="settingsCollection = owner" />
-            <IconButton
-              icon="edit"
-              :label="t.Rename()"
-              @click="renameCollection(owner)"
-            /><IconButton
-              icon="copy"
-              :label="t.Duplicate()"
-              @click="duplicateCollection(owner)"
-            /><IconButton
-              icon="trash"
-              :label="t.Delete()"
-              @click="deleteCollection(owner)"
-            />
-          </div>
         </div>
         <template v-if="expanded.has(owner.id) || search"
           ><div
@@ -163,6 +174,8 @@ function toggleSelection(id: string, ownerId: string) {
             :key="request.id"
             class="request-row"
             :class="{ selected: active === request.id }"
+            @contextmenu="showRequestMenu($event, request, owner)"
+            @keydown="showRequestMenu($event, request, owner)"
           >
             <input
               type="checkbox"
@@ -175,27 +188,7 @@ function toggleSelection(id: string, ownerId: string) {
               }}</span
               ><span>{{ request.name }}</span>
             </button>
-            <div class="tree-actions">
-              <IconButton
-                icon="copy"
-                :label="t.Duplicate()"
-                @click="copyRequest(request, owner)"
-              /><IconButton
-                icon="arrow-up"
-                :label="t.Up()"
-                :disabled="owner.requests[0]?.id === request.id"
-                @click="move(requestTab(request, owner), -1)"
-              /><IconButton
-                icon="arrow-down"
-                :label="t.Down()"
-                :disabled="owner.requests.at(-1)?.id === request.id"
-                @click="move(requestTab(request, owner), 1)"
-              /><IconButton
-                icon="trash"
-                :label="t.Delete()"
-                @click="deleteRequest(requestTab(request, owner))"
-              />
-            </div></div
+            </div
         ></template>
       </div>
     </div>
@@ -216,4 +209,20 @@ function toggleSelection(id: string, ownerId: string) {
     </div>
   </aside>
   <CollectionSettings v-if="settingsCollection" :collection="settingsCollection" @close="settingsCollection = undefined" />
+  <SidebarContextMenu v-if="requestMenu" :kind="SidebarMenuKind.Request" :key="requestMenu.request.id + ':' + requestMenu.x + ':' + requestMenu.y"
+    :x="requestMenu.x" :y="requestMenu.y" :trigger="requestMenu.trigger" :label="requestMenu.request.name"
+    :can-move-up="requestMenu.owner.requests[0]?.id !== requestMenu.request.id"
+    :can-move-down="requestMenu.owner.requests.at(-1)?.id !== requestMenu.request.id"
+    @close="requestMenu = undefined"
+    @up="move(requestTab(requestMenu.request, requestMenu.owner), -1)"
+    @down="move(requestTab(requestMenu.request, requestMenu.owner), 1)"
+    @copy="copyRequest(requestMenu.request, requestMenu.owner)"
+    @delete="deleteRequest(requestTab(requestMenu.request, requestMenu.owner))" />
+  <SidebarContextMenu v-if="collectionMenu" :kind="SidebarMenuKind.Collection" :key="collectionMenu.owner.id + ':' + collectionMenu.x + ':' + collectionMenu.y"
+    :x="collectionMenu.x" :y="collectionMenu.y" :trigger="collectionMenu.trigger" :label="collectionMenu.owner.name"
+    @close="collectionMenu = undefined"
+    @settings="settingsCollection = collectionMenu.owner"
+    @rename="renameCollection(collectionMenu.owner)"
+    @copy="duplicateCollection(collectionMenu.owner)"
+    @delete="deleteCollection(collectionMenu.owner)" />
 </template>

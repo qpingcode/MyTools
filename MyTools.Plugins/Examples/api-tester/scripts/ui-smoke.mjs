@@ -449,17 +449,20 @@ try {
     .filter({ hasText: 'User' })
     .last();
   await userRow.hover();
-  await userRow.getByRole('button', { name: 'Move up', exact: true }).click();
+  assert.equal(await userRow.locator('.tree-actions').count(), 0);
+  await userRow.click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Move up', exact: true }).click();
   assert.equal(workspace.collections[0].requests[0].name, 'User');
-  await userRow.hover();
-  await userRow.getByRole('button', { name: 'Move down', exact: true }).click();
+  await userRow.locator('.request-title').press('Shift+F10');
+  assert.equal(await page.getByRole('menuitem', { name: 'Move up', exact: true }).isDisabled(), true);
+  await page.getByRole('menuitem', { name: 'Move down', exact: true }).click();
   assert.equal(workspace.collections[0].requests[0].name, 'Login');
-  await userRow.hover();
-  await userRow.getByRole('button', { name: 'Duplicate', exact: true }).click();
+  await userRow.click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Duplicate', exact: true }).click();
   assert.equal(workspace.collections[0].requests.length, 3);
   const copiedRow = page.locator('.request-row').last();
-  await copiedRow.hover();
-  await copiedRow.getByRole('button', { name: 'Delete', exact: true }).click();
+  await copiedRow.click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Delete', exact: true }).click();
   await page
     .getByRole('dialog')
     .getByRole('button', { name: 'Continue', exact: true })
@@ -481,7 +484,18 @@ try {
   // Collection configuration saves public headers and authentication.
   const collectionHeading = page.locator('.collection-heading').first();
   await collectionHeading.hover();
-  await collectionHeading.getByRole('button', { name: 'Collection settings', exact: true }).click();
+  assert.equal(await collectionHeading.locator('.tree-actions').count(), 0);
+  await collectionHeading.locator('.collection-title').press('Shift+F10');
+  await page.getByRole('menuitem', { name: 'Rename', exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Cancel', exact: true }).click();
+  await collectionHeading.click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Duplicate', exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Cancel', exact: true }).click();
+  await collectionHeading.click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Delete', exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Cancel', exact: true }).click();
+  await collectionHeading.click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Collection settings', exact: true }).click();
   const settingsDialog = page.locator('.feature-dialog');
   await settingsDialog.getByLabel('Name', { exact: true }).last().fill('X-Common');
   await settingsDialog.getByLabel('Value', { exact: true }).first().fill('shared');
