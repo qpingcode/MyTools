@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import IconButton from './IconButton.vue';
+import ResponseBodyView from './ResponseBodyView.vue';
 import {ref} from 'vue';
 import {
   HttpHeader,
@@ -7,6 +8,8 @@ import {
   ExecutionState,
   TestState,
   Limits,
+  ScriptPhase,
+  ScriptLogLevel,
   type RequestResult,
 } from '../shared/model.js';
 import {rpc, errorText, notification} from './rpc.js';
@@ -18,8 +21,6 @@ const props = defineProps<{
   index: number;
 }>();
 const t = useText();
-const formatted = ref(false);
-const formattedText = ref('');
 
 function execution(state: ExecutionState) {
   return {
@@ -71,26 +72,13 @@ async function save() {
   setTimeout(() => URL.revokeObjectURL(url), Limits.pollMs);
 }
 
-function format() {
-  try {
-    formattedText.value = JSON.stringify(
-        JSON.parse(props.result.preview),
-        null,
-        2,
-    ).slice(0, Limits.previewBytes);
-    formatted.value = true;
-  } catch {
-    notification.value = t.value.BadJson();
-  }
-}
-
 async function copyHeaders() {
   await navigator.clipboard.writeText(
       props.result.headers.map((h) => `${h.name}: ${h.value}`).join('\r\n'),
   );
 }
 
-const panel = ref<'Body' | 'ResponseHeaders' | 'RequestHeaders' | 'Assertions'>(
+const panel = ref<'Body' | 'ResponseHeaders' | 'RequestHeaders' | 'Assertions' | 'ScriptConsole'>(
     'Body',
 );
 const responsePanels = [
@@ -98,6 +86,7 @@ const responsePanels = [
   'ResponseHeaders',
   'RequestHeaders',
   'Assertions',
+  'ScriptConsole',
 ] as const;
 </script>
 <template>
@@ -154,37 +143,14 @@ const responsePanels = [
         />
       </div>
     </div>
-    <template v-if="panel === 'Body'"
-    >
-      <div class="body-toolbar">
-        <button :class="{ selected: !formatted }" @click="formatted = false">
-          {{ t.Raw() }}
-        </button
-        >
-        <button
-            :class="{ selected: formatted }"
-            :disabled="
-            result.binary ||
-            result.truncated ||
-            result.previewAvailable === false
-          "
-            @click="format"
-        >
-          {{ t.Formatted() }}
-        </button>
-      </div>
-      <p v-if="result.truncated" class="muted">{{ t.PreviewLimit() }}</p>
-      <pre class="response-code">{{
-          result.previewAvailable === false
-              ? t.CacheError()
-              : result.binary
-                  ? t.BinaryResponse()
-                  : formatted
-                      ? formattedText
-                      : result.preview
-        }}</pre>
-    </template>
-    <table v-if="panel === 'ResponseHeaders' || panel === 'RequestHeaders'">
+    <ResponseBodyView v-if="panel === 'Body'" :result="result" />
+    <div v-if="panel === 'ScriptConsole'" class="response-code script-console">
+      <p v-if="!result.scriptLogs?.length" class="muted">{{ t.NoScriptLogs() }}</p>
+      <div v-for="(log, index) in result.scriptLogs" :key="index" :class="log.level === ScriptLogLevel.Error ? 'error' : ''"><span class="muted">{{ log.phase === ScriptPhase.Before ? t.BeforeScript() : t.AfterScript() }} · {{ log.level }}</span> {{ log.text }}</div>
+    </div>
+    <div v-if="panel === 'ResponseHeaders' || panel === 'RequestHeaders'" class="response-table-scroll">
+    <table class="response-headers-table">
+      <colgroup><col class="response-header-name-column" /><col class="response-header-value-column" /></colgroup>
       <thead>
       <tr>
         <th>{{ t.Key() }}</th>
@@ -203,7 +169,10 @@ const responsePanels = [
       </tr>
       </tbody>
     </table>
-    <table v-if="panel === 'Assertions' && result.assertions.length">
+    </div>
+    <div v-if="panel === 'Assertions' && result.assertions.length" class="response-table-scroll">
+    <table class="response-assertions-table">
+      <colgroup><col class="response-assertion-name-column" /><col class="response-assertion-value-column" /><col class="response-assertion-value-column" /></colgroup>
       <thead>
       <tr>
         <th>{{ t.Assertions() }}</th>
@@ -225,6 +194,7 @@ const responsePanels = [
       </tr>
       </tbody>
     </table>
+    </div>
     <p v-if="panel === 'Assertions' && !result.assertions.length" class="muted">
       {{ t.Untested() }}
     </p>

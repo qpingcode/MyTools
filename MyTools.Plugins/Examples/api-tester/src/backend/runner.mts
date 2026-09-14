@@ -1,6 +1,7 @@
 import {randomUUID} from 'node:crypto';
 import {CookieJar} from 'tough-cookie';
-import {executeRequest, skipped, RequestError} from './engine.mjs';
+import {executeRequest, skipped, RequestError, substitute} from './engine.mjs';
+import { exportCurl, resolveRequestVariables } from '../shared/interchange.js';
 import {
     Limits,
     TestState,
@@ -8,6 +9,9 @@ import {
     ErrorKind,
     CookieSessionExpiry,
     CookieDefaultPath,
+    effectiveRequest,
+    type Collection,
+    type HistoryEntry,
     type ApiRequest,
     type Settings,
     type RunView,
@@ -21,7 +25,9 @@ export interface RunInput {
     variables: Pair[];
     environmentId: string;
     batch: boolean;
-    stopOnFailure: boolean
+    stopOnFailure: boolean;
+    collections?: Collection[];
+    environmentName?: string
 }
 
 interface Job {
@@ -30,6 +36,7 @@ interface Job {
     started: number;
     bodies: Map<number, Buffer>
 }
+const wrapScript = (source: string) => `await (async () => {\n${source}\n})();`;
 
 function cookieExpiry(expires: Date | string | number | undefined): string {
     if (expires == null || expires === CookieSessionExpiry) return '';
@@ -61,10 +68,12 @@ function cookieRecord(cookie: {
 }
 
 export class Runner {
+    constructor(private recordHistory?: (entry: HistoryEntry) => Promise<void>) {}
     private jobs = new Map<string, Job>();
     private environmentId = '';
     private generation = 0;
     private variables: Record<string, string> = Object.create(null);
+    private unsetVariables = new Set<string>();
     private jar = new CookieJar();
     private jars = new Map<string, CookieJar>([['', this.jar]]);
     private bodyBytes = 0;
@@ -75,6 +84,7 @@ export class Runner {
             this.environmentId = id;
             this.generation++;
             this.variables = Object.create(null);
+            this.unsetVariables.clear();
             this.jar = this.jars.get(id) || new CookieJar();
             this.jars.set(id, this.jar);
             if (this.jars.size > Limits.cookieEnvironments) this.jars.delete(this.jars.keys().next().value!);
@@ -91,6 +101,14 @@ export class Runner {
         return snapshot.cookies
             .map(cookieRecord)
             .sort((left, right) => left.domain.localeCompare(right.domain) || left.name.localeCompare(right.name) || left.path.localeCompare(right.path));
+    }
+    curl(input: { request: ApiRequest; collection?: Collection; variables: Pair[]; environmentId: string }): string {
+        const variables = Object.fromEntries(input.variables.filter(v => v.enabled).map(v => [v.name, v.value]));
+        if (input.environmentId === this.environmentId) {
+            for (const name of this.unsetVariables) delete variables[name];
+            Object.assign(variables, this.variables);
+        }
+        return exportCurl(resolveRequestVariables(effectiveRequest(input.request, input.collection), text => substitute(text, variables, 'curl')));
     }
 
     start(input: RunInput): string {
@@ -115,6 +133,7 @@ export class Runner {
         this.jobs.set(id, job);
         const environment: Record<string, string> = Object.create(null);
         for (const variable of snapshot.variables.filter(v => v.enabled)) environment[variable.name] = variable.value;
+        if (!snapshot.batch) for (const name of this.unsetVariables) delete environment[name];
         const generation = this.generation;
         const runtime: Record<string, string> = snapshot.batch ? Object.create(null) : {...this.variables};
         const jar = snapshot.batch ? new CookieJar() : this.jar;
@@ -131,13 +150,33 @@ export class Runner {
                     continue;
                 }
                 job.view.current = request.name;
-                const output = await executeRequest(request, request.settings || input.defaults, {...environment, ...runtime}, jar, job.controller.signal);
+                const collection = input.collections?.find(c => c.requests.some(r => r.id === request.id));
+                const effective = effectiveRequest(request, collection);
+                if (collection?.scripts?.enabled) {
+                    effective.scripts = {
+                        enabled: true,
+                        before: [collection.scripts.before, request.scripts?.enabled ? request.scripts.before : ''].filter(Boolean).map(wrapScript).join('\n'),
+                        after: [collection.scripts.after, request.scripts?.enabled ? request.scripts.after : ''].filter(Boolean).map(wrapScript).join('\n'),
+                    };
+                }
+                const variables = {...environment, ...runtime};
+                const output = await executeRequest(effective, effective.settings || input.defaults, variables, jar, job.controller.signal);
                 if (!this.jobs.has(job.view.id)) return;
                 if (output.body) this.cache(job, job.view.results.length, output.body);
                 job.view.results.push(output.result);
                 this.cachePreview(output.result);
                 Object.assign(runtime, output.writes);
-                if (!input.batch && this.generation === generation && !job.controller.signal.aborted) Object.assign(this.variables, output.writes);
+                for (const name of output.unsets || []) { delete runtime[name]; delete environment[name]; }
+                if (!input.batch && this.generation === generation && !job.controller.signal.aborted) {
+                    Object.assign(this.variables, output.writes);
+                    for (const name of Object.keys(output.writes)) this.unsetVariables.delete(name);
+                    for (const name of output.unsets || []) { delete this.variables[name]; this.unsetVariables.add(name); }
+                }
+                if (this.recordHistory) {
+                    try { await this.recordHistory({ id: randomUUID(), request: output.result.sentRequest || effective, result: output.result, environmentId: input.environmentId, environmentName: input.environmentName || '', variables: Object.entries(variables).map(([name, value]) => ({ name, value, enabled: true })) }); }
+                    catch (error) { console.error('Could not save request history', error); }
+                }
+                delete output.result.sentRequest;
                 stopped = input.stopOnFailure && output.result.test === TestState.Failed;
             }
         } catch (error) {

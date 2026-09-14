@@ -41,10 +41,16 @@ watch(modal, async (value) => {
         {{ owner.name }}
       </option>
     </select>
-    <PairTable v-if="modal.environment" :values="modal.environment.variables" />
+    <div v-if="modal.environment" class="environment-editor">
+      <label class="environment-name-field">
+        <span>{{ t.EnvironmentName() }}</span>
+        <input v-model="modal.environment.name" :aria-label="t.EnvironmentName()" />
+      </label>
+      <PairTable :values="modal.environment.variables" />
+    </div>
     <SettingsEditor v-if="modal.settings" :value="modal.settings" />
     <div class="row">
-      <button @click="finishModal(true)">
+      <button :disabled="!!modal.environment && !modal.environment.name.trim()" @click="finishModal(true)">
         {{ modal.kind === DialogKind.Confirm ? t.Continue() : t.Save() }}
       </button>
       <button

@@ -2,6 +2,8 @@
 import { ref, watch } from 'vue';
 import { useWorkspaceContext } from './context.js';
 import IconButton from './IconButton.vue';
+import CollectionSettings from './CollectionSettings.vue';
+const settingsCollection = ref<Collection>();
 const expanded = ref(new Set<string>());
 const {
   t,
@@ -139,6 +141,7 @@ function toggleSelection(id: string, ownerId: string) {
             ><span class="muted">{{ owner.requests.length }}</span>
           </button>
           <div class="tree-actions">
+            <IconButton icon="more" :label="t.CollectionSettings()" @click="settingsCollection = owner" />
             <IconButton
               icon="edit"
               :label="t.Rename()"
@@ -212,4 +215,5 @@ function toggleSelection(id: string, ownerId: string) {
       >
     </div>
   </aside>
+  <CollectionSettings v-if="settingsCollection" :collection="settingsCollection" @close="settingsCollection = undefined" />
 </template>

@@ -2,7 +2,7 @@ export const PluginId = 'api-tester';
 export enum HttpMethod { Get = 'GET', Post = 'POST', Put = 'PUT', Patch = 'PATCH', Delete = 'DELETE', Head = 'HEAD', Options = 'OPTIONS' }
 export enum JsonValueType { String = 'string', Number = 'number', Boolean = 'boolean', Array = 'array', Object = 'object', Null = 'null' }
 export enum WarningKind { ContentType = 'contentType' }
-export const HttpHeader = { Authorization: 'authorization', ContentType: 'content-type', ContentLength: 'content-length', Cookie: 'cookie', SetCookie: 'set-cookie', Location: 'location', Encoding: 'content-encoding', Host: 'host', Connection: 'connection' } as const;
+export const HttpHeader = { Authorization: 'authorization', ContentType: 'content-type', ContentLength: 'content-length', Cookie: 'cookie', SetCookie: 'set-cookie', Location: 'location', Encoding: 'content-encoding', Host: 'host', Connection: 'connection', UserAgent: 'user-agent', Referer: 'referer' } as const;
 export const ContentType = { Json: 'application/json', Text: 'text/plain; charset=utf-8', Form: 'application/x-www-form-urlencoded', Binary: 'application/octet-stream', Multipart: 'multipart/form-data' } as const;
 export const Routes = {
     load: 'loadWorkspace',
@@ -15,7 +15,10 @@ export const Routes = {
     cookies: 'clearCookies',
     listCookies: 'listCookies',
     file: 'pickFile',
-    download: 'downloadResponse'
+    download: 'downloadResponse',
+    history: 'listHistory',
+    clearHistory: 'clearHistory',
+    curl: 'exportCurl'
 } as const;
 export const CookieSessionExpiry = 'Infinity';
 export const CookieDefaultPath = '/';
@@ -33,7 +36,17 @@ export const Limits = {
     retainedRuns: 8,
     openTabs: 12,
     pollMs: 200,
-    schemaVersion: 1
+    schemaVersion: 1,
+    historyEntries: 100,
+    historyPreviewBytes: 16 * 1024,
+    importBytes: 8 * 1024 * 1024,
+    scriptTimeoutMs: 2000,
+    scriptMemoryMb: 64,
+    scriptOutputBytes: 2 * 1024 * 1024,
+    scriptLogEntries: 100,
+    scriptLogChars: 2048,
+    scriptTests: 100,
+    jsonTreeNodes: 2000
 } as const;
 
 export enum BodyKind {
@@ -45,7 +58,11 @@ export enum BodyKind {
     Binary = 'binary'
 }
 
-export enum AuthKind { None = 'none', Basic = 'basic', Bearer = 'bearer', ApiKey = 'apiKey' }
+export enum AuthKind { None = 'none', Inherit = 'inherit', Basic = 'basic', Bearer = 'bearer', ApiKey = 'apiKey' }
+export enum ScriptPhase { Before = 'before', After = 'after' }
+export enum ScriptLogLevel { Log = 'log', Info = 'info', Warn = 'warn', Error = 'error', Debug = 'debug' }
+export interface RequestScripts { enabled: boolean; before: string; after: string }
+export interface ScriptLog { phase: ScriptPhase; level: ScriptLogLevel; text: string }
 
 export enum KeyLocation { Header = 'header', Query = 'query' }
 
@@ -77,7 +94,8 @@ export enum ErrorKind {
     RedirectLimit = 'redirectLimit',
     Extraction = 'extraction',
     Storage = 'storage',
-    Cache = 'cache'
+    Cache = 'cache',
+    Script = 'script'
 }
 
 export interface Pair {
@@ -130,13 +148,17 @@ export interface ApiRequest {
     body: { kind: BodyKind; text: string; contentType: string; fields: Pair[]; file: string; fileSize?: number };
     settings?: Settings;
     assertions: Assertion[];
-    extractions: Extraction[]
+    extractions: Extraction[];
+    scripts?: RequestScripts
 }
 
 export interface Collection {
     id: string;
     name: string;
-    requests: ApiRequest[]
+    requests: ApiRequest[];
+    auth?: ApiRequest['auth'];
+    headers?: Pair[];
+    scripts?: RequestScripts
 }
 
 export interface Environment {
@@ -189,7 +211,26 @@ export interface RequestResult {
     verifyTls: boolean;
     assertions: AssertionResult[];
     error?: Failure;
-    warnings: WarningKind[]
+    warnings: WarningKind[];
+    scriptLogs?: ScriptLog[];
+    sentRequest?: ApiRequest
+}
+
+export interface HistoryEntry {
+    id: string;
+    request: ApiRequest;
+    result: RequestResult;
+    environmentId: string;
+    environmentName: string;
+    variables: Pair[];
+}
+
+export function effectiveRequest(request: ApiRequest, collection?: Collection): ApiRequest {
+    const result: ApiRequest = JSON.parse(JSON.stringify(request));
+    if (result.auth.kind === AuthKind.Inherit) result.auth = JSON.parse(JSON.stringify(collection?.auth || newRequest('', '').auth));
+    const overridden = new Set(result.headers.map(header => header.name.toLowerCase()));
+    result.headers = [...(collection?.headers || []).filter(header => !overridden.has(header.name.toLowerCase())), ...result.headers];
+    return result;
 }
 
 export interface RunView {

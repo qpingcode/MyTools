@@ -11,6 +11,8 @@
     --muted: var(--mt-text-muted, #8b94a4);
     --accent: var(--mt-accent, #5b9cff);
     --accent-text: var(--mt-accent-foreground, #fff);
+    /* Text accents need more contrast than blue borders and button fills. */
+    --interactive-text: #a8ceff;
     --danger: var(--mt-error, #f18484);
     --success: var(--mt-success, #62cba4);
     /* Separate HTTP method hues, with brighter text on dark surfaces. */
@@ -26,6 +28,7 @@
 /* Match native dropdown popups and form controls to the host theme. */
 :root[data-theme='light'] {
     color-scheme: light;
+    --interactive-text: #245fc0;
     --method-get: #16734e;
     --method-post: #885b08;
     --method-put: #245fc0;
@@ -171,6 +174,60 @@ p {
     gap: 12px;
 }
 
+.header-actions { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.workspace-tools-button { border-color: var(--border); padding: 5px 8px; }
+.feature-dialog { width: min(960px, calc(100vw - 32px)); }
+.feature-dialog h2 { margin: 10px 0; }
+.feature-dialog .auth-layout { margin: 12px 0; }
+dialog.workspace-tools-dialog {
+    padding: 0;
+    height: min(760px, 85vh);
+    overflow: hidden;
+}
+.workspace-tools-dialog[open] { display: flex; flex-direction: column; }
+.workspace-tools-titlebar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: none;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-muted);
+}
+.workspace-tools-titlebar h2 { margin: 0; font-size: 14px; }
+.workspace-tools-dialog > .tools-content { flex: 1; min-height: 0; overflow: auto; padding: 16px; margin: 0; align-content: start; }
+.tools-history { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; padding: 0 16px 16px; }
+.tools-history > .body-toolbar, .tools-history > p { flex: none; }
+.tools-history > .history-list { flex: 0 1 160px; min-height: 64px; }
+.history-detail { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+.history-detail > .section-heading, .history-detail > p { flex: none; }
+.history-detail > .response-panel { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+.history-detail .response-meta, .history-detail .response-toolbar, .history-detail .body-toolbar, .history-detail .response-search, .history-detail .response-panel > p { flex: none; }
+.history-detail .response-table-scroll, .history-detail .response-body-content, .history-detail .script-console { flex: 1; min-height: 0; overflow: auto; }
+.history-detail .response-code { max-height: none; }
+.tools-content { display: grid; gap: 12px; margin-top: 12px; }
+.script-code { width: 100%; min-height: 180px; resize: vertical; font-family: 'Cascadia Code', Consolas, monospace; line-height: 1.6; tab-size: 2; }
+.assertion-editor-row { display: flex; align-items: end; gap: 10px; flex-wrap: wrap; margin: 12px 0; }
+.assertion-editor-row .field { flex: 1; min-width: 120px; }
+.assertion-editor-row input[type='checkbox'] { align-self: center; }
+.response-search { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+.response-search input { flex: 1; }
+.history-list { max-height: 240px; overflow: auto; margin: 12px 0; }
+.history-row { width: 100%; text-align: left; justify-content: flex-start; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
+.history-row > span:nth-child(2) { flex: 1; min-width: 180px; overflow-wrap: anywhere; }
+.history-row.selected { background: var(--hover); }
+.json-tree { font-family: 'Cascadia Code', Consolas, monospace; white-space: pre-wrap; }
+.json-tree-children { padding-left: 18px; border-left: 1px solid var(--border); margin-left: 6px; }
+.json-tree-node summary { cursor: pointer; }
+.json-key { color: var(--method-put); }
+.json-string { color: var(--method-get); }
+.json-number { color: var(--method-post); }
+.json-boolean, .json-null { color: var(--method-patch); }
+.response-code mark { background: var(--method-post); color: #15171b; border-radius: 2px; }
+.response-code mark.active-match { outline: 2px solid var(--accent); }
+:root[data-theme='light'] .response-code mark { background: #ffdfa0; color: #15171b; }
+.script-console { white-space: pre-wrap; overflow-wrap: anywhere; }
+
 .brand {
     display: flex;
     align-items: center;
@@ -195,8 +252,8 @@ p {
     color: var(--muted);
 }
 
-.environment-bar select {
-    width: 190px;
+.environment-selector {
+    width: 130px;
     background: transparent;
     border-color: transparent;
     color: var(--mt-text, #e4e7ec);
@@ -473,6 +530,20 @@ p {
 .tab-name {
     overflow: hidden;
     text-overflow: ellipsis;
+    color: var(--muted);
+}
+
+.document-tab.selected .tab-name {
+    color: var(--mt-text, #e4e7ec);
+}
+
+.document-tab > button:hover:not(:disabled) {
+    background: transparent;
+}
+
+.document-tab:hover .tab-name,
+.document-tab > .icon-button:hover:not(:disabled) {
+    color: var(--interactive-text);
 }
 
 .dirty-dot {
@@ -497,6 +568,85 @@ p {
 }
 
 .request-pane {
+    min-height: 0;
+    min-width: 0;
+    display: flex;
+    overflow: hidden;
+}
+
+.request-pane > .empty-state {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    padding: 20px;
+    overflow: auto;
+}
+
+.request-pane > .request-editor {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.request-pane .request-heading,
+.request-pane .url-bar,
+.request-pane .config-bar { flex: none; }
+
+/* Scroll only the active tab content, keeping headings and tab controls fixed. */
+.request-pane .config-panel {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+    overflow: auto;
+    scrollbar-gutter: stable;
+}
+
+.request-response-split > .workspace-scroll {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.request-response-split > .workspace-scroll > .response {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.request-response-split > .workspace-scroll > .response > .section-heading { flex: none; }
+.request-response-split > .workspace-scroll > .response > .response-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.response > .response-panel > .response-meta,
+.response > .response-panel > .response-toolbar,
+.response > .response-panel > .body-toolbar,
+.response > .response-panel > .response-search,
+.response > .response-panel > p { flex: none; }
+
+.response > .response-panel > .response-table-scroll,
+.response > .response-panel > .response-body-content,
+.response > .response-panel > .script-console {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    scrollbar-gutter: stable;
+}
+
+.response > .response-panel .response-code { max-height: none; }
+.request-response-split > .workspace-scroll > .run-results {
+    flex: 0 1 25%;
+    max-height: 25%;
     min-height: 0;
     overflow: auto;
 }
@@ -699,7 +849,7 @@ button.primary:hover:not(:disabled) {
 
 .config-tabs {
     display: flex;
-    gap: 18px;
+    gap: 4px;
     overflow-x: auto;
     flex: 1;
     min-width: 0;
@@ -708,14 +858,14 @@ button.primary:hover:not(:disabled) {
 .cookies-button {
     flex: none;
     border-radius: 0;
-    padding: 13px 2px 11px;
+    padding: 13px 8px 11px;
     color: var(--muted);
     font-size: 12px;
 }
 
 .config-tabs > button {
     border-radius: 0;
-    padding: 13px 0 11px;
+    padding: 13px 8px 11px;
     color: var(--muted);
     border-bottom: 2px solid transparent;
     font-size: 12px;
@@ -906,6 +1056,7 @@ button.primary:hover:not(:disabled) {
 }
 
 .response {
+    position: relative;
     border-top: 1px solid var(--border);
     padding: 0 20px 18px;
     min-height: 265px;
@@ -920,6 +1071,36 @@ button.primary:hover:not(:disabled) {
 
 .section-heading h2 {
     font-size: 13px;
+}
+
+.response-loading {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    overflow: hidden;
+    pointer-events: none;
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.response-loading > span {
+    display: block;
+    width: 35%;
+    height: 100%;
+    border-radius: 2px;
+    background: var(--accent);
+    animation: response-loading-slide 1.3s linear infinite;
+}
+
+@keyframes response-loading-slide {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(286%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .response-loading > span {
+        /* Keep the requested loading movement visible, at a gentler speed. */
+        animation-duration: 3s;
+    }
 }
 
 .running-indicator {
@@ -1131,7 +1312,51 @@ dialog > .row > button:first-child {
 
 dialog.cookies-dialog {
     width: min(860px, calc(100vw - 40px));
+    height: min(560px, 85vh);
+    min-width: min(560px, calc(100vw - 40px));
+    max-width: calc(100vw - 40px);
+    min-height: min(280px, 85vh);
+    resize: both;
+    overflow: auto;
+    --cookie-name-width: 160px;
+    --cookie-value-width: 320px;
+    --cookie-path-width: 140px;
+    --cookie-expires-width: 200px;
+    --cookie-flag-width: 100px;
 }
+
+.response-table-scroll {
+    overflow-x: auto;
+    --response-header-name-width: 240px;
+    --response-header-value-width: 480px;
+    --response-assertion-name-width: 240px;
+    --response-assertion-value-width: 320px;
+}
+
+.response-table-scroll table { table-layout: fixed; }
+.response-headers-table { min-width: calc(var(--response-header-name-width) + var(--response-header-value-width)); }
+.response-header-name-column { width: var(--response-header-name-width); }
+.response-header-value-column { width: var(--response-header-value-width); }
+.response-assertions-table { min-width: calc(var(--response-assertion-name-width) + 2 * var(--response-assertion-value-width)); }
+.response-assertion-name-column { width: var(--response-assertion-name-width); }
+.response-assertion-value-column { width: var(--response-assertion-value-width); }
+.response-table-scroll th, .response-table-scroll td { overflow-wrap: anywhere; }
+
+dialog.cookies-dialog[open] { display: flex; flex-direction: column; }
+.cookies-dialog > h2, .cookies-dialog > p, .cookies-dialog > .row { flex: none; }
+.cookies-content { min-height: 0; flex: 1; overflow: auto; }
+.cookies-table-scroll { overflow-x: auto; }
+.cookies-table-scroll table {
+    table-layout: fixed;
+    min-width: calc(var(--cookie-name-width) + var(--cookie-value-width) + var(--cookie-path-width) + var(--cookie-expires-width) + 2 * var(--cookie-flag-width));
+}
+.cookie-name-column { width: var(--cookie-name-width); }
+.cookie-value-column { width: var(--cookie-value-width); }
+.cookie-path-column { width: var(--cookie-path-width); }
+.cookie-expires-column { width: var(--cookie-expires-width); }
+.cookie-flag-column { width: var(--cookie-flag-width); }
+.cookies-table-scroll th, .cookies-table-scroll td { vertical-align: top; overflow-wrap: anywhere; }
+.cookie-value { max-height: 120px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
 
 dialog.cookies-dialog > .row > button:first-child {
     background: transparent;
@@ -1192,6 +1417,89 @@ dialog.cookies-dialog > .row > button:last-child {
     justify-content: flex-start;
 }
 
+.environment-selector > summary {
+    justify-content: space-between;
+    gap: 6px;
+    color: var(--mt-text, #e4e7ec);
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.environment-editor {
+    max-height: 60vh;
+    overflow: auto;
+}
+
+.environment-name-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+.environment-selector > summary:hover,
+.environment-selector[open] > summary {
+    color: var(--interactive-text);
+    border-color: var(--accent);
+    background: var(--surface);
+}
+
+.environment-selector > summary > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.environment-options {
+    width: 300px;
+    max-width: calc(100vw - 24px);
+    top: 100%;
+    max-height: 80vh;
+    overflow: hidden;
+}
+
+.environment-option-list {
+    max-height: min(240px, 50vh);
+    overflow: auto;
+}
+
+.environment-option-footer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-top: 1px solid var(--border);
+    margin-top: 6px;
+    padding-top: 8px;
+}
+
+.environment-options > .environment-search {
+    display: block;
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.environment-option-footer > button {
+    color: var(--interactive-text);
+}
+
+.environment-no-matches {
+    padding: 8px;
+    font-size: 12px;
+}
+
+.environment-option-list > button {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: left;
+    color: var(--mt-text, #e4e7ec);
+}
+
+.environment-option-list > button[aria-pressed='true'] {
+    color: var(--interactive-text);
+    background: var(--hover);
+}
+
 #toast {
     position: fixed;
     right: 20px;
@@ -1221,7 +1529,7 @@ dialog.cookies-dialog > .row > button:last-child {
     }
 
     .config-tabs {
-        gap: 12px;
+        gap: 2px;
     }
 
     .auth-layout {
@@ -1235,8 +1543,8 @@ dialog.cookies-dialog > .row > button:last-child {
         border-bottom: 1px solid var(--border);
     }
 
-    .environment-bar select {
-        width: 140px;
+    .environment-selector {
+        width: 110px;
     }
 
     .response-meta > .muted {

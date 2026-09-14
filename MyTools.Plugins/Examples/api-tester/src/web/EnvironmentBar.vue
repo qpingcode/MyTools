@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { useWorkspaceContext } from './context.js';
 import IconButton from './IconButton.vue';
 const {
@@ -17,18 +17,39 @@ const {
 } = useWorkspaceContext();
 import Icon from './Icon.vue';
 const menu = ref<HTMLDetailsElement | null>(null);
+const selector = ref<HTMLDetailsElement | null>(null);
+const environmentSearch = ref('');
+const filteredEnvironments = computed(() => {
+  const query = environmentSearch.value.trim().toLocaleLowerCase();
+  return workspace.value.environments.filter(owner => owner.name.toLocaleLowerCase().includes(query));
+});
+function resetEnvironmentSearch() {
+  if (!selector.value?.open) environmentSearch.value = '';
+}
+function createEnvironment() {
+  closeMenu();
+  addEnvironment();
+}
 function closeMenu() {
   if (menu.value) menu.value.open = false;
+  if (selector.value) selector.value.open = false;
 }
 function dismissOutside(event: Event) {
-  if (event.target instanceof Node && !menu.value?.contains(event.target))
-    closeMenu();
+  if (!(event.target instanceof Node)) return;
+  if (!menu.value?.contains(event.target) && menu.value) menu.value.open = false;
+  if (!selector.value?.contains(event.target) && selector.value) selector.value.open = false;
 }
 function dismissEscape(event: KeyboardEvent) {
-  if (event.key !== 'Escape' || !menu.value?.open) return;
+  const opened = selector.value?.open ? selector.value : menu.value?.open ? menu.value : null;
+  if (event.key !== 'Escape' || !opened) return;
   event.preventDefault();
   closeMenu();
-  menu.value.querySelector('summary')?.focus();
+  opened.querySelector('summary')?.focus();
+}
+function selectEnvironment(id: string) {
+  switchEnvironment(id);
+  if (selector.value) selector.value.open = false;
+  selector.value?.querySelector('summary')?.focus();
 }
 function dismissAction(event: MouseEvent) {
   const button =
@@ -48,24 +69,26 @@ onBeforeUnmount(() => {
 </script>
 <template>
   <div class="environment-bar">
-    <Icon name="globe" /><select
-      :value="workspace.environmentId"
-      :aria-label="t.Environments()"
-      @change="switchEnvironment(($event.target as HTMLSelectElement).value)"
-    >
-      <option value="">{{ t.NoEnvironment() }}</option>
-      <option
-        v-for="owner in workspace.environments"
-        :key="owner.id"
-        :value="owner.id"
-      >
-        {{ owner.name }}
-      </option></select
-    ><IconButton
-      icon="plus"
-      :label="t.NewEnvironment()"
-      @click="addEnvironment"
-    /><IconButton
+    <Icon name="globe" />
+    <details ref="selector" class="menu environment-selector" @toggle="resetEnvironmentSearch">
+      <summary :aria-label="t.Environments()" :title="environment?.name ?? t.NoEnvironment()">
+        <span>{{ environment?.name ?? t.NoEnvironment() }}</span><Icon name="chevron-down" />
+      </summary>
+      <div class="menu-popover environment-options" :aria-label="t.Environments()">
+        <input class="environment-search" v-model="environmentSearch" type="search" :placeholder="t.SearchEnvironments()" :aria-label="t.SearchEnvironments()" />
+        <div class="environment-option-list">
+        <button :aria-pressed="!workspace.environmentId" @click="selectEnvironment('')">{{ t.NoEnvironment() }}</button>
+        <button v-for="owner in filteredEnvironments" :key="owner.id"
+          :aria-pressed="workspace.environmentId === owner.id" :title="owner.name"
+          @click="selectEnvironment(owner.id)">{{ owner.name }}</button>
+        <p v-if="environmentSearch.trim() && !filteredEnvironments.length" class="environment-no-matches" role="status">{{ t.NoMatchingEnvironments() }}</p>
+        </div>
+        <div class="environment-option-footer">
+          <button @click="createEnvironment"><Icon name="plus" />{{ t.NewEnvironment() }}</button>
+        </div>
+      </div>
+    </details>
+    <IconButton
       icon="edit"
       :label="t.EditEnvironment()"
       :disabled="!environment"

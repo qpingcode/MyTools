@@ -36,6 +36,7 @@ function close() {
   >
     <h2>{{ t.Cookies() }}</h2>
     <p class="muted">{{ t.CookiesHint() }}</p>
+    <div class="cookies-content">
     <p v-if="!cookies.length" class="muted">{{ t.CookiesEmpty() }}</p>
     <section
       v-for="[domain, items] in groups"
@@ -43,7 +44,16 @@ function close() {
       class="cookie-domain"
     >
       <h3>{{ domain }}</h3>
+      <div class="cookies-table-scroll">
       <table>
+        <colgroup>
+          <col class="cookie-name-column" />
+          <col class="cookie-value-column" />
+          <col class="cookie-path-column" />
+          <col class="cookie-expires-column" />
+          <col class="cookie-flag-column" />
+          <col class="cookie-flag-column" />
+        </colgroup>
         <thead>
           <tr>
             <th>{{ t.Key() }}</th>
@@ -60,7 +70,7 @@ function close() {
             :key="cookie.domain + cookie.path + cookie.name"
           >
             <td>{{ cookie.name }}</td>
-            <td>{{ cookie.value }}</td>
+            <td><div class="cookie-value" :title="cookie.value">{{ cookie.value }}</div></td>
             <td>{{ cookie.path }}</td>
             <td>{{ expiresText(cookie.expires) }}</td>
             <td>{{ cookie.httpOnly ? t.CookieYes() : t.CookieNo() }}</td>
@@ -68,7 +78,9 @@ function close() {
           </tr>
         </tbody>
       </table>
+      </div>
     </section>
+    </div>
     <div class="row">
       <button :disabled="!cookies.length" @click="clearCookies">
         {{ t.ClearCookies() }}

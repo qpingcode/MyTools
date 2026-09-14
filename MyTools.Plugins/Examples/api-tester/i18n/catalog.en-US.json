@@ -2288,6 +2288,863 @@
       "existingTranslations": {
         "zh-CN": "重试"
       }
+    },
+    {
+      "key": "Plugin.ApiTester.InheritAuth",
+      "defaultValue": "Inherit from collection",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 5,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "继承集合认证"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.InheritAuthHint",
+      "defaultValue": "Use the collection authentication. Select None to disable it for this request.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 6,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "使用集合的认证配置。选择“无”可为此请求禁用认证。"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.CollectionSettings",
+      "defaultValue": "Collection settings",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 7,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "集合设置"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.CollectionSettingsHint",
+      "defaultValue": "Request headers override common headers with the same name, including disabled rows. Collection scripts run before request scripts in both phases.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 8,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "请求中的同名 Headers 会覆盖公共 Headers（包括禁用的条目）。两个阶段均先执行集合脚本，再执行请求脚本。"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.CommonHeaders",
+      "defaultValue": "Common headers",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 9,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "公共 Headers"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.AssertionsHint",
+      "defaultValue": "JSON paths use JSON Pointer, for example /data/id. Time assertions check a maximum response time in milliseconds. JSON values are entered as JSON.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 10,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "JSON 路径使用 JSON Pointer，例如 /data/id。时间断言检查最大响应时间（毫秒）；JSON 值按 JSON 格式填写。"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.TestName",
+      "defaultValue": "Test name",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 11,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "测试名称"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.AssertionKind",
+      "defaultValue": "Assertion type",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 12,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "断言类型"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Scripts",
+      "defaultValue": "Scripts",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 13,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "脚本"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.EnableScripts",
+      "defaultValue": "Enable scripts",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 14,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "启用脚本"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.BeforeScript",
+      "defaultValue": "Before request",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 15,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "请求前"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.AfterScript",
+      "defaultValue": "After response",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 16,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "响应后"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ScriptsHint",
+      "defaultValue": "JavaScript with pm.variables, pm.request, pm.response, pm.test, pm.expect, pm.crypto and console. pm.crypto provides sha256, hmacSha256 and UTF-8 base64. pm.environment and pm.collectionVariables are aliases for session variables; changes last until switching environments or restarting, not in the saved environment. Scripts run with a 2-second limit; filesystem, network APIs and npm imports are unavailable. This is a subset of the Postman scripting API.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 17,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "支持 JavaScript、pm.variables、pm.request、pm.response、pm.test、pm.expect、pm.crypto 和 console。pm.crypto 提供 sha256、hmacSha256 和 UTF-8 base64。pm.environment 和 pm.collectionVariables 是会话变量的别名；修改在切换环境或重启前有效，不会写入已保存的环境。脚本限时 2 秒，不提供文件、网络 API 或 npm 导入。仅支持 Postman 脚本 API 的一个子集。"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ScriptExamples",
+      "defaultValue": "Script examples",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 18,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "脚本示例"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ScriptConsole",
+      "defaultValue": "Script console",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 19,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "脚本控制台"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.NoScriptLogs",
+      "defaultValue": "No script output.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 20,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "暂无脚本输出。"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ScriptError",
+      "defaultValue": "Script execution failed.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 21,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "脚本执行失败。"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.CopyCurl",
+      "defaultValue": "Copy as cURL",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 22,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "复制为 cURL"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Copied",
+      "defaultValue": "Copied.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 23,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "已复制。"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.CopyFailed",
+      "defaultValue": "Could not copy to the clipboard.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 24,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "无法复制到剪贴板。"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.WorkspaceTools",
+      "defaultValue": "Import / Export / History",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 25,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "导入 / 导出 / 历史"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Import",
+      "defaultValue": "Import",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 26,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "导入"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Export",
+      "defaultValue": "Export",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 27,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "导出"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.History",
+      "defaultValue": "History",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 28,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "历史记录"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ImportFormat",
+      "defaultValue": "Import format",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 29,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "导入格式"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.JsonImportFormat",
+      "defaultValue": "API Tester backup / Postman Collection or Environment",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 30,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "API Tester 备份 / Postman 集合或环境"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ImportSource",
+      "defaultValue": "Paste cURL or JSON",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 31,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "粘贴 cURL 或 JSON"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ImportFile",
+      "defaultValue": "Choose a JSON file",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 32,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "选择 JSON 文件"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ImportHint",
+      "defaultValue": "JSON imports merge collections and environments without replacing existing data. Imported scripts are disabled until you enable them. Unsupported cURL options and Postman auth/body types are rejected. Maximum file size: 8 MB.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 33,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "JSON 导入会合并集合与环境，不覆盖现有数据。导入的脚本默认禁用，需要手动启用。不支持的 cURL 选项及 Postman 认证或请求体类型会被拒绝。文件最大 8 MB。"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ImportFailed",
+      "defaultValue": "Import failed. Check the format, supported options and the 8 MB size limit.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 34,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "导入失败，请检查格式、选项支持范围及 8 MB 大小限制。"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Imported",
+      "defaultValue": "Imported successfully.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 35,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "导入成功。"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ImportedRequest",
+      "defaultValue": "Imported request",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 36,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "导入的请求"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ExportTarget",
+      "defaultValue": "Export target",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 37,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "导出内容"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.WorkspaceBackup",
+      "defaultValue": "Entire workspace backup",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 38,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "完整工作区备份"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ExportFormat",
+      "defaultValue": "Export format",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 39,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "导出格式"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.NativeFormat",
+      "defaultValue": "API Tester JSON",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 40,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "API Tester JSON"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.PostmanFormat",
+      "defaultValue": "Postman Collection v2.1",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 41,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "Postman Collection v2.1"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ExportHint",
+      "defaultValue": "Exports contain saved requests and environment values, including credentials. Save edited tabs first. API Tester JSON preserves all settings; Postman export preserves requests, authentication and enabled scripts, but not API Tester assertions, extractions or request settings.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 42,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "导出包含已保存的请求及环境值（含凭据），请先保存编辑中的标签页。API Tester JSON 保留全部配置；Postman 导出保留请求、认证和已启用的脚本，不包含本插件的断言、提取规则或请求设置。"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.SearchHistory",
+      "defaultValue": "Search request history",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 43,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "搜索请求历史"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Refresh",
+      "defaultValue": "Refresh",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 44,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "刷新"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ClearHistory",
+      "defaultValue": "Clear history",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 45,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "清空历史"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ClearHistoryConfirm",
+      "defaultValue": "Clear all saved request history?",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 46,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "清空所有已保存的请求历史？"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.NoHistory",
+      "defaultValue": "No matching request history.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 47,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "暂无匹配的请求历史。"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.HistoryFailed",
+      "defaultValue": "Could not load history. Please refresh.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 48,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "无法加载历史，请刷新重试。"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ReopenRequest",
+      "defaultValue": "Reopen request",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 49,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "重新打开请求"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.HistoryHint",
+      "defaultValue": "History stores the latest 100 requests with environment snapshots and up to 16 KB of each response preview. Full response bodies are not retained. Reopened sent requests use recorded values with scripts disabled.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 50,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "历史保留最近 100 次请求、环境快照及每次最多 16 KB 的响应预览，不保留完整响应体。重新打开已发送的请求时使用记录的值，并禁用脚本。"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.JsonTree",
+      "defaultValue": "JSON tree",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 51,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "JSON 树"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ExpandAll",
+      "defaultValue": "Expand all",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 52,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "全部展开"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.CollapseAll",
+      "defaultValue": "Collapse all",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 53,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "全部折叠"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.SearchResponse",
+      "defaultValue": "Search response",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 54,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "搜索响应"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.SearchMatches",
+      "defaultValue": "{{count}} matches",
+      "placeholders": [
+        "count"
+      ],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 55,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "{{count}} 处匹配"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.PreviousMatch",
+      "defaultValue": "Previous",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 56,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "上一处"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.NextMatch",
+      "defaultValue": "Next",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 57,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "下一处"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.JsonTreeLimit",
+      "defaultValue": "This JSON is too large or deeply nested for tree view. Use raw view to search it.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 58,
+          "column": 5
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "此 JSON 过大或嵌套过深，无法显示树视图，请在原始视图中搜索。"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.SearchEnvironments",
+      "defaultValue": "Search environments",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 5,
+          "column": 31
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "搜索环境"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.NoMatchingEnvironments",
+      "defaultValue": "No matching environments.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 6,
+          "column": 31
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "没有匹配的环境。"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.EnvironmentName",
+      "defaultValue": "Environment name",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 5,
+          "column": 28
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "环境名称"
+      }
     }
   ]
 }

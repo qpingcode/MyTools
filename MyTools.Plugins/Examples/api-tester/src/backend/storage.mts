@@ -1,6 +1,8 @@
 import {mkdir, readFile, writeFile, rename} from 'node:fs/promises';
 import path from 'node:path';
-import {emptyWorkspace, Limits, type Workspace} from '../shared/model.js';
+import {emptyWorkspace, Limits, type HistoryEntry, type Workspace} from '../shared/model.js';
+
+import { validateWorkspace } from '../shared/workspaceValidation.js';
 
 const WorkspaceFilename = 'workspace.json';
 
@@ -33,8 +35,38 @@ export class WorkspaceStore {
     this.writes = operation; return operation;
   }
 }
-export function validateWorkspace(value: Workspace): void {
-  if (!value || value.version !== Limits.schemaVersion || !Array.isArray(value.collections) || !Array.isArray(value.environments) || !value.defaults) throw new Error('Unsupported workspace format');
-  for (const collection of value.collections) { if (!collection.id || !Array.isArray(collection.requests)) throw new Error('Invalid collection'); for (const request of collection.requests) if (!request.id || !request.body || !request.auth || !Array.isArray(request.params) || !Array.isArray(request.headers) || !Array.isArray(request.assertions) || !Array.isArray(request.extractions)) throw new Error('Invalid request'); }
-  for (const environment of value.environments) if (!environment.id || !Array.isArray(environment.variables)) throw new Error('Invalid environment');
+export { validateWorkspace } from '../shared/workspaceValidation.js';
+
+const HistoryFilename = 'history.json';
+export class HistoryStore {
+  private writes = Promise.resolve();
+  constructor(private directory: string | undefined) {}
+  async list(): Promise<HistoryEntry[]> {
+    await this.writes.catch(() => {});
+    return this.read();
+  }
+  private async read(): Promise<HistoryEntry[]> {
+    if (!this.directory) throw new Error('MYTOOLS_PLUGIN_DATA_DIR is not set');
+    try { return JSON.parse(await readFile(path.join(this.directory, HistoryFilename), 'utf8')); }
+    catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return []; throw error; }
+  }
+  private update(change: (entries: HistoryEntry[]) => HistoryEntry[]): Promise<void> {
+    const operation = this.writes.catch(() => {}).then(async () => {
+      const entries = change(await this.read());
+      const file = path.join(this.directory!, HistoryFilename);
+      await mkdir(this.directory!, { recursive: true });
+      await writeFile(file + '.pending', JSON.stringify(entries), 'utf8');
+      await rename(file + '.pending', file);
+    });
+    this.writes = operation; return operation;
+  }
+  append(entry: HistoryEntry): Promise<void> {
+    const snapshot = structuredClone(entry);
+    snapshot.result.preview = Buffer.from(snapshot.result.preview).subarray(0, Limits.historyPreviewBytes).toString('utf8');
+    snapshot.result.truncated ||= snapshot.result.size > Limits.historyPreviewBytes;
+    snapshot.result.bodyAvailable = false;
+    delete snapshot.result.sentRequest;
+    return this.update(entries => [snapshot, ...entries].slice(0, Limits.historyEntries));
+  }
+  clear(): Promise<void> { return this.update(() => []); }
 }

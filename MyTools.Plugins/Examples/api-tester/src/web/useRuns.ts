@@ -34,6 +34,8 @@ export function useRuns(
       environmentId: workspace.value.environmentId,
       batch: isBatch,
       stopOnFailure: stopOnFailure.value,
+      collections: workspace.value.collections,
+      environmentName: environment.value?.name || '',
     };
   }
 

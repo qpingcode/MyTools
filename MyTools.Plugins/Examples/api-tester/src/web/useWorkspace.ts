@@ -79,6 +79,7 @@ export function useWorkspace() {
       : errorText(notification.value);
   });
   const authOptions = computed(() => [
+    [AuthKind.Inherit, t.value.InheritAuth()],
     [AuthKind.None, t.value.None()],
     [AuthKind.Basic, t.value.Basic()],
     [AuthKind.Bearer, t.value.Bearer()],
@@ -145,6 +146,7 @@ export function useWorkspace() {
     if (value)
       await mutate(() =>
         workspace.value.collections.push({
+          ...clone(owner),
           id: crypto.randomUUID(),
           name: value,
           requests: owner.requests.map((request) => ({
@@ -277,15 +279,11 @@ export function useWorkspace() {
   }
 
   async function addEnvironment() {
-    const value = await name(t.value.NewEnvironment());
-    if (value)
-      await mutate(() =>
-        workspace.value.environments.push({
-          id: crypto.randomUUID(),
-          name: value,
-          variables: [],
-        }),
-      );
+    const draft: Environment = { id: uid(), name: '', variables: [] };
+    if (await choose(DialogKind.Environment, t.value.NewEnvironment, '', { environment: draft })) {
+      draft.name = draft.name.trim();
+      await mutate(() => workspace.value.environments.push(draft));
+    }
   }
 
   async function refreshCookies() {
@@ -318,7 +316,8 @@ export function useWorkspace() {
       await choose(DialogKind.Environment, t.value.EditEnvironment, '', {
         environment: copy,
       })
-    )
+    ) {
+      copy.name = copy.name.trim();
       await mutate(
         () =>
           (workspace.value.environments[
@@ -327,6 +326,7 @@ export function useWorkspace() {
             )
           ] = copy),
       );
+    }
   }
 
   async function renameEnvironment() {

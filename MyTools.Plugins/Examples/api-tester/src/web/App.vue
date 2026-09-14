@@ -14,6 +14,8 @@ import WorkspaceDialogs from './WorkspaceDialogs.vue';
 import Icon from './Icon.vue';
 import IconButton from './IconButton.vue';
 import { notification } from './rpc.js';
+import WorkspaceTools from './WorkspaceTools.vue';
+import { WorkspaceTool } from './workspaceToolTypes.js';
 const controller = useWorkspace();
 provide(WorkspaceKey, controller);
 const { t, workspaceReady, loadingWorkspace, workspaceLoadFailed, loadWorkspace, tab, notificationText } = controller;
@@ -29,7 +31,7 @@ const { t, workspaceReady, loadingWorkspace, workspaceLoadFailed, loadWorkspace,
         <span class="brand-icon"><Icon name="terminal" /></span>
         <h1>{{ t.Name() }}</h1>
       </div>
-      <EnvironmentBar />
+      <div class="header-actions"><WorkspaceTools :tool="WorkspaceTool.Import" /><WorkspaceTools :tool="WorkspaceTool.Export" /><WorkspaceTools :tool="WorkspaceTool.History" /><EnvironmentBar /></div>
     </header>
     <SplitPane
       ><template #sidebar><Sidebar /></template>
@@ -44,7 +46,13 @@ const { t, workspaceReady, loadingWorkspace, workspaceLoadFailed, loadWorkspace,
             <p>{{ t.Subtitle() }}</p>
           </div>
           </template>
-          <section class="response">
+          <section class="response" :aria-busy="!!tab?.running">
+            <div
+              v-if="tab?.running"
+              class="response-loading"
+              role="progressbar"
+              :aria-label="t.Running({ name: tab.request.name })"
+            ><span /></div>
             <div class="section-heading">
               <h2>{{ t.Response() }}</h2>
               <span v-if="tab?.running" class="running-indicator">{{
@@ -60,7 +68,7 @@ const { t, workspaceReady, loadingWorkspace, workspaceLoadFailed, loadWorkspace,
             />
             <div v-else class="empty-response">
               <Icon name="inbox" />
-              <p>{{ t.NoResults() }}</p>
+              <p>{{ tab?.running ? t.Running({ name: tab.request.name }) : t.NoResults() }}</p>
             </div>
           </section>
           <RunResults />

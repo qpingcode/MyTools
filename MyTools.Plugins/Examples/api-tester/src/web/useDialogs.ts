@@ -48,6 +48,7 @@ export function useDialogs() {
       return;
     }
     if (value.kind === DialogKind.Name && !value.value.trim()) return;
+    if (value.kind === DialogKind.Environment && !value.environment?.name.trim()) return;
     if (
       value.kind === DialogKind.Defaults &&
       (!Number.isFinite(value.settings?.timeoutMs) ||

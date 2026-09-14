@@ -20,6 +20,7 @@ export function errorText(error: Failure): string {
     [ErrorKind.Extraction]: text.ExtractionError,
     [ErrorKind.Storage]: text.StorageError,
     [ErrorKind.Cache]: text.CacheError,
+    [ErrorKind.Script]: text.ScriptError,
   };
   return (
     (captions[error.kind] || text.TransportError)() +

@@ -24,6 +24,8 @@ const paths = {
   inbox: 'M3 14 6 4h12l3 10v6H3zM3 14h5l2 3h4l2-3h5',
   file: 'M4 3h10l6 6v12H4zM14 3v6h6',
   download: 'M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4',
+  upload: 'M12 16V3m-5 5 5-5 5 5M4 17v4h16v-4',
+  history: 'M3 11a9 9 0 1 1 2 7M3 4v7h7M12 7v5l3 2',
 } as const;
 defineProps<{ name: keyof typeof paths }>();
 </script>

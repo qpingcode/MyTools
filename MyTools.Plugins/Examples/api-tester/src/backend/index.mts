@@ -3,7 +3,7 @@ import {mytoolsI18n} from '@qping/plugin-bus/i18n';
 import {stat} from 'node:fs/promises';
 import path from 'node:path';
 import {ContentType, Routes, ErrorKind, type Workspace} from '../shared/model.js';
-import {WorkspaceStore} from './storage.mjs';
+import {WorkspaceStore, HistoryStore} from './storage.mjs';
 import {Runner, type RunInput} from './runner.mjs';
 import {RequestError} from './engine.mjs';
 
@@ -11,7 +11,8 @@ const FilePickCapability = 'path.pick';
 const SearchItemId = 'api-tester-workspace';
 const plugin = createPlugin();
 const store = new WorkspaceStore(process.env.MYTOOLS_PLUGIN_DATA_DIR);
-const runner = new Runner();
+const history = new HistoryStore(process.env.MYTOOLS_PLUGIN_DATA_DIR);
+const runner = new Runner(entry => history.append(entry));
 const guarded = <T, R>(handler: (payload: T) => Promise<R> | R) => async (payload: T) => {
     try {
         return {ok: true, value: await handler(payload)};
@@ -54,10 +55,13 @@ plugin.initialize(params => {
         await store.save(workspace);
         return true;
     }))
+    .handle(Routes.history, guarded(() => history.list()))
+    .handle(Routes.curl, guarded((input: Parameters<Runner['curl']>[0]) => runner.curl(input)))
+    .handle(Routes.clearHistory, guarded(() => history.clear()))
     .handle(Routes.start, guarded((input: RunInput) => runner.start(input)))
     .handle(Routes.poll, guarded((input: { id: string; from?: number }) => {
         const view = runner.poll(input.id);
-        return { ...view, results: view.results.slice(input.from || 0), evictedBodies: view.results.flatMap((result, index) => !result.bodyAvailable ? [index] : []), evictedPreviews: view.results.flatMap((result, index) => result.previewAvailable === false ? [index] : []) };
+        return { ...view, results: view.results.slice(input.from || 0).map(({ sentRequest, ...result }) => result), evictedBodies: view.results.flatMap((result, index) => !result.bodyAvailable ? [index] : []), evictedPreviews: view.results.flatMap((result, index) => result.previewAvailable === false ? [index] : []) };
     }))
     .handle(Routes.cancel, guarded((input: { id: string }) => runner.cancel(input.id)))
     .handle(Routes.release, guarded((input: { id: string }) => runner.release(input.id)))

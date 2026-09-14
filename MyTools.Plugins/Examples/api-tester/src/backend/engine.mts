@@ -10,6 +10,7 @@ import {createGunzip, createInflate, createBrotliDecompress} from 'node:zlib';
 import {isDeepStrictEqual} from 'node:util';
 import path from 'node:path';
 import {CookieJar} from 'tough-cookie';
+import { runScript, ScriptFailure } from './scripts.mjs';
 import {
     HttpMethod,
     WarningKind,
@@ -24,6 +25,8 @@ import {
     TestState,
     ErrorKind,
     Limits,
+    ScriptPhase,
+    parseQuery,
     DefaultSuccessStatus,
     queryUrl,
     type ApiRequest,
@@ -330,7 +333,7 @@ export function skipped(request: ApiRequest): RequestResult {
 export async function executeRequest(request: ApiRequest, settings: Settings, variables: Record<string, string>, jar: CookieJar, outerSignal: AbortSignal): Promise<{
     result: RequestResult;
     body?: Buffer;
-    writes: Record<string, string>
+    writes: Record<string, string>; unsets?: string[]
 }> {
     const result = skipped(request);
     result.execution = ExecutionState.Failed;
@@ -345,8 +348,24 @@ export async function executeRequest(request: ApiRequest, settings: Settings, va
     let timer: ReturnType<typeof setTimeout> | undefined;
     let started = 0;
     const writes: Record<string, string> = Object.create(null);
+    const initialVariables = { ...variables };
+    variables = { ...variables };
+    request = structuredClone(request);
+    result.scriptLogs = [];
     try {
         signal.throwIfAborted();
+        if (request.scripts?.enabled && request.scripts.before.trim()) {
+            try {
+                const output = await runScript(request.scripts.before, ScriptPhase.Before, request, variables, signal);
+                if (output.request.url !== request.url) output.request.params = parseQuery(output.request.url);
+                request = output.request; variables = output.variables;
+                result.scriptLogs.push(...output.logs); result.assertions.push(...output.tests);
+            } catch (error) {
+                if (error instanceof ScriptFailure && error.output) { result.scriptLogs.push(...error.output.logs); result.assertions.push(...error.output.tests); }
+                throw new RequestError(ErrorKind.Script, 'before', (error as Error).message);
+            }
+        }
+        result.sentRequest = structuredClone(request);
         if (!SupportedMethods.has(request.method) || !Number.isFinite(settings.timeoutMs) || settings.timeoutMs <= 0 || settings.timeoutMs > MaximumTimerMs) throw new RequestError(ErrorKind.Configuration, 'settings');
         validateTests(request);
         const replace = (value: string, field: string) => substitute(value, variables, field);
@@ -406,6 +425,15 @@ export async function executeRequest(request: ApiRequest, settings: Settings, va
             headers.push({name: Header.ContentLength, value: String(body.length), enabled: true});
         }
         started = performance.now();
+        const sentRequest = structuredClone(request);
+        sentRequest.url = address.href; sentRequest.params = params;
+        sentRequest.headers = headers.filter(h => h.name.toLowerCase() !== Header.ContentLength);
+        sentRequest.auth.kind = AuthKind.None;
+        if ([BodyKind.Json, BodyKind.Text].includes(sentRequest.body.kind)) sentRequest.body.text = replace(sentRequest.body.text, 'body');
+        if (sentRequest.body.kind === BodyKind.Binary) sentRequest.body.file = replace(sentRequest.body.file, 'body');
+        if ([BodyKind.Form, BodyKind.Multipart].includes(sentRequest.body.kind)) sentRequest.body.fields = sentRequest.body.fields.map(p => p.enabled ? { ...p, name: replace(p.name, 'body'), value: p.file ? p.value : replace(p.value, 'body'), file: p.file ? replace(p.file, 'body') : undefined } : p);
+        if (sentRequest.scripts) sentRequest.scripts.enabled = false;
+        result.sentRequest = sentRequest;
         try { for (const header of headers) { http.validateHeaderName(header.name); http.validateHeaderValue(header.name, header.value); } } catch (error) { throw new RequestError(ErrorKind.Configuration, 'headers', (error as Error).message); }
         timer = setTimeout(() => {
             timedOut = true;
@@ -499,20 +527,32 @@ export async function executeRequest(request: ApiRequest, settings: Settings, va
         result.preview = Buffer.from(text).subarray(0, Limits.previewBytes).toString('utf8');
         result.previewAvailable = true;
         result.truncated = bytes.length > Limits.previewBytes;
-        result.assertions = evaluateAssertions(request, {
+        result.assertions.push(...evaluateAssertions(request, {
             status: result.status!,
             elapsedMs: result.elapsedMs,
             headers: result.headers,
             text
-        });
+        }));
         try {
             Object.assign(writes, extractVariables(request, text));
         } catch (error) {
             result.error = failure(error, signal, false);
         }
+        if (request.scripts?.enabled && request.scripts.after.trim()) {
+            try {
+                const output = await runScript(request.scripts.after, ScriptPhase.After, request, { ...variables, ...writes }, signal, result, text);
+                variables = output.variables; result.scriptLogs.push(...output.logs); result.assertions.push(...output.tests);
+                // Post-response unset takes precedence over extraction writes.
+                for (const key of Object.keys(writes)) if (!Object.hasOwn(variables, key)) delete writes[key];
+            } catch (error) {
+                if (error instanceof ScriptFailure && error.output) { result.scriptLogs.push(...error.output.logs); result.assertions.push(...error.output.tests); }
+                result.error = failure(new RequestError(ErrorKind.Script, 'after', (error as Error).message), signal, false);
+            }
+        }
+        for (const [key, value] of Object.entries(variables)) if (initialVariables[key] !== value) writes[key] = value;
         result.test = result.error || result.assertions.some(a => !a.passed) ? TestState.Failed : result.assertions.length ? TestState.Passed : TestState.Untested;
         result.completedAt = new Date().toISOString();
-        return {result, body: bytes, writes: result.error ? Object.create(null) : writes};
+        return {result, body: bytes, writes: result.error ? Object.create(null) : writes, unsets: result.error ? [] : Object.keys(initialVariables).filter(key => !Object.hasOwn(variables, key))};
     } catch (error) {
         result.error = failure(error, signal, timedOut);
         result.execution = result.error.kind === ErrorKind.Cancelled ? ExecutionState.Cancelled : ExecutionState.Failed;
