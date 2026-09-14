@@ -146,5 +146,8 @@
   "Plugin.ApiTester.ResponseBody": "响应体",
   "Plugin.ApiTester.ResizeRequestResponse": "拖动调整请求和响应区域高度；双击恢复默认",
   "Plugin.ApiTester.VariableNotInEnvironment": "当前环境未定义或未启用此变量",
-  "Plugin.ApiTester.VariableEmptyValue": "（空值）"
+  "Plugin.ApiTester.VariableEmptyValue": "（空值）",
+  "Plugin.ApiTester.WorkspaceLoadFailed": "无法加载工作区，请重试。",
+  "Plugin.ApiTester.WorkspaceLoading": "正在加载工作区…",
+  "Plugin.ApiTester.Retry": "重试"
 }

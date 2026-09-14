@@ -2243,6 +2243,51 @@
       "existingTranslations": {
         "zh-CN": "（空值）"
       }
+    },
+    {
+      "key": "Plugin.ApiTester.WorkspaceLoadFailed",
+      "defaultValue": "Could not load the workspace. Please retry.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 5,
+          "column": 35
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "无法加载工作区，请重试。"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.WorkspaceLoading",
+      "defaultValue": "Loading workspace…",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 6,
+          "column": 32
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "正在加载工作区…"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.Retry",
+      "defaultValue": "Retry",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/i18n.ts",
+          "line": 7,
+          "column": 21
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "重试"
+      }
     }
   ]
 }

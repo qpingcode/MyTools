@@ -13,11 +13,26 @@
     --accent-text: var(--mt-accent-foreground, #fff);
     --danger: var(--mt-error, #f18484);
     --success: var(--mt-success, #62cba4);
+    /* Separate HTTP method hues, with brighter text on dark surfaces. */
+    --method-get: #62cba4;
+    --method-post: #e7b863;
+    --method-put: #74aaff;
+    --method-patch: #c4a0ff;
+    --method-delete: #f18484;
+    --method-head: #59cbd7;
+    --method-options: #ed94c6;
 }
 
 /* Match native dropdown popups and form controls to the host theme. */
 :root[data-theme='light'] {
     color-scheme: light;
+    --method-get: #16734e;
+    --method-post: #885b08;
+    --method-put: #245fc0;
+    --method-patch: #7942b5;
+    --method-delete: #ba3535;
+    --method-head: #087681;
+    --method-options: #ac367b;
 }
 
 select option,
@@ -145,7 +160,7 @@ p {
 }
 
 .app-header {
-    height: 54px;
+    height: 40px;
     flex: none;
     display: flex;
     align-items: center;
@@ -351,20 +366,31 @@ p {
 }
 
 [data-method='GET'] {
-    color: var(--success);
+    color: var(--method-get);
 }
 
 [data-method='POST'] {
-    color: var(--mt-warning, #e7b863);
+    color: var(--method-post);
 }
 
 [data-method='DELETE'] {
-    color: var(--danger);
+    color: var(--method-delete);
 }
 
-[data-method='PUT'],
+[data-method='PUT'] {
+    color: var(--method-put);
+}
+
 [data-method='PATCH'] {
-    color: var(--accent);
+    color: var(--method-patch);
+}
+
+[data-method='HEAD'] {
+    color: var(--method-head);
+}
+
+[data-method='OPTIONS'] {
+    color: var(--method-options);
 }
 
 .sidebar-run {

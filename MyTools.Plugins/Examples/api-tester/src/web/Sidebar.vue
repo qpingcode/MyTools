@@ -30,8 +30,12 @@ const {
   clone,
 } = useWorkspaceContext();
 import Icon from './Icon.vue';
-import { newRequest } from '../shared/model.js';
+import { HttpMethod, newRequest } from '../shared/model.js';
 import type { ApiRequest, Collection } from '../shared/model.js';
+const SidebarMethodAbbreviations: Readonly<Record<string, string | undefined>> = {
+  [HttpMethod.Delete]: 'DEL',
+  [HttpMethod.Options]: 'OPT',
+};
 watch(
   collectionId,
   (id) => {
@@ -163,8 +167,8 @@ function toggleSelection(id: string, ownerId: string) {
               :checked="selected.has(request.id)"
               @change="toggleSelection(request.id, owner.id)"
             /><button class="request-title" @click="open(request, owner.id)">
-              <span class="method-label" :data-method="request.method">{{
-                request.method
+              <span class="method-label" :data-method="request.method" :title="request.method" :aria-label="request.method">{{
+                SidebarMethodAbbreviations[request.method] ?? request.method
               }}</span
               ><span>{{ request.name }}</span>
             </button>

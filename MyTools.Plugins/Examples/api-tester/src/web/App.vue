@@ -16,9 +16,13 @@ import IconButton from './IconButton.vue';
 import { notification } from './rpc.js';
 const controller = useWorkspace();
 provide(WorkspaceKey, controller);
-const { t, workspaceReady, tab, notificationText } = controller;
+const { t, workspaceReady, loadingWorkspace, workspaceLoadFailed, loadWorkspace, tab, notificationText } = controller;
 </script>
 <template>
+  <div v-if="workspaceLoadFailed || loadingWorkspace" class="empty-state" role="status">
+    <p>{{ workspaceLoadFailed ? t.WorkspaceLoadFailed() : t.WorkspaceLoading() }}</p>
+    <button v-if="workspaceLoadFailed" @click="loadWorkspace">{{ t.Retry() }}</button>
+  </div>
   <main class="app-shell" :inert="!workspaceReady" :aria-busy="!workspaceReady">
     <header class="app-header">
       <div class="brand">

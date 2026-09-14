@@ -10,6 +10,7 @@ import {CookieJar} from 'tough-cookie';
 import {executeRequest, extractVariables, pointer} from '../src/backend/engine.mjs';
 import {Runner} from '../src/backend/runner.mjs';
 import {WorkspaceStore} from '../src/backend/storage.mjs';
+import {createWorkspaceMutator} from '../src/web/workspacePersistence.js';
 import {
     newRequest,
     defaultSettings,
@@ -81,8 +82,70 @@ test('query editing preserves raw encoding, duplicate order and absent equals si
     const params = parseQuery(raw);
     assert.equal(params[0].value, '/');
     assert.equal(params[1].value, '%2F');
-    assert.equal(params[2].value, '+');
+    assert.equal(params[2].value, ' ');
+    assert.equal(queryUrl(raw, params), raw);
+    params[2].value = '+';
     assert.equal(queryUrl(raw, params), 'http://localhost/path?x=%2F&x=%252F&plus=%2B&flag&empty=');
+});
+
+test('query encoding survives sending and only edited or substituted values are re-encoded', async () => {
+    const server = await fixture((req, res) => res.end(req.url));
+    try {
+        const request = requestAt(server.url + '/?q=a+b&encoded=%2f&literal=%2B&token={{token}}&flag');
+        request.params = parseQuery(request.url);
+        const output = await executeRequest(request, defaultSettings(), {token: 'a+b'}, new CookieJar(), new AbortController().signal);
+        assert.equal(output.result.preview, '/?q=a+b&encoded=%2f&literal=%2B&token=a%2Bb&flag');
+    } finally { await server.close(); }
+});
+
+test('API-key authentication stays on same-origin redirects and is removed across origins', async () => {
+    const ApiKeyHeader = 'x-api-key';
+    const destination = await fixture((req, res) => res.end(JSON.stringify(req.headers)));
+    const source = await fixture((req, res) => {
+        if (req.url === '/same') { res.writeHead(RedirectStatus, {Location: '/final'}); res.end(); }
+        else if (req.url === '/cross') { res.writeHead(RedirectStatus, {Location: destination.url}); res.end(); }
+        else res.end(JSON.stringify(req.headers));
+    });
+    try {
+        const request = requestAt(source.url + '/same');
+        request.auth.kind = AuthKind.ApiKey;
+        request.auth.key = ApiKeyHeader;
+        request.auth.value = 'secret';
+        request.headers = [{name: 'Host', value: 'original.example', enabled: true}];
+        const same = JSON.parse((await send(request)).result.preview);
+        assert.equal(same[ApiKeyHeader], 'secret');
+        assert.equal(same.host, 'original.example');
+        request.url = source.url + '/cross';
+        const cross = JSON.parse((await send(request)).result.preview);
+        assert.equal(cross[ApiKeyHeader], undefined);
+        assert.equal(cross.host, new URL(destination.url).host);
+    } finally { await source.close(); await destination.close(); }
+});
+
+test('workspace mutations serialize and a failed save cannot roll back the following save', async () => {
+    const state = {value: emptyWorkspace()};
+    const owner = {id: 'collection', name: 'Original', requests: []};
+    state.value.collections.push(owner);
+    let rejectFirst!: (error: Error) => void;
+    const firstSave = new Promise<void>((_resolve, reject) => { rejectFirst = reject; });
+    const snapshots: import('../src/shared/model.js').Workspace[] = [];
+    const mutate = createWorkspaceMutator(state, async workspace => {
+        snapshots.push(structuredClone(workspace));
+        if (snapshots.length === 1) await firstSave;
+    });
+    const first = mutate(() => { owner.name = 'Failed'; state.value.collections = []; });
+    const rejected = assert.rejects(first, /save failed/);
+    const second = mutate(() => { owner.name = 'Succeeded'; });
+    await Promise.resolve();
+    await Promise.resolve();
+    assert.equal(snapshots.length, 1);
+    assert.equal(owner.name, 'Failed');
+    rejectFirst(new Error('save failed'));
+    await rejected;
+    await second;
+    assert.equal(state.value.collections[0], owner);
+    assert.equal(owner.name, 'Succeeded');
+    assert.deepEqual(state.value, snapshots[1]);
 });
 test('HTTP errors remain complete; strict assertions and transactional extraction work', async () => {
     const server = await fixture((_req, res) => {

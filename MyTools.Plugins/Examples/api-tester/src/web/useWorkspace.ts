@@ -1,6 +1,7 @@
 import { DialogKind, Choice, type Tab } from './workspaceTypes.js';
 import { useDialogs } from './useDialogs.js';
 import { useRuns } from './useRuns.js';
+import { createWorkspaceMutator } from './workspacePersistence.js';
 
 import { computed, ref } from 'vue';
 import { HostEvents } from '@qping/plugin-bus/web';
@@ -37,6 +38,8 @@ export function useWorkspace() {
   const t = useText();
   const workspace = ref<Workspace>(emptyWorkspace());
   const workspaceReady = ref(false);
+  const loadingWorkspace = ref(false);
+  const workspaceLoadFailed = ref(false);
   const tabs = ref<Tab[]>([]);
   const active = ref('');
   const collectionId = ref('');
@@ -119,16 +122,7 @@ export function useWorkspace() {
     }[state]();
   }
 
-  async function mutate(change: () => void): Promise<void> {
-    const previous = clone(workspace.value);
-    change();
-    try {
-      await rpc(Routes.save, workspace.value);
-    } catch (error) {
-      workspace.value = previous;
-      throw error;
-    }
-  }
+  const mutate = createWorkspaceMutator(workspace, value => rpc(Routes.save, value));
 
   async function addCollection() {
     const value = await name(t.value.NewCollection());
@@ -497,19 +491,25 @@ export function useWorkspace() {
       if (tab.value) void saveTab(tab.value).catch(console.error);
     }
   });
-  let initialized = false;
-  bus.on(HostEvents.Initialize, () => {
-    if (initialized) return;
-    initialized = true;
-    void rpc<Workspace>(Routes.load)
-      .then((value) => {
-        workspace.value = value;
-        workspaceReady.value = true;
-        collectionId.value = value.collections[0]?.id || '';
-        return refreshCookies();
-      })
-      .catch(console.error);
-  });
+  async function loadWorkspace() {
+    if (workspaceReady.value || loadingWorkspace.value) return;
+    loadingWorkspace.value = true;
+    workspaceLoadFailed.value = false;
+    try {
+      const value = await rpc<Workspace>(Routes.load);
+      workspace.value = value;
+      collectionId.value = value.collections[0]?.id || '';
+      workspaceReady.value = true;
+      notification.value = '';
+    } catch (error) {
+      workspaceLoadFailed.value = true;
+      console.error(error);
+    } finally {
+      loadingWorkspace.value = false;
+    }
+    if (workspaceReady.value) await refreshCookies().catch(console.error);
+  }
+  bus.on(HostEvents.Initialize, () => { void loadWorkspace(); });
   bus.on(HostEvents.LanguageChanged, () => {
     if (typeof notification.value === 'string') notification.value = '';
   });
@@ -520,6 +520,9 @@ export function useWorkspace() {
     t,
     workspace,
     workspaceReady,
+    loadingWorkspace,
+    workspaceLoadFailed,
+    loadWorkspace,
     tabs,
     active,
     collectionId,

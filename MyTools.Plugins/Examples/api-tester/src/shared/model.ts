@@ -87,7 +87,8 @@ export interface Pair {
     noEquals?: boolean;
     file?: string;
     contentType?: string;
-    size?: number
+    size?: number;
+    rawQuery?: { encoded: string; name: string; value: string; noEquals: boolean }
 }
 
 export interface Settings {
@@ -246,11 +247,14 @@ export function parseQuery(url: string): Pair[] {
     const query = url.split('#')[0].split('?').slice(1).join('?');
     return query ? query.split('&').map(part => {
         const separator = part.indexOf('=');
+        const name = decodeURIComponent((separator < 0 ? part : part.slice(0, separator)).replace(/\+/g, ' '));
+        const value = decodeURIComponent((separator < 0 ? '' : part.slice(separator + 1)).replace(/\+/g, ' '));
         return {
-            name: decodeURIComponent(separator < 0 ? part : part.slice(0, separator)),
-            value: decodeURIComponent(separator < 0 ? '' : part.slice(separator + 1)),
+            name,
+            value,
             enabled: true,
-            noEquals: separator < 0
+            noEquals: separator < 0,
+            rawQuery: { encoded: part, name, value, noEquals: separator < 0 }
         };
     }) : [];
 }
@@ -258,7 +262,12 @@ export function parseQuery(url: string): Pair[] {
 export function queryUrl(url: string, params: Pair[]): string {
     const [beforeHash, ...hash] = url.split('#');
     const base = beforeHash.split('?')[0];
-    const query = params.filter(p => p.enabled).map(p => encodeURIComponent(p.name) + (p.noEquals ? '' : '=' + encodeURIComponent(p.value))).join('&');
+    const query = params.filter(p => p.enabled).map(p => {
+        const raw = p.rawQuery;
+        return raw && raw.name === p.name && raw.value === p.value && raw.noEquals === Boolean(p.noEquals)
+            ? raw.encoded
+            : encodeURIComponent(p.name) + (p.noEquals ? '' : '=' + encodeURIComponent(p.value));
+    }).join('&');
     return base + (query ? '?' + query : '') + (hash.length ? '#' + hash.join('#') : '');
 }
 

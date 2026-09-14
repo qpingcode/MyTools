@@ -146,5 +146,8 @@
   "Plugin.ApiTester.ResponseBody": "Body",
   "Plugin.ApiTester.ResizeRequestResponse": "Drag to resize request and response panes; double-click to reset",
   "Plugin.ApiTester.VariableNotInEnvironment": "Variable is not defined or enabled in the current environment",
-  "Plugin.ApiTester.VariableEmptyValue": "(empty value)"
+  "Plugin.ApiTester.VariableEmptyValue": "(empty value)",
+  "Plugin.ApiTester.WorkspaceLoadFailed": "Could not load the workspace. Please retry.",
+  "Plugin.ApiTester.WorkspaceLoading": "Loading workspace…",
+  "Plugin.ApiTester.Retry": "Retry"
 }

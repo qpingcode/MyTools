@@ -370,9 +370,13 @@ export async function executeRequest(request: ApiRequest, settings: Settings, va
             value: replace(h.value, 'headers')
         }));
         const auth = request.auth;
+        const authenticationHeaders = new Set<string>();
         const addAuth = (name: string, value: string, location: KeyLocation) => {
             if (!name || (location === KeyLocation.Header ? headers.some(h => h.name.toLowerCase() === name.toLowerCase()) : params.some(p => p.enabled && p.name === name))) throw new RequestError(ErrorKind.Configuration, 'auth', 'Conflicting authentication');
-            if (location === KeyLocation.Header) headers.push({name, value, enabled: true}); else {
+            if (location === KeyLocation.Header) {
+                authenticationHeaders.add(name.toLowerCase());
+                headers.push({name, value, enabled: true});
+            } else {
                 params.push({name, value, enabled: true});
                 address = new URL(queryUrl(address.href, params));
             }
@@ -431,7 +435,9 @@ export async function executeRequest(request: ApiRequest, settings: Settings, va
             const next = new URL(response.headers[Header.Location]!, address);
             if (!['http:', 'https:'].includes(next.protocol)) throw new RequestError(ErrorKind.Configuration, 'url');
             next.hash = '';
-            if (next.origin !== address.origin) headers = headers.filter(h => ![Header.Authorization, Header.Cookie].includes(h.name.toLowerCase() as typeof Header.Authorization));
+            if (next.origin !== address.origin) headers = headers.filter(h =>
+                !authenticationHeaders.has(h.name.toLowerCase()) &&
+                ![Header.Authorization, Header.Cookie, Header.Host].includes(h.name.toLowerCase() as typeof Header.Authorization));
             if (response.statusCode === StatusSeeOther && method !== HttpMethod.Head || LegacyPostRedirects.has(response.statusCode!) && method === HttpMethod.Post) {
                 method = HttpMethod.Get;
                 body = undefined;

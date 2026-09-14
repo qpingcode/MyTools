@@ -2,6 +2,9 @@ import {createWebBusClient} from '@qping/plugin-bus/web';
 
 export const bus = createWebBusClient();
 export const text = {
+    WorkspaceLoadFailed: () => bus.i18n.t('Plugin.ApiTester.WorkspaceLoadFailed', { defaultValue: 'Could not load the workspace. Please retry.' }),
+    WorkspaceLoading: () => bus.i18n.t('Plugin.ApiTester.WorkspaceLoading', { defaultValue: 'Loading workspace…' }),
+    Retry: () => bus.i18n.t('Plugin.ApiTester.Retry', { defaultValue: 'Retry' }),
     Name: (values: Record<string, string | number> = {}) =>
         bus.i18n.t('Plugin.ApiTester.Name', {
             defaultValue: 'API Tester',

@@ -24,7 +24,7 @@ await build({
   packages: 'external',
   target: 'es2024',
 });
-const { Runner, emptyWorkspace, Routes } = await import(
+const { Runner, emptyWorkspace, Routes, ErrorKind } = await import(
   pathToFileURL(output).href
 );
 const runner = new Runner();
@@ -69,6 +69,7 @@ try {
   });
   page.setDefaultTimeout(TestTimeoutMs);
   const errors = [];
+  let failWorkspaceLoad = true;
   page.on('pageerror', (error) => errors.push(error.message));
   await page.exposeFunction('testBusRequest', async (envelope) => {
     if (envelope.route === BusRoutes.Bus.Handshake)
@@ -76,7 +77,13 @@ try {
     const method = envelope.route.slice(BusRoutes.Prefix.PluginCall.length);
     const payload = envelope.payload;
     let value;
-    if (method === Routes.load) value = workspace;
+    if (method === Routes.load) {
+      if (failWorkspaceLoad) {
+        failWorkspaceLoad = false;
+        return { ok: false, error: { kind: ErrorKind.Storage } };
+      }
+      value = workspace;
+    }
     else if (method === Routes.save) {
       workspace = structuredClone(payload);
       value = true;
@@ -137,6 +144,13 @@ try {
     },
   );
   await page.goto(url + '/index.html');
+  await page.getByText('Could not load the workspace. Please retry.', { exact: true }).waitFor();
+  assert.equal(await page.locator('.app-shell').evaluate(element => element.inert), true);
+  await page.evaluate(({ route, messages }) => window.testHostEvent(route, { locale: 'zh-CN', fallbackLocale: 'en-US', messages }), { route: BusRoutes.HostEvent.LanguageChanged, messages: zh });
+  await page.getByText('无法加载工作区，请重试。', { exact: true }).waitFor();
+  await page.getByRole('button', { name: '重试', exact: true }).click();
+  await page.waitForFunction(() => !document.querySelector('.app-shell').inert);
+  await page.evaluate(({ route, messages }) => window.testHostEvent(route, { locale: 'en-US', fallbackLocale: 'en-US', messages }), { route: BusRoutes.HostEvent.LanguageChanged, messages: en });
   await page
     .getByRole('heading', { name: 'API Tester', exact: true })
     .waitFor();
