@@ -77,13 +77,14 @@ public sealed class NodeProcessController : INodeProcessController
         var psi = new ProcessStartInfo
         {
             FileName = _nodeExePath,
-            Arguments = $"\"{_nodeEntryFullPath}\"",
             UseShellExecute = false,
             CreateNoWindow = true,
             RedirectStandardInput = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
         };
+        psi.ArgumentList.Add("--use-system-ca");
+        psi.ArgumentList.Add(_nodeEntryFullPath);
 
         // Log stderr for debugging Node startup failures.
         psi.Environment["MYTOOLS_V3"] = "1";
