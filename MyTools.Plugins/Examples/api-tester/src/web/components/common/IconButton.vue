@@ -9,12 +9,12 @@ defineProps<{
 </script>
 <template>
   <button
-    type="button"
-    class="icon-button"
-    :title="label"
-    :aria-label="label"
-    :disabled="disabled"
+      type="button"
+      class="icon-button"
+      :title="label"
+      :aria-label="label"
+      :disabled="disabled"
   >
-    <Icon :name="icon" />
+    <Icon :name="icon"/>
   </button>
 </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { useWorkspaceContext } from '../workspace/context.js';
+import {useWorkspaceContext} from '../workspace/context.js';
 import ResponsePanel from '../response/ResponsePanel.vue';
+
 const {
   t,
   batch,
@@ -25,15 +26,15 @@ const {
         })
       }}
     </p>
-    <p v-if="batch.current">{{ t.Running({ name: batch.current }) }}</p>
+    <p v-if="batch.current">{{ t.Running({name: batch.current}) }}</p>
     <p>
       <span v-for="item in executionCounts" :key="item.state"
-        >{{ execution(item.state) }}: {{ item.count }} ·
+      >{{ execution(item.state) }}: {{ item.count }} ·
       </span>
     </p>
     <p>
       <span v-for="item in testCounts" :key="item.state"
-        >{{ test(item.state) }}: {{ item.count }} ·
+      >{{ test(item.state) }}: {{ item.count }} ·
       </span>
     </p>
     <p>
@@ -41,9 +42,9 @@ const {
       {{ t.Fail() }} {{ assertionCounts.failed }}
     </p>
     <details
-      v-for="(result, index) in batch.results"
-      :key="result.requestId"
-      @toggle="
+        v-for="(result, index) in batch.results"
+        :key="result.requestId"
+        @toggle="
         ($event.target as HTMLDetailsElement).open
           ? expandedResults.add(result.requestId)
           : expandedResults.delete(result.requestId)
@@ -54,10 +55,10 @@ const {
         {{ test(result.test) }}
       </summary>
       <ResponsePanel
-        v-if="expandedResults.has(result.requestId)"
-        :result="result"
-        :run-id="batchId"
-        :index="index"
+          v-if="expandedResults.has(result.requestId)"
+          :result="result"
+          :run-id="batchId"
+          :index="index"
       />
     </details>
   </div>

@@ -1,4 +1,4 @@
 export enum SidebarMenuKind {
-  Request = 'request',
-  Collection = 'collection',
+    Request = 'request',
+    Collection = 'collection',
 }

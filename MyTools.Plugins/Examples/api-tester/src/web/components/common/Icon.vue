@@ -17,9 +17,9 @@ const paths = {
   stop: 'M6 6h12v12H6z',
   more: 'M5 12h.01M12 12h.01M19 12h.01',
   globe:
-    'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0M3 12h18M12 3c-5 5-5 13 0 18 5-5 5-13 0-18',
+      'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0M3 12h18M12 3c-5 5-5 13 0 18 5-5 5-13 0-18',
   cookie:
-    'M12 3a9 9 0 1 0 8.7 11.5 5 5 0 0 1-6.2-6.2A9 9 0 0 0 12 3M8.2 10.2h.01M12.5 13.5h.01M15.2 9.8h.01',
+      'M12 3a9 9 0 1 0 8.7 11.5 5 5 0 0 1-6.2-6.2A9 9 0 0 0 12 3M8.2 10.2h.01M12.5 13.5h.01M15.2 9.8h.01',
   terminal: 'm5 7 5 5-5 5M13 17h6',
   inbox: 'M3 14 6 4h12l3 10v6H3zM3 14h5l2 3h4l2-3h5',
   file: 'M4 3h10l6 6v12H4zM14 3v6h6',
@@ -31,15 +31,15 @@ defineProps<{ name: keyof typeof paths }>();
 </script>
 <template>
   <svg
-    class="icon"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="1.7"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    aria-hidden="true"
+      class="icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.7"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
   >
-    <path :d="paths[name]" />
+    <path :d="paths[name]"/>
   </svg>
 </template>

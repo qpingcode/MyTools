@@ -27,15 +27,27 @@ import ExtractionsEditor from './ExtractionsEditor.vue';
 import RequestSettingsEditor from './RequestSettingsEditor.vue';
 import AssertionsEditor from './AssertionsEditor.vue';
 import ScriptsEditor from '../../components/common/ScriptsEditor.vue';
-import { Routes } from '../../../shared/model.js';
-import { notification, rpc } from '../../services/rpc.js';
-const { environment } = useWorkspaceContext();
+import {Routes} from '../../../shared/model.js';
+import {notification, rpc} from '../../services/rpc.js';
+
+const {environment} = useWorkspaceContext();
+
 async function copyCurl() {
   if (!tab.value) return;
-  const curl = await rpc<string>(Routes.curl, { request: tab.value.request, collection: requestCollection.value, variables: environment.value?.variables || [], environmentId: workspace.value.environmentId }).catch(() => undefined);
+  const curl = await rpc<string>(Routes.curl, {
+    request: tab.value.request,
+    collection: requestCollection.value,
+    variables: environment.value?.variables || [],
+    environmentId: workspace.value.environmentId
+  }).catch(() => undefined);
   if (!curl) return;
-  try { await navigator.clipboard.writeText(curl); notification.value = t.value.Copied(); }
-  catch (error) { notification.value = t.value.CopyFailed(); console.error(error); }
+  try {
+    await navigator.clipboard.writeText(curl);
+    notification.value = t.value.Copied();
+  } catch (error) {
+    notification.value = t.value.CopyFailed();
+    console.error(error);
+  }
 }
 
 const requestCollection = computed(() =>
@@ -224,8 +236,8 @@ function navigate(event: KeyboardEvent, panel: Panel) {
           v-if="current === 'Extractions'"
       />
       <RequestSettingsEditor v-if="current === 'Settings'"/>
-      <AssertionsEditor v-if="current === 'Assertions'" />
-      <ScriptsEditor v-if="current === 'Scripts'" v-model="tab.request.scripts" />
+      <AssertionsEditor v-if="current === 'Assertions'"/>
+      <ScriptsEditor v-if="current === 'Scripts'" v-model="tab.request.scripts"/>
     </div>
   </div>
 </template>

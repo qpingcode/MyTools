@@ -10,7 +10,7 @@ import {createGunzip, createInflate, createBrotliDecompress} from 'node:zlib';
 import {isDeepStrictEqual} from 'node:util';
 import path from 'node:path';
 import {CookieJar} from 'tough-cookie';
-import { runScript, ScriptFailure } from '../scripting/scripts.mjs';
+import {runScript, ScriptFailure} from '../scripting/scripts.mjs';
 import {
     HttpMethod,
     WarningKind,
@@ -59,10 +59,19 @@ function validateTests(request: ApiRequest): void {
         if (assertion.kind === AssertionKind.Time && (!assertion.expected.trim() || !Number.isFinite(Number(assertion.expected)) || Number(assertion.expected) < 0)) throw new RequestError(ErrorKind.Configuration, 'assertions.expected');
         if (assertion.kind === AssertionKind.Header && !assertion.path.trim()) throw new RequestError(ErrorKind.Configuration, 'assertions.path');
         if ([AssertionKind.Exists, AssertionKind.Value, AssertionKind.Type].includes(assertion.kind)) pointer({}, assertion.path);
-        if (assertion.kind === AssertionKind.Value) { try { JSON.parse(assertion.expected); } catch { throw new RequestError(ErrorKind.Configuration, 'assertions.expected'); } }
+        if (assertion.kind === AssertionKind.Value) {
+            try {
+                JSON.parse(assertion.expected);
+            } catch {
+                throw new RequestError(ErrorKind.Configuration, 'assertions.expected');
+            }
+        }
         if (assertion.kind === AssertionKind.Type && !JsonTypes.has(assertion.expected)) throw new RequestError(ErrorKind.Configuration, 'assertions.expected');
     }
-    for (const extraction of request.extractions.filter(item => item.enabled)) { pointer({}, extraction.path); if (!extraction.variable.trim()) throw new RequestError(ErrorKind.Configuration, 'extractions.variable'); }
+    for (const extraction of request.extractions.filter(item => item.enabled)) {
+        pointer({}, extraction.path);
+        if (!extraction.variable.trim()) throw new RequestError(ErrorKind.Configuration, 'extractions.variable');
+    }
 }
 
 export class RequestError extends Error {
@@ -348,8 +357,8 @@ export async function executeRequest(request: ApiRequest, settings: Settings, va
     let timer: ReturnType<typeof setTimeout> | undefined;
     let started = 0;
     const writes: Record<string, string> = Object.create(null);
-    const initialVariables = { ...variables };
-    variables = { ...variables };
+    const initialVariables = {...variables};
+    variables = {...variables};
     request = structuredClone(request);
     result.scriptLogs = [];
     try {
@@ -358,10 +367,15 @@ export async function executeRequest(request: ApiRequest, settings: Settings, va
             try {
                 const output = await runScript(request.scripts.before, ScriptPhase.Before, request, variables, signal);
                 if (output.request.url !== request.url) output.request.params = parseQuery(output.request.url);
-                request = output.request; variables = output.variables;
-                result.scriptLogs.push(...output.logs); result.assertions.push(...output.tests);
+                request = output.request;
+                variables = output.variables;
+                result.scriptLogs.push(...output.logs);
+                result.assertions.push(...output.tests);
             } catch (error) {
-                if (error instanceof ScriptFailure && error.output) { result.scriptLogs.push(...error.output.logs); result.assertions.push(...error.output.tests); }
+                if (error instanceof ScriptFailure && error.output) {
+                    result.scriptLogs.push(...error.output.logs);
+                    result.assertions.push(...error.output.tests);
+                }
                 throw new RequestError(ErrorKind.Script, 'before', (error as Error).message);
             }
         }
@@ -426,15 +440,28 @@ export async function executeRequest(request: ApiRequest, settings: Settings, va
         }
         started = performance.now();
         const sentRequest = structuredClone(request);
-        sentRequest.url = address.href; sentRequest.params = params;
+        sentRequest.url = address.href;
+        sentRequest.params = params;
         sentRequest.headers = headers.filter(h => h.name.toLowerCase() !== Header.ContentLength);
         sentRequest.auth.kind = AuthKind.None;
         if ([BodyKind.Json, BodyKind.Text].includes(sentRequest.body.kind)) sentRequest.body.text = replace(sentRequest.body.text, 'body');
         if (sentRequest.body.kind === BodyKind.Binary) sentRequest.body.file = replace(sentRequest.body.file, 'body');
-        if ([BodyKind.Form, BodyKind.Multipart].includes(sentRequest.body.kind)) sentRequest.body.fields = sentRequest.body.fields.map(p => p.enabled ? { ...p, name: replace(p.name, 'body'), value: p.file ? p.value : replace(p.value, 'body'), file: p.file ? replace(p.file, 'body') : undefined } : p);
+        if ([BodyKind.Form, BodyKind.Multipart].includes(sentRequest.body.kind)) sentRequest.body.fields = sentRequest.body.fields.map(p => p.enabled ? {
+            ...p,
+            name: replace(p.name, 'body'),
+            value: p.file ? p.value : replace(p.value, 'body'),
+            file: p.file ? replace(p.file, 'body') : undefined
+        } : p);
         if (sentRequest.scripts) sentRequest.scripts.enabled = false;
         result.sentRequest = sentRequest;
-        try { for (const header of headers) { http.validateHeaderName(header.name); http.validateHeaderValue(header.name, header.value); } } catch (error) { throw new RequestError(ErrorKind.Configuration, 'headers', (error as Error).message); }
+        try {
+            for (const header of headers) {
+                http.validateHeaderName(header.name);
+                http.validateHeaderValue(header.name, header.value);
+            }
+        } catch (error) {
+            throw new RequestError(ErrorKind.Configuration, 'headers', (error as Error).message);
+        }
         timer = setTimeout(() => {
             timedOut = true;
             controller.abort();
@@ -444,9 +471,21 @@ export async function executeRequest(request: ApiRequest, settings: Settings, va
         while (true) {
             signal.throwIfAborted();
             const currentHeaders = [...headers];
-            if (!currentHeaders.some(h => h.name.toLowerCase() === Header.Host)) currentHeaders.push({name: Header.Host, value: address.host, enabled: true});
-            if (!currentHeaders.some(h => h.name.toLowerCase() === Header.Connection)) currentHeaders.push({name: Header.Connection, value: 'close', enabled: true});
-            if (!body && [HttpMethod.Post, HttpMethod.Put, HttpMethod.Patch].includes(method as HttpMethod)) currentHeaders.push({ name: Header.ContentLength, value: '0', enabled: true });
+            if (!currentHeaders.some(h => h.name.toLowerCase() === Header.Host)) currentHeaders.push({
+                name: Header.Host,
+                value: address.host,
+                enabled: true
+            });
+            if (!currentHeaders.some(h => h.name.toLowerCase() === Header.Connection)) currentHeaders.push({
+                name: Header.Connection,
+                value: 'close',
+                enabled: true
+            });
+            if (!body && [HttpMethod.Post, HttpMethod.Put, HttpMethod.Patch].includes(method as HttpMethod)) currentHeaders.push({
+                name: Header.ContentLength,
+                value: '0',
+                enabled: true
+            });
             const cookie = await jar.getCookieString(address.href);
             if (cookie && !currentHeaders.some(h => h.name.toLowerCase() === Header.Cookie)) currentHeaders.push({
                 name: Header.Cookie,
@@ -540,19 +579,29 @@ export async function executeRequest(request: ApiRequest, settings: Settings, va
         }
         if (request.scripts?.enabled && request.scripts.after.trim()) {
             try {
-                const output = await runScript(request.scripts.after, ScriptPhase.After, request, { ...variables, ...writes }, signal, result, text);
-                variables = output.variables; result.scriptLogs.push(...output.logs); result.assertions.push(...output.tests);
+                const output = await runScript(request.scripts.after, ScriptPhase.After, request, {...variables, ...writes}, signal, result, text);
+                variables = output.variables;
+                result.scriptLogs.push(...output.logs);
+                result.assertions.push(...output.tests);
                 // Post-response unset takes precedence over extraction writes.
                 for (const key of Object.keys(writes)) if (!Object.hasOwn(variables, key)) delete writes[key];
             } catch (error) {
-                if (error instanceof ScriptFailure && error.output) { result.scriptLogs.push(...error.output.logs); result.assertions.push(...error.output.tests); }
+                if (error instanceof ScriptFailure && error.output) {
+                    result.scriptLogs.push(...error.output.logs);
+                    result.assertions.push(...error.output.tests);
+                }
                 result.error = failure(new RequestError(ErrorKind.Script, 'after', (error as Error).message), signal, false);
             }
         }
         for (const [key, value] of Object.entries(variables)) if (initialVariables[key] !== value) writes[key] = value;
         result.test = result.error || result.assertions.some(a => !a.passed) ? TestState.Failed : result.assertions.length ? TestState.Passed : TestState.Untested;
         result.completedAt = new Date().toISOString();
-        return {result, body: bytes, writes: result.error ? Object.create(null) : writes, unsets: result.error ? [] : Object.keys(initialVariables).filter(key => !Object.hasOwn(variables, key))};
+        return {
+            result,
+            body: bytes,
+            writes: result.error ? Object.create(null) : writes,
+            unsets: result.error ? [] : Object.keys(initialVariables).filter(key => !Object.hasOwn(variables, key))
+        };
     } catch (error) {
         result.error = failure(error, signal, timedOut);
         result.execution = result.error.kind === ErrorKind.Cancelled ? ExecutionState.Cancelled : ExecutionState.Failed;

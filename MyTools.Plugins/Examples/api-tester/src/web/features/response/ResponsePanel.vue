@@ -143,57 +143,69 @@ const responsePanels = [
         />
       </div>
     </div>
-    <ResponseBodyView v-if="panel === 'Body'" :result="result" />
+    <ResponseBodyView v-if="panel === 'Body'" :result="result"/>
     <div v-if="panel === 'ScriptConsole'" class="response-code script-console">
       <p v-if="!result.scriptLogs?.length" class="muted">{{ t.NoScriptLogs() }}</p>
-      <div v-for="(log, index) in result.scriptLogs" :key="index" :class="log.level === ScriptLogLevel.Error ? 'error' : ''"><span class="muted">{{ log.phase === ScriptPhase.Before ? t.BeforeScript() : t.AfterScript() }} · {{ log.level }}</span> {{ log.text }}</div>
+      <div v-for="(log, index) in result.scriptLogs" :key="index"
+           :class="log.level === ScriptLogLevel.Error ? 'error' : ''"><span
+          class="muted">{{ log.phase === ScriptPhase.Before ? t.BeforeScript() : t.AfterScript() }} · {{
+          log.level
+        }}</span> {{ log.text }}
+      </div>
     </div>
     <div v-if="panel === 'ResponseHeaders' || panel === 'RequestHeaders'" class="response-table-scroll">
-    <table class="response-headers-table">
-      <colgroup><col class="response-header-name-column" /><col class="response-header-value-column" /></colgroup>
-      <thead>
-      <tr>
-        <th>{{ t.Key() }}</th>
-        <th>{{ t.Value() }}</th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr
-          v-for="(header, index) in panel === 'ResponseHeaders'
+      <table class="response-headers-table">
+        <colgroup>
+          <col class="response-header-name-column"/>
+          <col class="response-header-value-column"/>
+        </colgroup>
+        <thead>
+        <tr>
+          <th>{{ t.Key() }}</th>
+          <th>{{ t.Value() }}</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr
+            v-for="(header, index) in panel === 'ResponseHeaders'
             ? result.headers
             : result.requestHeaders"
-          :key="index"
-      >
-        <td>{{ header.name }}</td>
-        <td>{{ header.value }}</td>
-      </tr>
-      </tbody>
-    </table>
+            :key="index"
+        >
+          <td>{{ header.name }}</td>
+          <td>{{ header.value }}</td>
+        </tr>
+        </tbody>
+      </table>
     </div>
     <div v-if="panel === 'Assertions' && result.assertions.length" class="response-table-scroll">
-    <table class="response-assertions-table">
-      <colgroup><col class="response-assertion-name-column" /><col class="response-assertion-value-column" /><col class="response-assertion-value-column" /></colgroup>
-      <thead>
-      <tr>
-        <th>{{ t.Assertions() }}</th>
-        <th>{{ t.Actual() }}</th>
-        <th>{{ t.Expected() }}</th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr v-for="(assertion, index) in result.assertions" :key="index">
-        <td :class="assertion.passed ? 'pass' : 'error'">
-          {{ assertion.passed ? t.Pass() : t.Fail() }} ·
-          {{ assertion.name || t.Status() }}
-        </td>
-        <td>
-          {{ assertion.actualMissing ? t.Missing() : assertion.actual }}
-          <pre v-if="assertion.detail">{{ assertion.detail }}</pre>
-        </td>
-        <td>{{ assertion.expected }}</td>
-      </tr>
-      </tbody>
-    </table>
+      <table class="response-assertions-table">
+        <colgroup>
+          <col class="response-assertion-name-column"/>
+          <col class="response-assertion-value-column"/>
+          <col class="response-assertion-value-column"/>
+        </colgroup>
+        <thead>
+        <tr>
+          <th>{{ t.Assertions() }}</th>
+          <th>{{ t.Actual() }}</th>
+          <th>{{ t.Expected() }}</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr v-for="(assertion, index) in result.assertions" :key="index">
+          <td :class="assertion.passed ? 'pass' : 'error'">
+            {{ assertion.passed ? t.Pass() : t.Fail() }} ·
+            {{ assertion.name || t.Status() }}
+          </td>
+          <td>
+            {{ assertion.actualMissing ? t.Missing() : assertion.actual }}
+            <pre v-if="assertion.detail">{{ assertion.detail }}</pre>
+          </td>
+          <td>{{ assertion.expected }}</td>
+        </tr>
+        </tbody>
+      </table>
     </div>
     <p v-if="panel === 'Assertions' && !result.assertions.length" class="muted">
       {{ t.Untested() }}

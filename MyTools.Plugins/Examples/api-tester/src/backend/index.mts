@@ -61,7 +61,12 @@ plugin.initialize(params => {
     .handle(Routes.start, guarded((input: RunInput) => runner.start(input)))
     .handle(Routes.poll, guarded((input: { id: string; from?: number }) => {
         const view = runner.poll(input.id);
-        return { ...view, results: view.results.slice(input.from || 0).map(({ sentRequest, ...result }) => result), evictedBodies: view.results.flatMap((result, index) => !result.bodyAvailable ? [index] : []), evictedPreviews: view.results.flatMap((result, index) => result.previewAvailable === false ? [index] : []) };
+        return {
+            ...view,
+            results: view.results.slice(input.from || 0).map(({sentRequest, ...result}) => result),
+            evictedBodies: view.results.flatMap((result, index) => !result.bodyAvailable ? [index] : []),
+            evictedPreviews: view.results.flatMap((result, index) => result.previewAvailable === false ? [index] : [])
+        };
     }))
     .handle(Routes.cancel, guarded((input: { id: string }) => runner.cancel(input.id)))
     .handle(Routes.release, guarded((input: { id: string }) => runner.release(input.id)))

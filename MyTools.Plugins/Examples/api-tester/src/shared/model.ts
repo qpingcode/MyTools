@@ -1,9 +1,46 @@
 export const PluginId = 'api-tester';
-export enum HttpMethod { Get = 'GET', Post = 'POST', Put = 'PUT', Patch = 'PATCH', Delete = 'DELETE', Head = 'HEAD', Options = 'OPTIONS' }
-export enum JsonValueType { String = 'string', Number = 'number', Boolean = 'boolean', Array = 'array', Object = 'object', Null = 'null' }
+
+export enum HttpMethod {
+    Get = 'GET',
+    Post = 'POST',
+    Put = 'PUT',
+    Patch = 'PATCH',
+    Delete = 'DELETE',
+    Head = 'HEAD',
+    Options = 'OPTIONS'
+}
+
+export enum JsonValueType {
+    String = 'string',
+    Number = 'number',
+    Boolean = 'boolean',
+    Array = 'array',
+    Object = 'object',
+    Null = 'null'
+}
+
 export enum WarningKind { ContentType = 'contentType' }
-export const HttpHeader = { Authorization: 'authorization', ContentType: 'content-type', ContentLength: 'content-length', Cookie: 'cookie', SetCookie: 'set-cookie', Location: 'location', Encoding: 'content-encoding', Host: 'host', Connection: 'connection', UserAgent: 'user-agent', Referer: 'referer' } as const;
-export const ContentType = { Json: 'application/json', Text: 'text/plain; charset=utf-8', Form: 'application/x-www-form-urlencoded', Binary: 'application/octet-stream', Multipart: 'multipart/form-data' } as const;
+
+export const HttpHeader = {
+    Authorization: 'authorization',
+    ContentType: 'content-type',
+    ContentLength: 'content-length',
+    Cookie: 'cookie',
+    SetCookie: 'set-cookie',
+    Location: 'location',
+    Encoding: 'content-encoding',
+    Host: 'host',
+    Connection: 'connection',
+    UserAgent: 'user-agent',
+    Referer: 'referer'
+} as const;
+export const ContentType = {
+    Json: 'application/json',
+    Text: 'text/plain; charset=utf-8',
+    Form: 'application/x-www-form-urlencoded',
+    Binary: 'application/octet-stream',
+    Multipart: 'multipart/form-data'
+} as const;
 export const Routes = {
     load: 'loadWorkspace',
     save: 'saveWorkspace',
@@ -58,10 +95,22 @@ export enum BodyKind {
 }
 
 export enum AuthKind { None = 'none', Inherit = 'inherit', Basic = 'basic', Bearer = 'bearer', ApiKey = 'apiKey' }
+
 export enum ScriptPhase { Before = 'before', After = 'after' }
+
 export enum ScriptLogLevel { Log = 'log', Info = 'info', Warn = 'warn', Error = 'error', Debug = 'debug' }
-export interface RequestScripts { enabled: boolean; before: string; after: string }
-export interface ScriptLog { phase: ScriptPhase; level: ScriptLogLevel; text: string }
+
+export interface RequestScripts {
+    enabled: boolean;
+    before: string;
+    after: string
+}
+
+export interface ScriptLog {
+    phase: ScriptPhase;
+    level: ScriptLogLevel;
+    text: string
+}
 
 export enum KeyLocation { Header = 'header', Query = 'query' }
 
@@ -294,7 +343,7 @@ export function parseQuery(url: string): Pair[] {
             value,
             enabled: true,
             noEquals: separator < 0,
-            rawQuery: { encoded: part, name, value, noEquals: separator < 0 }
+            rawQuery: {encoded: part, name, value, noEquals: separator < 0}
         };
     }) : [];
 }
