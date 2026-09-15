@@ -3,9 +3,9 @@ import {mytoolsI18n} from '@qping/plugin-bus/i18n';
 import {stat} from 'node:fs/promises';
 import path from 'node:path';
 import {ContentType, Routes, ErrorKind, type Workspace} from '../shared/model.js';
-import {WorkspaceStore, HistoryStore} from './storage.mjs';
-import {Runner, type RunInput} from './runner.mjs';
-import {RequestError} from './engine.mjs';
+import {WorkspaceStore, HistoryStore} from './persistence/storage.mjs';
+import {Runner, type RunInput} from './execution/runner.mjs';
+import {RequestError} from './execution/engine.mjs';
 
 const FilePickCapability = 'path.pick';
 const SearchItemId = 'api-tester-workspace';

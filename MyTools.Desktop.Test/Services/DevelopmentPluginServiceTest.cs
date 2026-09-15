@@ -8,6 +8,8 @@ namespace MyTools.Desktop.Test.Services;
 [NonParallelizable]
 public class DevelopmentPluginServiceTest
 {
+    private const int WatchProcessExitTimeoutMs = 30_000;
+
     private static readonly (string Id, string Name)[] ExistingPlugins =
     [
         ("settings", "Settings"),
@@ -220,17 +222,11 @@ public class DevelopmentPluginServiceTest
 
         try
         {
-            process.Start();
-            if (!process.WaitForExit(30_000))
-            {
-                if (!process.HasExited) process.Kill(true);
-                Assert.Fail("Expected watch bootstrap process to exit within 30 seconds.");
-            }
-            var error = process.StandardError.ReadToEnd();
+            var (_, error) = RunWatchProcess(process);
 
             Assert.Multiple(() =>
             {
-                Assert.That(process.ExitCode, Is.EqualTo(73));
+                Assert.That(process.ExitCode, Is.EqualTo(DevelopmentPluginService.WatchAlreadyRunningExitCode));
                 Assert.That(error, Does.Contain("already running").IgnoreCase);
             });
         }
@@ -260,12 +256,7 @@ public class DevelopmentPluginServiceTest
                     logPath: log)
             };
 
-            process.Start();
-            if (!process.WaitForExit(30_000))
-            {
-                if (!process.HasExited) process.Kill(true);
-                Assert.Fail("Expected watch command process to exit within 30 seconds.");
-            }
+            RunWatchProcess(process);
 
             Assert.Multiple(() =>
             {
@@ -347,6 +338,23 @@ public class DevelopmentPluginServiceTest
         {
             Directory.Delete(directory, true);
         }
+    }
+
+    private static (string Output, string Error) RunWatchProcess(Process process)
+    {
+        process.Start();
+        // Drain both pipes while the child runs, before waiting for its exit.
+        // Keep this wait synchronous: the mutex test must release on its owning thread.
+        var outputTask = process.StandardOutput.ReadToEndAsync();
+        var errorTask = process.StandardError.ReadToEndAsync();
+        var exited = process.WaitForExit(WatchProcessExitTimeoutMs);
+        if (!exited && !process.HasExited) process.Kill(entireProcessTree: true);
+        var output = outputTask.GetAwaiter().GetResult();
+        var error = errorTask.GetAwaiter().GetResult();
+        Assert.That(exited, Is.True,
+            $"Watch process did not exit within {WatchProcessExitTimeoutMs} ms. " +
+            $"Standard output: {output}{Environment.NewLine}Standard error: {error}");
+        return (output, error);
     }
 
     private static string CreatePackageDirectory(string packageJson, bool withNodeModules)

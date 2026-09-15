@@ -8,10 +8,10 @@ import os from 'node:os';
 import path from 'node:path';
 import {gzipSync} from 'node:zlib';
 import {CookieJar} from 'tough-cookie';
-import {executeRequest, extractVariables, pointer} from '../src/backend/engine.mjs';
-import {Runner} from '../src/backend/runner.mjs';
-import {WorkspaceStore} from '../src/backend/storage.mjs';
-import {createWorkspaceMutator} from '../src/web/workspacePersistence.js';
+import {executeRequest, extractVariables, pointer} from '../src/backend/execution/engine.mjs';
+import {Runner} from '../src/backend/execution/runner.mjs';
+import {WorkspaceStore} from '../src/backend/persistence/storage.mjs';
+import {createWorkspaceMutator} from '../src/web/features/workspace/workspacePersistence.js';
 import {
     newRequest,
     defaultSettings,

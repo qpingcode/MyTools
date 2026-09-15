@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 const manifest = JSON.parse(await readFile('plugin.json', 'utf8'));
 const catalog = JSON.parse(await readFile(manifest.i18n.catalog, 'utf8'));
-const source = await readFile('src/web/i18n.ts', 'utf8');
+const source = await readFile('src/web/localization/i18n.ts', 'utf8');
 const defaults = new Map([...source.matchAll(/bus\.i18n\.t\('([^']+)',\s*\{\s*defaultValue:\s*("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/g)].map(match => [match[1], match[2].startsWith('"') ? JSON.parse(match[2]) : match[2].slice(1, -1)]));
 const placeholders = text => [...text.matchAll(/\{\{(\w+)\}\}/g)].map(match => match[1]).sort();
 for (const locale of manifest.i18n.supportedLocales) {

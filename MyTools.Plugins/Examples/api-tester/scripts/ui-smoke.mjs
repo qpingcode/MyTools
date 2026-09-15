@@ -149,14 +149,18 @@ try {
   );
   await page.goto(url + '/index.html');
   await page.getByText('Could not load the workspace. Please retry.', { exact: true }).waitFor();
+  assert.equal(await page.locator('.workspace-overlay').evaluate(element => getComputedStyle(element).position), 'fixed');
+  assert.equal((await page.locator('.app-header').boundingBox()).y, 0);
   assert.equal(await page.locator('.app-shell').evaluate(element => element.inert), true);
   await page.evaluate(({ route, messages }) => window.testHostEvent(route, { locale: 'zh-CN', fallbackLocale: 'en-US', messages }), { route: BusRoutes.HostEvent.LanguageChanged, messages: zh });
   await page.getByText('无法加载工作区，请重试。', { exact: true }).waitFor();
   await page.getByRole('button', { name: '重试', exact: true }).click();
   await page.waitForFunction(() => !document.querySelector('.app-shell').inert);
+  assert.equal(await page.locator('.workspace-overlay').count(), 0);
+  assert.equal((await page.locator('.app-header').boundingBox()).y, 0);
   await page.evaluate(({ route, messages }) => window.testHostEvent(route, { locale: 'en-US', fallbackLocale: 'en-US', messages }), { route: BusRoutes.HostEvent.LanguageChanged, messages: en });
   await page
-    .getByRole('heading', { name: 'API Tester', exact: true })
+    .getByRole('button', { name: 'Import', exact: true })
     .waitFor();
   const environmentMenu = page.locator('.environment-bar details:not(.environment-selector)');
   const menuTrigger = environmentMenu.locator('summary');
@@ -347,7 +351,7 @@ try {
   await cookiesDialog
     .getByText('No cookies stored for the current environment.')
     .waitFor();
-  await cookiesDialog.getByRole('button', { name: 'Close', exact: true }).click();
+  await cookiesDialog.locator('.dialog-titlebar').getByRole('button', { name: 'Close', exact: true }).click();
   await cookiesDialog.waitFor({ state: 'detached' });
   await create('User', '/user');
   // Default input rows are visual drafts, not saved configuration.
@@ -369,6 +373,7 @@ try {
   assert.equal(await config.locator('.variable-token').innerText(), '{{token}}');
   assert.equal(await config.getByRole('textbox', { name: 'Value', exact: true }).first().inputValue(), 'Bearer {{token}}');
   const urlInput = page.locator('[data-primary-input]');
+  assert.equal(await urlInput.getAttribute('placeholder'), 'Enter a URL, e.g. https://api.example.com/users');
   const originalUrl = await urlInput.inputValue();
   await urlInput.fill('{{baseUrl}}/users/{{userId}}');
   assert.deepEqual(await page.locator('.url-bar .variable-token').allTextContents(), ['{{baseUrl}}', '{{userId}}']);
@@ -549,6 +554,17 @@ try {
   await page.getByRole('dialog', { name: 'Import', exact: true }).waitFor();
   await toolsDialog.getByRole('combobox', { name: 'Import format', exact: true }).selectOption('json');
   await toolsDialog.getByRole('textbox', { name: 'Paste cURL or JSON', exact: true }).fill(backup);
+  // Cancelling the native file chooser bubbles from the input, not the dialog.
+  await toolsDialog.locator('input[type=file]').evaluate(input => {
+    input.dispatchEvent(new Event('cancel', { bubbles: true }));
+  });
+  assert.equal(await toolsDialog.evaluate(element => element.open), true);
+  assert.equal(await toolsDialog.getByRole('textbox', { name: 'Paste cURL or JSON', exact: true }).inputValue(), backup);
+  await page.keyboard.press('Escape');
+  await toolsDialog.waitFor({ state: 'detached' });
+  await importButton.click();
+  await page.getByRole('dialog', { name: 'Import', exact: true }).waitFor();
+  assert.equal(await toolsDialog.getByRole('textbox', { name: 'Paste cURL or JSON', exact: true }).inputValue(), backup);
   const collectionCount = workspace.collections.length;
   await toolsDialog.getByRole('button', { name: 'Import', exact: true }).last().click();
   await toolsDialog.waitFor({ state: 'detached' });
@@ -558,10 +574,20 @@ try {
   // History shows the sent headers and can reopen the recorded request.
   await historyButton.click();
   await page.getByRole('dialog', { name: 'History', exact: true }).waitFor();
+  const historyActions = toolsDialog.locator('.dialog-actions');
+  const reopenRequestButton = historyActions.getByRole('button', { name: 'Reopen request', exact: true });
+  assert.equal(await reopenRequestButton.isDisabled(), true);
+  assert.ok((await historyActions.getByRole('button', { name: 'Cancel', exact: true }).boundingBox()).x < (await historyActions.getByRole('button', { name: 'Refresh', exact: true }).boundingBox()).x);
+  await historyActions.getByRole('button', { name: 'Clear history', exact: true }).click();
+  const clearHistoryDialog = page.getByRole('dialog', { name: 'Clear history', exact: true });
+  await clearHistoryDialog.getByRole('heading', { name: 'Clear history', exact: true }).waitFor();
+  await clearHistoryDialog.getByText('Clear all saved request history?', { exact: true }).waitFor();
+  await clearHistoryDialog.getByRole('button', { name: 'Cancel', exact: true }).click();
   await toolsDialog.locator('.history-row').first().click();
+  assert.equal(await reopenRequestButton.isDisabled(), false);
   await toolsDialog.getByRole('button', { name: 'Effective request headers', exact: true }).click();
   await toolsDialog.getByRole('cell', { name: 'X-Ui', exact: true }).waitFor();
-  await toolsDialog.getByRole('button', { name: 'Reopen request', exact: true }).click();
+  await reopenRequestButton.click();
   await toolsDialog.waitFor({ state: 'detached' });
   // Pasted browser cURL opens a usable request tab.
   await importButton.click();
@@ -572,7 +598,30 @@ try {
   await toolsDialog.waitFor({ state: 'detached' });
   await page.getByRole('button', { name: 'Send', exact: true }).click();
   await page.locator('.response pre').filter({ hasText: 'Bearer curl-ui' }).waitFor();
-  await page.locator('.document-tab').filter({ hasText: 'User' }).first().locator('button').first().click();
+  // A narrow window moves complete request tabs into the overflow menu.
+  const OverflowViewport = { width: 720, height: 960 };
+  const DefaultViewport = { width: 1280, height: 960 };
+  await page.setViewportSize(OverflowViewport);
+  const hiddenRequestsButton = page.getByRole('button', { name: 'Hidden requests', exact: true });
+  await hiddenRequestsButton.waitFor();
+  assert.equal(await page.locator('.document-tabs').evaluate(element => getComputedStyle(element).overflowX), 'hidden');
+  await hiddenRequestsButton.click();
+  const hiddenRequest = page.locator('.request-tabs-menu').getByRole('menuitem').first();
+  const hiddenRequestName = await hiddenRequest.locator('.tab-name').innerText();
+  await hiddenRequest.click();
+  await page.locator('.document-tab.selected .tab-name').getByText(hiddenRequestName, { exact: true }).waitFor();
+  assert.equal(await page.locator('.request-tabs-menu').count(), 0);
+  await hiddenRequestsButton.press('ArrowDown');
+  await page.locator('.request-tabs-menu').waitFor();
+  await page.keyboard.press('Escape');
+  assert.equal(await hiddenRequestsButton.getAttribute('aria-expanded'), 'false');
+  await page.setViewportSize(DefaultViewport);
+  const userTab = page.locator('.document-tab').filter({ hasText: 'User' }).first();
+  if (await userTab.count()) await userTab.locator('button').first().click();
+  else {
+    await hiddenRequestsButton.click();
+    await page.locator('.request-tabs-menu').getByRole('menuitem').filter({ hasText: 'User' }).first().click();
+  }
   await page.getByRole('tab', { name: 'Authentication', exact: true }).click();
   await page
     .locator('.workspace-scroll')

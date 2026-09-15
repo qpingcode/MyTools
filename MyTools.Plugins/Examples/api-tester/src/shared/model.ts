@@ -34,7 +34,6 @@ export const Limits = {
     batchRequests: 1000,
     cookieEnvironments: 16,
     retainedRuns: 8,
-    openTabs: 12,
     pollMs: 200,
     schemaVersion: 1,
     historyEntries: 100,

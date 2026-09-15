@@ -1,4 +1,5 @@
 {
+  "Plugin.ApiTester.HiddenRequests": "Hidden requests",
   "Plugin.ApiTester.Name": "API Tester",
   "Plugin.ApiTester.Subtitle": "Debug HTTP requests and run simple API tests",
   "Plugin.ApiTester.SelectFile": "Select a file",
@@ -112,7 +113,6 @@
   "Plugin.ApiTester.DeleteItem": "Delete {{name}}?",
   "Plugin.ApiTester.ReplaceParams": "Editing the URL will remove disabled parameters. Continue?",
   "Plugin.ApiTester.NamePrompt": "Enter a name",
-  "Plugin.ApiTester.TabLimit": "Close a tab before opening another (maximum 12).",
   "Plugin.ApiTester.SaveTarget": "Choose a collection to save this request",
   "Plugin.ApiTester.ConfigurationError": "Invalid request configuration",
   "Plugin.ApiTester.VariableError": "Undefined variable",
@@ -206,5 +206,6 @@
   "Plugin.ApiTester.JsonTreeLimit": "This JSON is too large or deeply nested for tree view. Use raw view to search it.",
   "Plugin.ApiTester.SearchEnvironments": "Search environments",
   "Plugin.ApiTester.NoMatchingEnvironments": "No matching environments.",
-  "Plugin.ApiTester.EnvironmentName": "Environment name"
+  "Plugin.ApiTester.EnvironmentName": "Environment name",
+  "Plugin.ApiTester.UrlPlaceholder": "Enter a URL, e.g. https://api.example.com/users"
 }

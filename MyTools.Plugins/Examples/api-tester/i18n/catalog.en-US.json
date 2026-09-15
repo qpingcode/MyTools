@@ -5,12 +5,27 @@
   "sourceLocale": "en-US",
   "entries": [
     {
+      "key": "Plugin.ApiTester.HiddenRequests",
+      "defaultValue": "Hidden requests",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/localization/i18n.ts",
+          "line": 5,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "隐藏的请求"
+      }
+    },
+    {
       "key": "Plugin.ApiTester.Name",
       "defaultValue": "API Tester",
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 6,
           "column": 16
         }
@@ -25,7 +40,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 11,
           "column": 16
         }
@@ -40,7 +55,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 16,
           "column": 16
         }
@@ -55,7 +70,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 21,
           "column": 16
         }
@@ -70,7 +85,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 26,
           "column": 16
         }
@@ -85,7 +100,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 31,
           "column": 16
         }
@@ -100,7 +115,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 36,
           "column": 16
         }
@@ -115,7 +130,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 41,
           "column": 16
         }
@@ -130,7 +145,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 46,
           "column": 16
         }
@@ -145,7 +160,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 51,
           "column": 16
         }
@@ -160,7 +175,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 56,
           "column": 16
         }
@@ -175,7 +190,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 58,
           "column": 16
         }
@@ -190,7 +205,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 63,
           "column": 16
         }
@@ -205,7 +220,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 68,
           "column": 16
         }
@@ -220,7 +235,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 73,
           "column": 16
         }
@@ -235,7 +250,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 78,
           "column": 16
         }
@@ -250,7 +265,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 83,
           "column": 16
         }
@@ -265,7 +280,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 88,
           "column": 16
         }
@@ -280,7 +295,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 93,
           "column": 16
         }
@@ -295,7 +310,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 99,
           "column": 16
         }
@@ -310,7 +325,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 104,
           "column": 16
         }
@@ -325,7 +340,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 109,
           "column": 16
         }
@@ -340,7 +355,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 114,
           "column": 16
         }
@@ -355,7 +370,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 119,
           "column": 16
         }
@@ -370,7 +385,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 124,
           "column": 16
         }
@@ -385,7 +400,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 129,
           "column": 16
         }
@@ -400,7 +415,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 134,
           "column": 16
         }
@@ -415,7 +430,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 88,
           "column": 16
         }
@@ -430,7 +445,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 93,
           "column": 16
         }
@@ -445,7 +460,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 95,
           "column": 16
         }
@@ -460,7 +475,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 100,
           "column": 16
         }
@@ -475,7 +490,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 105,
           "column": 16
         }
@@ -490,7 +505,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 107,
           "column": 16
         }
@@ -505,7 +520,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 109,
           "column": 16
         }
@@ -520,7 +535,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 114,
           "column": 16
         }
@@ -535,7 +550,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 119,
           "column": 16
         }
@@ -550,7 +565,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 124,
           "column": 16
         }
@@ -565,7 +580,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 126,
           "column": 16
         }
@@ -580,7 +595,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 131,
           "column": 16
         }
@@ -595,7 +610,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 136,
           "column": 16
         }
@@ -610,7 +625,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 191,
           "column": 16
         }
@@ -625,7 +640,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 141,
           "column": 16
         }
@@ -640,7 +655,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 146,
           "column": 16
         }
@@ -655,7 +670,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 151,
           "column": 16
         }
@@ -670,7 +685,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 156,
           "column": 16
         }
@@ -685,7 +700,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 211,
           "column": 16
         }
@@ -700,7 +715,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 161,
           "column": 16
         }
@@ -715,7 +730,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 166,
           "column": 16
         }
@@ -730,7 +745,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 168,
           "column": 16
         }
@@ -745,7 +760,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 170,
           "column": 16
         }
@@ -760,7 +775,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 172,
           "column": 16
         }
@@ -775,7 +790,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 177,
           "column": 16
         }
@@ -790,7 +805,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 179,
           "column": 16
         }
@@ -805,7 +820,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 184,
           "column": 16
         }
@@ -820,7 +835,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 186,
           "column": 16
         }
@@ -835,7 +850,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 188,
           "column": 16
         }
@@ -850,7 +865,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 193,
           "column": 16
         }
@@ -865,7 +880,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 198,
           "column": 16
         }
@@ -880,7 +895,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 203,
           "column": 16
         }
@@ -895,7 +910,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 208,
           "column": 16
         }
@@ -910,7 +925,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 213,
           "column": 16
         }
@@ -925,7 +940,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 218,
           "column": 16
         }
@@ -940,7 +955,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 223,
           "column": 16
         }
@@ -955,7 +970,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 228,
           "column": 16
         }
@@ -970,7 +985,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 233,
           "column": 16
         }
@@ -985,7 +1000,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 235,
           "column": 16
         }
@@ -1000,7 +1015,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 240,
           "column": 16
         }
@@ -1015,7 +1030,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 245,
           "column": 16
         }
@@ -1030,7 +1045,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 250,
           "column": 16
         }
@@ -1045,7 +1060,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 255,
           "column": 16
         }
@@ -1060,7 +1075,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 260,
           "column": 16
         }
@@ -1075,7 +1090,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 265,
           "column": 16
         }
@@ -1090,7 +1105,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 270,
           "column": 16
         }
@@ -1105,7 +1120,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 275,
           "column": 16
         }
@@ -1120,7 +1135,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 280,
           "column": 16
         }
@@ -1135,7 +1150,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 285,
           "column": 16
         }
@@ -1150,7 +1165,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 290,
           "column": 16
         }
@@ -1165,7 +1180,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 295,
           "column": 16
         }
@@ -1180,7 +1195,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 300,
           "column": 16
         }
@@ -1195,7 +1210,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 305,
           "column": 16
         }
@@ -1210,7 +1225,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 310,
           "column": 16
         }
@@ -1225,7 +1240,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 315,
           "column": 16
         }
@@ -1240,7 +1255,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 320,
           "column": 16
         }
@@ -1255,7 +1270,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 325,
           "column": 16
         }
@@ -1270,7 +1285,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 330,
           "column": 16
         }
@@ -1285,7 +1300,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 335,
           "column": 16
         }
@@ -1300,7 +1315,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 337,
           "column": 16
         }
@@ -1315,7 +1330,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 342,
           "column": 16
         }
@@ -1330,7 +1345,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 347,
           "column": 16
         }
@@ -1345,7 +1360,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 352,
           "column": 16
         }
@@ -1360,7 +1375,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 357,
           "column": 16
         }
@@ -1375,7 +1390,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 362,
           "column": 16
         }
@@ -1390,7 +1405,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 367,
           "column": 16
         }
@@ -1405,7 +1420,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 372,
           "column": 16
         }
@@ -1420,7 +1435,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 377,
           "column": 16
         }
@@ -1435,7 +1450,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 382,
           "column": 16
         }
@@ -1450,7 +1465,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 387,
           "column": 16
         }
@@ -1465,7 +1480,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 392,
           "column": 16
         }
@@ -1480,7 +1495,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 397,
           "column": 16
         }
@@ -1495,7 +1510,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 402,
           "column": 16
         }
@@ -1510,7 +1525,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 407,
           "column": 16
         }
@@ -1525,7 +1540,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 412,
           "column": 16
         }
@@ -1542,7 +1557,7 @@
       ],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 417,
           "column": 16
         }
@@ -1561,7 +1576,7 @@
       ],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 422,
           "column": 16
         }
@@ -1581,7 +1596,7 @@
       ],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 427,
           "column": 16
         }
@@ -1596,7 +1611,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 433,
           "column": 16
         }
@@ -1611,7 +1626,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 439,
           "column": 16
         }
@@ -1626,7 +1641,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 444,
           "column": 16
         }
@@ -1643,7 +1658,7 @@
       ],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 449,
           "column": 16
         }
@@ -1660,7 +1675,7 @@
       ],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 454,
           "column": 16
         }
@@ -1677,7 +1692,7 @@
       ],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 459,
           "column": 16
         }
@@ -1692,7 +1707,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 464,
           "column": 16
         }
@@ -1707,7 +1722,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 470,
           "column": 16
         }
@@ -1717,27 +1732,12 @@
       }
     },
     {
-      "key": "Plugin.ApiTester.TabLimit",
-      "defaultValue": "Close a tab before opening another (maximum 12).",
-      "placeholders": [],
-      "references": [
-        {
-          "filePath": "src/web/i18n.ts",
-          "line": 475,
-          "column": 16
-        }
-      ],
-      "existingTranslations": {
-        "zh-CN": "请先关闭一个标签页（最多 12 个）。"
-      }
-    },
-    {
       "key": "Plugin.ApiTester.SaveTarget",
       "defaultValue": "Choose a collection to save this request",
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 480,
           "column": 16
         }
@@ -1752,7 +1752,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 485,
           "column": 16
         }
@@ -1767,7 +1767,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 490,
           "column": 16
         }
@@ -1782,7 +1782,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 495,
           "column": 16
         }
@@ -1797,7 +1797,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 500,
           "column": 16
         }
@@ -1812,7 +1812,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 505,
           "column": 16
         }
@@ -1827,7 +1827,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 510,
           "column": 16
         }
@@ -1842,7 +1842,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 515,
           "column": 16
         }
@@ -1857,7 +1857,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 520,
           "column": 16
         }
@@ -1872,7 +1872,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 525,
           "column": 16
         }
@@ -1887,7 +1887,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 530,
           "column": 16
         }
@@ -1902,7 +1902,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 535,
           "column": 16
         }
@@ -1917,7 +1917,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 540,
           "column": 16
         }
@@ -1932,7 +1932,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 545,
           "column": 16
         }
@@ -1947,7 +1947,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 550,
           "column": 16
         }
@@ -1962,7 +1962,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 555,
           "column": 16
         }
@@ -1977,7 +1977,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 560,
           "column": 16
         }
@@ -1992,7 +1992,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 565,
           "column": 16
         }
@@ -2007,7 +2007,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 567,
           "column": 16
         }
@@ -2022,7 +2022,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 569,
           "column": 16
         }
@@ -2037,7 +2037,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 571,
           "column": 16
         }
@@ -2052,7 +2052,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 576,
           "column": 16
         }
@@ -2067,7 +2067,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 581,
           "column": 16
         }
@@ -2082,7 +2082,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 586,
           "column": 16
         }
@@ -2097,7 +2097,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 591,
           "column": 16
         }
@@ -2112,7 +2112,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 596,
           "column": 16
         }
@@ -2130,7 +2130,7 @@
       ],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 601,
           "column": 16
         }
@@ -2145,7 +2145,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 606,
           "column": 16
         }
@@ -2160,7 +2160,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 611,
           "column": 16
         }
@@ -2175,7 +2175,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 616,
           "column": 16
         }
@@ -2190,7 +2190,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 621,
           "column": 16
         }
@@ -2205,7 +2205,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 621,
           "column": 16
         }
@@ -2220,7 +2220,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 626,
           "column": 16
         }
@@ -2235,7 +2235,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 630,
           "column": 16
         }
@@ -2250,7 +2250,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 5,
           "column": 35
         }
@@ -2265,7 +2265,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 6,
           "column": 32
         }
@@ -2280,7 +2280,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 7,
           "column": 21
         }
@@ -2295,7 +2295,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 5,
           "column": 5
         }
@@ -2310,7 +2310,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 6,
           "column": 5
         }
@@ -2325,7 +2325,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 7,
           "column": 5
         }
@@ -2340,7 +2340,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 8,
           "column": 5
         }
@@ -2355,7 +2355,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 9,
           "column": 5
         }
@@ -2370,7 +2370,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 10,
           "column": 5
         }
@@ -2385,7 +2385,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 11,
           "column": 5
         }
@@ -2400,7 +2400,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 12,
           "column": 5
         }
@@ -2415,7 +2415,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 13,
           "column": 5
         }
@@ -2430,7 +2430,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 14,
           "column": 5
         }
@@ -2445,7 +2445,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 15,
           "column": 5
         }
@@ -2460,7 +2460,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 16,
           "column": 5
         }
@@ -2475,7 +2475,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 17,
           "column": 5
         }
@@ -2490,7 +2490,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 18,
           "column": 5
         }
@@ -2505,7 +2505,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 19,
           "column": 5
         }
@@ -2520,7 +2520,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 20,
           "column": 5
         }
@@ -2535,7 +2535,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 21,
           "column": 5
         }
@@ -2550,7 +2550,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 22,
           "column": 5
         }
@@ -2565,7 +2565,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 23,
           "column": 5
         }
@@ -2580,7 +2580,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 24,
           "column": 5
         }
@@ -2595,7 +2595,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 25,
           "column": 5
         }
@@ -2610,7 +2610,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 26,
           "column": 5
         }
@@ -2625,7 +2625,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 27,
           "column": 5
         }
@@ -2640,7 +2640,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 28,
           "column": 5
         }
@@ -2655,7 +2655,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 29,
           "column": 5
         }
@@ -2670,7 +2670,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 30,
           "column": 5
         }
@@ -2685,7 +2685,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 31,
           "column": 5
         }
@@ -2700,7 +2700,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 32,
           "column": 5
         }
@@ -2715,7 +2715,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 33,
           "column": 5
         }
@@ -2730,7 +2730,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 34,
           "column": 5
         }
@@ -2745,7 +2745,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 35,
           "column": 5
         }
@@ -2760,7 +2760,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 36,
           "column": 5
         }
@@ -2775,7 +2775,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 37,
           "column": 5
         }
@@ -2790,7 +2790,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 38,
           "column": 5
         }
@@ -2805,7 +2805,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 39,
           "column": 5
         }
@@ -2820,7 +2820,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 40,
           "column": 5
         }
@@ -2835,7 +2835,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 41,
           "column": 5
         }
@@ -2850,7 +2850,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 42,
           "column": 5
         }
@@ -2865,7 +2865,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 43,
           "column": 5
         }
@@ -2880,7 +2880,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 44,
           "column": 5
         }
@@ -2895,7 +2895,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 45,
           "column": 5
         }
@@ -2910,7 +2910,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 46,
           "column": 5
         }
@@ -2925,7 +2925,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 47,
           "column": 5
         }
@@ -2940,7 +2940,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 48,
           "column": 5
         }
@@ -2955,7 +2955,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 49,
           "column": 5
         }
@@ -2970,7 +2970,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 50,
           "column": 5
         }
@@ -2985,7 +2985,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 51,
           "column": 5
         }
@@ -3000,7 +3000,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 52,
           "column": 5
         }
@@ -3015,7 +3015,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 53,
           "column": 5
         }
@@ -3030,7 +3030,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 54,
           "column": 5
         }
@@ -3047,7 +3047,7 @@
       ],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 55,
           "column": 5
         }
@@ -3062,7 +3062,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 56,
           "column": 5
         }
@@ -3077,7 +3077,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 57,
           "column": 5
         }
@@ -3092,7 +3092,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 58,
           "column": 5
         }
@@ -3107,7 +3107,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 5,
           "column": 31
         }
@@ -3122,7 +3122,7 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 6,
           "column": 31
         }
@@ -3137,13 +3137,28 @@
       "placeholders": [],
       "references": [
         {
-          "filePath": "src/web/i18n.ts",
+          "filePath": "src/web/localization/i18n.ts",
           "line": 5,
           "column": 28
         }
       ],
       "existingTranslations": {
         "zh-CN": "环境名称"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.UrlPlaceholder",
+      "defaultValue": "Enter a URL, e.g. https://api.example.com/users",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/localization/i18n.ts",
+          "line": 238,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "输入请求地址，例如 https://api.example.com/users"
       }
     }
   ]

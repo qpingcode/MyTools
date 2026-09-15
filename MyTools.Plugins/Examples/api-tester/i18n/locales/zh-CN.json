@@ -1,4 +1,5 @@
 {
+  "Plugin.ApiTester.HiddenRequests": "隐藏的请求",
   "Plugin.ApiTester.Name": "API 测试",
   "Plugin.ApiTester.Subtitle": "调试 HTTP 请求并执行简单 API 测试",
   "Plugin.ApiTester.SelectFile": "选择文件",
@@ -112,7 +113,6 @@
   "Plugin.ApiTester.DeleteItem": "删除 {{name}}？",
   "Plugin.ApiTester.ReplaceParams": "修改 URL 将移除禁用参数，是否继续？",
   "Plugin.ApiTester.NamePrompt": "请输入名称",
-  "Plugin.ApiTester.TabLimit": "请先关闭一个标签页（最多 12 个）。",
   "Plugin.ApiTester.SaveTarget": "请选择保存此请求的集合",
   "Plugin.ApiTester.ConfigurationError": "请求配置无效",
   "Plugin.ApiTester.VariableError": "变量未定义",
@@ -206,5 +206,6 @@
   "Plugin.ApiTester.JsonTreeLimit": "此 JSON 过大或嵌套过深，无法显示树视图，请在原始视图中搜索。",
   "Plugin.ApiTester.SearchEnvironments": "搜索环境",
   "Plugin.ApiTester.NoMatchingEnvironments": "没有匹配的环境。",
-  "Plugin.ApiTester.EnvironmentName": "环境名称"
+  "Plugin.ApiTester.EnvironmentName": "环境名称",
+  "Plugin.ApiTester.UrlPlaceholder": "输入请求地址，例如 https://api.example.com/users"
 }

@@ -1,36 +1,35 @@
 <script setup lang="ts">
 import { provide } from 'vue';
-import { useWorkspace } from './useWorkspace.js';
-import { WorkspaceKey } from './context.js';
-import Sidebar from './Sidebar.vue';
-import SplitPane from './SplitPane.vue';
-import RequestResponseSplit from './RequestResponseSplit.vue';
-import EnvironmentBar from './EnvironmentBar.vue';
-import RequestTabs from './RequestTabs.vue';
-import RequestEditor from './RequestEditor.vue';
-import ResponsePanel from './ResponsePanel.vue';
-import RunResults from './RunResults.vue';
-import WorkspaceDialogs from './WorkspaceDialogs.vue';
-import Icon from './Icon.vue';
-import IconButton from './IconButton.vue';
-import { notification } from './rpc.js';
-import WorkspaceTools from './WorkspaceTools.vue';
-import { WorkspaceTool } from './workspaceToolTypes.js';
+import { useWorkspace } from './features/workspace/useWorkspace.js';
+import { WorkspaceKey } from './features/workspace/context.js';
+import Sidebar from './features/sidebar/Sidebar.vue';
+import SplitPane from './components/layout/SplitPane.vue';
+import RequestResponseSplit from './components/layout/RequestResponseSplit.vue';
+import EnvironmentBar from './features/workspace/EnvironmentBar.vue';
+import RequestTabs from './features/request/RequestTabs.vue';
+import RequestEditor from './features/request/RequestEditor.vue';
+import ResponsePanel from './features/response/ResponsePanel.vue';
+import RunResults from './features/runs/RunResults.vue';
+import WorkspaceDialogs from './features/workspace/WorkspaceDialogs.vue';
+import Icon from './components/common/Icon.vue';
+import IconButton from './components/common/IconButton.vue';
+import { notification } from './services/rpc.js';
+import WorkspaceTools from './features/workspace/WorkspaceTools.vue';
+import { WorkspaceTool } from './features/workspace/workspaceToolTypes.js';
 const controller = useWorkspace();
 provide(WorkspaceKey, controller);
-const { t, workspaceReady, loadingWorkspace, workspaceLoadFailed, loadWorkspace, tab, notificationText } = controller;
+const { t, workspaceReady, workspaceLoadFailed, loadWorkspace, tab, notificationText } = controller;
 </script>
 <template>
-  <div v-if="workspaceLoadFailed || loadingWorkspace" class="empty-state" role="status">
-    <p>{{ workspaceLoadFailed ? t.WorkspaceLoadFailed() : t.WorkspaceLoading() }}</p>
-    <button v-if="workspaceLoadFailed" @click="loadWorkspace">{{ t.Retry() }}</button>
+  <div v-if="!workspaceReady" class="workspace-overlay" role="status" aria-live="polite">
+    <div class="workspace-overlay-card">
+      <span v-if="!workspaceLoadFailed" class="workspace-loading-spinner" aria-hidden="true" />
+      <p>{{ workspaceLoadFailed ? t.WorkspaceLoadFailed() : t.WorkspaceLoading() }}</p>
+      <button v-if="workspaceLoadFailed" class="primary" @click="loadWorkspace">{{ t.Retry() }}</button>
+    </div>
   </div>
   <main class="app-shell" :inert="!workspaceReady" :aria-busy="!workspaceReady">
     <header class="app-header">
-      <div class="brand">
-        <span class="brand-icon"><Icon name="terminal" /></span>
-        <h1>{{ t.Name() }}</h1>
-      </div>
       <div class="header-actions"><WorkspaceTools :tool="WorkspaceTool.Import" /><WorkspaceTools :tool="WorkspaceTool.Export" /><WorkspaceTools :tool="WorkspaceTool.History" /><EnvironmentBar /></div>
     </header>
     <SplitPane

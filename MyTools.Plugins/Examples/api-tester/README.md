@@ -14,7 +14,7 @@ Create and select an environment, edit its variables, and reference `{{baseUrl}}
 
 Add visual assertions for status, time, headers, text, JSON existence/value/type. Select requests with their checkboxes, or run the whole active collection with none selected. Open tabs' current edits are used without automatically saving. Stop/continue and cancellation are supported. HTTP errors remain responses; the built-in success check expects HTTP 200. Reports and multi-iteration runs are not included.
 
-Responses offer raw/formatted JSON/tree views, syntax colors, folding, case-insensitive search with match navigation, repeated headers, full body copying and saving. Defaults: 30-second timeout, ten redirects, 1 MiB preview, 20 MiB body reception, 40 MiB complete-body cache and 8 MiB preview cache across eight runs, twelve open tabs, and up to 1000 requests per batch. Cookie containers are retained for up to sixteen environments. Old complete bodies may expire while summaries remain. The UI supports English and Simplified Chinese, live language changes, host themes, and keyboard navigation.
+Responses offer raw/formatted JSON/tree views, syntax colors, folding, case-insensitive search with match navigation, repeated headers, full body copying and saving. Defaults: 30-second timeout, ten redirects, 1 MiB preview, 20 MiB body reception, 40 MiB complete-body cache and 8 MiB preview cache across eight runs, and up to 1000 requests per batch. Cookie containers are retained for up to sixteen environments. Old complete bodies may expire while summaries remain. The UI supports English and Simplified Chinese, live language changes, host themes, and keyboard navigation.
 
 ## Import, export and history
 
@@ -59,6 +59,15 @@ pm.variables.set('token', pm.response.json().token);
 A before-script exception prevents sending. An after-script exception preserves the received response and fails the run. Variable writes are committed only when execution, decoding, extraction and scripts succeed; failed test assertions still participate in batch stop-on-failure behavior.
 
 ## Development
+
+Source files are grouped by responsibility:
+
+- `src/backend/execution`, `scripting`, and `persistence`: HTTP execution and runs, script workers and crypto helpers, and workspace/history storage. `index.mts` remains the plugin entry point.
+- `src/shared`: domain models, workspace validation, and import/export formats shared by backend and frontend.
+- `src/web/components/common` and `layout`: reusable controls/editors and split panes.
+- `src/web/features/workspace`, `sidebar`, `request`, `response`, and `runs`: feature components, state, and related types/helpers.
+- `src/web/services` and `localization`: host RPC and notifications, and translation resources access and reactive locale state.
+- `src/web`: application composition, entry point, HTML, styles, and Vue type declarations.
 
 ```sh
 npm install

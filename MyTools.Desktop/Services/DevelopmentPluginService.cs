@@ -16,7 +16,7 @@ namespace MyTools.Desktop.Services;
 public sealed class DevelopmentPluginService : IDisposable, IPluginDevelopmentDiagnostics
 {
     private const string RefreshPipeName = "MyTools.DevelopmentPlugins.Refresh";
-    private const int WatchAlreadyRunningExitCode = 73;
+    internal const int WatchAlreadyRunningExitCode = 73;
     private static readonly Regex ValidPluginId = new("^[a-z0-9](?:[a-z0-9.-]{0,62}[a-z0-9])?$", RegexOptions.Compiled);
     private static readonly Regex AuthorizationSecret = new(
         @"(?i)\bauthorization\b\s*[:=]\s*(?:bearer\s+)?\S+", RegexOptions.Compiled);
