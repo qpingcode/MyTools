@@ -86,7 +86,7 @@ public class PluginWindowTitleLayoutTests
             Assert.That(chrome, Is.Not.Null);
             Assert.That(chrome!.CaptionHeight, Is.EqualTo(34));
             Assert.That(chrome.ResizeBorderThickness, Is.EqualTo(new Thickness(8)));
-            Assert.That(chrome.GlassFrameThickness, Is.EqualTo(new Thickness(0)));
+            Assert.That(chrome.GlassFrameThickness, Is.EqualTo(new Thickness(1)));
         });
     }
 

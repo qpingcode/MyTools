@@ -42,6 +42,17 @@ public class SearchWindowHeaderLayoutTests
         Assert.That((string?)basicList.Attribute("IconColumnWidth"), Is.EqualTo("50"));
     }
 
+    [TestCase("SearchWindow.xaml")]
+    [TestCase("ErrorDialog.xaml")]
+    public void CustomWindow_RequestsDwmFrameForSystemShadow(string fileName)
+    {
+        var document = LoadXaml("MyTools.Desktop", "Views", fileName);
+        var chrome = document.Descendants()
+            .Single(element => element.Name.LocalName == "WindowChrome");
+
+        Assert.That((string?)chrome.Attribute("GlassFrameThickness"), Is.EqualTo("1"));
+    }
+
     private static XDocument LoadXaml(params string[] relativePath)
     {
         var directory = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
