@@ -549,6 +549,8 @@ dialog.workspace-tools-dialog {
     --tree-heading-padding-x: 8px;
     --tree-request-padding-end: 12px;
     --tree-selected-accent-width: 2px;
+    --tree-drop-indicator-size: 2px;
+    --tree-dragging-opacity: 0.55;
     --tree-guide-elbow-extra: 14px;
     --tree-guide-stub-inset: 6px;
     --tree-child-indent: 0px;
@@ -675,6 +677,46 @@ dialog.workspace-tools-dialog {
 .request-row.selected {
     background: var(--hover);
     box-shadow: inset var(--tree-selected-accent-width) 0 var(--accent);
+}
+
+.request-row.dragging {
+    opacity: var(--tree-dragging-opacity);
+}
+
+.request-row.drop-before::after,
+.request-row.drop-after::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: var(--tree-drop-indicator-size);
+    background: var(--accent);
+    z-index: 2;
+    opacity: 1;
+    pointer-events: none;
+    border: 0;
+    width: auto;
+    top: auto;
+}
+
+.request-row.drop-before::after {
+    top: 0;
+}
+
+.request-row.drop-after::after {
+    bottom: 0;
+}
+
+.collection-heading.drop-into {
+    background: var(--hover);
+    box-shadow: inset 0 0 0 var(--tree-drop-indicator-size) var(--accent);
+}
+
+.collection-tree.request-dragging,
+.collection-tree.request-dragging .request-title,
+.collection-tree.request-dragging .collection-title {
+    cursor: grabbing;
+    user-select: none;
 }
 
 .method-label {

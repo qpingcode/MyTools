@@ -34,6 +34,12 @@ import {HistoryStore, WorkspaceStore} from '../src/backend/persistence/storage.m
 import {Runner} from '../src/backend/execution/runner.mjs';
 import {validateWorkspace} from '../src/shared/workspaceValidation.js';
 import {newCollection} from '../src/shared/collectionTree.js';
+import {placeRequest} from '../src/shared/requestPlacement.js';
+import {
+    requestDragScrollDelta,
+    RequestDragScrollEdgePx,
+    RequestDragScrollMaxPx,
+} from '../src/web/features/sidebar/requestDragScroll.js';
 
 const SuccessStatus = 200;
 const PollIntervalMs = 10;
@@ -158,6 +164,33 @@ test('nested collections persist, remap parents and export as a rooted subtree',
     const cyclic = emptyWorkspace();
     cyclic.collections.push(newCollection('a', 'A', 'b'), newCollection('b', 'B', 'a'));
     assert.throws(() => validateWorkspace(cyclic));
+});
+
+test('requests can be reordered and moved between collections', () => {
+    const root = newCollection('root', 'Root');
+    const child = newCollection('child', 'Child', root.id);
+    root.requests.push(newRequest('one', 'one'), newRequest('two', 'two'), newRequest('three', 'three'));
+    const collections = [root, child];
+    assert.equal(placeRequest(collections, 'one', root.id, 2), true);
+    assert.deepEqual(root.requests.map(request => request.id), ['two', 'one', 'three']);
+    assert.equal(placeRequest(collections, 'one', root.id, 2), false);
+    assert.equal(placeRequest(collections, 'three', child.id, 0), true);
+    assert.deepEqual(root.requests.map(request => request.id), ['two', 'one']);
+    assert.equal(child.requests[0].id, 'three');
+    assert.equal(placeRequest(collections, 'missing', root.id, 0), false);
+});
+
+test('dragging a request near the tree edge produces a scroll delta', () => {
+    const bounds = {top: 100, bottom: 400, left: 20, right: 220};
+    const centerX = (bounds.left + bounds.right) / 2;
+    const centerY = (bounds.top + bounds.bottom) / 2;
+    assert.equal(requestDragScrollDelta(centerX, centerY, bounds), 0);
+    assert.equal(requestDragScrollDelta(bounds.left - 1, bounds.top, bounds), 0);
+    assert.equal(requestDragScrollDelta(centerX, bounds.top, bounds), -RequestDragScrollMaxPx);
+    assert.equal(requestDragScrollDelta(centerX, bounds.bottom, bounds), RequestDragScrollMaxPx);
+    const halfEdge = RequestDragScrollEdgePx / 2;
+    assert.equal(requestDragScrollDelta(centerX, bounds.top + halfEdge, bounds), -RequestDragScrollMaxPx / 2);
+    assert.equal(requestDragScrollDelta(centerX, bounds.bottom - halfEdge, bounds), RequestDragScrollMaxPx / 2);
 });
 
 test('Postman collections import folder auth and scripts, and exported disabled params survive reimport', () => {

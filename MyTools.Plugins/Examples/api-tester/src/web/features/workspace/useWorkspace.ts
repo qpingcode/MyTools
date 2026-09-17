@@ -30,6 +30,7 @@ import {
     type CookieRecord,
 } from '../../../shared/model.js';
 import {collectionSubtreeIds, newCollection} from '../../../shared/collectionTree.js';
+import {placeRequest, requestRelocation} from '../../../shared/requestPlacement.js';
 
 const RunnerTabId = 'api-tester:runner';
 
@@ -366,6 +367,15 @@ export function useWorkspace() {
         });
     }
 
+    async function relocateRequest(requestId: string, targetCollectionId: string, targetIndex: number) {
+        if (!requestRelocation(workspace.value.collections, requestId, targetCollectionId, targetIndex)) return;
+        await mutate(() => {
+            placeRequest(workspace.value.collections, requestId, targetCollectionId, targetIndex);
+        });
+        const item = tabs.value.find(tab => tab.request.id === requestId);
+        if (item) item.collectionId = targetCollectionId;
+    }
+
     async function addEnvironment() {
         const draft: Environment = {id: uid(), name: '', variables: []};
         if (await choose(DialogKind.Environment, t.value.NewEnvironment, '', {environment: draft})) {
@@ -665,6 +675,7 @@ export function useWorkspace() {
         revealInSidebar,
         deleteRequest,
         move,
+        relocateRequest,
         addEnvironment,
         switchEnvironment,
         editEnvironment,

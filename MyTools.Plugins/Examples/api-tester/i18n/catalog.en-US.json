@@ -215,6 +215,21 @@
       }
     },
     {
+      "key": "Plugin.ApiTester.DragRequest",
+      "defaultValue": "Drag to reorder or move to another collection",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/localization/i18n.ts",
+          "line": 133,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "拖动以重新排序，或移动到其他集合"
+      }
+    },
+    {
       "key": "Plugin.ApiTester.Search",
       "defaultValue": "Search name or URL",
       "placeholders": [],

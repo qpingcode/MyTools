@@ -20,6 +20,11 @@ const CompactPanelSelectWidth = 180;
 const RequestPanelCollapseWidth = 640;
 const ResponseSearchInputWidth = 200;
 const VisibleTreeGuideOpacity = 0.5;
+const RequestDropX = 40;
+const RequestDropBeforeY = 4;
+const RequestDropAfterY = 32;
+const TreeAutoScrollViewportPx = 96;
+const TreeAutoScrollPointerInsetPx = 4;
 const output = path.resolve('bin/AgentVerification/ui-fixture.mjs');
 await build({
   entryPoints: ['tests/ui-fixture.mts'],
@@ -350,7 +355,7 @@ try {
   await page.locator('.collection-title').filter({ hasText: 'Users' }).click();
   assert.equal(await page.locator('.collection-heading.selected').count(), 1);
   await sidebar.getByRole('button', { name: 'Add subcollection', exact: true }).waitFor();
-  await page.locator('.request-row.selected').click();
+  await page.locator('.request-row.selected .request-title').click();
   await sidebar.getByRole('button', { name: 'New collection', exact: true }).waitFor();
   assert.equal(await page.locator('.collection-heading.selected').count(), 0);
   assert.equal(await page.getByRole('tab', {name: 'Assertions', exact: true}).count(), 0);
@@ -558,6 +563,7 @@ try {
     .filter({ hasText: 'User' })
     .last();
   await userRow.hover();
+  assert.equal(await userRow.locator('.request-title').evaluate(element => getComputedStyle(element).cursor), 'pointer');
   assert.equal(await userRow.locator('.tree-actions').count(), 0);
   await userRow.click({ button: 'right' });
   await page.getByRole('menuitem', { name: 'Move up', exact: true }).click();
@@ -566,6 +572,43 @@ try {
   assert.equal(await page.getByRole('menuitem', { name: 'Move up', exact: true }).isDisabled(), true);
   await page.getByRole('menuitem', { name: 'Move down', exact: true }).click();
   assert.equal(workspace.collections[0].requests[0].name, 'Login');
+  const loginRow = page.locator('.request-row').filter({ hasText: 'Login' });
+  await userRow.dragTo(loginRow, { targetPosition: { x: RequestDropX, y: RequestDropBeforeY } });
+  assert.equal(workspace.collections[0].requests[0].name, 'User');
+  assert.equal(workspace.collections[0].requests[1].name, 'Login');
+  await userRow.dragTo(page.locator('.collection-heading').filter({ hasText: 'Accounts' }));
+  assert.equal(usersCollection().requests.some(item => item.name === 'User'), false);
+  assert.equal(accountsCollection().requests.some(item => item.name === 'User'), true);
+  await userRow.dragTo(loginRow, { targetPosition: { x: RequestDropX, y: RequestDropAfterY } });
+  assert.deepEqual(usersCollection().requests.map(item => item.name), ['Login', 'User']);
+  assert.equal(accountsCollection().requests.length, 0);
+  const tree = page.locator('.collection-tree');
+  await tree.evaluate((element, height) => {
+    element.style.height = `${height}px`;
+    element.style.flex = 'none';
+  }, TreeAutoScrollViewportPx);
+  await userRow.hover();
+  const scrolledDown = await tree.evaluate(element => element.scrollTop);
+  assert.ok(scrolledDown > 0, `Tree should overflow before auto-scroll, scrollTop=${scrolledDown}`);
+  const treeBox = await tree.boundingBox();
+  const userBox = await userRow.boundingBox();
+  assert.ok(treeBox && userBox);
+  await page.mouse.move(userBox.x + RequestDropX, userBox.y + RequestDropAfterY);
+  await page.mouse.down();
+  await page.mouse.move(treeBox.x + RequestDropX, treeBox.y + TreeAutoScrollPointerInsetPx);
+  await page.waitForFunction(start => {
+    const element = document.querySelector('.collection-tree');
+    return Boolean(element && element.scrollTop < start);
+  }, scrolledDown);
+  const dropBox = await userRow.boundingBox();
+  assert.ok(dropBox);
+  await page.mouse.move(dropBox.x + RequestDropX, dropBox.y + dropBox.height / 2);
+  await page.mouse.up();
+  await tree.evaluate(element => {
+    element.style.height = '';
+    element.style.flex = '';
+  });
+  assert.deepEqual(usersCollection().requests.map(item => item.name), ['Login', 'User']);
   await userRow.click({ button: 'right' });
   await page.getByRole('menuitem', { name: 'Duplicate', exact: true }).click();
   assert.equal(workspace.collections[0].requests.length, 3);

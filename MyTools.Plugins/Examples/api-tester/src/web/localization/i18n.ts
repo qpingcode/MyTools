@@ -130,6 +130,9 @@ export const text = {
             defaultValue: 'Move down',
             ...values,
         }),
+    DragRequest: () => bus.i18n.t('Plugin.ApiTester.DragRequest', {
+        defaultValue: 'Drag to reorder or move to another collection',
+    }),
     Search: (values: Record<string, string | number> = {}) =>
         bus.i18n.t('Plugin.ApiTester.Search', {
             defaultValue: 'Search name or URL',

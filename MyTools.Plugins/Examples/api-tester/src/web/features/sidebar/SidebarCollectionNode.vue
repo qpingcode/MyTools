@@ -3,6 +3,8 @@ import {computed} from 'vue';
 import type {ApiRequest, Collection} from '../../../shared/model.js';
 import {HttpMethod} from '../../../shared/model.js';
 import {childCollections, collectionMatchesSearch, collectionSubtreeRequests} from '../../../shared/collectionTree.js';
+import {RequestDropKind} from '../../../shared/requestPlacement.js';
+import {useText} from '../../localization/locale.js';
 import Icon from '../../components/common/Icon.vue';
 
 defineOptions({name: 'SidebarCollectionNode'});
@@ -14,14 +16,20 @@ const props = defineProps<{
   search: string;
   activeRequestId: string;
   selectedCollectionId: string;
+  dragRequestId: string;
+  dropCollectionId: string;
+  dropRequestId: string;
+  dropKind: RequestDropKind | '';
 }>();
 const emit = defineEmits<{
   toggle: [id: string];
   openRequest: [request: ApiRequest, owner: Collection];
   collectionMenu: [event: MouseEvent | KeyboardEvent, owner: Collection];
   requestMenu: [event: MouseEvent | KeyboardEvent, request: ApiRequest, owner: Collection];
+  requestDragStart: [event: PointerEvent, request: ApiRequest, owner: Collection];
 }>();
 
+const t = useText();
 const children = computed(() => childCollections(props.collections, props.owner.id)
     .filter(child => collectionMatchesSearch(props.collections, child, props.search)));
 const requests = computed(() => props.owner.requests.filter(request =>
@@ -33,11 +41,21 @@ const SidebarMethodAbbreviations: Readonly<Record<string, string | undefined>> =
   [HttpMethod.Delete]: 'DEL',
   [HttpMethod.Options]: 'OPT',
 };
+
+function requestRowClass(request: ApiRequest) {
+  return {
+    selected: props.activeRequestId === request.id,
+    dragging: props.dragRequestId === request.id,
+    'drop-before': props.dropRequestId === request.id && props.dropKind === RequestDropKind.Before,
+    'drop-after': props.dropRequestId === request.id && props.dropKind === RequestDropKind.After,
+  };
+}
 </script>
 
 <template>
   <div class="collection">
-    <div class="collection-heading" :class="{selected: owner.id === selectedCollectionId}"
+    <div class="collection-heading" :data-collection-id="owner.id"
+         :class="{selected: owner.id === selectedCollectionId, 'drop-into': dropCollectionId === owner.id && dropKind === RequestDropKind.Into}"
          @contextmenu="emit('collectionMenu', $event, owner)"
          @keydown="emit('collectionMenu', $event, owner)">
       <button class="collection-title" :aria-expanded="open" @click="emit('toggle', owner.id)">
@@ -51,12 +69,20 @@ const SidebarMethodAbbreviations: Readonly<Record<string, string | undefined>> =
                              :collections="collections" :expanded="expanded" :search="search"
                              :active-request-id="activeRequestId"
                              :selected-collection-id="selectedCollectionId"
+                             :drag-request-id="dragRequestId"
+                             :drop-collection-id="dropCollectionId"
+                             :drop-request-id="dropRequestId"
+                             :drop-kind="dropKind"
                              @toggle="emit('toggle', $event)"
                              @open-request="(request, owner) => emit('openRequest', request, owner)"
                              @collection-menu="(event, owner) => emit('collectionMenu', event, owner)"
-                             @request-menu="(event, request, owner) => emit('requestMenu', event, request, owner)"/>
+                             @request-menu="(event, request, owner) => emit('requestMenu', event, request, owner)"
+                             @request-drag-start="(event, request, owner) => emit('requestDragStart', event, request, owner)"/>
       <div v-for="request in requests" :key="request.id" class="request-row"
-           :class="{selected: activeRequestId === request.id}"
+           :class="requestRowClass(request)"
+           :data-request-id="request.id" :data-collection-id="owner.id"
+           :title="t.DragRequest()"
+           @pointerdown="emit('requestDragStart', $event, request, owner)"
            @contextmenu="emit('requestMenu', $event, request, owner)"
            @keydown="emit('requestMenu', $event, request, owner)">
         <button class="request-title" :data-request-id="request.id" @click="emit('openRequest', request, owner)">
