@@ -107,12 +107,12 @@ function expandWithAncestors(id: string | undefined) {
 
 watch(collectionId, id => expandWithAncestors(id), {immediate: true});
 
+function selectCollectionNode(id: string) {
+  selectCollection(id);
+  expandWithAncestors(id);
+}
+
 function toggleCollection(id: string) {
-  if (collectionId.value !== id) {
-    selectCollection(id);
-    expandWithAncestors(id);
-    return;
-  }
   const next = new Set(expanded.value);
   next.has(id) ? next.delete(id) : next.add(id);
   expanded.value = next;
@@ -293,6 +293,7 @@ onBeforeUnmount(endRequestDrag);
                              :drop-request-id="dropTarget?.requestId ?? ''"
                              :drop-kind="dropTarget?.kind ?? ''"
                              @toggle="toggleCollection"
+                             @select="selectCollectionNode"
                              @open-request="(request, owner) => open(request, owner.id)"
                              @collection-menu="showCollectionMenu"
                              @request-menu="showRequestMenu"

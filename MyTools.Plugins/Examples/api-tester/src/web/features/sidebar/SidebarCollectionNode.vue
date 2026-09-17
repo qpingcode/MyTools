@@ -23,6 +23,7 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{
   toggle: [id: string];
+  select: [id: string];
   openRequest: [request: ApiRequest, owner: Collection];
   collectionMenu: [event: MouseEvent | KeyboardEvent, owner: Collection];
   requestMenu: [event: MouseEvent | KeyboardEvent, request: ApiRequest, owner: Collection];
@@ -58,8 +59,12 @@ function requestRowClass(request: ApiRequest) {
          :class="{selected: owner.id === selectedCollectionId, 'drop-into': dropCollectionId === owner.id && dropKind === RequestDropKind.Into}"
          @contextmenu="emit('collectionMenu', $event, owner)"
          @keydown="emit('collectionMenu', $event, owner)">
-      <button class="collection-title" :aria-expanded="open" @click="emit('toggle', owner.id)">
+      <button class="collection-toggle" type="button" :aria-expanded="open"
+              :aria-label="open ? t.CollapseCollection() : t.ExpandCollection()"
+              @click="emit('toggle', owner.id)">
         <Icon :name="open ? 'chevron-down' : 'chevron-right'"/>
+      </button>
+      <button class="collection-title" type="button" @click="emit('select', owner.id)">
         <Icon name="folder"/>
         <span>{{ owner.name }}</span><span class="muted">{{ requestCount }}</span>
       </button>
@@ -74,6 +79,7 @@ function requestRowClass(request: ApiRequest) {
                              :drop-request-id="dropRequestId"
                              :drop-kind="dropKind"
                              @toggle="emit('toggle', $event)"
+                             @select="emit('select', $event)"
                              @open-request="(request, owner) => emit('openRequest', request, owner)"
                              @collection-menu="(event, owner) => emit('collectionMenu', event, owner)"
                              @request-menu="(event, request, owner) => emit('requestMenu', event, request, owner)"

@@ -3163,6 +3163,36 @@
       }
     },
     {
+      "key": "Plugin.ApiTester.ExpandCollection",
+      "defaultValue": "Expand collection",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/localization/i18n.ts",
+          "line": 65,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "展开集合"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.CollapseCollection",
+      "defaultValue": "Collapse collection",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/localization/i18n.ts",
+          "line": 66,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "折叠集合"
+      }
+    },
+    {
       "key": "Plugin.ApiTester.SearchResponse",
       "defaultValue": "Search response",
       "placeholders": [],

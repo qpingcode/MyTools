@@ -547,6 +547,7 @@ dialog.workspace-tools-dialog {
     --tree-nested-collection-offset: 22px;
     --tree-row-half-height: 18px;
     --tree-heading-padding-x: 8px;
+    --tree-twistie-size: 22px;
     --tree-request-padding-end: 12px;
     --tree-selected-accent-width: 2px;
     --tree-drop-indicator-size: 2px;
@@ -569,6 +570,14 @@ dialog.workspace-tools-dialog {
     display: flex;
     align-items: center;
     padding: 3px var(--tree-heading-padding-x) 3px calc(var(--tree-heading-padding-x) + var(--tree-indent));
+}
+
+.collection-toggle {
+    flex: none;
+    width: var(--tree-twistie-size);
+    height: var(--tree-twistie-size);
+    padding: 0;
+    color: var(--muted);
 }
 
 .collection-title {
@@ -714,7 +723,8 @@ dialog.workspace-tools-dialog {
 
 .collection-tree.request-dragging,
 .collection-tree.request-dragging .request-title,
-.collection-tree.request-dragging .collection-title {
+.collection-tree.request-dragging .collection-title,
+.collection-tree.request-dragging .collection-toggle {
     cursor: grabbing;
     user-select: none;
 }

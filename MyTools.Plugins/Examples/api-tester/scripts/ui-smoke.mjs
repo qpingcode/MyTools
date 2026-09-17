@@ -358,6 +358,14 @@ try {
   await page.locator('.request-row.selected .request-title').click();
   await sidebar.getByRole('button', { name: 'New collection', exact: true }).waitFor();
   assert.equal(await page.locator('.collection-heading.selected').count(), 0);
+  const usersToggle = page.locator('.collection-tree > .collection > .collection-heading .collection-toggle');
+  assert.equal(await usersToggle.getAttribute('aria-expanded'), 'true');
+  await usersToggle.click();
+  assert.equal(await usersToggle.getAttribute('aria-expanded'), 'false');
+  assert.equal(await page.locator('.collection-heading.selected').count(), 0);
+  assert.equal(await page.locator('.collection-tree > .collection > .request-branches').count(), 0);
+  await usersToggle.click();
+  assert.equal(await usersToggle.getAttribute('aria-expanded'), 'true');
   assert.equal(await page.getByRole('tab', {name: 'Assertions', exact: true}).count(), 0);
   assert.equal(await page.getByRole('tab', {name: 'JSON variable extraction', exact: true}).count(), 0);
   await page.getByRole('tab', {name: 'Scripts', exact: true}).click();
@@ -535,9 +543,14 @@ try {
   await page.locator('.document-tab.selected').getByRole('button', {name: 'Close', exact: true}).click();
   assert.equal(workspace.collections[0].requests.length, 2);
   await page.locator('.collection-title').filter({ hasText: 'Accounts' }).click();
+  const accountsToggle = page.locator('.request-branches > .collection > .collection-heading .collection-toggle');
+  assert.equal(await accountsToggle.getAttribute('aria-expanded'), 'true');
+  await accountsToggle.click();
+  assert.equal(await accountsToggle.getAttribute('aria-expanded'), 'false');
   await page.locator('aside').getByRole('button', { name: 'New request', exact: true }).click();
   const nestedSelectedRow = page.locator('.request-branches > .collection .request-row.selected');
   await nestedSelectedRow.waitFor();
+  assert.equal(await accountsToggle.getAttribute('aria-expanded'), 'true');
   const nestedHighlight = await page.evaluate(() => {
     const tree = document.querySelector('.collection-tree');
     const row = document.querySelector('.request-branches > .collection .request-row.selected');

@@ -213,6 +213,8 @@
   "Plugin.ApiTester.JsonTree": "JSON 树",
   "Plugin.ApiTester.ExpandAll": "全部展开",
   "Plugin.ApiTester.CollapseAll": "全部折叠",
+  "Plugin.ApiTester.ExpandCollection": "展开集合",
+  "Plugin.ApiTester.CollapseCollection": "折叠集合",
   "Plugin.ApiTester.SearchResponse": "搜索响应",
   "Plugin.ApiTester.SearchMatches": "{{count}} 处匹配",
   "Plugin.ApiTester.PreviousMatch": "上一处",

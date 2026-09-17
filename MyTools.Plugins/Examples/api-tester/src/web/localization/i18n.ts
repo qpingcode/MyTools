@@ -62,6 +62,8 @@ export const text = {
     JsonTree: () => bus.i18n.t('Plugin.ApiTester.JsonTree', {defaultValue: "JSON tree"}),
     ExpandAll: () => bus.i18n.t('Plugin.ApiTester.ExpandAll', {defaultValue: "Expand all"}),
     CollapseAll: () => bus.i18n.t('Plugin.ApiTester.CollapseAll', {defaultValue: "Collapse all"}),
+    ExpandCollection: () => bus.i18n.t('Plugin.ApiTester.ExpandCollection', {defaultValue: 'Expand collection'}),
+    CollapseCollection: () => bus.i18n.t('Plugin.ApiTester.CollapseCollection', {defaultValue: 'Collapse collection'}),
     SearchResponse: () => bus.i18n.t('Plugin.ApiTester.SearchResponse', {defaultValue: "Search response"}),
     SearchMatches: (values: {
         count: number

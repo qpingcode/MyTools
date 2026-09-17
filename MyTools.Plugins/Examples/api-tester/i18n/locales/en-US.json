@@ -213,6 +213,8 @@
   "Plugin.ApiTester.JsonTree": "JSON tree",
   "Plugin.ApiTester.ExpandAll": "Expand all",
   "Plugin.ApiTester.CollapseAll": "Collapse all",
+  "Plugin.ApiTester.ExpandCollection": "Expand collection",
+  "Plugin.ApiTester.CollapseCollection": "Collapse collection",
   "Plugin.ApiTester.SearchResponse": "Search response",
   "Plugin.ApiTester.SearchMatches": "{{count}} matches",
   "Plugin.ApiTester.PreviousMatch": "Previous",

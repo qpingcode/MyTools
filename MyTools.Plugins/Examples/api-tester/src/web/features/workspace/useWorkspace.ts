@@ -227,6 +227,7 @@ export function useWorkspace() {
         const request = newRequest(uid(), t.value.NewRequest());
         await mutate(() => owner!.requests.push(request));
         open(request, owner.id);
+        revealRequestId.value = request.id;
     }
 
     async function duplicateRequest(request: ApiRequest, owner: Collection) {
@@ -236,6 +237,7 @@ export function useWorkspace() {
             owner.requests.findIndex(item => item.id === request.id) + 1, 0, copy,
         ));
         open(copy, owner.id);
+        revealRequestId.value = copy.id;
     }
 
     function activateRequest(id: string) {
