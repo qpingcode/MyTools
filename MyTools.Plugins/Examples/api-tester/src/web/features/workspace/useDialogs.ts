@@ -14,12 +14,18 @@ export function useDialogs() {
         value = '',
         extra: Partial<Modal> = {},
     ): Promise<T> {
+        const normalizedTitle = kind === DialogKind.Unsaved && !extra.message
+            ? t.value.UnsavedChanges
+            : title;
+        const normalizedExtra = kind === DialogKind.Unsaved && !extra.message
+            ? {...extra, message: title}
+            : extra;
         return new Promise((resolve) => {
             modal.value = {
                 kind,
-                title,
+                title: normalizedTitle,
                 value,
-                ...extra,
+                ...normalizedExtra,
                 finish: (result) => {
                     modal.value = null;
                     resolve(result as T);
@@ -35,9 +41,9 @@ export function useDialogs() {
     async function confirm(message: () => string, title?: () => string): Promise<boolean> {
         return choose(
             DialogKind.Confirm,
-            title || message,
+            title || t.value.Confirm,
             '',
-            title ? {message} : {},
+            {message},
         );
     }
 

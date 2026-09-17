@@ -6,29 +6,29 @@ Debug HTTP/HTTPS APIs inside MyTools, save reusable requests, and run a collecti
 
 ## Features and usage
 
-Manage requests in the left collection tree using icon actions for creation, duplication, deletion and ordering. Drag the divider, use arrow keys or Home/End, or double-click to reset its width. Edit request configuration through tabs below the URL; response tabs show the body, headers and assertions. `App.vue` composes focused components, while `useWorkspace`, `useDialogs` and `useRuns` own their respective state.
+Manage requests in the left collection tree using context actions for creation, running, duplication, deletion and ordering. Request tabs also provide creation, duplication, close-group and sidebar-reveal actions. Drag the divider, use arrow keys or Home/End, or double-click to reset its width. Edit request configuration through tabs below the URL; response tabs show the body, headers and script test results, and the Body row opens history filtered to the current request. History search covers all matching records and paginates them locally in groups of 5. Clearing this scoped view removes only that request's records; clearing the global History view removes all records. Collection settings can override timeout, redirect and TLS verification defaults. Start collection runs from a collection's context menu. The runner opens as a regular document tab in normal tab order: choose requests, iterations, delay, JSON/CSV test data and advanced behavior before starting, then filter live results by test state, errors or console output. Closing the runner tab only hides it, while Stop run explicitly cancels execution. `App.vue` composes focused components, while `useWorkspace`, `useDialogs` and `useRuns` own their respective state.
 
 Open API Tester from MyTools (alias `api-tester`). Create a collection and request, configure its URL, parameters, headers, authentication and body, then send. Save explicitly; blue dots mark unsaved edits. Requests support Basic/Bearer/API Key authentication, JSON/text/form/multipart/binary bodies, and streamed file uploads. Saved file references must remain readable.
 
-Create and select an environment, edit its variables, and reference `{{baseUrl}}`. To chain login, extract JSON Pointer `/token` to `token`, then reference `{{token}}` in a subsequent Bearer token. Manual tabs share temporary variables until the environment changes or the plugin restarts. Each batch starts with independent temporary variables and Cookies and discards them afterward.
+Create and select an environment, edit its variables, and reference `{{baseUrl}}`. To chain login, save `pm.response.json().token` to `token` in an After response script, then reference `{{token}}` in a subsequent Bearer token. Manual tabs share temporary variables until the environment changes or the plugin restarts. Each batch starts with independent temporary variables and Cookies and discards them afterward.
 
-Add visual assertions for status, time, headers, text, JSON existence/value/type. Select requests with their checkboxes, or run the whole active collection with none selected. Open tabs' current edits are used without automatically saving. Stop/continue and cancellation are supported. HTTP errors remain responses; the built-in success check expects HTTP 200. Reports and multi-iteration runs are not included.
+Add tests with `pm.test` and `pm.expect` in After response scripts. Select requests with their checkboxes, or run the whole active collection with none selected. Open tabs' current edits are used without automatically saving. Stop/continue and cancellation are supported. HTTP errors remain responses; requests without tests are marked untested.
 
 Responses offer raw/formatted JSON/tree views, syntax colors, folding, case-insensitive search with match navigation, repeated headers, full body copying and saving. Defaults: 30-second timeout, ten redirects, 1 MiB preview, 20 MiB body reception, 40 MiB complete-body cache and 8 MiB preview cache across eight runs, and up to 1000 requests per batch. Cookie containers are retained for up to sixteen environments. Old complete bodies may expire while summaries remain. The UI supports English and Simplified Chinese, live language changes, host themes, and keyboard navigation.
 
 ## Import, export and history
 
-The header has separate **Import**, **Export** and **History** buttons with icons, each opening its own dialog. Paste browser cURL or load API Tester JSON, Postman Collection v2.x, or Postman Environment JSON. Imports append data with fresh IDs and disable scripts until explicitly enabled. Unsupported cURL options, authentication and body modes fail rather than silently changing the request. Native JSON preserves assertions, extraction rules, scripts and request settings. Export the entire workspace, a collection or an environment; collections can also export as Postman v2.1. Postman export omits this plugin's assertions, extractions and request settings. Exports use saved data, so save tab edits first.
+The header has separate **Import**, **Export** and **History** buttons with icons, each opening its own dialog. Paste browser cURL or load API Tester JSON, Postman Collection v2.x, or Postman Environment JSON. Imports append data with fresh IDs and disable scripts until explicitly enabled. Unsupported cURL options, authentication and body modes fail rather than silently changing the request. Native JSON preserves scripts and request settings. Export the entire workspace, a collection or an environment; collections can also export as Postman v2.1. Postman export omits this plugin's request settings. Exports use saved data, so save tab edits first.
 
 The copy icon next to request Save copies a POSIX-shell cURL command with collection configuration, the selected environment and session variables resolved. It does not execute pre-request scripts. Common browser flags, quoted bodies, duplicate/raw-encoded query parameters, form fields, multipart files and binary file paths are supported. File paths remain references and are read only when sending the request.
 
 History is stored atomically in `history.json` beside the workspace. It retains the latest 100 actual requests, environment/variable snapshots, headers, test results, logs and up to 16 KiB of response preview. Full bodies are not retained. Reopening a successful send uses the actual sent values with scripts disabled to avoid applying request mutations twice. Failed requests may retain their original script configuration. History and exports may include credentials, just like saved requests.
 
-## Collection configuration and assertions
+## Collection configuration and tests
 
 Use the collection's settings icon to edit common headers, authentication and scripts. A request must select **Inherit from collection** to use collection authentication; **None** explicitly disables authentication. Request headers override same-named common headers case-insensitively, including disabled rows. Both manual sends and batch runs use these settings. Collection scripts run before request scripts in each phase, with independent lexical scopes and a shared variable context.
 
-The **Assertions** request tab edits status, maximum response time (milliseconds), header presence, text inclusion, JSON Pointer existence, JSON value and JSON type checks. JSON paths use `/data/id`; JSON expected values use JSON syntax. Results appear in the response Assertions tab together with script tests.
+Tests and response-value extraction belong in **After response** scripts. `pm.test` results appear in the response **Test results** tab after either an individual send or a collection run; the runner also aggregates passed and failed tests.
 
 ## Scripts
 
@@ -56,7 +56,7 @@ pm.test('token', () => pm.expect(pm.response.json().token).to.be.a('string'));
 pm.variables.set('token', pm.response.json().token);
 ```
 
-A before-script exception prevents sending. An after-script exception preserves the received response and fails the run. Variable writes are committed only when execution, decoding, extraction and scripts succeed; failed test assertions still participate in batch stop-on-failure behavior.
+A before-script exception prevents sending. An after-script exception preserves the received response and fails the run. Variable writes are committed only when execution, decoding and scripts succeed; failed tests mark the request as failed and are aggregated by the collection runner.
 
 ## Development
 

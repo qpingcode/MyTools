@@ -26,6 +26,11 @@ export interface RunInput {
     environmentId: string;
     batch: boolean;
     stopOnFailure: boolean;
+    stopOnError?: boolean;
+    iterations?: number;
+    delayMs?: number;
+    iterationData?: Record<string, string>[];
+    persistResponses?: boolean;
     collections?: Collection[];
     environmentName?: string
 }
@@ -38,6 +43,20 @@ interface Job {
 }
 
 const wrapScript = (source: string) => `await (async () => {\n${source}\n})();`;
+const DefaultRunIterations = 1;
+const DefaultRunDelayMs = 0;
+
+function wait(delayMs: number, signal: AbortSignal): Promise<void> {
+    return new Promise(resolve => {
+        const finish = () => {
+            clearTimeout(timer);
+            signal.removeEventListener('abort', finish);
+            resolve();
+        };
+        const timer = setTimeout(finish, delayMs);
+        signal.addEventListener('abort', finish, {once: true});
+    });
+}
 
 function cookieExpiry(expires: Date | string | number | undefined): string {
     if (expires == null || expires === CookieSessionExpiry) return '';
@@ -124,12 +143,19 @@ export class Runner {
         if (this.jobs.size >= Limits.retainedRuns) throw new RequestError(ErrorKind.Cache);
         const snapshot = structuredClone(input);
         const id = randomUUID();
+        const requestedIterations = snapshot.iterations ?? DefaultRunIterations;
+        const requestedDelayMs = snapshot.delayMs ?? DefaultRunDelayMs;
+        if (!Number.isFinite(requestedIterations) || requestedIterations < DefaultRunIterations ||
+            !Number.isFinite(requestedDelayMs) || requestedDelayMs < DefaultRunDelayMs || requestedDelayMs > Limits.batchDelayMs)
+            throw new RequestError(ErrorKind.Configuration, 'runConfiguration');
+        const iterations = Math.floor(requestedIterations);
+        if (iterations * snapshot.requests.length > Limits.batchRequests) throw new RequestError(ErrorKind.Configuration, 'iterations');
         const job: Job = {
             view: {
                 id,
                 done: false,
                 current: '',
-                total: snapshot.requests.length,
+                total: snapshot.requests.length * iterations,
                 elapsedMs: 0,
                 results: []
             }, controller: new AbortController(), started: performance.now(), bodies: new Map()
@@ -147,10 +173,23 @@ export class Runner {
 
     private async run(job: Job, input: RunInput, environment: Record<string, string>, runtime: Record<string, string>, jar: CookieJar, generation: number): Promise<void> {
         let stopped = false;
+        const iterations = Math.floor(input.iterations ?? DefaultRunIterations);
+        const delayMs = Math.floor(input.delayMs ?? DefaultRunDelayMs);
+        const scheduled = Array.from({length: iterations}, (_, iteration) =>
+            input.requests.map(request => ({request, iteration}))).flat();
         try {
-            for (const request of input.requests) {
+            for (const {request, iteration} of scheduled) {
                 if (stopped || job.controller.signal.aborted) {
-                    job.view.results.push(skipped(request));
+                    const result = skipped(request);
+                    result.iteration = iteration + 1;
+                    job.view.results.push(result);
+                    continue;
+                }
+                if (delayMs) await wait(delayMs, job.controller.signal);
+                if (job.controller.signal.aborted) {
+                    const result = skipped(request);
+                    result.iteration = iteration + 1;
+                    job.view.results.push(result);
                     continue;
                 }
                 job.view.current = request.name;
@@ -163,12 +202,19 @@ export class Runner {
                         after: [collection.scripts.after, request.scripts?.enabled ? request.scripts.after : ''].filter(Boolean).map(wrapScript).join('\n'),
                     };
                 }
-                const variables = {...environment, ...runtime};
-                const output = await executeRequest(effective, effective.settings || input.defaults, variables, jar, job.controller.signal);
+                const variables = {...environment, ...(input.iterationData?.[iteration] || {}), ...runtime};
+                const settings = effective.settings || collection?.settings || input.defaults;
+                const output = await executeRequest(effective, settings, variables, jar, job.controller.signal);
+                output.result.iteration = iteration + 1;
                 if (!this.jobs.has(job.view.id)) return;
-                if (output.body) this.cache(job, job.view.results.length, output.body);
+                if (input.persistResponses !== false && output.body) this.cache(job, job.view.results.length, output.body);
+                if (input.persistResponses === false) {
+                    output.result.bodyAvailable = false;
+                    output.result.preview = '';
+                    output.result.previewAvailable = false;
+                }
                 job.view.results.push(output.result);
-                this.cachePreview(output.result);
+                if (input.persistResponses !== false) this.cachePreview(output.result);
                 Object.assign(runtime, output.writes);
                 for (const name of output.unsets || []) {
                     delete runtime[name];
@@ -197,18 +243,24 @@ export class Runner {
                     }
                 }
                 delete output.result.sentRequest;
-                stopped = input.stopOnFailure && output.result.test === TestState.Failed;
+                stopped = input.stopOnFailure && output.result.test === TestState.Failed ||
+                    Boolean(input.stopOnError && output.result.error);
             }
         } catch (error) {
-            const request = input.requests[job.view.results.length];
-            if (request) {
-                const result = skipped(request);
+            const current = scheduled[job.view.results.length];
+            if (current) {
+                const result = skipped(current.request);
+                result.iteration = current.iteration + 1;
                 result.error = {kind: ErrorKind.Configuration, detail: (error as Error).message};
                 result.execution = ExecutionState.Failed;
                 result.test = TestState.Failed;
                 job.view.results.push(result);
             }
-            for (const remaining of input.requests.slice(job.view.results.length)) job.view.results.push(skipped(remaining));
+            for (const remaining of scheduled.slice(job.view.results.length)) {
+                const result = skipped(remaining.request);
+                result.iteration = remaining.iteration + 1;
+                job.view.results.push(result);
+            }
         } finally {
             job.view.done = true;
             job.view.current = '';

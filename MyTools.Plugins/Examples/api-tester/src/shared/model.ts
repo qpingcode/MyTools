@@ -59,7 +59,6 @@ export const Routes = {
 } as const;
 export const CookieSessionExpiry = 'Infinity';
 export const CookieDefaultPath = '/';
-export const DefaultSuccessStatus = 200;
 export const Limits = {
     timeoutMs: 30_000,
     redirects: 10,
@@ -69,6 +68,7 @@ export const Limits = {
     cachedPreviewBytes: 8 * 1024 * 1024,
     diagnosticChars: 2048,
     batchRequests: 1000,
+    batchDelayMs: 24 * 60 * 60 * 1000,
     cookieEnvironments: 16,
     retainedRuns: 8,
     pollMs: 200,
@@ -114,16 +114,6 @@ export interface ScriptLog {
 
 export enum KeyLocation { Header = 'header', Query = 'query' }
 
-export enum AssertionKind {
-    Status = 'status',
-    Time = 'time',
-    Header = 'header',
-    Text = 'text',
-    Exists = 'exists',
-    Value = 'value',
-    Type = 'type'
-}
-
 export enum ExecutionState { Complete = 'complete', Failed = 'failed', Cancelled = 'cancelled', Skipped = 'skipped' }
 
 export enum TestState { Passed = 'passed', Failed = 'failed', Untested = 'untested', NotApplicable = 'notApplicable' }
@@ -163,20 +153,6 @@ export interface Settings {
     verifyTls: boolean
 }
 
-export interface Assertion {
-    name: string;
-    enabled: boolean;
-    kind: AssertionKind;
-    path: string;
-    expected: string
-}
-
-export interface Extraction {
-    enabled: boolean;
-    path: string;
-    variable: string
-}
-
 export interface ApiRequest {
     id: string;
     name: string;
@@ -195,8 +171,6 @@ export interface ApiRequest {
     };
     body: { kind: BodyKind; text: string; contentType: string; fields: Pair[]; file: string; fileSize?: number };
     settings?: Settings;
-    assertions: Assertion[];
-    extractions: Extraction[];
     scripts?: RequestScripts
 }
 
@@ -207,6 +181,7 @@ export interface Collection {
     auth?: ApiRequest['auth'];
     headers?: Pair[];
     scripts?: RequestScripts
+    settings?: Settings
 }
 
 export interface Environment {
@@ -262,6 +237,7 @@ export interface RequestResult {
     warnings: WarningKind[];
     scriptLogs?: ScriptLog[];
     sentRequest?: ApiRequest
+    iteration?: number
 }
 
 export interface HistoryEntry {
@@ -327,9 +303,7 @@ export const newRequest = (id: string, name: string): ApiRequest => ({
         value: '',
         location: KeyLocation.Header
     },
-    body: {kind: BodyKind.None, text: '', contentType: '', fields: [], file: ''},
-    assertions: [],
-    extractions: []
+    body: {kind: BodyKind.None, text: '', contentType: '', fields: [], file: ''}
 });
 
 export function parseQuery(url: string): Pair[] {

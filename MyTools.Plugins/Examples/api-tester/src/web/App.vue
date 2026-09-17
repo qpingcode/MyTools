@@ -19,7 +19,7 @@ import {WorkspaceTool} from './features/workspace/workspaceToolTypes.js';
 
 const controller = useWorkspace();
 provide(WorkspaceKey, controller);
-const {t, workspaceReady, workspaceLoadFailed, loadWorkspace, tab, notificationText} = controller;
+const {t, workspaceReady, workspaceLoadFailed, loadWorkspace, tab, runnerActive, notificationText} = controller;
 </script>
 <template>
   <div v-if="!workspaceReady" class="workspace-overlay" role="status" aria-live="polite">
@@ -45,7 +45,8 @@ const {t, workspaceReady, workspaceLoadFailed, loadWorkspace, tab, notificationT
       </template>
       <section class="workspace">
         <RequestTabs/>
-        <RequestResponseSplit>
+        <RunResults v-if="runnerActive"/>
+        <RequestResponseSplit v-else>
           <template #request>
             <RequestEditor v-if="tab"/>
             <div v-else class="empty-state">
@@ -61,25 +62,27 @@ const {t, workspaceReady, workspaceLoadFailed, loadWorkspace, tab, notificationT
                 role="progressbar"
                 :aria-label="t.Running({ name: tab.request.name })"
             ><span/></div>
-            <div class="section-heading">
-              <h2>{{ t.Response() }}</h2>
-              <span v-if="tab?.running" class="running-indicator">{{
-                  t.Running({name: tab.request.name})
-                }}</span>
-            </div>
             <ResponsePanel
-                v-if="tab?.result"
+                v-if="tab"
                 :key="tab.runId"
                 :result="tab.result"
                 :run-id="tab.runId"
                 :index="0"
-            />
+                :request-id="tab.request.id"
+                :request-name="tab.request.name"
+            >
+              <template #empty>
+                <div class="empty-response">
+                  <Icon name="inbox"/>
+                  <p>{{ tab.running ? t.Running({name: tab.request.name}) : t.NoResults() }}</p>
+                </div>
+              </template>
+            </ResponsePanel>
             <div v-else class="empty-response">
               <Icon name="inbox"/>
-              <p>{{ tab?.running ? t.Running({name: tab.request.name}) : t.NoResults() }}</p>
+              <p>{{ t.NoResults() }}</p>
             </div>
           </section>
-          <RunResults/>
         </RequestResponseSplit>
       </section
       >

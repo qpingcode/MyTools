@@ -92,7 +92,9 @@ export class HistoryStore {
         return this.update(entries => [snapshot, ...entries].slice(0, Limits.historyEntries));
     }
 
-    clear(): Promise<void> {
-        return this.update(() => []);
+    clear(requestId?: string): Promise<void> {
+        return this.update(entries => requestId
+            ? entries.filter(entry => entry.request.id !== requestId)
+            : []);
     }
 }

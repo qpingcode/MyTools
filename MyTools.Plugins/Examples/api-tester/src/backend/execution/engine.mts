@@ -7,35 +7,29 @@ import {randomUUID} from 'node:crypto';
 import {Readable, PassThrough} from 'node:stream';
 import {pipeline} from 'node:stream/promises';
 import {createGunzip, createInflate, createBrotliDecompress} from 'node:zlib';
-import {isDeepStrictEqual} from 'node:util';
 import path from 'node:path';
 import {CookieJar} from 'tough-cookie';
 import {runScript, ScriptFailure} from '../scripting/scripts.mjs';
 import {
     HttpMethod,
     WarningKind,
-    JsonValueType,
     HttpHeader,
     ContentType,
     BodyKind,
     AuthKind,
     KeyLocation,
-    AssertionKind,
     ExecutionState,
     TestState,
     ErrorKind,
     Limits,
     ScriptPhase,
     parseQuery,
-    DefaultSuccessStatus,
     queryUrl,
     type ApiRequest,
-    type Assertion,
     type Pair,
     type Settings,
     type RequestResult,
-    type Failure,
-    type AssertionResult
+    type Failure
 } from '../../shared/model.js';
 
 const Header = HttpHeader;
@@ -45,34 +39,8 @@ const SupportedMethods = new Set<string>(Object.values(HttpMethod));
 const StatusSeeOther = 303;
 const LegacyPostRedirects = new Set([301, 302]);
 const ResponseCharsetPattern = /charset\s*=\s*["']?([^\s;"']+)/i;
-const NoValue = Symbol('missing');
 const MultipartBoundaryPrefix = 'mytools-api-';
-const MinimumHttpStatus = 100;
-const MaximumHttpStatus = 599;
 const MaximumTimerMs = 2_147_483_647;
-const JsonTypes = new Set<string>(Object.values(JsonValueType));
-
-function validateTests(request: ApiRequest): void {
-    for (const assertion of request.assertions.filter(item => item.enabled)) {
-        if (!Object.values(AssertionKind).includes(assertion.kind)) throw new RequestError(ErrorKind.Configuration, 'assertions');
-        if (assertion.kind === AssertionKind.Status && (!assertion.expected.trim() || !Number.isInteger(Number(assertion.expected)) || Number(assertion.expected) < MinimumHttpStatus || Number(assertion.expected) > MaximumHttpStatus)) throw new RequestError(ErrorKind.Configuration, 'assertions.expected');
-        if (assertion.kind === AssertionKind.Time && (!assertion.expected.trim() || !Number.isFinite(Number(assertion.expected)) || Number(assertion.expected) < 0)) throw new RequestError(ErrorKind.Configuration, 'assertions.expected');
-        if (assertion.kind === AssertionKind.Header && !assertion.path.trim()) throw new RequestError(ErrorKind.Configuration, 'assertions.path');
-        if ([AssertionKind.Exists, AssertionKind.Value, AssertionKind.Type].includes(assertion.kind)) pointer({}, assertion.path);
-        if (assertion.kind === AssertionKind.Value) {
-            try {
-                JSON.parse(assertion.expected);
-            } catch {
-                throw new RequestError(ErrorKind.Configuration, 'assertions.expected');
-            }
-        }
-        if (assertion.kind === AssertionKind.Type && !JsonTypes.has(assertion.expected)) throw new RequestError(ErrorKind.Configuration, 'assertions.expected');
-    }
-    for (const extraction of request.extractions.filter(item => item.enabled)) {
-        pointer({}, extraction.path);
-        if (!extraction.variable.trim()) throw new RequestError(ErrorKind.Configuration, 'extractions.variable');
-    }
-}
 
 export class RequestError extends Error {
     constructor(public kind: ErrorKind, public field = '', detail = '') {
@@ -87,115 +55,6 @@ export function substitute(value: string, variables: Record<string, string>, fie
     });
 }
 
-export function pointer(value: unknown, location: string): unknown {
-    if (!location) return value;
-    if (!location.startsWith('/') || /~(?![01])/g.test(location)) throw new RequestError(ErrorKind.Configuration, 'path', location);
-    for (const encoded of location.slice(1).split('/')) {
-        const key = encoded.replace(/~1/g, '/').replace(/~0/g, '~');
-        if (value === null || typeof value !== 'object' || !Object.hasOwn(value, key) || (Array.isArray(value) && !/^(0|[1-9]\d*)$/.test(key))) return NoValue;
-        value = (value as Record<string, unknown>)[key];
-    }
-    return value;
-}
-
-function display(value: unknown): string {
-    return value === NoValue ? '' : typeof value === 'string' ? value : JSON.stringify(value) ?? String(value);
-}
-
-export function evaluateAssertions(request: ApiRequest, response: {
-    status: number;
-    elapsedMs: number;
-    headers: Pair[];
-    text: string
-}): AssertionResult[] {
-    let json: unknown;
-    let parsed = false;
-    const enabled = request.assertions.filter(a => a.enabled);
-    const assertions: Assertion[] = enabled.length
-        ? enabled
-        : [{
-            name: '',
-            enabled: true,
-            kind: AssertionKind.Status,
-            path: '',
-            expected: String(DefaultSuccessStatus)
-        }];
-    return assertions.map(assertion => {
-        let actual: unknown;
-        let expected: unknown = assertion.expected;
-        let passed = false;
-        let detail: string | undefined;
-        try {
-            switch (assertion.kind) {
-                case AssertionKind.Status:
-                    actual = response.status;
-                    expected = Number(assertion.expected);
-                    passed = actual === expected;
-                    break;
-                case AssertionKind.Time:
-                    actual = response.elapsedMs;
-                    expected = Number(assertion.expected);
-                    passed = response.elapsedMs < (expected as number);
-                    break;
-                case AssertionKind.Header:
-                    actual = response.headers.filter(h => h.name.toLowerCase() === assertion.path.toLowerCase()).map(h => h.value);
-                    passed = (actual as string[]).length > 0;
-                    break;
-                case AssertionKind.Text:
-                    actual = response.text;
-                    passed = response.text.includes(assertion.expected);
-                    break;
-                case AssertionKind.Exists:
-                case AssertionKind.Value:
-                case AssertionKind.Type:
-                    if (!parsed) {
-                        json = JSON.parse(response.text);
-                        parsed = true;
-                    }
-                    actual = pointer(json, assertion.path);
-                    if (assertion.kind === AssertionKind.Exists) passed = actual !== NoValue;
-                    else if (assertion.kind === AssertionKind.Value) {
-                        expected = JSON.parse(assertion.expected);
-                        passed = actual !== NoValue && isDeepStrictEqual(actual, expected);
-                    } else {
-                        actual = actual === NoValue ? NoValue : actual === null ? JsonValueType.Null : Array.isArray(actual) ? JsonValueType.Array : typeof actual;
-                        passed = actual === expected;
-                    }
-                    break;
-                default:
-                    throw new RequestError(ErrorKind.Configuration, 'assertions');
-            }
-        } catch (error) {
-            detail = (error as Error).message;
-        }
-        return {
-            name: assertion.name,
-            passed,
-            actual: display(actual).slice(0, Limits.diagnosticChars),
-            expected: display(expected).slice(0, Limits.diagnosticChars),
-            actualMissing: actual === NoValue,
-            detail: detail?.slice(0, Limits.diagnosticChars)
-        };
-    });
-}
-
-export function extractVariables(request: ApiRequest, text: string): Record<string, string> {
-    const active = request.extractions.filter(e => e.enabled);
-    const writes: Record<string, string> = Object.create(null);
-    if (!active.length) return writes;
-    let json: unknown;
-    try {
-        json = JSON.parse(text);
-    } catch {
-        throw new RequestError(ErrorKind.Extraction, 'extractions', 'Invalid JSON');
-    }
-    for (const extraction of active) {
-        const value = pointer(json, extraction.path);
-        if (value === NoValue || !extraction.variable.trim()) throw new RequestError(ErrorKind.Extraction, extraction.path, extraction.variable);
-        writes[extraction.variable] = typeof value === 'string' ? value : JSON.stringify(value);
-    }
-    return writes;
-}
 
 interface PreparedBody {
     length: number;
@@ -381,7 +240,6 @@ export async function executeRequest(request: ApiRequest, settings: Settings, va
         }
         result.sentRequest = structuredClone(request);
         if (!SupportedMethods.has(request.method) || !Number.isFinite(settings.timeoutMs) || settings.timeoutMs <= 0 || settings.timeoutMs > MaximumTimerMs) throw new RequestError(ErrorKind.Configuration, 'settings');
-        validateTests(request);
         const replace = (value: string, field: string) => substitute(value, variables, field);
         const params = request.params.map(p => p.enabled ? {
             ...p,
@@ -566,17 +424,6 @@ export async function executeRequest(request: ApiRequest, settings: Settings, va
         result.preview = Buffer.from(text).subarray(0, Limits.previewBytes).toString('utf8');
         result.previewAvailable = true;
         result.truncated = bytes.length > Limits.previewBytes;
-        result.assertions.push(...evaluateAssertions(request, {
-            status: result.status!,
-            elapsedMs: result.elapsedMs,
-            headers: result.headers,
-            text
-        }));
-        try {
-            Object.assign(writes, extractVariables(request, text));
-        } catch (error) {
-            result.error = failure(error, signal, false);
-        }
         if (request.scripts?.enabled && request.scripts.after.trim()) {
             try {
                 const output = await runScript(request.scripts.after, ScriptPhase.After, request, {...variables, ...writes}, signal, result, text);
@@ -614,6 +461,5 @@ export async function executeRequest(request: ApiRequest, settings: Settings, va
         outerSignal.removeEventListener('abort', cancel);
     }
 }
-
 
 

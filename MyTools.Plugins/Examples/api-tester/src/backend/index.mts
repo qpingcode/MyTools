@@ -57,7 +57,7 @@ plugin.initialize(params => {
     }))
     .handle(Routes.history, guarded(() => history.list()))
     .handle(Routes.curl, guarded((input: Parameters<Runner['curl']>[0]) => runner.curl(input)))
-    .handle(Routes.clearHistory, guarded(() => history.clear()))
+    .handle(Routes.clearHistory, guarded((input?: { requestId?: string }) => history.clear(input?.requestId)))
     .handle(Routes.start, guarded((input: RunInput) => runner.start(input)))
     .handle(Routes.poll, guarded((input: { id: string; from?: number }) => {
         const view = runner.poll(input.id);
@@ -91,4 +91,3 @@ plugin.initialize(params => {
         };
     }))
     .start();
-

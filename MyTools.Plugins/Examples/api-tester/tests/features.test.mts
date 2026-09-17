@@ -19,7 +19,6 @@ import {
     HttpMethod,
     HttpHeader,
     BodyKind,
-    AssertionKind,
     ScriptPhase,
     TestState,
     ExecutionState,
@@ -103,8 +102,7 @@ test('browser cURL imports quoted JSON, raw query encoding and explicit HTTP met
 test('native backup roundtrip preserves configuration, creates new IDs and disables imported scripts', async () => {
     const workspace = emptyWorkspace();
     const request = newRequest('request', 'saved');
-    request.assertions.push({name: 'id', enabled: true, kind: AssertionKind.Value, path: '/id', expected: '42'});
-    request.scripts = {enabled: true, before: "pm.variables.set('x','y')", after: ''};
+    request.scripts = {enabled: true, before: "pm.variables.set('x','y')", after: "pm.test('id', () => pm.expect(pm.response.json().id).to.equal(42))"};
     workspace.collections.push({
         id: 'collection',
         name: 'saved',
@@ -121,7 +119,7 @@ test('native backup roundtrip preserves configuration, creates new IDs and disab
     let sequence = 0;
     const imported = importWorkspace(exportWorkspace(workspace), () => String(++sequence));
     assert.notEqual(imported.collections[0].requests[0].id, request.id);
-    assert.deepEqual(imported.collections[0].requests[0].assertions, request.assertions);
+    assert.equal(imported.collections[0].requests[0].scripts!.after, request.scripts.after);
     assert.equal(imported.collections[0].requests[0].scripts!.enabled, false);
     assert.equal(imported.environments[0].id, imported.environmentId);
     assert.equal(workspace.collections[0].requests[0].scripts!.enabled, true);
@@ -200,7 +198,7 @@ test('collection auth inherits explicitly and disabled request headers override 
             batch: false,
             stopOnFailure: false
         });
-        assert.equal((await wait(runner, id)).results[0].test, TestState.Passed);
+        assert.equal((await wait(runner, id)).results[0].test, TestState.Untested);
         assert.equal(server.received[0].headers.authorization, 'Bearer token');
         assert.equal(server.received[0].headers['x-common'], undefined);
         assert.equal(server.received[0].headers['x-other'], 'other');
@@ -329,7 +327,7 @@ test('collection and request scripts have separate lexical scopes and carry vari
             stopOnFailure: false
         });
         const view = await wait(runner, id);
-        assert.equal(view.results[1].test, TestState.Passed);
+        assert.equal(view.results[1].test, TestState.Untested);
         assert.equal(server.received[1].headers.authorization, 'Bearer server-token');
         assert.equal(server.received[1].headers['x-value'], '3');
     } finally {
@@ -435,6 +433,12 @@ test('history persists actual request snapshots across restarts, bounds previews
         assert.equal(bounded.length, Limits.historyEntries);
         assert.equal(Buffer.byteLength(bounded[0].result.preview), Limits.historyPreviewBytes);
         assert.equal(bounded[0].result.truncated, true);
+        const otherRequestEntry = structuredClone(entry);
+        otherRequestEntry.id = 'other-entry';
+        otherRequestEntry.request.id = 'other-request';
+        await store.append(otherRequestEntry);
+        await store.clear('id');
+        assert.deepEqual((await store.list()).map(item => item.request.id), ['other-request']);
         await Promise.all([store.append(entry), store.clear()]);
         assert.deepEqual(await store.list(), []);
         const workspaceStore = new WorkspaceStore(directory);

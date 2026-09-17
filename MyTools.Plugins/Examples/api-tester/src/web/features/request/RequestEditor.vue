@@ -23,9 +23,7 @@ import {computed, ref, watch} from 'vue';
 import Icon from '../../components/common/Icon.vue';
 import AuthenticationEditor from '../../components/common/AuthenticationEditor.vue';
 import BodyEditor from './BodyEditor.vue';
-import ExtractionsEditor from './ExtractionsEditor.vue';
 import RequestSettingsEditor from './RequestSettingsEditor.vue';
-import AssertionsEditor from './AssertionsEditor.vue';
 import ScriptsEditor from '../../components/common/ScriptsEditor.vue';
 import {Routes} from '../../../shared/model.js';
 import {notification, rpc} from '../../services/rpc.js';
@@ -60,8 +58,6 @@ const panels = [
   'Headers',
   'Authentication',
   'Body',
-  'Extractions',
-  'Assertions',
   'Scripts',
   'Settings',
 ] as const;
@@ -105,9 +101,7 @@ function count(panel: Panel) {
       ? request.params.length
       : panel === 'Headers'
           ? request.headers.length
-          : panel === 'Extractions'
-              ? request.extractions.length
-              : 0;
+          : 0;
 }
 
 function navigate(event: KeyboardEvent, panel: Panel) {
@@ -196,6 +190,11 @@ function navigate(event: KeyboardEvent, panel: Panel) {
           }}</span>
         </button>
       </div>
+      <select v-model="current" class="panel-select request-panel-select" :aria-label="t.RequestSections()">
+        <option v-for="panel in panels" :key="panel" :value="panel">
+          {{ t[panel]() }}
+        </option>
+      </select>
       <button
           type="button"
           class="cookies-button"
@@ -232,11 +231,7 @@ function navigate(event: KeyboardEvent, panel: Panel) {
       <BodyEditor
           v-if="current === 'Body'"
       />
-      <ExtractionsEditor
-          v-if="current === 'Extractions'"
-      />
       <RequestSettingsEditor v-if="current === 'Settings'"/>
-      <AssertionsEditor v-if="current === 'Assertions'"/>
       <ScriptsEditor v-if="current === 'Scripts'" v-model="tab.request.scripts"/>
     </div>
   </div>

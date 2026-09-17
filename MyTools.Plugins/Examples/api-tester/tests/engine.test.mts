@@ -8,7 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {gzipSync} from 'node:zlib';
 import {CookieJar} from 'tough-cookie';
-import {executeRequest, extractVariables, pointer} from '../src/backend/execution/engine.mjs';
+import {executeRequest} from '../src/backend/execution/engine.mjs';
 import {Runner} from '../src/backend/execution/runner.mjs';
 import {WorkspaceStore} from '../src/backend/persistence/storage.mjs';
 import {createWorkspaceMutator} from '../src/web/features/workspace/workspacePersistence.js';
@@ -24,7 +24,6 @@ import {
     WarningKind,
     AuthKind,
     KeyLocation,
-    AssertionKind,
     ExecutionState,
     TestState,
     ErrorKind,
@@ -164,7 +163,7 @@ test('workspace mutations serialize and a failed save cannot roll back the follo
     assert.equal(owner.name, 'Succeeded');
     assert.deepEqual(state.value, snapshots[1]);
 });
-test('HTTP errors remain complete; strict assertions and transactional extraction work', async () => {
+test('HTTP errors remain complete; script tests and variable writes are transactional', async () => {
     const server = await fixture((_req, res) => {
         res.writeHead(ErrorStatus, {'Content-Type': 'application/json', 'X-Repeat': ['a', 'b']});
         res.end('{"token":"abc","empty":null,"value":200,"a/b":{"~":1}}');
@@ -173,32 +172,27 @@ test('HTTP errors remain complete; strict assertions and transactional extractio
         const request = requestAt(server.url);
         const output = await send(request);
         assert.equal(output.result.execution, ExecutionState.Complete);
-        assert.equal(output.result.test, TestState.Failed);
-        assert.equal(output.result.assertions[0].passed, false);
+        assert.equal(output.result.test, TestState.Untested);
+        assert.deepEqual(output.result.assertions, []);
         assert.equal(output.result.headers.filter(h => h.name === 'X-Repeat').length, 2);
-        request.assertions = [{
-            name: 'Strict',
+        request.scripts = {
             enabled: true,
-            kind: AssertionKind.Value,
-            path: '/value',
-            expected: '"200"'
-        }, {name: 'Null exists', enabled: true, kind: AssertionKind.Exists, path: '/empty', expected: ''}];
-        request.extractions = [{enabled: true, path: '/token', variable: 'token'}];
-        const failedAssertion = await send(request);
-        assert.equal(failedAssertion.result.test, TestState.Failed);
-        assert.equal(failedAssertion.result.assertions[1].passed, true);
-        assert.equal(failedAssertion.writes.token, 'abc');
-        request.extractions.push({enabled: true, path: '/missing', variable: 'missing'});
-        const failedExtraction = await send(request);
-        assert.equal(failedExtraction.result.error?.kind, ErrorKind.Extraction);
-        assert.deepEqual(Object.keys(failedExtraction.writes), []);
-        assert.equal(pointer({'a/b': {'~': 1}}, '/a~1b/~0'), 1);
-        assert.throws(() => extractVariables(request, '{}'));
+            before: '',
+            after: "const body = pm.response.json(); pm.test('Strict', () => pm.expect(body.value).to.equal('200')); pm.test('Null exists', () => pm.expect(body).to.have.property('empty')); pm.variables.set('token', body.token);"
+        };
+        const tested = await send(request);
+        assert.equal(tested.result.test, TestState.Failed);
+        assert.equal(tested.result.assertions[1].passed, true);
+        assert.equal(tested.writes.token, 'abc');
+        request.scripts.after = "pm.variables.set('token', pm.response.json().token); throw new Error('after failed');";
+        const failedScript = await send(request);
+        assert.equal(failedScript.result.error?.kind, ErrorKind.Script);
+        assert.deepEqual(Object.keys(failedScript.writes), []);
     } finally {
         await server.close();
     }
 });
-test('complete responses pass when the status is 200 and fail otherwise', async () => {
+test('post-response tests determine pass and fail states', async () => {
     let status = SuccessStatus;
     const server = await fixture((_req, res) => {
         res.writeHead(status, {'Content-Type': 'text/plain'});
@@ -206,6 +200,7 @@ test('complete responses pass when the status is 200 and fail otherwise', async 
     });
     try {
         const request = requestAt(server.url);
+        request.scripts = {enabled: true, before: '', after: "pm.test('status', () => pm.response.to.have.status(200));"};
         assert.equal((await send(request)).result.test, TestState.Passed);
         status = ErrorStatus;
         assert.equal((await send(request)).result.test, TestState.Failed);
@@ -353,7 +348,7 @@ test('manual tokens share a session; batches isolate tokens and apply whole-run 
         const runner = new Runner();
         const login = requestAt(server.url + '/login');
         login.id = 'login';
-        login.extractions.push({enabled: true, path: '/token', variable: 'token'});
+        login.scripts = {enabled: true, before: '', after: "pm.variables.set('token', pm.response.json().token);"};
         const dependent = requestAt(server.url + '/user');
         dependent.id = 'user';
         dependent.auth.kind = AuthKind.Bearer;
@@ -381,6 +376,43 @@ test('manual tokens share a session; batches isolate tokens and apply whole-run 
             stopOnFailure: true,
             requests: [dependent, login]
         }));
+        assert.equal(stopped.results[1].execution, ExecutionState.Skipped);
+    } finally {
+        await server.close();
+    }
+});
+test('collection runs apply collection settings, iterations, data, response persistence and stop-on-error', async () => {
+    const RunnerDelayMs = 10;
+    const server = await fixture((req, res) => {
+        res.setHeader('Content-Type', 'text/plain');
+        if (req.url === '/slow') setTimeout(() => res.end('slow'), ServerDelayMs);
+        else res.end(req.url);
+    });
+    try {
+        const runner = new Runner();
+        const dataRequest = requestAt(server.url + '/{{item}}');
+        const dataCollection = {id: 'data', name: 'Data', requests: [dataRequest]};
+        const iterated = await completed(runner, runner.start({
+            requests: [dataRequest], defaults: defaultSettings(), variables: [], environmentId: '',
+            batch: true, stopOnFailure: false, iterations: 2, delayMs: RunnerDelayMs,
+            iterationData: [{item: 'one'}, {item: 'two'}], persistResponses: false,
+            collections: [dataCollection]
+        }));
+        assert.equal(iterated.total, 2);
+        assert.deepEqual(iterated.results.map(result => result.iteration), [1, 2]);
+        assert.deepEqual(iterated.results.map(result => new URL(result.url!).pathname), ['/one', '/two']);
+        assert.ok(iterated.results.every(result => !result.bodyAvailable && result.preview === ''));
+
+        const slow = {...requestAt(server.url + '/slow'), id: 'slow'};
+        const after = {...requestAt(server.url + '/after'), id: 'after'};
+        const settings = {...defaultSettings(), timeoutMs: ShortTimeoutMs, verifyTls: false};
+        const stopped = await completed(runner, runner.start({
+            requests: [slow, after], defaults: defaultSettings(), variables: [], environmentId: '',
+            batch: true, stopOnFailure: false, stopOnError: true,
+            collections: [{id: 'settings', name: 'Settings', requests: [slow, after], settings}]
+        }));
+        assert.equal(stopped.results[0].error?.kind, ErrorKind.Timeout);
+        assert.equal(stopped.results[0].verifyTls, false);
         assert.equal(stopped.results[1].execution, ExecutionState.Skipped);
     } finally {
         await server.close();
@@ -451,27 +483,6 @@ test('HEAD on compressed endpoints and encoded form bodies work', async () => {
         request.body.fields = [{name: 'x', value: '%2F', enabled: true}, {name: 'x', value: '+ ', enabled: true}];
         assert.equal((await send(request)).result.execution, ExecutionState.Complete);
         assert.equal(received, 'x=%252F&x=%2B%20');
-    } finally {
-        await server.close();
-    }
-});
-test('invalid assertion configuration does not send a request', async () => {
-    let received = false;
-    const server = await fixture((_req, res) => {
-        received = true;
-        res.end('ok');
-    });
-    try {
-        const request = requestAt(server.url);
-        request.assertions.push({
-            name: 'Bad path',
-            kind: AssertionKind.Exists,
-            enabled: true,
-            path: 'not-a-pointer',
-            expected: ''
-        });
-        assert.equal((await send(request)).result.error?.kind, ErrorKind.Configuration);
-        assert.equal(received, false);
     } finally {
         await server.close();
     }

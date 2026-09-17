@@ -103,14 +103,14 @@ function navigate(direction: number) {
       <button @click="toggleAll(true)">{{ t.ExpandAll() }}</button>
       <button @click="toggleAll(false)">{{ t.CollapseAll() }}</button>
     </template>
-  </div>
-  <div class="response-search"><input v-model="search" :aria-label="t.SearchResponse()"
-                                      :placeholder="t.SearchResponse()"
-                                      @keydown.enter.prevent="navigate($event.shiftKey ? -1 : 1)"/><span class="muted">{{
-      t.SearchMatches({count: matches})
-    }}</span>
-    <button :disabled="!matches" @click="navigate(-1)">{{ t.PreviousMatch() }}</button>
-    <button :disabled="!matches" @click="navigate(1)">{{ t.NextMatch() }}</button>
+    <div class="response-search"><input v-model="search" :aria-label="t.SearchResponse()"
+                                        :placeholder="t.SearchResponse()"
+                                        @keydown.enter.prevent="navigate($event.shiftKey ? -1 : 1)"/><span class="muted">{{
+        t.SearchMatches({count: matches})
+      }}</span>
+      <button :disabled="!matches" @click="navigate(-1)">{{ t.PreviousMatch() }}</button>
+      <button :disabled="!matches" @click="navigate(1)">{{ t.NextMatch() }}</button>
+    </div>
   </div>
   <p v-if="result.truncated" class="muted">{{ t.PreviewLimit() }}</p>
   <p v-if="parsed && !treeAllowed" class="muted">{{ t.JsonTreeLimit() }}</p>

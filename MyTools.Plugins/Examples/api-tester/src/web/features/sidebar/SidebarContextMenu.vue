@@ -9,7 +9,7 @@ const props = defineProps<{
   kind: SidebarMenuKind;
   canMoveUp?: boolean; canMoveDown?: boolean;
 }>();
-const emit = defineEmits<{ close: []; up: []; down: []; copy: []; delete: []; settings: []; rename: [] }>();
+const emit = defineEmits<{ close: []; up: []; down: []; copy: []; delete: []; settings: []; rename: []; run: []; add: [] }>();
 const t = useText();
 const menu = ref<HTMLElement>();
 const left = ref(props.x);
@@ -104,6 +104,14 @@ onBeforeUnmount(() => {
         </button>
       </template>
       <template v-else>
+        <button role="menuitem" @click="perform(() => emit('run'))">
+          <Icon name="play"/>
+          {{ t.RunCollection() }}
+        </button>
+        <button role="menuitem" @click="perform(() => emit('add'))">
+          <Icon name="plus"/>
+          {{ t.AddRequest() }}
+        </button>
         <button role="menuitem" @click="perform(() => emit('settings'))">
           <Icon name="more"/>
           {{ t.CollectionSettings() }}

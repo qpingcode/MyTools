@@ -16,18 +16,26 @@ import IconButton from '../../components/common/IconButton.vue';
 import Icon from '../../components/common/Icon.vue';
 import {WorkspaceTool as ToolTab} from './workspaceToolTypes.js';
 
-const props = defineProps<{ tool: ToolTab }>();
+const props = defineProps<{ tool: ToolTab; requestId?: string; requestName?: string; iconOnly?: boolean }>();
 const ToolIcons = {[ToolTab.Import]: 'download', [ToolTab.Export]: 'upload', [ToolTab.History]: 'history'} as const;
 
 enum ImportKind { Curl = 'curl', Json = 'json' }
 
 enum ExportTarget { Workspace = 'workspace', Collection = 'collection', Environment = 'environment' }
 
+const HistoryPageSize = 5;
+
 const {t, workspace, mutate, open, uid, batch, tabs, confirm} = useWorkspaceContext();
 const visible = ref(false);
 const dialog = ref<HTMLDialogElement>();
 const current = computed(() => props.tool);
-const title = computed(() => props.tool === ToolTab.Import ? t.value.Import() : props.tool === ToolTab.Export ? t.value.Export() : t.value.History());
+const title = computed(() => props.tool === ToolTab.Import
+    ? t.value.Import()
+    : props.tool === ToolTab.Export
+        ? t.value.Export()
+        : props.requestName
+            ? t.value.RequestHistory({name: props.requestName})
+            : t.value.History());
 const kind = ref(ImportKind.Curl);
 const source = ref('');
 const format = ref(ExportFormat.Native);
@@ -36,17 +44,29 @@ const targetId = ref('');
 const history = ref<HistoryEntry[]>([]);
 const selected = ref<HistoryEntry>();
 const search = ref('');
+const historyPage = ref(1);
 const busy = ref(false);
 const error = ref(false);
 const historyFailed = ref(false);
 const exportCollection = computed(() => workspace.value.collections.find(c => c.id === targetId.value));
 const exportEnvironment = computed(() => workspace.value.environments.find(e => e.id === targetId.value));
-const filteredHistory = computed(() => history.value.filter(e => (e.request.name + ' ' + e.request.url + ' ' + e.environmentName).toLowerCase().includes(search.value.toLowerCase())));
+const filteredHistory = computed(() => history.value.filter(e =>
+    (!props.requestId || e.request.id === props.requestId) &&
+    (e.request.name + ' ' + e.request.url + ' ' + e.environmentName).toLowerCase().includes(search.value.toLowerCase())));
+const historyPageCount = computed(() => Math.max(1, Math.ceil(filteredHistory.value.length / HistoryPageSize)));
+const pagedHistory = computed(() => filteredHistory.value.slice(
+    (historyPage.value - 1) * HistoryPageSize,
+    historyPage.value * HistoryPageSize,
+));
+const scopedHistory = computed(() => history.value.filter(entry => !props.requestId || entry.request.id === props.requestId));
+const clearHistoryLabel = computed(() => props.requestId ? t.value.ClearRequestHistory() : t.value.ClearHistory());
 const running = computed(() => tabs.value.some(tab => tab.running) || batch.value && !batch.value.done);
 watch(target, () => {
   targetId.value = target.value === ExportTarget.Collection ? workspace.value.collections[0]?.id || '' : workspace.value.environments[0]?.id || '';
   format.value = ExportFormat.Native;
 });
+watch([search, () => props.requestId], () => historyPage.value = 1);
+watch(historyPageCount, count => historyPage.value = Math.min(historyPage.value, count));
 watch(visible, async value => {
   if (value) {
     await nextTick();
@@ -63,6 +83,9 @@ async function loadHistory() {
   historyFailed.value = false;
   try {
     history.value = await rpc<HistoryEntry[]>(Routes.history);
+    historyPage.value = 1;
+    if (!filteredHistory.value.some(entry => entry.id === selected.value?.id))
+      selected.value = props.requestId ? filteredHistory.value[0] : undefined;
   } catch (failure) {
     historyFailed.value = true;
     console.error(failure);
@@ -126,9 +149,12 @@ function download() {
 const ExportFilename = 'api-tester-export.json';
 
 async function clearHistory() {
-  if (!(await confirm(t.value.ClearHistoryConfirm, t.value.ClearHistory))) return;
+  const message = props.requestId
+      ? () => t.value.ClearRequestHistoryConfirm({name: props.requestName || ''})
+      : t.value.ClearHistoryConfirm;
+  if (!(await confirm(message, () => clearHistoryLabel.value))) return;
   try {
-    await rpc(Routes.clearHistory);
+    await rpc(Routes.clearHistory, props.requestId ? {requestId: props.requestId} : {});
     selected.value = undefined;
     await loadHistory();
   } catch (failure) {
@@ -151,7 +177,8 @@ function reopenSelected() {
 }
 </script>
 <template>
-  <button class="workspace-tools-button" @click="visible = true">
+  <IconButton v-if="iconOnly" icon="history" :label="title" @click="visible = true"/>
+  <button v-else class="workspace-tools-button" @click="visible = true">
     <Icon :name="ToolIcons[tool]"/>
     {{ title }}
   </button>
@@ -196,15 +223,23 @@ function reopenSelected() {
       <p v-if="historyFailed" role="alert" class="error">{{ t.HistoryFailed() }}</p>
       <p v-else-if="!filteredHistory.length" class="muted">{{ t.NoHistory() }}</p>
       <div class="history-list">
-        <button v-for="entry in filteredHistory" :key="entry.id" class="history-row"
+        <button v-for="entry in pagedHistory" :key="entry.id" class="history-row"
                 :class="{ selected: selected?.id === entry.id }" @click="selected = entry"><span class="method-label"
                                                                                                  :data-method="entry.request.method">{{
             entry.request.method
-          }}</span><span>{{ entry.request.name }} · {{ entry.request.url }}</span><span
+          }}</span><span class="history-request-name">{{ entry.request.name }}</span><span class="history-url" :title="entry.request.url">{{ entry.request.url }}</span><span
             class="muted">{{ entry.result.status ?? '—' }} · {{
             entry.environmentName || t.NoEnvironment()
           }} · {{ entry.result.completedAt }}</span></button>
       </div>
+      <nav v-if="filteredHistory.length" class="history-pagination" :aria-label="t.HistoryPagination()">
+        <span class="history-total">{{ t.HistoryTotal({count: filteredHistory.length}) }}</span>
+        <IconButton icon="chevron-left" :label="t.PreviousPage()" :disabled="historyPage === 1"
+                    @click="historyPage--"/>
+        <span>{{ t.HistoryPage({page: historyPage, pages: historyPageCount}) }}</span>
+        <IconButton icon="chevron-right" :label="t.NextPage()" :disabled="historyPage === historyPageCount"
+                    @click="historyPage++"/>
+      </nav>
       <section v-if="selected" class="history-detail">
         <div class="section-heading"><h2>{{ selected.request.name }}</h2></div>
         <p class="muted">{{ t.HistoryHint() }}</p>
@@ -215,7 +250,7 @@ function reopenSelected() {
       <button @click="visible = false">{{ t.Cancel() }}</button>
       <template v-if="current === ToolTab.History">
         <button @click="loadHistory">{{ t.Refresh() }}</button>
-        <button :disabled="!history.length" @click="clearHistory">{{ t.ClearHistory() }}</button>
+        <button :disabled="!scopedHistory.length" @click="clearHistory">{{ clearHistoryLabel }}</button>
         <button class="primary" :disabled="!selected" @click="reopenSelected">{{ t.ReopenRequest() }}</button>
       </template>
       <button v-if="current === ToolTab.Import" class="primary" :disabled="busy || !source.trim()" @click="importData">

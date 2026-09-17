@@ -530,6 +530,54 @@
       }
     },
     {
+      "key": "Plugin.ApiTester.ViewRun",
+      "defaultValue": "{{done}} / {{total}} · View run",
+      "placeholders": [
+        "done",
+        "total"
+      ],
+      "references": [
+        {
+          "filePath": "src/web/localization/i18n.ts",
+          "line": 228,
+          "column": 20
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "{{done}} / {{total}} · 查看运行"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ViewLastRun",
+      "defaultValue": "View last run",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/localization/i18n.ts",
+          "line": 233,
+          "column": 20
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "查看上次运行"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.StopRun",
+      "defaultValue": "Stop run",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/localization/i18n.ts",
+          "line": 237,
+          "column": 20
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "停止运行"
+      }
+    },
+    {
       "key": "Plugin.ApiTester.StopOnFailure",
       "defaultValue": "Stop on failure",
       "placeholders": [],
@@ -662,6 +710,15 @@
       ],
       "existingTranslations": {
         "zh-CN": "断言"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.TestResults",
+      "defaultValue": "Test results",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "测试结果"
       }
     },
     {
@@ -1587,12 +1644,10 @@
     },
     {
       "key": "Plugin.ApiTester.Summary",
-      "defaultValue": "HTTP {{status}} · {{elapsed}} ms · {{size}} bytes · {{time}}",
+      "defaultValue": "{{elapsed}} ms · {{size}} bytes",
       "placeholders": [
-        "status",
         "elapsed",
-        "size",
-        "time"
+        "size"
       ],
       "references": [
         {
@@ -1602,7 +1657,7 @@
         }
       ],
       "existingTranslations": {
-        "zh-CN": "HTTP {{status}} · {{elapsed}} 毫秒 · {{size}} 字节 · {{time}}"
+        "zh-CN": "{{elapsed}} 毫秒 · {{size}} 字节"
       }
     },
     {
@@ -2471,7 +2526,7 @@
     },
     {
       "key": "Plugin.ApiTester.ScriptsHint",
-      "defaultValue": "JavaScript with pm.variables, pm.request, pm.response, pm.test, pm.expect, pm.crypto and console. pm.crypto provides sha256, hmacSha256 and UTF-8 base64. pm.environment and pm.collectionVariables are aliases for session variables; changes last until switching environments or restarting, not in the saved environment. Scripts run with a 2-second limit; filesystem, network APIs and npm imports are unavailable. This is a subset of the Postman scripting API.",
+      "defaultValue": "Use After response scripts with pm.test and pm.expect for tests, and pm.variables, pm.environment or pm.collectionVariables to save response values. Changes last until switching environments or restarting, not in the saved environment. pm.crypto provides sha256, hmacSha256 and UTF-8 base64. Scripts run with a 2-second limit; filesystem, network APIs and npm imports are unavailable. This is a subset of the Postman scripting API.",
       "placeholders": [],
       "references": [
         {
@@ -2481,7 +2536,7 @@
         }
       ],
       "existingTranslations": {
-        "zh-CN": "支持 JavaScript、pm.variables、pm.request、pm.response、pm.test、pm.expect、pm.crypto 和 console。pm.crypto 提供 sha256、hmacSha256 和 UTF-8 base64。pm.environment 和 pm.collectionVariables 是会话变量的别名；修改在切换环境或重启前有效，不会写入已保存的环境。脚本限时 2 秒，不提供文件、网络 API 或 npm 导入。仅支持 Postman 脚本 API 的一个子集。"
+        "zh-CN": "请在响应后脚本中使用 pm.test 和 pm.expect 编写测试，并通过 pm.variables、pm.environment 或 pm.collectionVariables 保存响应值。修改在切换环境或重启前有效，不会写入已保存的环境。pm.crypto 提供 sha256、hmacSha256 和 UTF-8 base64。脚本限时 2 秒，不提供文件、网络 API 或 npm 导入。仅支持 Postman 脚本 API 的一个子集。"
       }
     },
     {
@@ -2846,7 +2901,7 @@
     },
     {
       "key": "Plugin.ApiTester.ExportHint",
-      "defaultValue": "Exports contain saved requests and environment values, including credentials. Save edited tabs first. API Tester JSON preserves all settings; Postman export preserves requests, authentication and enabled scripts, but not API Tester assertions, extractions or request settings.",
+      "defaultValue": "Exports contain saved requests and environment values, including credentials. Save edited tabs first. API Tester JSON preserves all settings; Postman export preserves requests, authentication and enabled scripts, but not API Tester request settings.",
       "placeholders": [],
       "references": [
         {
@@ -2856,7 +2911,7 @@
         }
       ],
       "existingTranslations": {
-        "zh-CN": "导出包含已保存的请求及环境值（含凭据），请先保存编辑中的标签页。API Tester JSON 保留全部配置；Postman 导出保留请求、认证和已启用的脚本，不包含本插件的断言、提取规则或请求设置。"
+        "zh-CN": "导出包含已保存的请求及环境值（含凭据），请先保存编辑中的标签页。API Tester JSON 保留全部配置；Postman 导出保留请求、认证和已启用的脚本，但不包含 API Tester 请求设置。"
       }
     },
     {
@@ -2918,6 +2973,59 @@
       "existingTranslations": {
         "zh-CN": "清空所有已保存的请求历史？"
       }
+    },
+    {
+      "key": "Plugin.ApiTester.ClearRequestHistory",
+      "defaultValue": "Clear request history",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "清空当前请求历史"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.ClearRequestHistoryConfirm",
+      "defaultValue": "Clear saved history for {{name}}?",
+      "placeholders": ["name"],
+      "references": [],
+      "existingTranslations": {
+        "zh-CN": "清空 {{name}} 的已保存历史？"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.HistoryPagination",
+      "defaultValue": "History pages",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {"zh-CN": "历史记录分页"}
+    },
+    {
+      "key": "Plugin.ApiTester.PreviousPage",
+      "defaultValue": "Previous page",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {"zh-CN": "上一页"}
+    },
+    {
+      "key": "Plugin.ApiTester.NextPage",
+      "defaultValue": "Next page",
+      "placeholders": [],
+      "references": [],
+      "existingTranslations": {"zh-CN": "下一页"}
+    },
+    {
+      "key": "Plugin.ApiTester.HistoryPage",
+      "defaultValue": "Page {{page}} of {{pages}}",
+      "placeholders": ["page", "pages"],
+      "references": [],
+      "existingTranslations": {"zh-CN": "第 {{page}} / {{pages}} 页"}
+    },
+    {
+      "key": "Plugin.ApiTester.HistoryTotal",
+      "defaultValue": "{{count}} records",
+      "placeholders": ["count"],
+      "references": [],
+      "existingTranslations": {"zh-CN": "共 {{count}} 条"}
     },
     {
       "key": "Plugin.ApiTester.NoHistory",
@@ -3160,6 +3268,35 @@
       "existingTranslations": {
         "zh-CN": "输入请求地址，例如 https://api.example.com/users"
       }
-    }
+    },
+    {"key":"Plugin.ApiTester.UnsavedChanges","defaultValue":"Unsaved changes","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"未保存的修改"}},
+    {"key":"Plugin.ApiTester.Confirm","defaultValue":"Confirm action","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"确认操作"}},
+    {"key":"Plugin.ApiTester.OverrideCollectionSettings","defaultValue":"Override global settings for this collection","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"覆盖此集合的全局设置"}},
+    {"key":"Plugin.ApiTester.RequestHistory","defaultValue":"History · {{name}}","placeholders":["name"],"references":[],"existingTranslations":{"zh-CN":"历史记录 · {{name}}"}},
+    {"key":"Plugin.ApiTester.DuplicateTab","defaultValue":"Duplicate tab","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"复制标签页"}},
+    {"key":"Plugin.ApiTester.CloseTab","defaultValue":"Close tab","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"关闭标签页"}},
+    {"key":"Plugin.ApiTester.CloseOtherTabs","defaultValue":"Close other tabs","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"关闭其他标签页"}},
+    {"key":"Plugin.ApiTester.CloseAllTabs","defaultValue":"Close all tabs","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"关闭所有标签页"}},
+    {"key":"Plugin.ApiTester.RevealInSidebar","defaultValue":"Reveal in sidebar","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"在侧栏中显示"}},
+    {"key":"Plugin.ApiTester.RunCollection","defaultValue":"Run collection","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"运行集合"}},
+    {"key":"Plugin.ApiTester.AddRequest","defaultValue":"Add request","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"添加请求"}},
+    {"key":"Plugin.ApiTester.CollectionRunner","defaultValue":"Collection Runner","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"集合运行器"}},
+    {"key":"Plugin.ApiTester.Requests","defaultValue":"Requests","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"请求"}},
+    {"key":"Plugin.ApiTester.NoRequestsInCollection","defaultValue":"This collection has no requests.","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"此集合中没有请求。"}},
+    {"key":"Plugin.ApiTester.RunConfiguration","defaultValue":"Run configuration","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"运行配置"}},
+    {"key":"Plugin.ApiTester.Iterations","defaultValue":"Iterations","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"迭代次数"}},
+    {"key":"Plugin.ApiTester.Delay","defaultValue":"Delay between requests (milliseconds)","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"请求间延迟（毫秒）"}},
+    {"key":"Plugin.ApiTester.TestDataFile","defaultValue":"Test data file (JSON or CSV)","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"测试数据文件（JSON 或 CSV）"}},
+    {"key":"Plugin.ApiTester.DataFileSummary","defaultValue":"{{name}} · {{rows}} rows","placeholders":["name","rows"],"references":[],"existingTranslations":{"zh-CN":"{{name}} · {{rows}} 行"}},
+    {"key":"Plugin.ApiTester.InvalidDataFile","defaultValue":"The test data file is invalid or too large.","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"测试数据文件无效或过大。"}},
+    {"key":"Plugin.ApiTester.AdvancedSettings","defaultValue":"Advanced settings","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"高级设置"}},
+    {"key":"Plugin.ApiTester.PersistResponses","defaultValue":"Persist responses for this session","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"在本次会话中保留响应"}},
+    {"key":"Plugin.ApiTester.StopOnError","defaultValue":"Stop run if an error occurs","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"发生错误时停止运行"}},
+    {"key":"Plugin.ApiTester.AllTests","defaultValue":"All tests","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"全部测试"}},
+    {"key":"Plugin.ApiTester.Errors","defaultValue":"Errors","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"错误"}},
+    {"key":"Plugin.ApiTester.ConsoleLog","defaultValue":"Console log","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"控制台日志"}},
+    {"key":"Plugin.ApiTester.ResultFilters","defaultValue":"Run result filters","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"运行结果筛选"}},
+    {"key":"Plugin.ApiTester.Iteration","defaultValue":"Iteration {{number}}","placeholders":["number"],"references":[],"existingTranslations":{"zh-CN":"第 {{number}} 次迭代"}},
+    {"key":"Plugin.ApiTester.NoMatchingResults","defaultValue":"No matching run results.","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"没有匹配的运行结果。"}}
   ]
 }

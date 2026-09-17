@@ -18,7 +18,7 @@ export const text = {
     EnableScripts: () => bus.i18n.t('Plugin.ApiTester.EnableScripts', {defaultValue: "Enable scripts"}),
     BeforeScript: () => bus.i18n.t('Plugin.ApiTester.BeforeScript', {defaultValue: "Before request"}),
     AfterScript: () => bus.i18n.t('Plugin.ApiTester.AfterScript', {defaultValue: "After response"}),
-    ScriptsHint: () => bus.i18n.t('Plugin.ApiTester.ScriptsHint', {defaultValue: "JavaScript with pm.variables, pm.request, pm.response, pm.test, pm.expect, pm.crypto and console. pm.crypto provides sha256, hmacSha256 and UTF-8 base64. pm.environment and pm.collectionVariables are aliases for session variables; changes last until switching environments or restarting, not in the saved environment. Scripts run with a 2-second limit; filesystem, network APIs and npm imports are unavailable. This is a subset of the Postman scripting API."}),
+    ScriptsHint: () => bus.i18n.t('Plugin.ApiTester.ScriptsHint', {defaultValue: "Use After response scripts with pm.test and pm.expect for tests, and pm.variables, pm.environment or pm.collectionVariables to save response values. Changes last until switching environments or restarting, not in the saved environment. pm.crypto provides sha256, hmacSha256 and UTF-8 base64. Scripts run with a 2-second limit; filesystem, network APIs and npm imports are unavailable. This is a subset of the Postman scripting API."}),
     ScriptExamples: () => bus.i18n.t('Plugin.ApiTester.ScriptExamples', {defaultValue: "Script examples"}),
     ScriptConsole: () => bus.i18n.t('Plugin.ApiTester.ScriptConsole', {defaultValue: "Script console"}),
     NoScriptLogs: () => bus.i18n.t('Plugin.ApiTester.NoScriptLogs', {defaultValue: "No script output."}),
@@ -43,11 +43,18 @@ export const text = {
     ExportFormat: () => bus.i18n.t('Plugin.ApiTester.ExportFormat', {defaultValue: "Export format"}),
     NativeFormat: () => bus.i18n.t('Plugin.ApiTester.NativeFormat', {defaultValue: "API Tester JSON"}),
     PostmanFormat: () => bus.i18n.t('Plugin.ApiTester.PostmanFormat', {defaultValue: "Postman Collection v2.1"}),
-    ExportHint: () => bus.i18n.t('Plugin.ApiTester.ExportHint', {defaultValue: "Exports contain saved requests and environment values, including credentials. Save edited tabs first. API Tester JSON preserves all settings; Postman export preserves requests, authentication and enabled scripts, but not API Tester assertions, extractions or request settings."}),
+    ExportHint: () => bus.i18n.t('Plugin.ApiTester.ExportHint', {defaultValue: "Exports contain saved requests and environment values, including credentials. Save edited tabs first. API Tester JSON preserves all settings; Postman export preserves requests, authentication and enabled scripts, but not API Tester request settings."}),
     SearchHistory: () => bus.i18n.t('Plugin.ApiTester.SearchHistory', {defaultValue: "Search request history"}),
     Refresh: () => bus.i18n.t('Plugin.ApiTester.Refresh', {defaultValue: "Refresh"}),
     ClearHistory: () => bus.i18n.t('Plugin.ApiTester.ClearHistory', {defaultValue: "Clear history"}),
     ClearHistoryConfirm: () => bus.i18n.t('Plugin.ApiTester.ClearHistoryConfirm', {defaultValue: "Clear all saved request history?"}),
+    ClearRequestHistory: () => bus.i18n.t('Plugin.ApiTester.ClearRequestHistory', {defaultValue: "Clear request history"}),
+    ClearRequestHistoryConfirm: (values: {name: string}) => bus.i18n.t('Plugin.ApiTester.ClearRequestHistoryConfirm', {defaultValue: "Clear saved history for {{name}}?", ...values}),
+    HistoryPagination: () => bus.i18n.t('Plugin.ApiTester.HistoryPagination', {defaultValue: "History pages"}),
+    PreviousPage: () => bus.i18n.t('Plugin.ApiTester.PreviousPage', {defaultValue: "Previous page"}),
+    NextPage: () => bus.i18n.t('Plugin.ApiTester.NextPage', {defaultValue: "Next page"}),
+    HistoryPage: (values: {page: number; pages: number}) => bus.i18n.t('Plugin.ApiTester.HistoryPage', {defaultValue: "Page {{page}} of {{pages}}", ...values}),
+    HistoryTotal: (values: {count: number}) => bus.i18n.t('Plugin.ApiTester.HistoryTotal', {defaultValue: "{{count}} records", ...values}),
     NoHistory: () => bus.i18n.t('Plugin.ApiTester.NoHistory', {defaultValue: "No matching request history."}),
     HistoryFailed: () => bus.i18n.t('Plugin.ApiTester.HistoryFailed', {defaultValue: "Could not load history. Please refresh."}),
     ReopenRequest: () => bus.i18n.t('Plugin.ApiTester.ReopenRequest', {defaultValue: "Reopen request"}),
@@ -224,6 +231,19 @@ export const text = {
             defaultValue: 'Run collection / selected requests',
             ...values,
         }),
+    ViewRun: (values: {done: number; total: number}) =>
+        bus.i18n.t('Plugin.ApiTester.ViewRun', {
+            defaultValue: '{{done}} / {{total}} · View run',
+            ...values,
+        }),
+    ViewLastRun: () =>
+        bus.i18n.t('Plugin.ApiTester.ViewLastRun', {
+            defaultValue: 'View last run',
+        }),
+    StopRun: () =>
+        bus.i18n.t('Plugin.ApiTester.StopRun', {
+            defaultValue: 'Stop run',
+        }),
     StopOnFailure: (values: Record<string, string | number> = {}) =>
         bus.i18n.t('Plugin.ApiTester.StopOnFailure', {
             defaultValue: 'Stop on failure',
@@ -268,6 +288,11 @@ export const text = {
     Assertions: (values: Record<string, string | number> = {}) =>
         bus.i18n.t('Plugin.ApiTester.Assertions', {
             defaultValue: 'Assertions',
+            ...values,
+        }),
+    TestResults: (values: Record<string, string | number> = {}) =>
+        bus.i18n.t('Plugin.ApiTester.TestResults', {
+            defaultValue: 'Test results',
             ...values,
         }),
     Extractions: (values: Record<string, string | number> = {}) =>
@@ -553,8 +578,7 @@ export const text = {
         }),
     Summary: (values: Record<string, string | number> = {}) =>
         bus.i18n.t('Plugin.ApiTester.Summary', {
-            defaultValue:
-                'HTTP {{status}} · {{elapsed}} ms · {{size}} bytes · {{time}}',
+            defaultValue: '{{elapsed}} ms · {{size}} bytes',
             ...values,
         }),
     PreviewLimit: (values: Record<string, string | number> = {}) =>
@@ -577,6 +601,10 @@ export const text = {
         bus.i18n.t('Plugin.ApiTester.Unsaved', {
             defaultValue: 'Save changes to {{name}}?',
             ...values,
+        }),
+    UnsavedChanges: () =>
+        bus.i18n.t('Plugin.ApiTester.UnsavedChanges', {
+            defaultValue: 'Unsaved changes',
         }),
     DeleteCollection: (values: Record<string, string | number> = {}) =>
         bus.i18n.t('Plugin.ApiTester.DeleteCollection', {
@@ -758,4 +786,32 @@ export const text = {
             defaultValue: 'Body',
             ...values,
         }),
+    Confirm: () => bus.i18n.t('Plugin.ApiTester.Confirm', {defaultValue: 'Confirm action'}),
+    OverrideCollectionSettings: () => bus.i18n.t('Plugin.ApiTester.OverrideCollectionSettings', {defaultValue: 'Override global settings for this collection'}),
+    RequestHistory: (values: {name: string}) => bus.i18n.t('Plugin.ApiTester.RequestHistory', {defaultValue: 'History · {{name}}', ...values}),
+    DuplicateTab: () => bus.i18n.t('Plugin.ApiTester.DuplicateTab', {defaultValue: 'Duplicate tab'}),
+    CloseTab: () => bus.i18n.t('Plugin.ApiTester.CloseTab', {defaultValue: 'Close tab'}),
+    CloseOtherTabs: () => bus.i18n.t('Plugin.ApiTester.CloseOtherTabs', {defaultValue: 'Close other tabs'}),
+    CloseAllTabs: () => bus.i18n.t('Plugin.ApiTester.CloseAllTabs', {defaultValue: 'Close all tabs'}),
+    RevealInSidebar: () => bus.i18n.t('Plugin.ApiTester.RevealInSidebar', {defaultValue: 'Reveal in sidebar'}),
+    RunCollection: () => bus.i18n.t('Plugin.ApiTester.RunCollection', {defaultValue: 'Run collection'}),
+    AddRequest: () => bus.i18n.t('Plugin.ApiTester.AddRequest', {defaultValue: 'Add request'}),
+    CollectionRunner: () => bus.i18n.t('Plugin.ApiTester.CollectionRunner', {defaultValue: 'Collection Runner'}),
+    Requests: () => bus.i18n.t('Plugin.ApiTester.Requests', {defaultValue: 'Requests'}),
+    NoRequestsInCollection: () => bus.i18n.t('Plugin.ApiTester.NoRequestsInCollection', {defaultValue: 'This collection has no requests.'}),
+    RunConfiguration: () => bus.i18n.t('Plugin.ApiTester.RunConfiguration', {defaultValue: 'Run configuration'}),
+    Iterations: () => bus.i18n.t('Plugin.ApiTester.Iterations', {defaultValue: 'Iterations'}),
+    Delay: () => bus.i18n.t('Plugin.ApiTester.Delay', {defaultValue: 'Delay between requests (milliseconds)'}),
+    TestDataFile: () => bus.i18n.t('Plugin.ApiTester.TestDataFile', {defaultValue: 'Test data file (JSON or CSV)'}),
+    DataFileSummary: (values: {name: string; rows: number}) => bus.i18n.t('Plugin.ApiTester.DataFileSummary', {defaultValue: '{{name}} · {{rows}} rows', ...values}),
+    InvalidDataFile: () => bus.i18n.t('Plugin.ApiTester.InvalidDataFile', {defaultValue: 'The test data file is invalid or too large.'}),
+    AdvancedSettings: () => bus.i18n.t('Plugin.ApiTester.AdvancedSettings', {defaultValue: 'Advanced settings'}),
+    PersistResponses: () => bus.i18n.t('Plugin.ApiTester.PersistResponses', {defaultValue: 'Persist responses for this session'}),
+    StopOnError: () => bus.i18n.t('Plugin.ApiTester.StopOnError', {defaultValue: 'Stop run if an error occurs'}),
+    AllTests: () => bus.i18n.t('Plugin.ApiTester.AllTests', {defaultValue: 'All tests'}),
+    Errors: () => bus.i18n.t('Plugin.ApiTester.Errors', {defaultValue: 'Errors'}),
+    ConsoleLog: () => bus.i18n.t('Plugin.ApiTester.ConsoleLog', {defaultValue: 'Console log'}),
+    ResultFilters: () => bus.i18n.t('Plugin.ApiTester.ResultFilters', {defaultValue: 'Run result filters'}),
+    Iteration: (values: {number: number}) => bus.i18n.t('Plugin.ApiTester.Iteration', {defaultValue: 'Iteration {{number}}', ...values}),
+    NoMatchingResults: () => bus.i18n.t('Plugin.ApiTester.NoMatchingResults', {defaultValue: 'No matching run results.'}),
 };

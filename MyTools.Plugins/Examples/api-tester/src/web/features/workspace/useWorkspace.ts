@@ -15,7 +15,6 @@ import {
     BodyKind,
     AuthKind,
     KeyLocation,
-    AssertionKind,
     ExecutionState,
     TestState,
     ErrorKind,
@@ -31,8 +30,9 @@ import {
     type CookieRecord,
 } from '../../../shared/model.js';
 
+const RunnerTabId = 'api-tester:runner';
+
 export function useWorkspace() {
-    const DefaultExpectedStatus = '200';
     const uid = () => crypto.randomUUID();
     const HttpMethods = Object.values(HttpMethod);
     const t = useText();
@@ -41,10 +41,13 @@ export function useWorkspace() {
     const loadingWorkspace = ref(false);
     const workspaceLoadFailed = ref(false);
     const tabs = ref<Tab[]>([]);
+    const documentTabIds = ref<string[]>([]);
     const active = ref('');
+    const runnerOpen = ref(false);
+    const runnerActive = ref(false);
+    const revealRequestId = ref('');
     const collectionId = ref('');
     const search = ref('');
-    const selected = ref(new Set<string>());
     const tab = computed(() =>
         tabs.value.find((item) => item.request.id === active.value),
     );
@@ -61,17 +64,30 @@ export function useWorkspace() {
     const {
         batch,
         batchId,
-        expandedResults,
-        stopOnFailure,
+        selectedRunResultIndex,
+        runnerStage,
+        runnerCollection,
+        runnerRequests,
+        iterations,
+        delayMs,
+        dataFileName,
+        iterationData,
+        dataFileError,
+        persistResponses,
+        stopOnError,
         startingBatch,
         runInput,
         monitor,
         send,
+        configureRun,
+        loadDataFile,
         runBatch,
+        cancelBatch,
         executionCounts,
         testCounts,
-        assertionCounts,
-    } = useRuns(workspace, tabs, collection, environment, selected);
+        testResultCounts,
+        RunnerStage,
+    } = useRuns(workspace, tabs, collection, environment);
     const notificationText = computed(() => {
         t.value;
         return typeof notification.value === 'string'
@@ -92,15 +108,6 @@ export function useWorkspace() {
         [BodyKind.Form, t.value.Form()],
         [BodyKind.Multipart, t.value.Multipart()],
         [BodyKind.Binary, t.value.Binary()],
-    ]);
-    const assertionOptions = computed(() => [
-        [AssertionKind.Status, t.value.Status()],
-        [AssertionKind.Time, t.value.Time()],
-        [AssertionKind.Header, t.value.HeaderExists()],
-        [AssertionKind.Text, t.value.Contains()],
-        [AssertionKind.Exists, t.value.JsonExists()],
-        [AssertionKind.Value, t.value.JsonValue()],
-        [AssertionKind.Type, t.value.JsonType()],
     ]);
     const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value));
     const dirty = (item: Tab) => JSON.stringify(item.request) !== item.baseline;
@@ -175,7 +182,6 @@ export function useWorkspace() {
                 )),
         );
         collectionId.value = workspace.value.collections[0]?.id || '';
-        selected.value.clear();
     }
 
     function open(request: ApiRequest, owner = '') {
@@ -187,9 +193,77 @@ export function useWorkspace() {
                 runId: '',
                 running: false,
             });
+            documentTabIds.value.push(request.id);
         }
         active.value = request.id;
+        runnerActive.value = false;
         if (owner) collectionId.value = owner;
+    }
+
+    async function createRequest(owner: Collection | undefined = collection.value) {
+        if (!owner) {
+            await addCollection();
+            owner = collection.value;
+        }
+        if (!owner) return;
+        const request = newRequest(uid(), t.value.NewRequest());
+        await mutate(() => owner!.requests.push(request));
+        open(request, owner.id);
+    }
+
+    async function duplicateRequest(request: ApiRequest, owner: Collection) {
+        const draft = tabs.value.find(item => item.request.id === request.id)?.request || request;
+        const copy = {...clone(draft), id: uid()};
+        await mutate(() => owner.requests.splice(
+            owner.requests.findIndex(item => item.id === request.id) + 1, 0, copy,
+        ));
+        open(copy, owner.id);
+    }
+
+    function activateRequest(id: string) {
+        active.value = id;
+        runnerActive.value = false;
+    }
+
+    function showRunner() {
+        if (!batch.value) return;
+        if (!runnerOpen.value) documentTabIds.value.push(RunnerTabId);
+        runnerOpen.value = true;
+        runnerActive.value = true;
+        runnerStage.value = RunnerStage.Results;
+    }
+
+    function closeRunner() {
+        runnerOpen.value = false;
+        runnerActive.value = false;
+        documentTabIds.value = documentTabIds.value.filter(
+            id => id !== RunnerTabId,
+        );
+    }
+
+    function openRunner(owner: Collection | undefined = collection.value) {
+        if (batch.value && !batch.value.done) {
+            showRunner();
+            return;
+        }
+        if (!owner || !configureRun(owner)) return;
+        if (!runnerOpen.value) documentTabIds.value.push(RunnerTabId);
+        runnerOpen.value = true;
+        runnerActive.value = true;
+    }
+
+    async function closeOtherTabs(item: Tab) {
+        for (const other of [...tabs.value]) if (other !== item && !(await closeTab(other))) return;
+        activateRequest(item.request.id);
+    }
+
+    async function closeAllTabs() {
+        for (const item of [...tabs.value]) if (!(await closeTab(item))) return;
+    }
+
+    function revealInSidebar(item: Tab) {
+        collectionId.value = item.collectionId;
+        revealRequestId.value = item.request.id;
     }
 
     async function saveTab(item: Tab): Promise<boolean> {
@@ -236,6 +310,9 @@ export function useWorkspace() {
         }
         if (item.runId) await rpc(Routes.release, {id: item.runId});
         tabs.value = tabs.value.filter((tab) => tab.request.id !== item.request.id);
+        documentTabIds.value = documentTabIds.value.filter(
+            id => id !== item.request.id,
+        );
         if (active.value === item.request.id)
             active.value = tabs.value.at(-1)?.request.id || '';
         return true;
@@ -253,7 +330,6 @@ export function useWorkspace() {
                     (request) => request.id !== item.request.id,
                 );
         });
-        selected.value.delete(item.request.id);
     }
 
     async function move(item: Tab, offset: number) {
@@ -430,7 +506,6 @@ export function useWorkspace() {
 
     function selectCollection(id: string) {
         collectionId.value = id;
-        selected.value.clear();
     }
 
     let closing = false;
@@ -508,7 +583,6 @@ export function useWorkspace() {
     });
 
     return {
-        DefaultExpectedStatus,
         HttpMethods,
         t,
         workspace,
@@ -517,10 +591,14 @@ export function useWorkspace() {
         workspaceLoadFailed,
         loadWorkspace,
         tabs,
+        documentTabIds,
+        RunnerTabId,
         active,
+        runnerOpen,
+        runnerActive,
+        revealRequestId,
         collectionId,
         search,
-        selected,
         tab,
         collection,
         environment,
@@ -530,17 +608,25 @@ export function useWorkspace() {
         modal,
         batch,
         batchId,
-        expandedResults,
-        stopOnFailure,
+        selectedRunResultIndex,
+        runnerStage,
+        runnerCollection,
+        runnerRequests,
+        iterations,
+        delayMs,
+        dataFileName,
+        iterationData,
+        dataFileError,
+        persistResponses,
+        stopOnError,
         startingBatch,
         notificationText,
         authOptions,
         bodyOptions,
-        assertionOptions,
         dirty,
         executionCounts,
         testCounts,
-        assertionCounts,
+        testResultCounts,
         execution,
         test,
         name,
@@ -548,12 +634,20 @@ export function useWorkspace() {
         mutate,
         finishModal,
         addCollection,
+        createRequest,
         renameCollection,
         duplicateCollection,
         deleteCollection,
         open,
+        duplicateRequest,
+        activateRequest,
+        showRunner,
+        closeRunner,
         saveTab,
         closeTab,
+        closeOtherTabs,
+        closeAllTabs,
+        revealInSidebar,
         deleteRequest,
         move,
         addEnvironment,
@@ -570,7 +664,10 @@ export function useWorkspace() {
         runInput,
         monitor,
         send: sendRequest,
+        openRunner,
+        loadDataFile,
         runBatch,
+        cancelBatch,
         filtered,
         selectCollection,
         beforeClose,
@@ -583,8 +680,8 @@ export function useWorkspace() {
         BodyKind,
         AuthKind,
         KeyLocation,
-        AssertionKind,
         ExecutionState,
         TestState,
+        RunnerStage,
     };
 }

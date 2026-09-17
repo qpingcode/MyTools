@@ -14,6 +14,11 @@ import {
 
 const TestTimeoutMs = 10_000;
 const FixtureStatus = 200;
+const WideViewport = {width: 1280, height: 960};
+const CompactViewport = {width: 640, height: 960};
+const CompactPanelSelectWidth = 180;
+const RequestPanelCollapseWidth = 640;
+const ResponseSearchInputWidth = 200;
 const output = path.resolve('bin/AgentVerification/ui-fixture.mjs');
 await build({
   entryPoints: ['tests/ui-fixture.mts'],
@@ -66,7 +71,7 @@ const url = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({ channel: 'msedge', headless: true });
 try {
   const page = await browser.newPage({
-    viewport: { width: 1280, height: 960 },
+    viewport: WideViewport,
   });
   page.setDefaultTimeout(TestTimeoutMs);
   const errors = [];
@@ -92,7 +97,10 @@ try {
       runner.switchEnvironment(payload.id);
     else if (method === Routes.curl) value = runner.curl(payload);
     else if (method === Routes.history) value = historyEntries;
-    else if (method === Routes.clearHistory) historyEntries = [];
+    else if (method === Routes.clearHistory)
+      historyEntries = payload?.requestId
+        ? historyEntries.filter(entry => entry.request.id !== payload.requestId)
+        : [];
     else if (method === Routes.cookies) runner.clearCookies();
     else if (method === Routes.listCookies) value = await runner.listCookies();
     else if (method === Routes.start) value = runner.start(payload);
@@ -315,17 +323,12 @@ try {
       .click();
   }
   await create('Login', '/login');
-  await page
-    .getByRole('tab', { name: 'JSON variable extraction', exact: true })
-    .click();
-  const extraction = page.getByRole('tabpanel');
-  await extraction.getByRole('button', { name: 'Add', exact: true }).click();
-  await extraction
-    .getByRole('textbox', { name: 'JSON Pointer / header name', exact: true })
-    .fill('/token');
-  await extraction
-    .getByRole('textbox', { name: 'Target variable name', exact: true })
-    .fill('token');
+  assert.equal(await page.getByRole('tab', {name: 'Assertions', exact: true}).count(), 0);
+  assert.equal(await page.getByRole('tab', {name: 'JSON variable extraction', exact: true}).count(), 0);
+  await page.getByRole('tab', {name: 'Scripts', exact: true}).click();
+  await page.getByRole('button', {name: 'After response', exact: true}).click();
+  await page.getByRole('textbox', {name: 'After response', exact: true})
+    .fill("pm.variables.set('token', pm.response.json().token);");
   await save();
   await page.getByRole('button', { name: 'Send', exact: true }).click();
   await page.locator('.response pre').filter({ hasText: 'abc' }).waitFor();
@@ -354,6 +357,32 @@ try {
   await cookiesDialog.locator('.dialog-titlebar').getByRole('button', { name: 'Close', exact: true }).click();
   await cookiesDialog.waitFor({ state: 'detached' });
   await create('User', '/user');
+  const requestHistoryButton = page.getByRole('button', {name: 'History · User', exact: true});
+  await requestHistoryButton.waitFor();
+  assert.equal(await page.locator('.response-toolbar').getByRole('button', {name: 'History · User', exact: true}).count(), 1);
+  assert.equal(await page.locator('.config-bar').getByRole('button', {name: 'History · User', exact: true}).count(), 0);
+  const requestPanelSelect = page.locator('.request-panel-select');
+  assert.equal(await requestPanelSelect.isHidden(), true);
+  await page.setViewportSize(CompactViewport);
+  const compactRequestEditorWidth = await page.locator('.request-editor').evaluate(element => element.getBoundingClientRect().width);
+  assert.ok(compactRequestEditorWidth <= RequestPanelCollapseWidth,
+    `Compact request editor width: ${compactRequestEditorWidth}px`);
+  await requestPanelSelect.waitFor({state: 'visible'});
+  assert.equal(await page.locator('.config-tabs').isHidden(), true);
+  const restingRequestSelectStyle = await requestPanelSelect.evaluate(element => ({
+    background: getComputedStyle(element).backgroundColor,
+    border: getComputedStyle(element).borderColor,
+  }));
+  await requestPanelSelect.hover();
+  const hoveredRequestSelectStyle = await requestPanelSelect.evaluate(element => ({
+    background: getComputedStyle(element).backgroundColor,
+    border: getComputedStyle(element).borderColor,
+  }));
+  assert.notDeepEqual(hoveredRequestSelectStyle, restingRequestSelectStyle);
+  await requestPanelSelect.selectOption('Headers');
+  assert.equal((await requestPanelSelect.locator('option:checked').textContent()).trim(), 'Headers');
+  await page.setViewportSize(WideViewport);
+  await page.getByRole('tab', {name: 'Headers', exact: true}).waitFor();
   // Default input rows are visual drafts, not saved configuration.
   assert.equal(await page.getByRole('tabpanel').locator('.pair').count(), 1);
   assert.equal(workspace.collections[0].requests.at(-1).params.length, 0);
@@ -432,21 +461,22 @@ try {
     .locator('.response pre')
     .filter({ hasText: 'Bearer abc' })
     .waitFor();
-  await page
-    .getByRole('button', {
-      name: 'Run collection / selected requests',
-      exact: true,
-    })
-    .click();
+  const runCollectionHeading = page.locator('.collection-heading').first();
+  await runCollectionHeading.click({button: 'right'});
+  await page.getByRole('menuitem', {name: 'Run collection', exact: true}).click();
+  await page.locator('.runner-options').getByRole('button', { name: 'Run collection', exact: true }).click();
   await page.getByText(/2 \/ 2 requests/).waitFor();
-  await page
-    .locator('.workspace-scroll > div')
-    .filter({
-      has: page.getByRole('heading', { name: 'Run results', exact: true }),
-    })
-    .locator('details > summary')
-    .filter({ hasText: /^User/ })
-    .click();
+  const runnerWorkspace = page.locator('.runner-workspace');
+  await runnerWorkspace.locator('.runner-result-list > button').filter({ hasText: /^User/ }).click();
+  const runnerTab = page.locator('.document-tabs > .document-tab').filter({hasText: 'Run results'});
+  assert.equal(await page.locator('.sidebar-run').count(), 0);
+  assert.equal(await page.locator('.runner-document-tab').count(), 0);
+  await runnerTab.getByRole('button', { name: 'Close', exact: true }).click();
+  assert.equal(await runnerWorkspace.count(), 0);
+  await runCollectionHeading.click({button: 'right'});
+  await page.getByRole('menuitem', {name: 'Run collection', exact: true}).click();
+  await page.getByRole('heading', {name: 'Collection Runner', exact: true}).waitFor();
+  await page.locator('.document-tab.selected').getByRole('button', {name: 'Close', exact: true}).click();
   assert.equal(workspace.collections[0].requests.length, 2);
   // CRUD controls operate from the sidebar, including unopened requests.
   const userRow = page
@@ -497,36 +527,80 @@ try {
   await page.getByRole('menuitem', { name: 'Duplicate', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Cancel', exact: true }).click();
   await collectionHeading.click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Run collection', exact: true }).waitFor();
+  await page.getByRole('menuitem', { name: 'Add request', exact: true }).waitFor();
+  await page.keyboard.press('Escape');
+  await collectionHeading.click({ button: 'right' });
   await page.getByRole('menuitem', { name: 'Delete', exact: true }).click();
+  await page.getByText(/Delete this collection and its \d+ requests\?/, { exact: true }).waitFor();
   await page.getByRole('dialog').getByRole('button', { name: 'Cancel', exact: true }).click();
   await collectionHeading.click({ button: 'right' });
   await page.getByRole('menuitem', { name: 'Collection settings', exact: true }).click();
   const settingsDialog = page.locator('.feature-dialog');
   await settingsDialog.getByLabel('Name', { exact: true }).last().fill('X-Common');
   await settingsDialog.getByLabel('Value', { exact: true }).first().fill('shared');
+  await settingsDialog.getByRole('checkbox', { name: 'Override global settings for this collection', exact: true }).check();
+  await settingsDialog.getByRole('spinbutton', { name: 'Timeout (milliseconds)', exact: true }).fill('15000');
   await settingsDialog.getByRole('button', { name: 'Save', exact: true }).click();
   assert.equal(workspace.collections[0].headers[0].value, 'shared');
+  assert.equal(workspace.collections[0].settings.timeoutMs, 15000);
 
-  // Script and assertion editors are persisted and execute on an actual request.
+  // Post-response scripts own tests and response-value extraction.
   await page.getByRole('tab', { name: 'Scripts', exact: true }).click();
   await page.getByRole('textbox', { name: 'Before request', exact: true }).fill("pm.request.headers.upsert({key:'X-Ui', value:'yes'}); console.log('ui-before');");
   await page.getByRole('button', { name: 'After response', exact: true }).click();
-  await page.getByRole('textbox', { name: 'After response', exact: true }).fill("pm.test('ui-script', () => pm.response.to.have.status(200)); console.log('ui-after');");
-  await page.getByRole('tab', { name: 'Assertions', exact: true }).click();
-  await page.locator('.config-panel').getByRole('button', { name: 'Add', exact: true }).click();
-  await page.getByRole('textbox', { name: 'Test name', exact: true }).last().fill('ui-status');
+  await page.getByRole('textbox', { name: 'After response', exact: true }).fill("pm.test('ui-script', () => pm.response.to.have.status(200)); pm.test('ui-status', () => pm.expect(pm.response.code).to.equal(200)); pm.variables.set('ui-token', pm.response.json().auth); console.log('ui-after');");
   await save();
   await page.getByRole('button', { name: 'Send', exact: true }).click();
-  await page.locator('.response .status-badge').filter({ hasText: '200' }).waitFor();
-  await page.locator('.response').getByRole('button', { name: 'Script console', exact: true }).click();
-  await page.locator('.response .script-console').filter({ hasText: 'ui-after' }).waitFor();
+  const response = page.locator('.response');
+  await response.locator('.status-badge').filter({ hasText: '200' }).waitFor();
+  assert.equal(await response.locator('.result-badge').count(), 0);
+  assert.match(await response.locator('.response-meta > .muted').innerText(), /^\d+ ms · \d+ bytes$/);
+  assert.equal(await response.locator('.response-panel-select').isHidden(), true);
+  const bodyPanelBounds = await response.getByRole('button', {name: 'Body', exact: true}).boundingBox();
+  const responseMetaBounds = await response.locator('.response-meta').boundingBox();
+  assert.ok(bodyPanelBounds && responseMetaBounds && bodyPanelBounds.x < responseMetaBounds.x);
+  await page.setViewportSize(CompactViewport);
+  const responsePanelSelect = response.locator('.response-panel-select');
+  await responsePanelSelect.waitFor({state: 'visible'});
+  const compactSelectBounds = await responsePanelSelect.boundingBox();
+  const compactMetaBounds = await response.locator('.response-meta').boundingBox();
+  assert.ok(compactSelectBounds && compactMetaBounds && compactSelectBounds.x < compactMetaBounds.x);
+  assert.equal(compactSelectBounds.width, CompactPanelSelectWidth);
+  await responsePanelSelect.selectOption('ScriptConsole');
+  assert.equal((await responsePanelSelect.locator('option:checked').textContent()).trim(), 'Script console');
+  await response.locator('.script-console').filter({ hasText: 'ui-after' }).waitFor();
+  await page.setViewportSize(WideViewport);
   assert.equal(workspace.collections[0].requests.find(r => r.name === 'User').scripts.enabled, true);
-  await page.locator('.response').getByRole('button', { name: 'Assertions', exact: true }).click();
-  await page.locator('.response').getByText('Pass · ui-script', { exact: true }).waitFor();
-  await page.locator('.response').getByText('Pass · ui-status', { exact: true }).waitFor();
+  await response.getByRole('button', { name: 'Test results', exact: true }).click();
+  await response.getByText('Pass · ui-script', { exact: true }).waitFor();
+  await response.getByText('Pass · ui-status', { exact: true }).waitFor();
+  await page.getByRole('button', { name: 'History · User', exact: true }).click();
+  const requestHistoryDialog = page.getByRole('dialog', { name: 'History · User', exact: true });
+  await requestHistoryDialog.locator('.history-row').first().waitFor();
+  assert.equal(await requestHistoryDialog.locator('.history-row').filter({hasText: 'Login'}).count(), 0);
+  const requestHistorySnapshot = structuredClone(historyEntries);
+  const userRequestId = workspace.collections[0].requests.find(request => request.name === 'User').id;
+  assert.ok(historyEntries.some(entry => entry.request.id !== userRequestId));
+  await requestHistoryDialog.getByRole('button', {name: 'Clear request history', exact: true}).click();
+  const clearRequestHistoryDialog = page.getByRole('dialog', {name: 'Clear request history', exact: true});
+  await clearRequestHistoryDialog.getByText('Clear saved history for User?', {exact: true}).waitFor();
+  await clearRequestHistoryDialog.getByRole('button', {name: 'Continue', exact: true}).click();
+  await requestHistoryDialog.getByText('No matching request history.', {exact: true}).waitFor();
+  assert.equal(historyEntries.some(entry => entry.request.id === userRequestId), false);
+  assert.ok(historyEntries.some(entry => entry.request.id !== userRequestId));
+  historyEntries = requestHistorySnapshot;
+  await requestHistoryDialog.getByRole('button', { name: 'Cancel', exact: true }).click();
 
   // JSON tree folding and response search highlight the payload safely.
   await page.locator('.response').getByRole('button', { name: 'Body', exact: true }).click();
+  const responseBodyToolbar = page.locator('.response .body-toolbar');
+  const responseSearchInput = responseBodyToolbar.getByRole('textbox', {name: 'Search response', exact: true});
+  await responseSearchInput.waitFor();
+  const rawButtonBounds = await responseBodyToolbar.getByRole('button', {name: 'Raw', exact: true}).boundingBox();
+  const responseSearchBounds = await responseSearchInput.boundingBox();
+  assert.ok(rawButtonBounds && responseSearchBounds && responseSearchBounds.x > rawButtonBounds.x);
+  assert.equal(responseSearchBounds.width, ResponseSearchInputWidth);
   await page.locator('.response').getByRole('button', { name: 'JSON tree', exact: true }).click();
   await page.locator('.response').getByRole('button', { name: 'Collapse all', exact: true }).click();
   assert.equal(await page.locator('.response .json-tree details').first().evaluate(element => element.open), false);
@@ -572,8 +646,20 @@ try {
   assert.equal(workspace.collections.at(-1).requests.find(r => r.name === 'User').scripts.enabled, false);
 
   // History shows the sent headers and can reopen the recorded request.
+  const globalHistorySnapshot = structuredClone(historyEntries);
+  const paginationFixture = historyEntries[0];
+  for (let index = 0; index < 21; index++)
+    historyEntries.push({...structuredClone(paginationFixture), id: `pagination-${index}`});
+  const paginationTotal = historyEntries.length;
   await historyButton.click();
   await page.getByRole('dialog', { name: 'History', exact: true }).waitFor();
+  const historyPagination = toolsDialog.getByRole('navigation', {name: 'History pages', exact: true});
+  await historyPagination.getByText(`${paginationTotal} records`, {exact: true}).waitFor();
+  await historyPagination.getByText(/Page 1 of \d+/).waitFor();
+  await historyPagination.getByRole('button', {name: 'Next page', exact: true}).click();
+  await historyPagination.getByText(/Page 2 of \d+/).waitFor();
+  await historyPagination.getByRole('button', {name: 'Previous page', exact: true}).click();
+  historyEntries = globalHistorySnapshot;
   const historyActions = toolsDialog.locator('.dialog-actions');
   const reopenRequestButton = historyActions.getByRole('button', { name: 'Reopen request', exact: true });
   assert.equal(await reopenRequestButton.isDisabled(), true);
@@ -616,12 +702,19 @@ try {
   await page.keyboard.press('Escape');
   assert.equal(await hiddenRequestsButton.getAttribute('aria-expanded'), 'false');
   await page.setViewportSize(DefaultViewport);
+  await page.evaluate(() => new Promise(resolve =>
+    requestAnimationFrame(() => requestAnimationFrame(resolve))));
   const userTab = page.locator('.document-tab').filter({ hasText: 'User' }).first();
   if (await userTab.count()) await userTab.locator('button').first().click();
   else {
     await hiddenRequestsButton.click();
     await page.locator('.request-tabs-menu').getByRole('menuitem').filter({ hasText: 'User' }).first().click();
   }
+  const activeTab = page.locator('.document-tab.selected');
+  await activeTab.click({button: 'right'});
+  for (const item of ['New request', 'Duplicate tab', 'Close tab', 'Close other tabs', 'Close all tabs', 'Reveal in sidebar'])
+    await page.getByRole('menuitem', {name: item, exact: true}).waitFor();
+  await page.keyboard.press('Escape');
   await page.getByRole('tab', { name: 'Authentication', exact: true }).click();
   await page
     .locator('.workspace-scroll')
@@ -637,8 +730,11 @@ try {
     .first()
     .fill('User changed');
   const close = page.evaluate(() => window.mytoolsBeforeClose());
+  const unsavedDialog = page.getByRole('dialog', {name: 'Unsaved changes', exact: true});
+  await unsavedDialog.getByRole('heading', {name: 'Unsaved changes', exact: true}).waitFor();
+  await unsavedDialog.getByText('Save changes to User changed?', {exact: true}).waitFor();
   await page
-    .getByRole('dialog')
+    .getByRole('dialog', {name: 'Unsaved changes', exact: true})
     .getByRole('button', { name: 'Cancel', exact: true })
     .click();
   assert.equal(await close, false);
@@ -694,7 +790,7 @@ try {
   });
   assert.deepEqual(errors, []);
   console.log(
-    'UI smoke passed: divider dragging/keyboard resizing, sidebar request CRUD and ordering, configuration tabs, saving, login chaining, assertions, batch results, close cancellation, live Chinese and theme changes; collection headers, scripts, assertion editing, JSON tree/search, backup export/import and request history.',
+    'UI smoke passed: divider dragging/keyboard resizing, sidebar request CRUD and ordering, configuration tabs, saving, login chaining, script tests, batch results, close cancellation, live Chinese and theme changes; collection headers, scripts, JSON tree/search, backup export/import and request history.',
   );
 } finally {
   await browser.close();

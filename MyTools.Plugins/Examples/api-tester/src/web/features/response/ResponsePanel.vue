@@ -6,7 +6,6 @@ import {
   HttpHeader,
   Routes,
   ExecutionState,
-  TestState,
   Limits,
   ScriptPhase,
   ScriptLogLevel,
@@ -14,13 +13,22 @@ import {
 } from '../../../shared/model.js';
 import {rpc, errorText, notification} from '../../services/rpc.js';
 import {useText} from '../../localization/locale.js';
+import WorkspaceTools from '../workspace/WorkspaceTools.vue';
+import {WorkspaceTool} from '../workspace/workspaceToolTypes.js';
 
 const props = defineProps<{
-  result: RequestResult;
+  result?: RequestResult;
   runId: string;
   index: number;
+  requestId?: string;
+  requestName?: string;
 }>();
 const t = useText();
+
+function currentResult(): RequestResult {
+  if (!props.result) throw new Error('Response result is unavailable');
+  return props.result;
+}
 
 function execution(state: ExecutionState) {
   return {
@@ -28,15 +36,6 @@ function execution(state: ExecutionState) {
     [ExecutionState.Failed]: t.value.Failed,
     [ExecutionState.Cancelled]: t.value.Cancelled,
     [ExecutionState.Skipped]: t.value.Skipped,
-  }[state]();
-}
-
-function test(state: TestState) {
-  return {
-    [TestState.Passed]: t.value.Passed,
-    [TestState.Failed]: t.value.TestFailed,
-    [TestState.Untested]: t.value.Untested,
-    [TestState.NotApplicable]: t.value.NotApplicable,
   }[state]();
 }
 
@@ -50,8 +49,9 @@ async function fullBody(): Promise<Uint8Array<ArrayBuffer>> {
 
 async function copy() {
   const bytes = await fullBody();
+  const result = currentResult();
   const type =
-      props.result.headers.find(
+      result.headers.find(
           (h) => h.name.toLowerCase() === HttpHeader.ContentType,
       )?.value || '';
   const charset = /charset\s*=\s*["']?([^\s;"']+)/i.exec(type)?.[1] || 'utf-8';
@@ -64,55 +64,50 @@ async function copy() {
 
 async function save() {
   const bytes = await fullBody();
+  const result = currentResult();
   const url = URL.createObjectURL(new Blob([bytes]));
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = props.result.binary ? 'response.bin' : 'response.txt';
+  anchor.download = result.binary ? 'response.bin' : 'response.txt';
   anchor.click();
   setTimeout(() => URL.revokeObjectURL(url), Limits.pollMs);
 }
 
 async function copyHeaders() {
   await navigator.clipboard.writeText(
-      props.result.headers.map((h) => `${h.name}: ${h.value}`).join('\r\n'),
+      currentResult().headers.map((h) => `${h.name}: ${h.value}`).join('\r\n'),
   );
 }
 
-const panel = ref<'Body' | 'ResponseHeaders' | 'RequestHeaders' | 'Assertions' | 'ScriptConsole'>(
-    'Body',
-);
+enum ResponsePanelId {
+  Body = 'Body',
+  ResponseHeaders = 'ResponseHeaders',
+  RequestHeaders = 'RequestHeaders',
+  TestResults = 'TestResults',
+  ScriptConsole = 'ScriptConsole',
+}
+
+const panel = ref(ResponsePanelId.Body);
 const responsePanels = [
-  'Body',
-  'ResponseHeaders',
-  'RequestHeaders',
-  'Assertions',
-  'ScriptConsole',
+  ResponsePanelId.Body,
+  ResponsePanelId.ResponseHeaders,
+  ResponsePanelId.RequestHeaders,
+  ResponsePanelId.TestResults,
+  ResponsePanelId.ScriptConsole,
 ] as const;
+
+function panelLabel(item: ResponsePanelId) {
+  return item === ResponsePanelId.Body ? t.value.ResponseBody() : t.value[item]();
+}
 </script>
 <template>
   <div class="response-panel">
-    <div class="response-meta" :title="result.url">
-      <span class="status-badge" :data-state="result.execution"
-      >{{ result.status ?? execution(result.execution) }}
-        {{ result.statusText }}</span
-      ><span class="result-badge" :data-state="result.test">{{
-        test(result.test)
-      }}</span
-    ><span class="muted">{{
-        t.Summary({
-          status: result.status ?? '—',
-          elapsed: Math.round(result.elapsedMs),
-          size: result.size,
-          time: result.completedAt,
-        })
-      }}</span>
-    </div>
-    <p v-if="result.error" class="error">{{ errorText(result.error) }}</p>
-    <p v-if="result.warnings.length" class="muted">
+    <p v-if="result?.error" class="error">{{ errorText(result.error) }}</p>
+    <p v-if="result?.warnings.length" class="muted">
       {{ t.ContentTypeWarning() }}
     </p>
     <div class="response-toolbar">
-      <div class="config-tabs response-tabs">
+      <div v-if="result" class="config-tabs response-tabs">
         <button
             v-for="item in responsePanels"
             :key="item"
@@ -120,31 +115,59 @@ const responsePanels = [
             :aria-pressed="panel === item"
             @click="panel = item"
         >
-          {{ item === 'Body' ? t.ResponseBody() : t[item]() }}
+          {{ panelLabel(item) }}
         </button>
       </div>
-      <div class="icon-actions">
-        <IconButton
-            icon="copy"
-            :label="t.Copy()"
-            :disabled="result.binary || !result.bodyAvailable"
-            @click="copy"
-        />
-        <IconButton
-            icon="file"
-            :label="t.CopyHeaders()"
-            @click="copyHeaders"
-        />
-        <IconButton
-            icon="download"
-            :label="t.SaveBody()"
-            :disabled="!result.bodyAvailable"
-            @click="save"
-        />
+      <select v-if="result" v-model="panel" class="panel-select response-panel-select" :aria-label="t.Response()">
+        <option v-for="item in responsePanels" :key="item" :value="item">
+          {{ panelLabel(item) }}
+        </option>
+      </select>
+      <div v-if="result" class="response-toolbar-trailing">
+        <div class="response-meta" :title="result.url">
+          <span class="status-badge" :data-state="result.execution"
+          >{{ result.status ?? execution(result.execution) }}
+            {{ result.statusText }}</span
+          ><span class="muted">{{
+              t.Summary({
+                elapsed: Math.round(result.elapsedMs),
+                size: result.size,
+              })
+            }}</span>
+        </div>
+        <div class="icon-actions">
+          <WorkspaceTools v-if="requestId" :tool="WorkspaceTool.History" :request-id="requestId"
+                          :request-name="requestName" icon-only/>
+          <IconButton
+              icon="copy"
+              :label="t.Copy()"
+              :disabled="result.binary || !result.bodyAvailable"
+              @click="copy"
+          />
+          <IconButton
+              icon="file"
+              :label="t.CopyHeaders()"
+              @click="copyHeaders"
+          />
+          <IconButton
+              icon="download"
+              :label="t.SaveBody()"
+              :disabled="!result.bodyAvailable"
+              @click="save"
+          />
+        </div>
+      </div>
+      <div v-else class="response-toolbar-trailing">
+        <div class="icon-actions">
+          <WorkspaceTools v-if="requestId" :tool="WorkspaceTool.History" :request-id="requestId"
+                          :request-name="requestName" icon-only/>
+        </div>
       </div>
     </div>
-    <ResponseBodyView v-if="panel === 'Body'" :result="result"/>
-    <div v-if="panel === 'ScriptConsole'" class="response-code script-console">
+    <slot v-if="!result" name="empty"/>
+    <template v-else>
+    <ResponseBodyView v-if="panel === ResponsePanelId.Body" :result="result"/>
+    <div v-if="panel === ResponsePanelId.ScriptConsole" class="response-code script-console">
       <p v-if="!result.scriptLogs?.length" class="muted">{{ t.NoScriptLogs() }}</p>
       <div v-for="(log, index) in result.scriptLogs" :key="index"
            :class="log.level === ScriptLogLevel.Error ? 'error' : ''"><span
@@ -153,7 +176,7 @@ const responsePanels = [
         }}</span> {{ log.text }}
       </div>
     </div>
-    <div v-if="panel === 'ResponseHeaders' || panel === 'RequestHeaders'" class="response-table-scroll">
+    <div v-if="panel === ResponsePanelId.ResponseHeaders || panel === ResponsePanelId.RequestHeaders" class="response-table-scroll">
       <table class="response-headers-table">
         <colgroup>
           <col class="response-header-name-column"/>
@@ -167,7 +190,7 @@ const responsePanels = [
         </thead>
         <tbody>
         <tr
-            v-for="(header, index) in panel === 'ResponseHeaders'
+            v-for="(header, index) in panel === ResponsePanelId.ResponseHeaders
             ? result.headers
             : result.requestHeaders"
             :key="index"
@@ -178,7 +201,7 @@ const responsePanels = [
         </tbody>
       </table>
     </div>
-    <div v-if="panel === 'Assertions' && result.assertions.length" class="response-table-scroll">
+    <div v-if="panel === ResponsePanelId.TestResults && result.assertions.length" class="response-table-scroll">
       <table class="response-assertions-table">
         <colgroup>
           <col class="response-assertion-name-column"/>
@@ -187,7 +210,7 @@ const responsePanels = [
         </colgroup>
         <thead>
         <tr>
-          <th>{{ t.Assertions() }}</th>
+          <th>{{ t.TestResults() }}</th>
           <th>{{ t.Actual() }}</th>
           <th>{{ t.Expected() }}</th>
         </tr>
@@ -207,8 +230,9 @@ const responsePanels = [
         </tbody>
       </table>
     </div>
-    <p v-if="panel === 'Assertions' && !result.assertions.length" class="muted">
+    <p v-if="panel === ResponsePanelId.TestResults && !result.assertions.length" class="muted">
       {{ t.Untested() }}
     </p>
+    </template>
   </div>
 </template>

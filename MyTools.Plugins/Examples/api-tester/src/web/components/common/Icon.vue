@@ -8,6 +8,7 @@ const paths = {
   'arrow-up': 'M12 20V4m-6 6 6-6 6 6',
   'arrow-down': 'M12 4v16m-6-6 6 6 6-6',
   'chevron-down': 'm6 9 6 6 6-6',
+  'chevron-left': 'm15 6-6 6 6 6',
   'chevron-right': 'm9 6 6 6-6 6',
   folder: 'M3 5h7l2 3h9v12H3z',
   'folder-plus': 'M3 5h7l2 3h9v12H3zM12 11v6m-3-3h6',

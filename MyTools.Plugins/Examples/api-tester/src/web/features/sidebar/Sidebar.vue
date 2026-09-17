@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {ref, watch} from 'vue';
+import {nextTick, ref, watch} from 'vue';
 import SidebarContextMenu from './SidebarContextMenu.vue';
 import {SidebarMenuKind} from './sidebarMenuTypes.js';
 import {useWorkspaceContext} from '../workspace/context.js';
@@ -45,27 +45,22 @@ const {
   active,
   collectionId,
   search,
-  selected,
-  collection,
-  batch,
-  stopOnFailure,
-  startingBatch,
-  mutate,
   addCollection,
+  createRequest,
   renameCollection,
   duplicateCollection,
   deleteCollection,
   open,
+  duplicateRequest,
   deleteRequest,
   move,
-  runBatch,
+  openRunner,
   filtered,
   selectCollection,
-  uid,
-  clone,
+  revealRequestId,
 } = useWorkspaceContext();
 import Icon from '../../components/common/Icon.vue';
-import {HttpMethod, newRequest} from '../../../shared/model.js';
+import {HttpMethod} from '../../../shared/model.js';
 import type {ApiRequest, Collection} from '../../../shared/model.js';
 
 const SidebarMethodAbbreviations: Readonly<Record<string, string | undefined>> = {
@@ -101,36 +96,14 @@ function requestTab(request: ApiRequest, owner: Collection) {
   );
 }
 
-async function createRequest() {
-  if (!collection.value) await addCollection();
-  const owner = collection.value;
-  if (!owner) return;
-  const request = newRequest(uid(), t.value.NewRequest());
-  await mutate(() => owner.requests.push(request));
-  expanded.value.add(owner.id);
-  open(request, owner.id);
-}
-
-async function copyRequest(request: ApiRequest, owner: Collection) {
-  const draft =
-      tabs.value.find((item) => item.request.id === request.id)?.request ||
-      request;
-  const copy = {...clone(draft), id: uid()};
-  await mutate(() =>
-      owner.requests.splice(
-          owner.requests.findIndex((item) => item.id === request.id) + 1,
-          0,
-          copy,
-      ),
-  );
-  expanded.value.add(owner.id);
-  open(copy, owner.id);
-}
-
-function toggleSelection(id: string, ownerId: string) {
-  if (collectionId.value !== ownerId) selectCollection(ownerId);
-  selected.value.has(id) ? selected.value.delete(id) : selected.value.add(id);
-}
+watch(revealRequestId, async id => {
+  if (!id) return;
+  const owner = workspace.value.collections.find(item => item.requests.some(request => request.id === id));
+  if (owner) expanded.value.add(owner.id);
+  await nextTick();
+  document.querySelector<HTMLElement>(`[data-request-id="${CSS.escape(id)}"]`)?.scrollIntoView({block: 'nearest'});
+  revealRequestId.value = '';
+});
 </script>
 <template>
   <aside class="sidebar">
@@ -145,7 +118,7 @@ function toggleSelection(id: string, ownerId: string) {
         <IconButton
             icon="plus"
             :label="t.NewRequest()"
-            @click="createRequest"
+            @click="createRequest()"
         />
       </div>
     </div>
@@ -196,13 +169,7 @@ function toggleSelection(id: string, ownerId: string) {
               @contextmenu="showRequestMenu($event, request, owner)"
               @keydown="showRequestMenu($event, request, owner)"
           >
-            <input
-                type="checkbox"
-                :aria-label="request.name"
-                :checked="selected.has(request.id)"
-                @change="toggleSelection(request.id, owner.id)"
-            />
-            <button class="request-title" @click="open(request, owner.id)">
+            <button class="request-title" :data-request-id="request.id" @click="open(request, owner.id)">
               <span class="method-label" :data-method="request.method" :title="request.method"
                     :aria-label="request.method">{{
                   SidebarMethodAbbreviations[request.method] ?? request.method
@@ -213,24 +180,6 @@ function toggleSelection(id: string, ownerId: string) {
           >
         </template>
       </div>
-    </div>
-    <div class="sidebar-run">
-      <button
-          class="run-button"
-          :disabled="!collection || (startingBatch && (!batch || batch.done))"
-          @click="runBatch"
-      >
-        <Icon :name="batch && !batch.done ? 'stop' : 'play'"/>
-        {{
-          batch && !batch.done ? t.Cancel() : t.Run()
-        }}
-      </button
-      >
-      <label class="check"
-      ><input type="checkbox" v-model="stopOnFailure"/>{{
-          t.StopOnFailure()
-        }}</label
-      >
     </div>
   </aside>
   <CollectionSettings v-if="settingsCollection" :collection="settingsCollection"
@@ -244,13 +193,15 @@ function toggleSelection(id: string, ownerId: string) {
                       @close="requestMenu = undefined"
                       @up="move(requestTab(requestMenu.request, requestMenu.owner), -1)"
                       @down="move(requestTab(requestMenu.request, requestMenu.owner), 1)"
-                      @copy="copyRequest(requestMenu.request, requestMenu.owner)"
+                      @copy="duplicateRequest(requestMenu.request, requestMenu.owner)"
                       @delete="deleteRequest(requestTab(requestMenu.request, requestMenu.owner))"/>
   <SidebarContextMenu v-if="collectionMenu" :kind="SidebarMenuKind.Collection"
                       :key="collectionMenu.owner.id + ':' + collectionMenu.x + ':' + collectionMenu.y"
                       :x="collectionMenu.x" :y="collectionMenu.y" :trigger="collectionMenu.trigger"
                       :label="collectionMenu.owner.name"
                       @close="collectionMenu = undefined"
+                      @run="openRunner(collectionMenu.owner)"
+                      @add="createRequest(collectionMenu.owner)"
                       @settings="settingsCollection = collectionMenu.owner"
                       @rename="renameCollection(collectionMenu.owner)"
                       @copy="duplicateCollection(collectionMenu.owner)"

@@ -7,6 +7,7 @@ import AuthenticationEditor from '../../components/common/AuthenticationEditor.v
 import PairTable from '../../components/common/PairTable.vue';
 import ScriptsEditor from '../../components/common/ScriptsEditor.vue';
 import IconButton from '../../components/common/IconButton.vue';
+import SettingsEditor from '../../components/common/SettingsEditor.vue';
 
 const props = defineProps<{ collection: Collection }>();
 const emit = defineEmits<{ close: [] }>();
@@ -14,7 +15,8 @@ const {t, clone, mutate, workspace} = useWorkspaceContext();
 const draft = ref({
   ...clone(props.collection),
   auth: clone(props.collection.auth || newRequest('', '').auth),
-  headers: clone(props.collection.headers || [])
+  headers: clone(props.collection.headers || []),
+  settings: props.collection.settings ? clone(props.collection.settings) : undefined
 });
 const dialog = ref<HTMLDialogElement>();
 const saving = ref(false);
@@ -29,7 +31,8 @@ async function save() {
       if (owner) Object.assign(owner, {
         auth: clone(draft.value.auth),
         headers: clone(draft.value.headers),
-        scripts: draft.value.scripts ? clone(draft.value.scripts) : undefined
+        scripts: draft.value.scripts ? clone(draft.value.scripts) : undefined,
+        settings: draft.value.settings ? clone(draft.value.settings) : undefined
       });
     });
     emit('close');
@@ -54,6 +57,12 @@ async function save() {
       <PairTable :values="draft.headers" headers/>
       <h2>{{ t.Scripts() }}</h2>
       <ScriptsEditor v-model="draft.scripts"/>
+      <h2>{{ t.Settings() }}</h2>
+      <label class="check"><input type="checkbox" :checked="!!draft.settings"
+                                  @change="draft.settings = ($event.target as HTMLInputElement).checked ? clone(workspace.defaults) : undefined"/>
+        {{ t.OverrideCollectionSettings() }}
+      </label>
+      <SettingsEditor v-if="draft.settings" :value="draft.settings"/>
     </div>
     <div class="dialog-actions">
       <button @click="emit('close')">{{ t.Cancel() }}</button>
