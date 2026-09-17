@@ -32,9 +32,10 @@ MyTools 提供完整版（内置 .NET 和 Node.js 运行时）与精简版（需
 | --- | --- | --- | --- | --- |
 | **完整版** | **Stable** | translator-local-v1 | 尚未发布 | 尚未发布 |
 | **精简版** | **Stable** | translator-local-v1 | 尚未发布 | 尚未发布 |
-| **完整版** | **Beta** | 0.0.71 | [下载](https://github.com/qpingcode/MyTools/releases/download/v0.0.71/MyTools-0.0.71-windows-x64-full-setup.exe) | [下载](https://github.com/qpingcode/MyTools/releases/download/v0.0.71/MyTools-0.0.71-windows-x64-full-portable.zip) |
-| **精简版** | **Beta** | 0.0.71 | [下载](https://github.com/qpingcode/MyTools/releases/download/v0.0.71/MyTools-0.0.71-windows-x64-lite-setup.exe) | [下载](https://github.com/qpingcode/MyTools/releases/download/v0.0.71/MyTools-0.0.71-windows-x64-lite-portable.zip) |
+| **完整版** | **Beta** | 0.0.72 | [下载](https://github.com/qpingcode/MyTools/releases/download/v0.0.72/MyTools-0.0.72-windows-x64-full-setup.exe) | [下载](https://github.com/qpingcode/MyTools/releases/download/v0.0.72/MyTools-0.0.72-windows-x64-full-portable.zip) |
+| **精简版** | **Beta** | 0.0.72 | [下载](https://github.com/qpingcode/MyTools/releases/download/v0.0.72/MyTools-0.0.72-windows-x64-lite-setup.exe) | [下载](https://github.com/qpingcode/MyTools/releases/download/v0.0.72/MyTools-0.0.72-windows-x64-lite-portable.zip) |
 <!-- mytools-downloads:end -->
+
 
 
 
