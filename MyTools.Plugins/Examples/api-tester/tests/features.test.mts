@@ -35,11 +35,19 @@ import {Runner} from '../src/backend/execution/runner.mjs';
 import {validateWorkspace} from '../src/shared/workspaceValidation.js';
 import {newCollection} from '../src/shared/collectionTree.js';
 import {placeRequest} from '../src/shared/requestPlacement.js';
+import {ListDropKind, listInsertionIndex, placeListItem} from '../src/shared/listReorder.js';
 import {
     requestDragScrollDelta,
     RequestDragScrollEdgePx,
     RequestDragScrollMaxPx,
 } from '../src/web/features/sidebar/requestDragScroll.js';
+import {
+    documentTabRevealDirection,
+    DocumentTabRevealEdgePx,
+    DocumentTabRevealNext,
+    DocumentTabRevealNone,
+    DocumentTabRevealPrevious,
+} from '../src/web/features/request/documentTabDragScroll.js';
 
 const SuccessStatus = 200;
 const PollIntervalMs = 10;
@@ -178,6 +186,31 @@ test('requests can be reordered and moved between collections', () => {
     assert.deepEqual(root.requests.map(request => request.id), ['two', 'one']);
     assert.equal(child.requests[0].id, 'three');
     assert.equal(placeRequest(collections, 'missing', root.id, 0), false);
+});
+
+test('document tabs can be reordered in their open list', () => {
+    const ids = ['login', 'user', 'runner'];
+    assert.equal(placeListItem(ids, 'login', 2), true);
+    assert.deepEqual(ids, ['user', 'login', 'runner']);
+    assert.equal(placeListItem(ids, 'login', 2), false);
+    assert.equal(placeListItem(ids, 'runner', 0), true);
+    assert.deepEqual(ids, ['runner', 'user', 'login']);
+    assert.equal(placeListItem(ids, 'missing', 0), false);
+    assert.equal(listInsertionIndex(ids, 'user', ListDropKind.Before), 1);
+    assert.equal(listInsertionIndex(ids, 'user', ListDropKind.After), 2);
+});
+
+test('dragging a tab near the tab bar edge reveals hidden tabs', () => {
+    const bounds = {top: 40, bottom: 80, left: 100, right: 500};
+    const centerX = (bounds.left + bounds.right) / 2;
+    const centerY = (bounds.top + bounds.bottom) / 2;
+    assert.equal(documentTabRevealDirection(centerX, centerY, bounds), DocumentTabRevealNone);
+    assert.equal(documentTabRevealDirection(centerX, bounds.top - 1, bounds), DocumentTabRevealNone);
+    assert.equal(documentTabRevealDirection(bounds.left, centerY, bounds), DocumentTabRevealPrevious);
+    assert.equal(documentTabRevealDirection(bounds.right, centerY, bounds), DocumentTabRevealNext);
+    const halfEdge = DocumentTabRevealEdgePx / 2;
+    assert.equal(documentTabRevealDirection(bounds.left + halfEdge, centerY, bounds), DocumentTabRevealPrevious);
+    assert.equal(documentTabRevealDirection(bounds.right - halfEdge, centerY, bounds), DocumentTabRevealNext);
 });
 
 test('dragging a request near the tree edge produces a scroll delta', () => {

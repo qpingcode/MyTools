@@ -128,6 +128,9 @@ export const text = {
     DragRequest: () => bus.i18n.t('Plugin.ApiTester.DragRequest', {
         defaultValue: 'Drag to reorder or move to another collection',
     }),
+    DragDocumentTab: () => bus.i18n.t('Plugin.ApiTester.DragDocumentTab', {
+        defaultValue: 'Drag to reorder',
+    }),
     Search: (values: Record<string, string | number> = {}) =>
         bus.i18n.t('Plugin.ApiTester.Search', {
             defaultValue: 'Search name or URL',

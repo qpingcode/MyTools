@@ -12,6 +12,7 @@
   "Plugin.ApiTester.Delete": "删除",
   "Plugin.ApiTester.Duplicate": "复制",
   "Plugin.ApiTester.DragRequest": "拖动以重新排序，或移动到其他集合",
+  "Plugin.ApiTester.DragDocumentTab": "拖动以重新排序",
   "Plugin.ApiTester.Search": "搜索名称或 URL",
   "Plugin.ApiTester.NoEnvironment": "无环境",
   "Plugin.ApiTester.NewEnvironment": "新建环境",

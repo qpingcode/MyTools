@@ -5,16 +5,33 @@ import IconButton from '../../components/common/IconButton.vue';
 import Icon from '../../components/common/Icon.vue';
 import RequestTabContextMenu from './RequestTabContextMenu.vue';
 import type {Tab} from '../workspace/workspaceTypes.js';
+import {ListDropKind, listInsertionIndex} from '../../../shared/listReorder.js';
+import {
+  documentTabRevealDirection,
+  DocumentTabRevealIntervalMs,
+  DocumentTabRevealNone,
+} from './documentTabDragScroll.js';
 
 enum DocumentKind { Request = 'request', Runner = 'runner' }
 type Document =
     | {kind: DocumentKind.Request; id: string; item: Tab}
     | {kind: DocumentKind.Runner; id: string};
+type DocumentTabDropTarget = {tabId: string; kind: ListDropKind};
+type DocumentTabDragSession = {
+  tabId: string;
+  pointerId: number;
+  startX: number;
+  startY: number;
+  active: boolean;
+};
+
+const DocumentTabDragThresholdPx = 12;
+const DocumentTabDragButton = 0;
 
 const {
   t, tabs, documentTabIds, RunnerTabId, active, batch, runnerOpen, runnerActive, dirty,
   closeTab, activateRequest, showRunner, closeRunner, createRequest, duplicateRequest,
-  closeOtherTabs, closeAllTabs, revealInSidebar, workspace,
+  closeOtherTabs, closeAllTabs, revealInSidebar, workspace, reorderDocumentTab,
 } = useWorkspaceContext();
 const tabBar = ref<HTMLDivElement>();
 const overflowMenu = ref<HTMLDivElement>();
@@ -23,6 +40,8 @@ const capacity = ref(1);
 const firstVisible = ref(0);
 const menuOpen = ref(false);
 const contextMenu = ref<{item: Tab; x: number; y: number; trigger: HTMLElement}>();
+const dragSession = ref<DocumentTabDragSession>();
+const dropTarget = ref<DocumentTabDropTarget>();
 const documents = computed<Document[]>(() => {
   const values: Document[] = [];
   for (const id of documentTabIds.value) {
@@ -38,7 +57,12 @@ const documents = computed<Document[]>(() => {
 const visibleDocuments = computed(() => documents.value.slice(firstVisible.value, firstVisible.value + capacity.value));
 const hiddenDocuments = computed(() => documents.value.filter(item => !visibleDocuments.value.includes(item)));
 const activeDocumentId = computed(() => runnerActive.value ? RunnerTabId : active.value);
+const dragTabId = computed(() => dragSession.value?.active ? dragSession.value.tabId : '');
 let resizeObserver: ResizeObserver | undefined;
+let dragPointerX = 0;
+let dragPointerY = 0;
+let revealFrame = 0;
+let lastRevealAt = 0;
 
 function measure() {
   if (!tabBar.value) return;
@@ -53,6 +77,7 @@ function measure() {
 
 function revealActive() {
   firstVisible.value = Math.max(0, Math.min(firstVisible.value, documents.value.length - capacity.value));
+  if (dragSession.value?.active) return;
   const index = documents.value.findIndex(item => item.id === activeDocumentId.value);
   if (index < 0) return;
   if (index < firstVisible.value) firstVisible.value = index;
@@ -122,6 +147,139 @@ function owner(item: Tab) {
   return workspace.value.collections.find(collection => collection.id === item.collectionId);
 }
 
+function tabClass(document: Document) {
+  return {
+    selected: document.id === activeDocumentId.value,
+    dragging: dragTabId.value === document.id,
+    'drop-before': dropTarget.value?.tabId === document.id && dropTarget.value.kind === ListDropKind.Before,
+    'drop-after': dropTarget.value?.tabId === document.id && dropTarget.value.kind === ListDropKind.After,
+  };
+}
+
+function suppressNextClick() {
+  const timeout = window.setTimeout(() => document.removeEventListener('click', suppress, true));
+  function suppress(event: Event) {
+    event.preventDefault();
+    event.stopPropagation();
+    window.clearTimeout(timeout);
+    document.removeEventListener('click', suppress, true);
+  }
+  document.addEventListener('click', suppress, true);
+}
+
+function stopDocumentTabReveal() {
+  if (!revealFrame) return;
+  cancelAnimationFrame(revealFrame);
+  revealFrame = 0;
+  lastRevealAt = 0;
+}
+
+function clampFirstVisible(value: number) {
+  return Math.max(0, Math.min(value, Math.max(0, documents.value.length - capacity.value)));
+}
+
+function tickDocumentTabReveal(now: number) {
+  revealFrame = requestAnimationFrame(tickDocumentTabReveal);
+  const session = dragSession.value;
+  const bar = tabBar.value;
+  if (!session?.active || !bar) return;
+  const direction = documentTabRevealDirection(dragPointerX, dragPointerY, bar.getBoundingClientRect());
+  if (direction === DocumentTabRevealNone) {
+    lastRevealAt = 0;
+    return;
+  }
+  if (lastRevealAt && now - lastRevealAt < DocumentTabRevealIntervalMs) return;
+  const next = clampFirstVisible(firstVisible.value + direction);
+  if (next === firstVisible.value) return;
+  firstVisible.value = next;
+  lastRevealAt = now;
+  dropTarget.value = dropFromPoint(dragPointerX, dragPointerY, session.tabId);
+}
+
+function startDocumentTabReveal() {
+  if (revealFrame) return;
+  revealFrame = requestAnimationFrame(tickDocumentTabReveal);
+}
+
+function endDocumentTabDrag() {
+  stopDocumentTabReveal();
+  const bar = tabBar.value;
+  const session = dragSession.value;
+  if (bar && session?.pointerId !== undefined && bar.hasPointerCapture(session.pointerId)) {
+    bar.releasePointerCapture(session.pointerId);
+  }
+  window.removeEventListener('pointermove', onDocumentTabDragMove);
+  window.removeEventListener('pointerup', onDocumentTabDragEnd);
+  window.removeEventListener('pointercancel', onDocumentTabDragEnd);
+  dragSession.value = undefined;
+  dropTarget.value = undefined;
+}
+
+function dropFromPoint(x: number, y: number, tabId: string): DocumentTabDropTarget | undefined {
+  const element = document.elementFromPoint(x, y);
+  const tab = element?.closest<HTMLElement>('.document-tab');
+  if (tab?.dataset.documentId && tab.dataset.documentId !== tabId) {
+    const bounds = tab.getBoundingClientRect();
+    return {
+      tabId: tab.dataset.documentId,
+      kind: x < bounds.left + bounds.width / 2 ? ListDropKind.Before : ListDropKind.After,
+    };
+  }
+  if (element?.closest('.request-tabs-overflow, .request-tabs-menu')) {
+    const last = visibleDocuments.value.findLast(item => item.id !== tabId);
+    if (last) return {tabId: last.id, kind: ListDropKind.After};
+  }
+}
+
+function onDocumentTabDragMove(event: PointerEvent) {
+  const session = dragSession.value;
+  const bar = tabBar.value;
+  if (!session || event.pointerId !== session.pointerId) return;
+  const deltaX = event.clientX - session.startX;
+  const deltaY = event.clientY - session.startY;
+  if (!session.active) {
+    if (deltaX * deltaX + deltaY * deltaY < DocumentTabDragThresholdPx * DocumentTabDragThresholdPx) return;
+    bar?.setPointerCapture(session.pointerId);
+    dragSession.value = {...session, active: true};
+    dragPointerX = event.clientX;
+    dragPointerY = event.clientY;
+    menuOpen.value = false;
+    startDocumentTabReveal();
+  }
+  event.preventDefault();
+  dragPointerX = event.clientX;
+  dragPointerY = event.clientY;
+  dropTarget.value = dropFromPoint(event.clientX, event.clientY, session.tabId);
+}
+
+function onDocumentTabDragEnd(event: PointerEvent) {
+  const session = dragSession.value;
+  if (!session || event.pointerId !== session.pointerId) return;
+  const target = session.active ? dropTarget.value : undefined;
+  const tabId = session.tabId;
+  const dragged = session.active;
+  endDocumentTabDrag();
+  if (!dragged || !target) return;
+  suppressNextClick();
+  reorderDocumentTab(tabId, listInsertionIndex(documentTabIds.value, target.tabId, target.kind));
+}
+
+function startDocumentTabDrag(event: PointerEvent, tabId: string) {
+  if (event.button !== DocumentTabDragButton || event.pointerType === 'touch') return;
+  if ((event.target as HTMLElement).closest('.icon-button')) return;
+  endDocumentTabDrag();
+  dragSession.value = {
+    tabId,
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+    active: false,
+  };
+  window.addEventListener('pointermove', onDocumentTabDragMove, {passive: false});
+  window.addEventListener('pointerup', onDocumentTabDragEnd);
+  window.addEventListener('pointercancel', onDocumentTabDragEnd);
+}
+
 onMounted(() => {
   measure();
   resizeObserver = new ResizeObserver(measure);
@@ -129,15 +287,17 @@ onMounted(() => {
   document.addEventListener('pointerdown', outsideClick);
 });
 onBeforeUnmount(() => {
+  endDocumentTabDrag();
   resizeObserver?.disconnect();
   document.removeEventListener('pointerdown', outsideClick);
 });
 </script>
 <template>
-  <div ref="tabBar" class="document-tabs-bar">
+  <div ref="tabBar" class="document-tabs-bar" :class="{'document-tab-dragging': Boolean(dragTabId)}">
     <div class="document-tabs">
       <div v-for="document in visibleDocuments" :key="document.id" class="document-tab"
-           :class="{selected: document.id === activeDocumentId}"
+           :class="tabClass(document)" :data-document-id="document.id" :title="t.DragDocumentTab()"
+           @pointerdown="startDocumentTabDrag($event, document.id)"
            @contextmenu="document.kind === DocumentKind.Request && showContextMenu($event, document.item)"
            @keydown="document.kind === DocumentKind.Request && showContextMenu($event, document.item)">
         <template v-if="document.kind === DocumentKind.Request">

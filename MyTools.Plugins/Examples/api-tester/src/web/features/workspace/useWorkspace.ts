@@ -31,6 +31,7 @@ import {
 } from '../../../shared/model.js';
 import {collectionSubtreeIds, newCollection} from '../../../shared/collectionTree.js';
 import {placeRequest, requestRelocation} from '../../../shared/requestPlacement.js';
+import {placeListItem} from '../../../shared/listReorder.js';
 
 const RunnerTabId = 'api-tester:runner';
 
@@ -351,6 +352,12 @@ export function useWorkspace() {
         });
     }
 
+    function reorderDocumentTab(tabId: string, targetIndex: number) {
+        const ids = documentTabIds.value.slice();
+        if (!placeListItem(ids, tabId, targetIndex)) return;
+        documentTabIds.value = ids;
+    }
+
     async function relocateRequest(requestId: string, targetCollectionId: string, targetIndex: number) {
         if (!requestRelocation(workspace.value.collections, requestId, targetCollectionId, targetIndex)) return;
         await mutate(() => {
@@ -658,6 +665,7 @@ export function useWorkspace() {
         closeAllTabs,
         revealInSidebar,
         deleteRequest,
+        reorderDocumentTab,
         relocateRequest,
         addEnvironment,
         switchEnvironment,

@@ -200,6 +200,21 @@
       }
     },
     {
+      "key": "Plugin.ApiTester.DragDocumentTab",
+      "defaultValue": "Drag to reorder",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/localization/i18n.ts",
+          "line": 132,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "拖动以重新排序"
+      }
+    },
+    {
       "key": "Plugin.ApiTester.Search",
       "defaultValue": "Search name or URL",
       "placeholders": [],

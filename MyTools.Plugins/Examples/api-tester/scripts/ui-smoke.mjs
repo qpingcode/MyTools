@@ -23,6 +23,9 @@ const VisibleTreeGuideOpacity = 0.5;
 const RequestDropX = 40;
 const RequestDropBeforeY = 4;
 const RequestDropAfterY = 32;
+const DocumentTabDropY = 20;
+const DocumentTabDropBeforeX = 16;
+const DocumentTabDropAfterX = 160;
 const TreeAutoScrollViewportPx = 96;
 const TreeAutoScrollPointerInsetPx = 4;
 const output = path.resolve('bin/AgentVerification/ui-fixture.mjs');
@@ -634,6 +637,34 @@ try {
     .click();
   await page.getByRole('dialog').waitFor({ state: 'detached' });
   assert.equal(workspace.collections[0].requests.length, 2);
+  const loginTab = page.locator('.document-tabs > .document-tab').filter({ hasText: 'Login' });
+  const userTab = page.locator('.document-tabs > .document-tab').filter({ hasText: 'User' });
+  assert.deepEqual(
+    await page.locator('.document-tabs > .document-tab .tab-name').allTextContents(),
+    ['Login', 'User'],
+  );
+  await userTab.hover();
+  assert.equal(
+    await userTab.locator('button').first().evaluate(element => getComputedStyle(element).cursor),
+    'pointer',
+  );
+  await userTab.locator('button').first().click();
+  assert.equal(await page.locator('.document-tab.selected .tab-name').innerText(), 'User');
+  await loginTab.dragTo(userTab, { targetPosition: { x: DocumentTabDropAfterX, y: DocumentTabDropY } });
+  assert.deepEqual(
+    await page.locator('.document-tabs > .document-tab .tab-name').allTextContents(),
+    ['User', 'Login'],
+  );
+  await userTab.dragTo(loginTab, { targetPosition: { x: DocumentTabDropAfterX, y: DocumentTabDropY } });
+  assert.deepEqual(
+    await page.locator('.document-tabs > .document-tab .tab-name').allTextContents(),
+    ['Login', 'User'],
+  );
+  await loginTab.dragTo(userTab, { targetPosition: { x: DocumentTabDropBeforeX, y: DocumentTabDropY } });
+  assert.deepEqual(
+    await page.locator('.document-tabs > .document-tab .tab-name').allTextContents(),
+    ['Login', 'User'],
+  );
   await page.getByRole('tab', { name: /^Authentication/ }).click();
   assert.equal(
     await page
@@ -836,7 +867,6 @@ try {
   await page.setViewportSize(DefaultViewport);
   await page.evaluate(() => new Promise(resolve =>
     requestAnimationFrame(() => requestAnimationFrame(resolve))));
-  const userTab = page.locator('.document-tab').filter({ hasText: 'User' }).first();
   if (await userTab.count()) await userTab.locator('button').first().click();
   else {
     await hiddenRequestsButton.click();
@@ -922,7 +952,7 @@ try {
   });
   assert.deepEqual(errors, []);
   console.log(
-    'UI smoke passed: divider dragging/keyboard resizing, sidebar request CRUD and ordering, configuration tabs, saving, login chaining, script tests, batch results, close cancellation, live Chinese and theme changes; collection headers, scripts, JSON tree/search, backup export/import and request history.',
+    'UI smoke passed: divider dragging/keyboard resizing, sidebar request CRUD and ordering, request tab reordering, configuration tabs, saving, login chaining, script tests, batch results, close cancellation, live Chinese and theme changes; collection headers, scripts, JSON tree/search, backup export/import and request history.',
   );
 } finally {
   await browser.close();

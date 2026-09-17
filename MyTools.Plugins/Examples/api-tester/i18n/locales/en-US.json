@@ -12,6 +12,7 @@
   "Plugin.ApiTester.Delete": "Delete",
   "Plugin.ApiTester.Duplicate": "Duplicate",
   "Plugin.ApiTester.DragRequest": "Drag to reorder or move to another collection",
+  "Plugin.ApiTester.DragDocumentTab": "Drag to reorder",
   "Plugin.ApiTester.Search": "Search name or URL",
   "Plugin.ApiTester.NoEnvironment": "No environment",
   "Plugin.ApiTester.NewEnvironment": "New environment",

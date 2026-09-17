@@ -788,6 +788,8 @@ dialog.workspace-tools-dialog {
 .document-tabs-bar {
     --request-tab-width: 180px;
     --request-tabs-overflow-width: 36px;
+    --document-tab-drop-indicator-size: 2px;
+    --document-tab-dragging-opacity: 0.55;
     display: flex;
     position: relative;
     flex: none;
@@ -857,6 +859,36 @@ dialog.workspace-tools-dialog {
 
 .document-tab.selected {
     background: var(--mt-surface-bg, #15171b);
+}
+
+.document-tab.dragging {
+    opacity: var(--document-tab-dragging-opacity);
+}
+
+.document-tab.drop-before::after,
+.document-tab.drop-after::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: var(--document-tab-drop-indicator-size);
+    background: var(--accent);
+    z-index: 2;
+    pointer-events: none;
+}
+
+.document-tab.drop-before::after {
+    left: 0;
+}
+
+.document-tab.drop-after::after {
+    right: 0;
+}
+
+.document-tabs-bar.document-tab-dragging,
+.document-tabs-bar.document-tab-dragging button {
+    cursor: grabbing;
+    user-select: none;
 }
 
 .document-tab.selected::before {
