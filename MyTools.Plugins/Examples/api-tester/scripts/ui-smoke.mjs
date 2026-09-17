@@ -350,7 +350,7 @@ try {
   await page.locator('.collection-title').filter({ hasText: 'Users' }).click();
   assert.equal(await page.locator('.collection-heading.selected').count(), 1);
   await sidebar.getByRole('button', { name: 'Add subcollection', exact: true }).waitFor();
-  await page.locator('.request-title').filter({ hasText: 'Login' }).click();
+  await page.locator('.request-row.selected').click();
   await sidebar.getByRole('button', { name: 'New collection', exact: true }).waitFor();
   assert.equal(await page.locator('.collection-heading.selected').count(), 0);
   assert.equal(await page.getByRole('tab', {name: 'Assertions', exact: true}).count(), 0);

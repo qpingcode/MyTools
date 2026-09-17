@@ -67,17 +67,15 @@ import {collectionMatchesSearch, rootCollections} from '../../../shared/collecti
 const visibleRootCollections = computed(() =>
     rootCollections(workspace.value.collections)
         .filter(owner => collectionMatchesSearch(workspace.value.collections, owner, search.value)));
-watch(
-    collectionId,
-    (id) => {
-      let owner = workspace.value.collections.find(candidate => candidate.id === id);
-      while (owner) {
-        expanded.value.add(owner.id);
-        owner = workspace.value.collections.find(candidate => candidate.id === owner?.parentId);
-      }
-    },
-    {immediate: true},
-);
+function expandWithAncestors(id: string | undefined) {
+  let owner = workspace.value.collections.find(candidate => candidate.id === id);
+  while (owner) {
+    expanded.value.add(owner.id);
+    owner = workspace.value.collections.find(candidate => candidate.id === owner?.parentId);
+  }
+}
+
+watch(collectionId, id => expandWithAncestors(id), {immediate: true});
 
 function toggleCollection(id: string) {
   if (collectionId.value !== id) {
@@ -103,7 +101,7 @@ function requestTab(request: ApiRequest, owner: Collection) {
 watch(revealRequestId, async id => {
   if (!id) return;
   const owner = workspace.value.collections.find(item => item.requests.some(request => request.id === id));
-  if (owner) expanded.value.add(owner.id);
+  expandWithAncestors(owner?.id);
   await nextTick();
   document.querySelector<HTMLElement>(`[data-request-id="${CSS.escape(id)}"]`)?.scrollIntoView({block: 'nearest'});
   revealRequestId.value = '';
