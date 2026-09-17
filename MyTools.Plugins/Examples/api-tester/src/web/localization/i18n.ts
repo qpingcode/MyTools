@@ -260,7 +260,7 @@ export const text = {
         bus.i18n.t('Plugin.ApiTester.Url', {defaultValue: 'URL', ...values}),
     UrlPlaceholder: () =>
         bus.i18n.t('Plugin.ApiTester.UrlPlaceholder', {
-            defaultValue: 'Enter a URL, e.g. https://api.example.com/users',
+            defaultValue: 'Enter URL',
         }),
     Params: (values: Record<string, string | number> = {}) =>
         bus.i18n.t('Plugin.ApiTester.Params', {

@@ -222,7 +222,7 @@
   "Plugin.ApiTester.SearchEnvironments": "Search environments",
   "Plugin.ApiTester.NoMatchingEnvironments": "No matching environments.",
   "Plugin.ApiTester.EnvironmentName": "Environment name",
-  "Plugin.ApiTester.UrlPlaceholder": "Enter a URL, e.g. https://api.example.com/users",
+  "Plugin.ApiTester.UrlPlaceholder": "Enter URL",
   "Plugin.ApiTester.Confirm": "Confirm action",
   "Plugin.ApiTester.OverrideCollectionSettings": "Override global settings for this collection",
   "Plugin.ApiTester.RequestHistory": "History · {{name}}",

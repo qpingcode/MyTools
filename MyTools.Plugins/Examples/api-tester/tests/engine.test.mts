@@ -14,6 +14,7 @@ import {WorkspaceStore} from '../src/backend/persistence/storage.mjs';
 import {createWorkspaceMutator} from '../src/web/features/workspace/workspacePersistence.js';
 import {
     newRequest,
+    withDefaultHttpProtocol,
     defaultSettings,
     emptyWorkspace,
     parseQuery,
@@ -66,6 +67,13 @@ const requestAt = (url: string) => {
     return request;
 };
 const send = (request: ApiRequest, jar = new CookieJar(), signal = new AbortController().signal) => executeRequest(request, request.settings || defaultSettings(), {}, jar, signal);
+
+test('URL input defaults to HTTPS when the HTTP protocol is omitted', () => {
+    assert.equal(withDefaultHttpProtocol('example.com/users'), 'https://example.com/users');
+    assert.equal(withDefaultHttpProtocol('http://example.com/users'), 'http://example.com/users');
+    assert.equal(withDefaultHttpProtocol('HTTPS://example.com/users'), 'HTTPS://example.com/users');
+    assert.equal(withDefaultHttpProtocol(''), '');
+});
 
 async function completed(runner: Runner, id: string): Promise<RunView> {
     const deadline = Date.now() + TestDeadlineMs;

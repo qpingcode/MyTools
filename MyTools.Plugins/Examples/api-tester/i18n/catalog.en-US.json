@@ -3301,7 +3301,7 @@
     },
     {
       "key": "Plugin.ApiTester.UrlPlaceholder",
-      "defaultValue": "Enter a URL, e.g. https://api.example.com/users",
+      "defaultValue": "Enter URL",
       "placeholders": [],
       "references": [
         {
@@ -3311,7 +3311,7 @@
         }
       ],
       "existingTranslations": {
-        "zh-CN": "输入请求地址，例如 https://api.example.com/users"
+        "zh-CN": "输入 URL"
       }
     },
     {"key":"Plugin.ApiTester.UnsavedChanges","defaultValue":"Unsaved changes","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"未保存的修改"}},

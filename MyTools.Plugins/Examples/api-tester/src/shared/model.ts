@@ -307,6 +307,15 @@ export const newRequest = (id: string, name: string): ApiRequest => ({
     body: {kind: BodyKind.None, text: '', contentType: '', fields: [], file: ''}
 });
 
+const DefaultHttpProtocolPrefix = 'https://';
+const HttpProtocolPrefixPattern = /^https?:\/\//i;
+
+export function withDefaultHttpProtocol(url: string): string {
+    return url && !HttpProtocolPrefixPattern.test(url)
+        ? DefaultHttpProtocolPrefix + url
+        : url;
+}
+
 export function parseQuery(url: string): Pair[] {
     const query = url.split('#')[0].split('?').slice(1).join('?');
     return query ? query.split('&').map(part => {

@@ -1,19 +1,7 @@
-import { chromium } from 'playwright';
-import { build } from 'esbuild';
-import http from 'node:http';
-import { once } from 'node:events';
 import { readFile } from 'node:fs/promises';
-import path from 'node:path';
-import { pathToFileURL } from 'node:url';
 import assert from 'node:assert/strict';
-import {
-  ProtocolVersion,
-  MessageKind,
-  Routes as BusRoutes,
-} from '@qping/plugin-bus/protocol';
+import {test} from './fixtures/app.fixture.mjs';
 
-const TestTimeoutMs = 10_000;
-const FixtureStatus = 200;
 const WideViewport = {width: 1280, height: 960};
 const CompactViewport = {width: 640, height: 960};
 const CompactPanelSelectWidth = 180;
@@ -28,279 +16,23 @@ const DocumentTabDropBeforeX = 16;
 const DocumentTabDropAfterX = 160;
 const TreeAutoScrollViewportPx = 96;
 const TreeAutoScrollPointerInsetPx = 4;
-const output = path.resolve('bin/AgentVerification/ui-fixture.mjs');
-await build({
-  entryPoints: ['tests/ui-fixture.mts'],
-  outfile: output,
-  bundle: true,
-  platform: 'node',
-  format: 'esm',
-  packages: 'external',
-  target: 'es2024',
-});
-const { Runner, emptyWorkspace, Routes, ErrorKind } = await import(
-  pathToFileURL(output).href
-);
-let historyEntries = [];
-const runner = new Runner(async entry => { const snapshot = structuredClone(entry); snapshot.result.bodyAvailable = false; delete snapshot.result.sentRequest; historyEntries.unshift(snapshot); });
-let workspace = emptyWorkspace();
-const en = JSON.parse(await readFile('i18n/locales/en-US.json', 'utf8'));
-const zh = JSON.parse(await readFile('i18n/locales/zh-CN.json', 'utf8'));
-const contentTypes = {
-  '.html': 'text/html',
-  '.js': 'text/javascript',
-  '.css': 'text/css',
-};
-const assets = new Set(['/index.html', '/main.js', '/style.css']);
-const server = http.createServer(async (req, res) => {
-  if (req.url === '/login') {
-    res.writeHead(FixtureStatus, {
-      'Content-Type': 'application/json',
-      'Set-Cookie': 'session=abc; Path=/',
-    });
-    res.end('{"token":"abc"}');
-    return;
-  }
-  if (req.url === '/user') {
-    res.writeHead(FixtureStatus, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ auth: req.headers.authorization || '' }));
-    return;
-  }
-  if (!assets.has(req.url)) {
-    res.writeHead(404);
-    res.end();
-    return;
-  }
-  res.setHeader('Content-Type', contentTypes[path.extname(req.url)]);
-  res.end(await readFile(path.join('dist/web', req.url.slice(1))));
-});
-server.listen(0, '127.0.0.1');
-await once(server, 'listening');
-const url = `http://127.0.0.1:${server.address().port}`;
-const browser = await chromium.launch({ channel: 'msedge', headless: true });
-try {
-  const page = await browser.newPage({
-    viewport: WideViewport,
-  });
-  page.setDefaultTimeout(TestTimeoutMs);
-  const errors = [];
-  let failWorkspaceLoad = true;
-  page.on('pageerror', (error) => errors.push(error.message));
-  await page.exposeFunction('testBusRequest', async (envelope) => {
-    if (envelope.route === BusRoutes.Bus.Handshake)
-      return { negotiatedVersion: ProtocolVersion };
-    const method = envelope.route.slice(BusRoutes.Prefix.PluginCall.length);
-    const payload = envelope.payload;
-    let value;
-    if (method === Routes.load) {
-      if (failWorkspaceLoad) {
-        failWorkspaceLoad = false;
-        return { ok: false, error: { kind: ErrorKind.Storage } };
-      }
-      value = workspace;
-    }
-    else if (method === Routes.save) {
-      workspace = structuredClone(payload);
-      value = true;
-    } else if (method === Routes.environment)
-      runner.switchEnvironment(payload.id);
-    else if (method === Routes.curl) value = runner.curl(payload);
-    else if (method === Routes.history) value = historyEntries;
-    else if (method === Routes.clearHistory)
-      historyEntries = payload?.requestId
-        ? historyEntries.filter(entry => entry.request.id !== payload.requestId)
-        : [];
-    else if (method === Routes.cookies) runner.clearCookies();
-    else if (method === Routes.listCookies) value = await runner.listCookies();
-    else if (method === Routes.start) value = runner.start(payload);
-    else if (method === Routes.poll) {
-      const view = runner.poll(payload.id);
-      value = { ...view, results: view.results.slice(payload.from || 0) };
-    } else if (method === Routes.cancel) runner.cancel(payload.id);
-    else if (method === Routes.release) runner.release(payload.id);
-    else if (method === Routes.download)
-      value = runner.download(payload.id, payload.index);
-    else throw new Error(`Unexpected route: ${method}`);
-    return { ok: true, value };
-  });
-  await page.addInitScript(
-    ({ messages, kind, routes, version }) => {
-      const listeners = [];
-      const dispatch = (envelope) => {
-        for (const listener of listeners) listener({ data: envelope });
-      };
-      window.testHostEvent = (route, payload) =>
-        dispatch({ kind: kind.Event, route, payload });
-      window.chrome = window.chrome || {};
-      window.chrome.webview = {
-        addEventListener: (_name, listener) => listeners.push(listener),
-        removeEventListener: () => {},
-        postMessage: async (envelope) => {
-          const payload = await window.testBusRequest(envelope);
-          dispatch({
-            kind: kind.Response,
-            route: envelope.route,
-            correlationId: envelope.id,
-            payload,
-          });
-          if (envelope.route === routes.Bus.Handshake)
-            dispatch({
-              kind: kind.Event,
-              route: routes.HostEvent.Initialize,
-              payload: {
-                locale: 'en-US',
-                fallbackLocale: 'en-US',
-                messages,
-                theme: 'dark',
-              },
-            });
-        },
-      };
-    },
-    {
-      messages: en,
-      kind: MessageKind,
-      routes: BusRoutes,
-      version: ProtocolVersion,
-    },
-  );
-  await page.goto(url + '/index.html');
-  await page.getByText('Could not load the workspace. Please retry.', { exact: true }).waitFor();
-  assert.equal(await page.locator('.workspace-overlay').evaluate(element => getComputedStyle(element).position), 'fixed');
-  assert.equal((await page.locator('.app-header').boundingBox()).y, 0);
-  assert.equal(await page.locator('.app-shell').evaluate(element => element.inert), true);
-  await page.evaluate(({ route, messages }) => window.testHostEvent(route, { locale: 'zh-CN', fallbackLocale: 'en-US', messages }), { route: BusRoutes.HostEvent.LanguageChanged, messages: zh });
-  await page.getByText('无法加载工作区，请重试。', { exact: true }).waitFor();
-  await page.getByRole('button', { name: '重试', exact: true }).click();
-  await page.waitForFunction(() => !document.querySelector('.app-shell').inert);
-  assert.equal(await page.locator('.workspace-overlay').count(), 0);
-  assert.equal((await page.locator('.app-header').boundingBox()).y, 0);
-  await page.evaluate(({ route, messages }) => window.testHostEvent(route, { locale: 'en-US', fallbackLocale: 'en-US', messages }), { route: BusRoutes.HostEvent.LanguageChanged, messages: en });
-  await page
-    .getByRole('button', { name: 'Import', exact: true })
-    .waitFor();
-  const environmentMenu = page.locator('.environment-bar details:not(.environment-selector)');
-  const menuTrigger = environmentMenu.locator('summary');
-  const environmentSelect = page.locator('.environment-selector > summary');
-  assert.equal(
-    await page
-      .locator('html')
-      .evaluate((element) => getComputedStyle(element).colorScheme),
-    'dark',
-  );
-  const optionColors = await page.locator('.environment-option-list > button')
-    .first()
-    .evaluate((element) => ({
-      background: getComputedStyle(element).backgroundColor,
-      text: getComputedStyle(element).color,
-    }));
-  assert.notEqual(optionColors.background, optionColors.text);
-  await menuTrigger.click();
-  assert.equal(await environmentMenu.evaluate((element) => element.open), true);
-  await environmentSelect.click();
-  assert.equal(
-    await environmentMenu.evaluate((element) => element.open),
-    false,
-  );
-  await environmentSelect.press('Escape');
-  await menuTrigger.click();
-  await menuTrigger.press('Escape');
-  assert.equal(
-    await environmentMenu.evaluate((element) => element.open),
-    false,
-  );
-  await menuTrigger.click();
-  await page
-    .getByRole('button', { name: 'Default execution settings', exact: true })
-    .click();
-  assert.equal(
-    await environmentMenu.evaluate((element) => element.open),
-    false,
-  );
-  await page
-    .getByRole('dialog')
-    .getByRole('button', { name: 'Cancel', exact: true })
-    .click();
-  // Divider supports pointer capture and keyboard resizing.
-  // Search stays above the list, and the create action accepts variables immediately.
-  const SearchFixtureEnvironmentName = 'Search Fixture';
-  await environmentSelect.click();
-  const environmentOptions = page.locator('.environment-options');
-  await environmentOptions.getByRole('button', { name: 'New environment', exact: true }).click();
-  assert.equal(await page.locator('.environment-selector').evaluate(element => element.open), false);
-  const newEnvironmentDialog = page.getByRole('dialog', { name: 'New environment', exact: true });
-  assert.equal(await newEnvironmentDialog.getByRole('button', { name: 'Save', exact: true }).isDisabled(), true);
-  await newEnvironmentDialog.getByRole('textbox', { name: 'Environment name', exact: true }).fill(SearchFixtureEnvironmentName);
-  await newEnvironmentDialog.getByRole('textbox', { name: 'Name', exact: true }).first().fill('fixtureToken');
-  await newEnvironmentDialog.getByRole('textbox', { name: 'Value', exact: true }).first().fill('fixtureValue');
-  await page.getByRole('dialog').getByRole('button', { name: 'Save', exact: true }).click();
-  await environmentSelect.click();
-  const environmentSearch = environmentOptions.getByRole('searchbox', { name: 'Search environments', exact: true });
-  const searchBox = await environmentSearch.boundingBox();
-  const optionListBox = await page.locator('.environment-option-list').boundingBox();
-  assert.ok(searchBox.width > (await environmentOptions.boundingBox()).width / 2);
-  assert.ok(searchBox.y < optionListBox.y);
-  await environmentSearch.fill('SEARCH FIX');
-  await environmentOptions.getByRole('button', { name: SearchFixtureEnvironmentName, exact: true }).waitFor();
-  await environmentSearch.fill('unmatched environment');
-  assert.equal(await environmentOptions.getByRole('button', { name: SearchFixtureEnvironmentName, exact: true }).count(), 0);
-  await environmentOptions.getByText('No matching environments.', { exact: true }).waitFor();
-  await environmentOptions.getByRole('button', { name: 'New environment', exact: true }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Cancel', exact: true }).click();
-  await environmentSelect.click();
-  assert.equal(await environmentSearch.inputValue(), '');
-  await environmentOptions.getByRole('button', { name: SearchFixtureEnvironmentName, exact: true }).waitFor();
-  await environmentSearch.press('Escape');
-  await environmentSelect.click();
-  await environmentOptions.getByRole('button', { name: SearchFixtureEnvironmentName, exact: true }).click();
-  await page.getByRole('button', { name: 'Edit environment', exact: true }).click();
-  const editEnvironmentDialog = page.getByRole('dialog', { name: 'Edit environment', exact: true });
-  assert.equal(await editEnvironmentDialog.getByRole('textbox', { name: 'Name', exact: true }).first().inputValue(), 'fixtureToken');
-  assert.equal(await editEnvironmentDialog.getByRole('textbox', { name: 'Value', exact: true }).first().inputValue(), 'fixtureValue');
-  await editEnvironmentDialog.getByRole('button', { name: 'Cancel', exact: true }).click();
-  await environmentSelect.click();
-  await environmentOptions.getByRole('button', { name: 'No environment', exact: true }).click();
 
-  const divider = page.locator('.splitter');
-  const initialWidth = Number(await divider.getAttribute('aria-valuenow'));
-  const dividerBox = await divider.boundingBox();
-  const DragDistance = 90;
-  await page.mouse.move(
-    dividerBox.x + dividerBox.width / 2,
-    dividerBox.y + 100,
-  );
-  await page.mouse.down();
-  await page.mouse.move(dividerBox.x + DragDistance, dividerBox.y + 100);
-  await page.mouse.up();
-  assert.ok(Number(await divider.getAttribute('aria-valuenow')) > initialWidth);
-  await divider.press('Home');
-  assert.equal(
-    await divider.getAttribute('aria-valuenow'),
-    await divider.getAttribute('aria-valuemin'),
-  );
-  await divider.dblclick();
-  assert.equal(
-    Number(await divider.getAttribute('aria-valuenow')),
-    initialWidth,
-  );
-  const responseDivider = page.locator('.response-splitter');
-  const requestPane = page.locator('.request-pane');
-  const initialRequestHeight = (await requestPane.boundingBox()).height;
-  const initialRequestPercent = await responseDivider.getAttribute('aria-valuenow');
-  const responseDividerBox = await responseDivider.boundingBox();
-  const VerticalDragDistance = 80;
-  const centerX = responseDividerBox.x + responseDividerBox.width / 2;
-  const centerY = responseDividerBox.y + responseDividerBox.height / 2;
-  await page.mouse.move(centerX, centerY);
-  await page.mouse.down();
-  await page.mouse.move(centerX, centerY + VerticalDragDistance);
-  await page.mouse.up();
-  assert.ok((await requestPane.boundingBox()).height > initialRequestHeight);
-  await responseDivider.press('Home');
-  assert.equal(await responseDivider.getAttribute('aria-valuenow'),
-    await responseDivider.getAttribute('aria-valuemin'));
-  await responseDivider.dblclick();
-  assert.equal(await responseDivider.getAttribute('aria-valuenow'), initialRequestPercent);
+test('authors, executes, and manages an API request workspace', async ({app, page}) => {
+  const {
+    errors,
+    historyEntries,
+    messages: {en, zh},
+    routes: BusRoutes,
+    url,
+    workspace,
+  } = app;
+  await page.getByRole('button', {name: 'Import', exact: true}).waitFor();
+  let accountsCollection;
+  let save;
+  let userTab;
+  let usersCollection;
+
+  await test.step('creates collections and chains login into an authenticated request', async () => {
   await page
     .getByRole('button', { name: 'New collection', exact: true })
     .click();
@@ -314,8 +46,8 @@ try {
   await page.getByRole('menuitem', { name: 'Add subcollection', exact: true }).click();
   await page.getByRole('dialog').getByRole('textbox').fill('Accounts');
   await page.getByRole('dialog').getByRole('button', { name: 'Save', exact: true }).click();
-  const usersCollection = () => workspace.collections.find(item => item.name === 'Users');
-  const accountsCollection = () => workspace.collections.find(item => item.name === 'Accounts');
+  usersCollection = () => workspace.collections.find(item => item.name === 'Users');
+  accountsCollection = () => workspace.collections.find(item => item.name === 'Accounts');
   assert.equal(accountsCollection().parentId, usersCollection().id);
   const nestedCollectionAlign = await page.evaluate(() => {
     const tree = document.querySelector('.collection-tree');
@@ -344,12 +76,12 @@ try {
       .fill(url + endpoint);
     await page.getByRole('textbox', { name: 'URL', exact: true }).press('Tab');
   }
-  async function save() {
+  save = async () => {
     await page
       .locator('section.workspace')
       .getByRole('button', { name: 'Save', exact: true })
       .click();
-  }
+  };
   await create('Login', '/login');
   assert.equal(usersCollection().requests.length, 1);
   assert.equal(accountsCollection().requests.length, 0);
@@ -452,10 +184,11 @@ try {
   assert.equal((await requestPanelSelect.locator('option:checked').textContent()).trim(), 'Headers');
   await page.setViewportSize(WideViewport);
   await page.getByRole('tab', {name: 'Headers', exact: true}).waitFor();
-  // Default input rows are visual drafts, not saved configuration.
+  });
+
+  await test.step('edits request configuration and runs the collection', async () => {
   assert.equal(await page.getByRole('tabpanel').locator('.pair').count(), 1);
   assert.equal(workspace.collections[0].requests.at(-1).params.length, 0);
-  // Configuration tabs retain their fields and support keyboard navigation.
   await page
     .getByRole('tab', { name: 'Parameters', exact: true })
     .press('ArrowRight');
@@ -471,8 +204,11 @@ try {
   assert.equal(await config.locator('.variable-token').innerText(), '{{token}}');
   assert.equal(await config.getByRole('textbox', { name: 'Value', exact: true }).first().inputValue(), 'Bearer {{token}}');
   const urlInput = page.locator('[data-primary-input]');
-  assert.equal(await urlInput.getAttribute('placeholder'), 'Enter a URL, e.g. https://api.example.com/users');
+  assert.equal(await urlInput.getAttribute('placeholder'), 'Enter URL');
   const originalUrl = await urlInput.inputValue();
+  await urlInput.fill('example.com/users?active=true');
+  await urlInput.press('Tab');
+  assert.equal(await urlInput.inputValue(), 'https://example.com/users?active=true');
   await urlInput.fill('{{baseUrl}}/users/{{userId}}');
   assert.deepEqual(await page.locator('.url-bar .variable-token').allTextContents(), ['{{baseUrl}}', '{{userId}}']);
   await page.screenshot({ path: 'bin/AgentVerification/variable-highlighting.png' });
@@ -575,7 +311,9 @@ try {
   await page.getByRole('dialog').getByRole('button', { name: 'Continue', exact: true }).click();
   await page.getByRole('dialog').waitFor({ state: 'detached' });
   await page.locator('.request-title').filter({ hasText: 'User' }).click();
-  // CRUD controls operate from the sidebar, including unopened requests.
+  });
+
+  await test.step('manages sidebar requests and reorders document tabs', async () => {
   const userRow = page
     .locator('.request-row')
     .filter({ hasText: 'User' })
@@ -640,7 +378,7 @@ try {
   await page.getByRole('dialog').waitFor({ state: 'detached' });
   assert.equal(workspace.collections[0].requests.length, 2);
   const loginTab = page.locator('.document-tabs > .document-tab').filter({ hasText: 'Login' });
-  const userTab = page.locator('.document-tabs > .document-tab').filter({ hasText: 'User' });
+  userTab = page.locator('.document-tabs > .document-tab').filter({ hasText: 'User' });
   assert.deepEqual(
     await page.locator('.document-tabs > .document-tab .tab-name').allTextContents(),
     ['Login', 'User'],
@@ -678,8 +416,9 @@ try {
   await page.getByRole('button', { name: 'Copy as cURL', exact: true }).click();
   await page.getByText('Copied.', { exact: true }).waitFor();
   assert.match(await page.evaluate(() => navigator.clipboard.readText()), /authorization: Bearer abc/i);
+  });
 
-  // Collection configuration saves public headers and authentication.
+  await test.step('configures collection defaults and context actions', async () => {
   const collectionHeading = page.locator('.collection-heading').first();
   await collectionHeading.hover();
   assert.equal(await collectionHeading.locator('.tree-actions').count(), 0);
@@ -708,8 +447,9 @@ try {
   await settingsDialog.getByRole('button', { name: 'Save', exact: true }).click();
   assert.equal(workspace.collections[0].headers[0].value, 'shared');
   assert.equal(workspace.collections[0].settings.timeoutMs, 15000);
+  });
 
-  // Post-response scripts own tests and response-value extraction.
+  await test.step('runs scripts, assertions, and request-scoped history', async () => {
   await page.getByRole('tab', { name: 'Scripts', exact: true }).click();
   await page.getByRole('textbox', { name: 'Before request', exact: true }).fill("pm.request.headers.upsert({key:'X-Ui', value:'yes'}); console.log('ui-before');");
   await page.getByRole('button', { name: 'After response', exact: true }).click();
@@ -753,10 +493,11 @@ try {
   await requestHistoryDialog.getByText('No matching request history.', {exact: true}).waitFor();
   assert.equal(historyEntries.some(entry => entry.request.id === userRequestId), false);
   assert.ok(historyEntries.some(entry => entry.request.id !== userRequestId));
-  historyEntries = requestHistorySnapshot;
+  historyEntries.splice(0, historyEntries.length, ...requestHistorySnapshot);
   await requestHistoryDialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+  });
 
-  // JSON tree folding and response search highlight the payload safely.
+  await test.step('searches and folds the JSON response tree', async () => {
   await page.locator('.response').getByRole('button', { name: 'Body', exact: true }).click();
   const responseBodyToolbar = page.locator('.response .body-toolbar');
   const responseSearchInput = responseBodyToolbar.getByRole('textbox', {name: 'Search response', exact: true});
@@ -773,13 +514,14 @@ try {
   assert.equal(await page.locator('.response mark').count(), 1);
   await page.locator('.response').getByRole('button', { name: 'Next', exact: true }).click();
   assert.equal(await page.locator('.response mark.active-match').count(), 1);
+  });
 
-  // Export downloads a real backup; importing it merges with the existing workspace.
   const importButton = page.locator('.app-header').getByRole('button', { name: 'Import', exact: true });
   const exportButton = page.locator('.app-header').getByRole('button', { name: 'Export', exact: true });
   const historyButton = page.locator('.app-header').getByRole('button', { name: 'History', exact: true });
-  await exportButton.click();
   const toolsDialog = page.locator('.workspace-tools-dialog');
+  await test.step('exports and imports a workspace backup', async () => {
+  await exportButton.click();
   await page.getByRole('dialog', { name: 'Export', exact: true }).waitFor();
   const downloadPromise = page.waitForEvent('download');
   await toolsDialog.getByRole('button', { name: 'Export', exact: true }).last().click();
@@ -792,7 +534,6 @@ try {
   await page.getByRole('dialog', { name: 'Import', exact: true }).waitFor();
   await toolsDialog.getByRole('combobox', { name: 'Import format', exact: true }).selectOption('json');
   await toolsDialog.getByRole('textbox', { name: 'Paste cURL or JSON', exact: true }).fill(backup);
-  // Cancelling the native file chooser bubbles from the input, not the dialog.
   await toolsDialog.locator('input[type=file]').evaluate(input => {
     input.dispatchEvent(new Event('cancel', { bubbles: true }));
   });
@@ -809,8 +550,9 @@ try {
   assert.equal(workspace.collections.length, collectionCount * 2);
   const importedUsers = workspace.collections.filter(item => item.name === 'Users').at(-1);
   assert.equal(importedUsers.requests.find(r => r.name === 'User').scripts.enabled, false);
+  });
 
-  // History shows the sent headers and can reopen the recorded request.
+  await test.step('paginates history and reopens a recorded request', async () => {
   const globalHistorySnapshot = structuredClone(historyEntries);
   const paginationFixture = historyEntries[0];
   for (let index = 0; index < 21; index++)
@@ -824,7 +566,7 @@ try {
   await historyPagination.getByRole('button', {name: 'Next page', exact: true}).click();
   await historyPagination.getByText(/Page 2 of \d+/).waitFor();
   await historyPagination.getByRole('button', {name: 'Previous page', exact: true}).click();
-  historyEntries = globalHistorySnapshot;
+  historyEntries.splice(0, historyEntries.length, ...globalHistorySnapshot);
   const historyActions = toolsDialog.locator('.dialog-actions');
   const reopenRequestButton = historyActions.getByRole('button', { name: 'Reopen request', exact: true });
   assert.equal(await reopenRequestButton.isDisabled(), true);
@@ -840,7 +582,9 @@ try {
   await toolsDialog.getByRole('cell', { name: 'X-Ui', exact: true }).waitFor();
   await reopenRequestButton.click();
   await toolsDialog.waitFor({ state: 'detached' });
-  // Pasted browser cURL opens a usable request tab.
+  });
+
+  await test.step('imports and executes a pasted browser cURL', async () => {
   await importButton.click();
   await page.getByRole('dialog', { name: 'Import', exact: true }).waitFor();
   await toolsDialog.getByRole('combobox', { name: 'Import format', exact: true }).selectOption('curl');
@@ -849,7 +593,9 @@ try {
   await toolsDialog.waitFor({ state: 'detached' });
   await page.getByRole('button', { name: 'Send', exact: true }).click();
   await page.locator('.response pre').filter({ hasText: 'Bearer curl-ui' }).waitFor();
-  // A narrow window moves complete request tabs into the overflow menu.
+  });
+
+  await test.step('moves complete tabs into the responsive overflow menu', async () => {
   const OverflowViewport = { width: 720, height: 960 };
   const DefaultViewport = { width: 1280, height: 960 };
   await page.setViewportSize(OverflowViewport);
@@ -887,7 +633,9 @@ try {
     path: 'bin/AgentVerification/ui-smoke-dark.png',
     fullPage: true,
   });
+  });
 
+  await test.step('cancels host close when the active request is dirty', async () => {
   await page
     .locator('section.workspace')
     .getByRole('textbox', { name: 'Name', exact: true })
@@ -902,6 +650,9 @@ try {
     .getByRole('button', { name: 'Cancel', exact: true })
     .click();
   assert.equal(await close, false);
+  });
+
+  await test.step('applies live language and theme host events', async () => {
   await page.evaluate(
     ({ route, messages }) =>
       window.testHostEvent(route, {
@@ -952,12 +703,6 @@ try {
     path: 'bin/AgentVerification/ui-smoke.png',
     fullPage: true,
   });
+  });
   assert.deepEqual(errors, []);
-  console.log(
-    'UI smoke passed: divider dragging/keyboard resizing, sidebar request CRUD and ordering, request tab reordering, configuration tabs, saving, login chaining, script tests, batch results, close cancellation, live Chinese and theme changes; collection headers, scripts, JSON tree/search, backup export/import and request history.',
-  );
-} finally {
-  await browser.close();
-  server.closeAllConnections();
-  await new Promise((resolve) => server.close(resolve));
-}
+});

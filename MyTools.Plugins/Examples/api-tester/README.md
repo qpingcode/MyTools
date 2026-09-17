@@ -78,7 +78,7 @@ npm run build
 npm run watch
 ```
 
-Uses the published `@qping/plugin-bus@0.9.0` and Create Plugin's esbuild scaffolding, extended with `@vue/compiler-sfc`. The scaffold retains TypeScript 7; an isolated `typescript-vue` TypeScript 5 alias supplies the JavaScript compiler API required by vue-tsc. Browser smoke tests use installed Microsoft Edge in headless mode. Local HTTP integration tests build under `bin/AgentVerification/`.
+Uses the published `@qping/plugin-bus@0.9.0` and Create Plugin's esbuild scaffolding, extended with `@vue/compiler-sfc`. The scaffold retains TypeScript 7; an isolated `typescript-vue` TypeScript 5 alias supplies the JavaScript compiler API required by vue-tsc. Playwright UI scenarios use installed Microsoft Edge in headless mode. Their isolated host bridge, Runner, workspace, and HTTP fixture live under `tests/ui/`; artifacts are written under `bin/AgentVerification/`. Pass normal Playwright arguments after `--`, for example `npm run test:ui -- --grep environment`.
 
 The host must set `MYTOOLS_PLUGIN_DATA_DIR`; `workspace.json` is saved atomically there. Values are saved as entered; credential masking and secure storage are outside this version's scope.
 

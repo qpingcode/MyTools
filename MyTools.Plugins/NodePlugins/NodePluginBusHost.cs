@@ -492,14 +492,6 @@ internal sealed class NodePluginBusHost : INodePluginHost
         return result ?? (typeof(T) == typeof(string) ? (T)(object)string.Empty : default!);
     }
 
-    private async Task<JsonElement> SendAndUnwrapResultAsync(string route, object parameters,
-        CancellationToken cancellationToken)
-    {
-        var payloadJson = await SendAndAwaitResponseAsync(route, parameters, cancellationToken);
-        if (payloadJson is null) return default;
-        return JsonDocument.Parse(payloadJson.ToJsonString()).RootElement.Clone();
-    }
-
     private async Task<JsonNode?> SendAndAwaitResponseAsync(string route, object parameters,
         CancellationToken cancellationToken)
     {

@@ -222,7 +222,7 @@
   "Plugin.ApiTester.SearchEnvironments": "搜索环境",
   "Plugin.ApiTester.NoMatchingEnvironments": "没有匹配的环境。",
   "Plugin.ApiTester.EnvironmentName": "环境名称",
-  "Plugin.ApiTester.UrlPlaceholder": "输入请求地址，例如 https://api.example.com/users",
+  "Plugin.ApiTester.UrlPlaceholder": "输入 URL",
   "Plugin.ApiTester.Confirm": "确认操作",
   "Plugin.ApiTester.OverrideCollectionSettings": "覆盖此集合的全局设置",
   "Plugin.ApiTester.RequestHistory": "历史记录 · {{name}}",

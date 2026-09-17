@@ -84,7 +84,7 @@ npm run build
 npm run watch
 ```
 
-使用已发布的 `@qping/plugin-bus@0.9.0` 和 Create Plugin 的 esbuild 脚手架，通过 `@vue/compiler-sfc` 编译组件。`App.vue` 仅组装界面；`useWorkspace`、`useDialogs`、`useRuns` 分别管理工作区、弹窗和执行状态，各配置编辑器独立成组件。保留模板的 TypeScript 7，另用 `typescript-vue` 别名单独安装 TypeScript 5，为 vue-tsc 提供 JavaScript 编译器 API。浏览器冒烟测试使用已安装的 Microsoft Edge 无头模式。本地 HTTP 集成测试输出到 `bin/AgentVerification/`。
+使用已发布的 `@qping/plugin-bus@0.9.0` 和 Create Plugin 的 esbuild 脚手架，通过 `@vue/compiler-sfc` 编译组件。`App.vue` 仅组装界面；`useWorkspace`、`useDialogs`、`useRuns` 分别管理工作区、弹窗和执行状态，各配置编辑器独立成组件。保留模板的 TypeScript 7，另用 `typescript-vue` 别名单独安装 TypeScript 5，为 vue-tsc 提供 JavaScript 编译器 API。Playwright UI 场景使用已安装的 Microsoft Edge 无头模式；隔离的宿主桥、Runner、工作区和 HTTP fixture 位于 `tests/ui/`，产物输出到 `bin/AgentVerification/`。可在 `--` 后传入标准 Playwright 参数，例如 `npm run test:ui -- --grep environment`。
 
 宿主须设置 `MYTOOLS_PLUGIN_DATA_DIR`，插件在其中原子保存 `workspace.json`。配置值按输入保存，本版不考虑凭据脱敏或安全存储。
 
