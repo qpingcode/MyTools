@@ -579,12 +579,12 @@ try {
   assert.equal(await userRow.locator('.request-title').evaluate(element => getComputedStyle(element).cursor), 'pointer');
   assert.equal(await userRow.locator('.tree-actions').count(), 0);
   await userRow.click({ button: 'right' });
-  await page.getByRole('menuitem', { name: 'Move up', exact: true }).click();
-  assert.equal(workspace.collections[0].requests[0].name, 'User');
+  assert.equal(await page.getByRole('menuitem', { name: 'Move up', exact: true }).count(), 0);
+  assert.equal(await page.getByRole('menuitem', { name: 'Move down', exact: true }).count(), 0);
+  await page.keyboard.press('Escape');
   await userRow.locator('.request-title').press('Shift+F10');
-  assert.equal(await page.getByRole('menuitem', { name: 'Move up', exact: true }).isDisabled(), true);
-  await page.getByRole('menuitem', { name: 'Move down', exact: true }).click();
-  assert.equal(workspace.collections[0].requests[0].name, 'Login');
+  await page.getByRole('menuitem', { name: 'Duplicate', exact: true }).waitFor();
+  await page.keyboard.press('Escape');
   const loginRow = page.locator('.request-row').filter({ hasText: 'Login' });
   await userRow.dragTo(loginRow, { targetPosition: { x: RequestDropX, y: RequestDropBeforeY } });
   assert.equal(workspace.collections[0].requests[0].name, 'User');

@@ -63,7 +63,6 @@ const {
   open,
   duplicateRequest,
   deleteRequest,
-  move,
   relocateRequest,
   openRunner,
   selectCollection,
@@ -306,11 +305,7 @@ onBeforeUnmount(endRequestDrag);
                       :key="requestMenu.request.id + ':' + requestMenu.x + ':' + requestMenu.y"
                       :x="requestMenu.x" :y="requestMenu.y" :trigger="requestMenu.trigger"
                       :label="requestMenu.request.name"
-                      :can-move-up="requestMenu.owner.requests[0]?.id !== requestMenu.request.id"
-                      :can-move-down="requestMenu.owner.requests.at(-1)?.id !== requestMenu.request.id"
                       @close="requestMenu = undefined"
-                      @up="move(requestTab(requestMenu.request, requestMenu.owner), -1)"
-                      @down="move(requestTab(requestMenu.request, requestMenu.owner), 1)"
                       @copy="duplicateRequest(requestMenu.request, requestMenu.owner)"
                       @delete="deleteRequest(requestTab(requestMenu.request, requestMenu.owner))"/>
   <SidebarContextMenu v-if="collectionMenu" :kind="SidebarMenuKind.Collection"

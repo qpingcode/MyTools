@@ -7,9 +7,8 @@ import {SidebarMenuKind} from './sidebarMenuTypes.js';
 const props = defineProps<{
   x: number; y: number; trigger: HTMLElement; label: string;
   kind: SidebarMenuKind;
-  canMoveUp?: boolean; canMoveDown?: boolean;
 }>();
-const emit = defineEmits<{ close: []; up: []; down: []; copy: []; delete: []; settings: []; rename: []; run: []; add: []; addCollection: [] }>();
+const emit = defineEmits<{ close: []; copy: []; delete: []; settings: []; rename: []; run: []; add: []; addCollection: [] }>();
 const t = useText();
 const menu = ref<HTMLElement>();
 const left = ref(props.x);
@@ -93,17 +92,7 @@ onBeforeUnmount(() => {
   <Teleport to="body">
     <div ref="menu" class="menu-popover sidebar-context-menu" role="menu" :aria-label="label"
          :style="{ left: left + 'px', top: top + 'px' }" @keydown="keydown" @contextmenu.prevent>
-      <template v-if="kind === SidebarMenuKind.Request">
-        <button role="menuitem" :disabled="!canMoveUp" @click="perform(() => emit('up'))">
-          <Icon name="arrow-up"/>
-          {{ t.Up() }}
-        </button>
-        <button role="menuitem" :disabled="!canMoveDown" @click="perform(() => emit('down'))">
-          <Icon name="arrow-down"/>
-          {{ t.Down() }}
-        </button>
-      </template>
-      <template v-else>
+      <template v-if="kind === SidebarMenuKind.Collection">
         <button role="menuitem" @click="perform(() => emit('run'))">
           <Icon name="play"/>
           {{ t.RunCollection() }}

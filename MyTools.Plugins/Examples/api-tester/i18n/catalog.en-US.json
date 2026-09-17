@@ -185,36 +185,6 @@
       }
     },
     {
-      "key": "Plugin.ApiTester.Up",
-      "defaultValue": "Move up",
-      "placeholders": [],
-      "references": [
-        {
-          "filePath": "src/web/localization/i18n.ts",
-          "line": 56,
-          "column": 16
-        }
-      ],
-      "existingTranslations": {
-        "zh-CN": "上移"
-      }
-    },
-    {
-      "key": "Plugin.ApiTester.Down",
-      "defaultValue": "Move down",
-      "placeholders": [],
-      "references": [
-        {
-          "filePath": "src/web/localization/i18n.ts",
-          "line": 58,
-          "column": 16
-        }
-      ],
-      "existingTranslations": {
-        "zh-CN": "下移"
-      }
-    },
-    {
       "key": "Plugin.ApiTester.DragRequest",
       "defaultValue": "Drag to reorder or move to another collection",
       "placeholders": [],

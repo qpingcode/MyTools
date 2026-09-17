@@ -351,24 +351,6 @@ export function useWorkspace() {
         });
     }
 
-    async function move(item: Tab, offset: number) {
-        const owner = workspace.value.collections.find(
-            (owner) => owner.id === item.collectionId,
-        );
-        if (!owner) return;
-        const index = owner.requests.findIndex(
-            (request) => request.id === item.request.id,
-        );
-        const target = index + offset;
-        if (index < 0 || target < 0 || target >= owner.requests.length) return;
-        await mutate(() => {
-            [owner.requests[index], owner.requests[target]] = [
-                owner.requests[target],
-                owner.requests[index],
-            ];
-        });
-    }
-
     async function relocateRequest(requestId: string, targetCollectionId: string, targetIndex: number) {
         if (!requestRelocation(workspace.value.collections, requestId, targetCollectionId, targetIndex)) return;
         await mutate(() => {
@@ -676,7 +658,6 @@ export function useWorkspace() {
         closeAllTabs,
         revealInSidebar,
         deleteRequest,
-        move,
         relocateRequest,
         addEnvironment,
         switchEnvironment,

@@ -11,8 +11,6 @@
   "Plugin.ApiTester.Rename": "重命名",
   "Plugin.ApiTester.Delete": "删除",
   "Plugin.ApiTester.Duplicate": "复制",
-  "Plugin.ApiTester.Up": "上移",
-  "Plugin.ApiTester.Down": "下移",
   "Plugin.ApiTester.DragRequest": "拖动以重新排序，或移动到其他集合",
   "Plugin.ApiTester.Search": "搜索名称或 URL",
   "Plugin.ApiTester.NoEnvironment": "无环境",

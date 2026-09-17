@@ -11,8 +11,6 @@
   "Plugin.ApiTester.Rename": "Rename",
   "Plugin.ApiTester.Delete": "Delete",
   "Plugin.ApiTester.Duplicate": "Duplicate",
-  "Plugin.ApiTester.Up": "Move up",
-  "Plugin.ApiTester.Down": "Move down",
   "Plugin.ApiTester.DragRequest": "Drag to reorder or move to another collection",
   "Plugin.ApiTester.Search": "Search name or URL",
   "Plugin.ApiTester.NoEnvironment": "No environment",

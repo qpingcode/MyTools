@@ -125,13 +125,6 @@ export const text = {
             defaultValue: 'Duplicate',
             ...values,
         }),
-    Up: (values: Record<string, string | number> = {}) =>
-        bus.i18n.t('Plugin.ApiTester.Up', {defaultValue: 'Move up', ...values}),
-    Down: (values: Record<string, string | number> = {}) =>
-        bus.i18n.t('Plugin.ApiTester.Down', {
-            defaultValue: 'Move down',
-            ...values,
-        }),
     DragRequest: () => bus.i18n.t('Plugin.ApiTester.DragRequest', {
         defaultValue: 'Drag to reorder or move to another collection',
     }),
