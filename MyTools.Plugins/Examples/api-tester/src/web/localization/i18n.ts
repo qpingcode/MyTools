@@ -102,6 +102,7 @@ export const text = {
             defaultValue: 'New collection',
             ...values,
         }),
+    AddSubcollection: () => bus.i18n.t('Plugin.ApiTester.AddSubcollection', {defaultValue: 'Add subcollection'}),
     NewRequest: (values: Record<string, string | number> = {}) =>
         bus.i18n.t('Plugin.ApiTester.NewRequest', {
             defaultValue: 'New request',

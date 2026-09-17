@@ -5,7 +5,10 @@ import SettingsEditor from '../../components/common/SettingsEditor.vue';
 import IconButton from '../../components/common/IconButton.vue';
 
 const {t, workspace, modal, finishModal, DialogKind} = useWorkspaceContext();
-import {ref, watch, nextTick} from 'vue';
+import {computed, ref, watch, nextTick} from 'vue';
+import {collectionPath, flattenCollectionTree} from '../../../shared/collectionTree.js';
+
+const collections = computed(() => flattenCollectionTree(workspace.value.collections));
 
 const modalElement = ref<HTMLDialogElement | null>(null);
 watch(modal, async (value) => {
@@ -42,11 +45,11 @@ watch(modal, async (value) => {
           :aria-label="t.Collections()"
       >
         <option
-            v-for="owner in workspace.collections"
+            v-for="owner in collections"
             :key="owner.id"
             :value="owner.id"
         >
-          {{ owner.name }}
+          {{ collectionPath(workspace.collections, owner) }}
         </option>
       </select>
       <div v-if="modal.environment" class="environment-editor">

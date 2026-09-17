@@ -6,6 +6,7 @@ import {
 } from '../../../shared/model.js';
 import type {Tab} from '../workspace/workspaceTypes.js';
 import {rpc} from '../../services/rpc.js';
+import {collectionSubtreeRequests} from '../../../shared/collectionTree.js';
 
 export enum RunnerStage { Configuration = 'configuration', Results = 'results' }
 export interface RunnerRequest { request: ApiRequest; enabled: boolean }
@@ -89,7 +90,8 @@ export function useRuns(
     function configureRun(owner: Collection = collection.value!) {
         if (!owner) return false;
         runnerCollectionId.value = owner.id;
-        runnerRequests.value = owner.requests.map(request => ({request, enabled: true}));
+        runnerRequests.value = collectionSubtreeRequests(workspace.value.collections, owner)
+            .map(request => ({request, enabled: true}));
         iterations.value = DefaultIterations;
         delayMs.value = DefaultDelayMs;
         dataFileName.value = '';
@@ -134,9 +136,8 @@ export function useRuns(
         if (startingBatch.value || batch.value && !batch.value.done) return;
         const owner = runnerCollection.value;
         if (!owner) return;
-        const enabledIds = new Set(runnerRequests.value.filter(item => item.enabled).map(item => item.request.id));
-        const requests = owner.requests.filter(request => enabledIds.has(request.id)).map(request =>
-            tabs.value.find(tab => tab.request.id === request.id)?.request || request,
+        const requests = runnerRequests.value.filter(item => item.enabled).map(item =>
+            tabs.value.find(tab => tab.request.id === item.request.id)?.request || item.request,
         );
         const normalizedIterations = Math.max(DefaultIterations, Math.floor(iterations.value));
         if (!requests.length || !Number.isFinite(normalizedIterations) ||

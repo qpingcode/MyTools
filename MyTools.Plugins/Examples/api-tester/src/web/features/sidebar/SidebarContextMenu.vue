@@ -9,7 +9,7 @@ const props = defineProps<{
   kind: SidebarMenuKind;
   canMoveUp?: boolean; canMoveDown?: boolean;
 }>();
-const emit = defineEmits<{ close: []; up: []; down: []; copy: []; delete: []; settings: []; rename: []; run: []; add: [] }>();
+const emit = defineEmits<{ close: []; up: []; down: []; copy: []; delete: []; settings: []; rename: []; run: []; add: []; addCollection: [] }>();
 const t = useText();
 const menu = ref<HTMLElement>();
 const left = ref(props.x);
@@ -111,6 +111,10 @@ onBeforeUnmount(() => {
         <button role="menuitem" @click="perform(() => emit('add'))">
           <Icon name="plus"/>
           {{ t.AddRequest() }}
+        </button>
+        <button role="menuitem" @click="perform(() => emit('addCollection'))">
+          <Icon name="folder-plus"/>
+          {{ t.AddSubcollection() }}
         </button>
         <button role="menuitem" @click="perform(() => emit('settings'))">
           <Icon name="more"/>

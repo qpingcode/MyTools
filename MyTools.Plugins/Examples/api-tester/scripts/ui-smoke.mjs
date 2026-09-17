@@ -19,6 +19,7 @@ const CompactViewport = {width: 640, height: 960};
 const CompactPanelSelectWidth = 180;
 const RequestPanelCollapseWidth = 640;
 const ResponseSearchInputWidth = 200;
+const VisibleTreeGuideOpacity = 0.5;
 const output = path.resolve('bin/AgentVerification/ui-fixture.mjs');
 await build({
   entryPoints: ['tests/ui-fixture.mts'],
@@ -301,6 +302,13 @@ try {
     .getByRole('button', { name: 'Save', exact: true })
     .click();
   await page.getByRole('button', { name: /Users/ }).waitFor();
+  await page.locator('aside').getByRole('button', { name: 'Add subcollection', exact: true }).click();
+  await page.getByRole('dialog').getByRole('textbox').fill('Accounts');
+  await page.getByRole('dialog').getByRole('button', { name: 'Save', exact: true }).click();
+  const usersCollection = () => workspace.collections.find(item => item.name === 'Users');
+  const accountsCollection = () => workspace.collections.find(item => item.name === 'Accounts');
+  assert.equal(accountsCollection().parentId, usersCollection().id);
+  await page.locator('.collection-title').filter({ hasText: 'Users' }).click();
   async function create(name, endpoint) {
     await page
       .locator('aside')
@@ -323,6 +331,8 @@ try {
       .click();
   }
   await create('Login', '/login');
+  assert.equal(usersCollection().requests.length, 1);
+  assert.equal(accountsCollection().requests.length, 0);
   assert.equal(await page.getByRole('tab', {name: 'Assertions', exact: true}).count(), 0);
   assert.equal(await page.getByRole('tab', {name: 'JSON variable extraction', exact: true}).count(), 0);
   await page.getByRole('tab', {name: 'Scripts', exact: true}).click();
@@ -357,6 +367,27 @@ try {
   await cookiesDialog.locator('.dialog-titlebar').getByRole('button', { name: 'Close', exact: true }).click();
   await cookiesDialog.waitFor({ state: 'detached' });
   await create('User', '/user');
+  const selectedCollection = page.locator('.collection-tree > .collection');
+  const requestBranches = selectedCollection.locator(':scope > .request-branches');
+  assert.equal(await requestBranches.evaluate(element => getComputedStyle(element, '::before').opacity), '0');
+  await selectedCollection.hover();
+  await page.waitForFunction(minimumOpacity => {
+    const branches = document.querySelector('.collection:hover .request-branches');
+    return branches && Number.parseFloat(getComputedStyle(branches, '::before').opacity) > minimumOpacity;
+  }, VisibleTreeGuideOpacity);
+  const branchGuideStyle = await requestBranches.evaluate(element => {
+    const vertical = getComputedStyle(element, '::before');
+    const horizontal = getComputedStyle(element.querySelector('.request-row'), '::before');
+    return {
+      verticalStyle: vertical.borderLeftStyle,
+      horizontalStyle: horizontal.borderTopStyle,
+      verticalLeft: vertical.left,
+      horizontalLeft: horizontal.left,
+    };
+  });
+  assert.equal(branchGuideStyle.verticalStyle, 'dashed');
+  assert.equal(branchGuideStyle.horizontalStyle, 'dashed');
+  assert.equal(branchGuideStyle.verticalLeft, branchGuideStyle.horizontalLeft);
   const requestHistoryButton = page.getByRole('button', {name: 'History · User', exact: true});
   await requestHistoryButton.waitFor();
   assert.equal(await page.locator('.response-toolbar').getByRole('button', {name: 'History · User', exact: true}).count(), 1);
@@ -529,6 +560,7 @@ try {
   await collectionHeading.click({ button: 'right' });
   await page.getByRole('menuitem', { name: 'Run collection', exact: true }).waitFor();
   await page.getByRole('menuitem', { name: 'Add request', exact: true }).waitFor();
+  await page.getByRole('menuitem', { name: 'Add subcollection', exact: true }).waitFor();
   await page.keyboard.press('Escape');
   await collectionHeading.click({ button: 'right' });
   await page.getByRole('menuitem', { name: 'Delete', exact: true }).click();
@@ -643,7 +675,8 @@ try {
   await toolsDialog.getByRole('button', { name: 'Import', exact: true }).last().click();
   await toolsDialog.waitFor({ state: 'detached' });
   assert.equal(workspace.collections.length, collectionCount * 2);
-  assert.equal(workspace.collections.at(-1).requests.find(r => r.name === 'User').scripts.enabled, false);
+  const importedUsers = workspace.collections.filter(item => item.name === 'Users').at(-1);
+  assert.equal(importedUsers.requests.find(r => r.name === 'User').scripts.enabled, false);
 
   // History shows the sent headers and can reopen the recorded request.
   const globalHistorySnapshot = structuredClone(historyEntries);

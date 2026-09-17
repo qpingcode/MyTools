@@ -6,6 +6,7 @@
   "Plugin.ApiTester.Collections": "集合",
   "Plugin.ApiTester.Environments": "环境",
   "Plugin.ApiTester.NewCollection": "新建集合",
+  "Plugin.ApiTester.AddSubcollection": "添加子集合",
   "Plugin.ApiTester.NewRequest": "新建请求",
   "Plugin.ApiTester.Rename": "重命名",
   "Plugin.ApiTester.Delete": "删除",

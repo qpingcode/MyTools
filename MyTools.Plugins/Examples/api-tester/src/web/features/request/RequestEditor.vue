@@ -27,6 +27,7 @@ import RequestSettingsEditor from './RequestSettingsEditor.vue';
 import ScriptsEditor from '../../components/common/ScriptsEditor.vue';
 import {Routes} from '../../../shared/model.js';
 import {notification, rpc} from '../../services/rpc.js';
+import {collectionPath} from '../../../shared/collectionTree.js';
 
 const {environment} = useWorkspaceContext();
 
@@ -52,6 +53,11 @@ const requestCollection = computed(() =>
     workspace.value.collections.find(
         (owner) => owner.id === tab.value?.collectionId,
     ),
+);
+const requestCollectionPath = computed(() =>
+    requestCollection.value
+        ? collectionPath(workspace.value.collections, requestCollection.value)
+        : t.value.Collections(),
 );
 const panels = [
   'Params',
@@ -128,7 +134,7 @@ function navigate(event: KeyboardEvent, panel: Panel) {
   <div v-if="tab" class="request-editor">
     <div class="request-heading">
       <span class="breadcrumb"
-      >{{ requestCollection?.name || t.Collections() }} /</span
+      >{{ requestCollectionPath }} /</span
       ><input
         class="request-name"
         v-model="tab.request.name"

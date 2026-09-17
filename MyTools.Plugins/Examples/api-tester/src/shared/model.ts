@@ -177,6 +177,7 @@ export interface ApiRequest {
 export interface Collection {
     id: string;
     name: string;
+    parentId?: string;
     requests: ApiRequest[];
     auth?: ApiRequest['auth'];
     headers?: Pair[];

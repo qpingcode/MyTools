@@ -18,6 +18,7 @@ import {
     type Workspace
 } from './model.js';
 import {validateWorkspace} from './workspaceValidation.js';
+import {childCollections, collectionSubtreeIds} from './collectionTree.js';
 
 const PostmanCollectionSchema = 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json';
 const JsonIndent = 2;
@@ -393,8 +394,10 @@ export function importWorkspace(source: string, uid: () => string): Workspace {
     } else throw new Error('Unknown import format');
     // Reassign identities so importing a backup never replaces existing requests.
     const activeEnvironment = workspace.environmentId;
+    const collectionIds = new Map(workspace.collections.map(c => [c.id, uid()]));
     for (const c of workspace.collections) {
-        c.id = uid();
+        c.id = collectionIds.get(c.id)!;
+        if (c.parentId) c.parentId = collectionIds.get(c.parentId);
         if (c.scripts) c.scripts.enabled = false;
         for (const r of c.requests) {
             r.id = uid();
@@ -414,7 +417,9 @@ export function importWorkspace(source: string, uid: () => string): Workspace {
 export function exportWorkspace(workspace: Workspace, collection?: Collection, environment?: Environment): string {
     const result = clone(workspace);
     if (collection) {
-        result.collections = [clone(collection)];
+        const collectionIds = collectionSubtreeIds(workspace.collections, collection.id);
+        result.collections = workspace.collections.filter(candidate => collectionIds.has(candidate.id)).map(clone);
+        delete result.collections.find(candidate => candidate.id === collection.id)!.parentId;
         result.environments = [];
         result.environmentId = '';
     }
@@ -426,7 +431,7 @@ export function exportWorkspace(workspace: Workspace, collection?: Collection, e
     return JSON.stringify(result, null, JsonIndent);
 }
 
-export function exportPostman(collection: Collection): string {
+export function exportPostman(collection: Collection, collections: Collection[] = [collection]): string {
     const auth = (a?: ApiRequest['auth']): any => {
         if (!a || a.kind === AuthKind.Inherit) return undefined;
         const fields = (values: Record<string, string>) => Object.entries(values).map(([key, value]) => ({
@@ -449,7 +454,7 @@ export function exportPostman(collection: Collection): string {
         listen: 'prerequest',
         script: {type: 'text/javascript', exec: s.before.split('\n')}
     }, {listen: 'test', script: {type: 'text/javascript', exec: s.after.split('\n')}}];
-    const item = collection.requests.map(r => {
+    const requestItem = (owner: Collection, r: ApiRequest) => {
         const body: any = r.body.kind === BodyKind.None ? undefined : r.body.kind === BodyKind.Binary ? {
             mode: 'file',
             file: {src: r.body.file}
@@ -472,7 +477,7 @@ export function exportPostman(collection: Collection): string {
             options: {raw: {language: r.body.kind === BodyKind.Json ? 'json' : 'text'}}
         };
         const ownHeaders = new Set(r.headers.map(h => h.name.toLowerCase()));
-        const headers = [...(collection.headers || []).filter(h => !ownHeaders.has(h.name.toLowerCase())), ...r.headers];
+        const headers = [...(owner.headers || []).filter(h => !ownHeaders.has(h.name.toLowerCase())), ...r.headers];
         if (r.body.contentType && ![BodyKind.None, BodyKind.Multipart].includes(r.body.kind) && !headers.some(h => h.enabled && h.name.toLowerCase() === HttpHeader.ContentType)) headers.push(pair(HttpHeader.ContentType, r.body.contentType));
         return {
             name: r.name,
@@ -488,11 +493,20 @@ export function exportPostman(collection: Collection): string {
                 body
             }
         };
-    });
+    };
+    const items = (owner: Collection): any[] => [
+        ...childCollections(collections, owner.id).map(child => ({
+            name: child.name,
+            auth: auth(child.auth),
+            event: events(child.scripts),
+            item: items(child)
+        })),
+        ...owner.requests.map(request => requestItem(owner, request))
+    ];
     return JSON.stringify({
         info: {name: collection.name, schema: PostmanCollectionSchema},
         auth: auth(collection.auth),
         event: events(collection.scripts),
-        item
+        item: items(collection)
     }, null, JsonIndent);
 }

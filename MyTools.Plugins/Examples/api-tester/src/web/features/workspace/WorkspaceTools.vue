@@ -15,6 +15,7 @@ import ResponsePanel from '../response/ResponsePanel.vue';
 import IconButton from '../../components/common/IconButton.vue';
 import Icon from '../../components/common/Icon.vue';
 import {WorkspaceTool as ToolTab} from './workspaceToolTypes.js';
+import {collectionPath, flattenCollectionTree} from '../../../shared/collectionTree.js';
 
 const props = defineProps<{ tool: ToolTab; requestId?: string; requestName?: string; iconOnly?: boolean }>();
 const ToolIcons = {[ToolTab.Import]: 'download', [ToolTab.Export]: 'upload', [ToolTab.History]: 'history'} as const;
@@ -48,6 +49,7 @@ const historyPage = ref(1);
 const busy = ref(false);
 const error = ref(false);
 const historyFailed = ref(false);
+const exportCollections = computed(() => flattenCollectionTree(workspace.value.collections));
 const exportCollection = computed(() => workspace.value.collections.find(c => c.id === targetId.value));
 const exportEnvironment = computed(() => workspace.value.environments.find(e => e.id === targetId.value));
 const filteredHistory = computed(() => history.value.filter(e =>
@@ -137,7 +139,9 @@ function download() {
   const collection = target.value === ExportTarget.Collection ? exportCollection.value : undefined;
   const environment = target.value === ExportTarget.Environment ? exportEnvironment.value : undefined;
   if (target.value !== ExportTarget.Workspace && !collection && !environment) return;
-  const contents = format.value === ExportFormat.Postman && collection ? exportPostman(collection) : exportWorkspace(workspace.value, collection, environment);
+  const contents = format.value === ExportFormat.Postman && collection
+      ? exportPostman(collection, workspace.value.collections)
+      : exportWorkspace(workspace.value, collection, environment);
   const url = URL.createObjectURL(new Blob([contents], {type: 'application/json'}));
   const link = document.createElement('a');
   link.href = url;
@@ -206,7 +210,7 @@ function reopenSelected() {
         <option :value="ExportTarget.Environment">{{ t.Environments() }}</option>
       </select></label>
       <label v-if="target === ExportTarget.Collection" class="field">{{ t.Collections() }}<select v-model="targetId">
-        <option v-for="c in workspace.collections" :key="c.id" :value="c.id">{{ c.name }}</option>
+        <option v-for="c in exportCollections" :key="c.id" :value="c.id">{{ collectionPath(workspace.collections, c) }}</option>
       </select></label>
       <label v-if="target === ExportTarget.Environment" class="field">{{ t.Environments() }}<select v-model="targetId">
         <option v-for="e in workspace.environments" :key="e.id" :value="e.id">{{ e.name }}</option>

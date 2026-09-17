@@ -542,6 +542,10 @@ dialog.workspace-tools-dialog {
 }
 
 .collection-tree {
+    --tree-branch-x: 20px;
+    --tree-request-content-x: 42px;
+    --tree-nested-collection-offset: 22px;
+    --tree-row-half-height: 18px;
     flex: 1;
     min-height: 0;
     overflow: auto;
@@ -579,13 +583,70 @@ dialog.workspace-tools-dialog {
     background: var(--surface);
 }
 
+.request-branches {
+    position: relative;
+}
+
+.request-branches:not(:empty)::before {
+    content: '';
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    bottom: var(--tree-row-half-height);
+    left: var(--tree-branch-x);
+    border-left: 1px dashed var(--muted);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 120ms ease-out;
+}
+
+.request-branches > .collection {
+    position: relative;
+    margin-left: var(--tree-nested-collection-offset);
+}
+
+.request-branches > .collection::before {
+    content: '';
+    position: absolute;
+    z-index: 1;
+    top: var(--tree-row-half-height);
+    left: calc(var(--tree-branch-x) - var(--tree-nested-collection-offset));
+    width: calc(var(--tree-nested-collection-offset) - var(--tree-branch-x) + 14px);
+    border-top: 1px dashed var(--muted);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 120ms ease-out;
+}
+
 .request-row {
     position: relative;
     display: flex;
     align-items: center;
-    padding: 3px 12px 3px 30px;
+    padding: 3px 12px 3px var(--tree-request-content-x);
     gap: 9px;
     min-height: 36px;
+}
+
+.request-row::before {
+    content: '';
+    position: absolute;
+    z-index: 1;
+    top: 50%;
+    left: var(--tree-branch-x);
+    width: calc(var(--tree-request-content-x) - var(--tree-branch-x) - 6px);
+    border-top: 1px dashed var(--muted);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 120ms ease-out;
+}
+
+.collection:hover > .request-branches::before,
+.collection:hover > .request-branches > .request-row::before,
+.collection:hover > .request-branches > .collection::before,
+.collection:focus-within > .request-branches::before,
+.collection:focus-within > .request-branches > .request-row::before,
+.collection:focus-within > .request-branches > .collection::before {
+    opacity: 0.55;
 }
 
 .request-title {

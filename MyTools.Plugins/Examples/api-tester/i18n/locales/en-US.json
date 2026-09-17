@@ -6,6 +6,7 @@
   "Plugin.ApiTester.Collections": "Collections",
   "Plugin.ApiTester.Environments": "Environments",
   "Plugin.ApiTester.NewCollection": "New collection",
+  "Plugin.ApiTester.AddSubcollection": "Add subcollection",
   "Plugin.ApiTester.NewRequest": "New request",
   "Plugin.ApiTester.Rename": "Rename",
   "Plugin.ApiTester.Delete": "Delete",

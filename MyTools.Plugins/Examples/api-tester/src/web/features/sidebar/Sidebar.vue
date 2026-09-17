@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import {nextTick, ref, watch} from 'vue';
+import {computed, nextTick, ref, watch} from 'vue';
 import SidebarContextMenu from './SidebarContextMenu.vue';
 import {SidebarMenuKind} from './sidebarMenuTypes.js';
 import {useWorkspaceContext} from '../workspace/context.js';
 import IconButton from '../../components/common/IconButton.vue';
 import CollectionSettings from './CollectionSettings.vue';
+import SidebarCollectionNode from './SidebarCollectionNode.vue';
 
 const settingsCollection = ref<Collection>();
 const expanded = ref(new Set<string>());
@@ -44,6 +45,7 @@ const {
   tabs,
   active,
   collectionId,
+  collection,
   search,
   addCollection,
   createRequest,
@@ -55,22 +57,24 @@ const {
   deleteRequest,
   move,
   openRunner,
-  filtered,
   selectCollection,
   revealRequestId,
 } = useWorkspaceContext();
 import Icon from '../../components/common/Icon.vue';
-import {HttpMethod} from '../../../shared/model.js';
 import type {ApiRequest, Collection} from '../../../shared/model.js';
+import {collectionMatchesSearch, rootCollections} from '../../../shared/collectionTree.js';
 
-const SidebarMethodAbbreviations: Readonly<Record<string, string | undefined>> = {
-  [HttpMethod.Delete]: 'DEL',
-  [HttpMethod.Options]: 'OPT',
-};
+const visibleRootCollections = computed(() =>
+    rootCollections(workspace.value.collections)
+        .filter(owner => collectionMatchesSearch(workspace.value.collections, owner, search.value)));
 watch(
     collectionId,
     (id) => {
-      if (id) expanded.value.add(id);
+      let owner = workspace.value.collections.find(candidate => candidate.id === id);
+      while (owner) {
+        expanded.value.add(owner.id);
+        owner = workspace.value.collections.find(candidate => candidate.id === owner?.parentId);
+      }
     },
     {immediate: true},
 );
@@ -112,8 +116,8 @@ watch(revealRequestId, async id => {
       <div class="icon-actions">
         <IconButton
             icon="folder-plus"
-            :label="t.NewCollection()"
-            @click="addCollection"
+            :label="collection ? t.AddSubcollection() : t.NewCollection()"
+            @click="addCollection()"
         />
         <IconButton
             icon="plus"
@@ -131,55 +135,13 @@ watch(revealRequestId, async id => {
       />
     </div>
     <div class="collection-tree">
-      <div
-          v-for="owner in workspace.collections"
-          :key="owner.id"
-          class="collection"
-      >
-        <div
-            class="collection-heading"
-            :class="{ selected: owner.id === collectionId }"
-            @contextmenu="showCollectionMenu($event, owner)"
-            @keydown="showCollectionMenu($event, owner)"
-        >
-          <button
-              class="collection-title"
-              @click="toggleCollection(owner.id)"
-              :aria-expanded="expanded.has(owner.id) || !!search"
-          >
-            <Icon
-                :name="
-                expanded.has(owner.id) || search
-                  ? 'chevron-down'
-                  : 'chevron-right'
-              "
-            />
-            <Icon name="folder"/>
-            <span>{{ owner.name }}</span
-            ><span class="muted">{{ owner.requests.length }}</span>
-          </button>
-        </div>
-        <template v-if="expanded.has(owner.id) || search"
-        >
-          <div
-              v-for="request in filtered(owner)"
-              :key="request.id"
-              class="request-row"
-              :class="{ selected: active === request.id }"
-              @contextmenu="showRequestMenu($event, request, owner)"
-              @keydown="showRequestMenu($event, request, owner)"
-          >
-            <button class="request-title" :data-request-id="request.id" @click="open(request, owner.id)">
-              <span class="method-label" :data-method="request.method" :title="request.method"
-                    :aria-label="request.method">{{
-                  SidebarMethodAbbreviations[request.method] ?? request.method
-                }}</span
-              ><span>{{ request.name }}</span>
-            </button>
-          </div
-          >
-        </template>
-      </div>
+      <SidebarCollectionNode v-for="owner in visibleRootCollections" :key="owner.id" :owner="owner"
+                             :collections="workspace.collections" :expanded="expanded" :search="search"
+                             :active-request-id="active" :selected-collection-id="collectionId"
+                             @toggle="toggleCollection"
+                             @open-request="(request, owner) => open(request, owner.id)"
+                             @collection-menu="showCollectionMenu"
+                             @request-menu="showRequestMenu"/>
     </div>
   </aside>
   <CollectionSettings v-if="settingsCollection" :collection="settingsCollection"
@@ -202,6 +164,7 @@ watch(revealRequestId, async id => {
                       @close="collectionMenu = undefined"
                       @run="openRunner(collectionMenu.owner)"
                       @add="createRequest(collectionMenu.owner)"
+                      @add-collection="addCollection(collectionMenu.owner)"
                       @settings="settingsCollection = collectionMenu.owner"
                       @rename="renameCollection(collectionMenu.owner)"
                       @copy="duplicateCollection(collectionMenu.owner)"

@@ -29,6 +29,7 @@ import {
     type Settings,
     type CookieRecord,
 } from '../../../shared/model.js';
+import {collectionSubtreeIds, newCollection} from '../../../shared/collectionTree.js';
 
 const RunnerTabId = 'api-tester:runner';
 
@@ -132,12 +133,13 @@ export function useWorkspace() {
 
     const mutate = createWorkspaceMutator(workspace, value => rpc(Routes.save, value));
 
-    async function addCollection() {
+    async function addCollection(parent?: Collection) {
+        const owner = parent ?? collection.value;
         const value = await name(t.value.NewCollection());
         if (value) {
-            const id = crypto.randomUUID();
+            const id = uid();
             await mutate(() =>
-                workspace.value.collections.push({id, name: value, requests: []}),
+                workspace.value.collections.push(newCollection(id, value, owner?.id)),
             );
             collectionId.value = id;
         }
@@ -150,38 +152,45 @@ export function useWorkspace() {
 
     async function duplicateCollection(owner: Collection) {
         const value = await name(owner.name);
-        if (value)
-            await mutate(() =>
-                workspace.value.collections.push({
-                    ...clone(owner),
-                    id: crypto.randomUUID(),
-                    name: value,
-                    requests: owner.requests.map((request) => ({
-                        ...clone(request),
-                        id: crypto.randomUUID(),
-                    })),
-                }),
-            );
+        if (!value) return;
+        const subtreeIds = collectionSubtreeIds(workspace.value.collections, owner.id);
+        const originals = workspace.value.collections.filter(candidate => subtreeIds.has(candidate.id));
+        const copiedIds = new Map(originals.map(candidate => [candidate.id, uid()]));
+        const copies = originals.map(candidate => ({
+            ...clone(candidate),
+            id: copiedIds.get(candidate.id)!,
+            name: candidate.id === owner.id ? value : candidate.name,
+            parentId: candidate.id === owner.id ? owner.parentId : copiedIds.get(candidate.parentId!),
+            requests: candidate.requests.map(request => ({...clone(request), id: uid()})),
+        }));
+        await mutate(() => workspace.value.collections.push(...copies));
+        collectionId.value = copiedIds.get(owner.id)!;
     }
 
     async function deleteCollection(owner: Collection) {
+        const subtreeIds = collectionSubtreeIds(workspace.value.collections, owner.id);
+        const requestCount = workspace.value.collections
+            .filter(candidate => subtreeIds.has(candidate.id))
+            .reduce((total, candidate) => total + candidate.requests.length, 0);
         if (
             !(await confirm(() =>
-                t.value.DeleteCollection({count: owner.requests.length}),
+                t.value.DeleteCollection({count: requestCount}),
             ))
         )
             return;
         for (const item of [...tabs.value].filter(
-            (item) => item.collectionId === owner.id,
+            (item) => subtreeIds.has(item.collectionId),
         ))
             if (!(await closeTab(item))) return;
         await mutate(
             () =>
                 (workspace.value.collections = workspace.value.collections.filter(
-                    (item) => item.id !== owner.id,
+                    (item) => !subtreeIds.has(item.id),
                 )),
         );
-        collectionId.value = workspace.value.collections[0]?.id || '';
+        collectionId.value = workspace.value.collections.some(item => item.id === owner.parentId)
+            ? owner.parentId!
+            : workspace.value.collections[0]?.id || '';
     }
 
     function open(request: ApiRequest, owner = '') {

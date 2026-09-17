@@ -110,6 +110,21 @@
       }
     },
     {
+      "key": "Plugin.ApiTester.AddSubcollection",
+      "defaultValue": "Add subcollection",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/localization/i18n.ts",
+          "line": 105,
+          "column": 32
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "添加子集合"
+      }
+    },
+    {
       "key": "Plugin.ApiTester.NewRequest",
       "defaultValue": "New request",
       "placeholders": [],

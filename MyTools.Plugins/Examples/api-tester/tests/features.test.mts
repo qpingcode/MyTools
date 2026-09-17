@@ -32,6 +32,8 @@ import {executeRequest} from '../src/backend/execution/engine.mjs';
 import {runScript} from '../src/backend/scripting/scripts.mjs';
 import {HistoryStore, WorkspaceStore} from '../src/backend/persistence/storage.mjs';
 import {Runner} from '../src/backend/execution/runner.mjs';
+import {validateWorkspace} from '../src/shared/workspaceValidation.js';
+import {newCollection} from '../src/shared/collectionTree.js';
 
 const SuccessStatus = 200;
 const PollIntervalMs = 10;
@@ -126,6 +128,36 @@ test('native backup roundtrip preserves configuration, creates new IDs and disab
     const invalid = JSON.parse(exportWorkspace(workspace));
     invalid.collections[0].requests[0].headers = [{name: 1, value: null}];
     assert.throws(() => importWorkspace(JSON.stringify(invalid), () => String(++sequence)));
+});
+
+test('nested collections persist, remap parents and export as a rooted subtree', () => {
+    const workspace = emptyWorkspace();
+    const root = newCollection('root', 'Root');
+    const child = newCollection('child', 'Child', root.id);
+    root.requests.push(newRequest('one', 'one'));
+    child.requests.push(newRequest('two', 'two'));
+    workspace.collections.push(root, child);
+    const childExport = JSON.parse(exportWorkspace(workspace, child));
+    assert.equal(childExport.collections.length, 1);
+    assert.equal(childExport.collections[0].id, child.id);
+    assert.equal(childExport.collections[0].parentId, undefined);
+    const rootExport = JSON.parse(exportWorkspace(workspace, root));
+    assert.equal(rootExport.collections.length, 2);
+    assert.equal(rootExport.collections.find((item: Collection) => item.id === root.id).parentId, undefined);
+    assert.equal(rootExport.collections.find((item: Collection) => item.id === child.id).parentId, root.id);
+    const postman = JSON.parse(exportPostman(root, workspace.collections));
+    assert.equal(postman.item[0].name, 'Child');
+    assert.equal(postman.item[0].item[0].name, 'two');
+    assert.equal(postman.item[1].name, 'one');
+    let sequence = 0;
+    const imported = importWorkspace(exportWorkspace(workspace), () => String(++sequence));
+    const importedRoot = imported.collections.find(item => !item.parentId)!;
+    const importedChild = imported.collections.find(item => item.parentId)!;
+    assert.notEqual(importedRoot.id, root.id);
+    assert.equal(importedChild.parentId, importedRoot.id);
+    const cyclic = emptyWorkspace();
+    cyclic.collections.push(newCollection('a', 'A', 'b'), newCollection('b', 'B', 'a'));
+    assert.throws(() => validateWorkspace(cyclic));
 });
 
 test('Postman collections import folder auth and scripts, and exported disabled params survive reimport', () => {
