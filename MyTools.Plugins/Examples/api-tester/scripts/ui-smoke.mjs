@@ -308,6 +308,17 @@ try {
   const usersCollection = () => workspace.collections.find(item => item.name === 'Users');
   const accountsCollection = () => workspace.collections.find(item => item.name === 'Accounts');
   assert.equal(accountsCollection().parentId, usersCollection().id);
+  const nestedCollectionAlign = await page.evaluate(() => {
+    const tree = document.querySelector('.collection-tree');
+    const nested = document.querySelector('.collection-tree > .collection > .request-branches > .collection');
+    return {
+      treeLeft: tree.getBoundingClientRect().left,
+      nestedLeft: nested.getBoundingClientRect().left,
+      nestedMarginLeft: getComputedStyle(nested).marginLeft,
+    };
+  });
+  assert.equal(nestedCollectionAlign.nestedMarginLeft, '0px');
+  assert.equal(nestedCollectionAlign.nestedLeft, nestedCollectionAlign.treeLeft);
   await page.locator('.collection-title').filter({ hasText: 'Users' }).click();
   async function create(name, endpoint) {
     await page
@@ -333,6 +344,15 @@ try {
   await create('Login', '/login');
   assert.equal(usersCollection().requests.length, 1);
   assert.equal(accountsCollection().requests.length, 0);
+  const sidebar = page.locator('aside');
+  await sidebar.getByRole('button', { name: 'New collection', exact: true }).waitFor();
+  assert.equal(await page.locator('.collection-heading.selected').count(), 0);
+  await page.locator('.collection-title').filter({ hasText: 'Users' }).click();
+  assert.equal(await page.locator('.collection-heading.selected').count(), 1);
+  await sidebar.getByRole('button', { name: 'Add subcollection', exact: true }).waitFor();
+  await page.locator('.request-title').filter({ hasText: 'Login' }).click();
+  await sidebar.getByRole('button', { name: 'New collection', exact: true }).waitFor();
+  assert.equal(await page.locator('.collection-heading.selected').count(), 0);
   assert.equal(await page.getByRole('tab', {name: 'Assertions', exact: true}).count(), 0);
   assert.equal(await page.getByRole('tab', {name: 'JSON variable extraction', exact: true}).count(), 0);
   await page.getByRole('tab', {name: 'Scripts', exact: true}).click();
@@ -509,6 +529,29 @@ try {
   await page.getByRole('heading', {name: 'Collection Runner', exact: true}).waitFor();
   await page.locator('.document-tab.selected').getByRole('button', {name: 'Close', exact: true}).click();
   assert.equal(workspace.collections[0].requests.length, 2);
+  await page.locator('.collection-title').filter({ hasText: 'Accounts' }).click();
+  await page.locator('aside').getByRole('button', { name: 'New request', exact: true }).click();
+  const nestedSelectedRow = page.locator('.request-branches > .collection .request-row.selected');
+  await nestedSelectedRow.waitFor();
+  const nestedHighlight = await page.evaluate(() => {
+    const tree = document.querySelector('.collection-tree');
+    const row = document.querySelector('.request-branches > .collection .request-row.selected');
+    const treeBox = tree.getBoundingClientRect();
+    const rowBox = row.getBoundingClientRect();
+    return {
+      treeLeft: treeBox.left,
+      rowLeft: rowBox.left,
+      rowWidth: rowBox.width,
+      treeClientWidth: tree.clientWidth,
+    };
+  });
+  assert.equal(nestedHighlight.rowLeft, nestedHighlight.treeLeft);
+  assert.equal(nestedHighlight.rowWidth, nestedHighlight.treeClientWidth);
+  await nestedSelectedRow.click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Delete', exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Continue', exact: true }).click();
+  await page.getByRole('dialog').waitFor({ state: 'detached' });
+  await page.locator('.request-title').filter({ hasText: 'User' }).click();
   // CRUD controls operate from the sidebar, including unopened requests.
   const userRow = page
     .locator('.request-row')

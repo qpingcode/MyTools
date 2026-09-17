@@ -188,9 +188,17 @@ export function useWorkspace() {
                     (item) => !subtreeIds.has(item.id),
                 )),
         );
-        collectionId.value = workspace.value.collections.some(item => item.id === owner.parentId)
-            ? owner.parentId!
-            : workspace.value.collections[0]?.id || '';
+        if (subtreeIds.has(collectionId.value)) {
+            collectionId.value = workspace.value.collections.some(item => item.id === owner.parentId)
+                ? owner.parentId!
+                : '';
+        }
+    }
+
+    function ownerCollection(id: string | undefined) {
+        return id
+            ? workspace.value.collections.find(item => item.id === id)
+            : undefined;
     }
 
     function open(request: ApiRequest, owner = '') {
@@ -204,12 +212,12 @@ export function useWorkspace() {
             });
             documentTabIds.value.push(request.id);
         }
-        active.value = request.id;
-        runnerActive.value = false;
-        if (owner) collectionId.value = owner;
+        activateRequest(request.id);
     }
 
-    async function createRequest(owner: Collection | undefined = collection.value) {
+    async function createRequest(
+        owner: Collection | undefined = collection.value ?? ownerCollection(tab.value?.collectionId),
+    ) {
         if (!owner) {
             await addCollection();
             owner = collection.value;
@@ -232,6 +240,7 @@ export function useWorkspace() {
     function activateRequest(id: string) {
         active.value = id;
         runnerActive.value = false;
+        collectionId.value = '';
     }
 
     function showRunner() {
@@ -271,7 +280,6 @@ export function useWorkspace() {
     }
 
     function revealInSidebar(item: Tab) {
-        collectionId.value = item.collectionId;
         revealRequestId.value = item.request.id;
     }
 
@@ -302,7 +310,6 @@ export function useWorkspace() {
         });
         item.collectionId = target.id;
         item.baseline = JSON.stringify(saved);
-        collectionId.value = target.id;
         return true;
     }
 
@@ -572,7 +579,6 @@ export function useWorkspace() {
         try {
             const value = await rpc<Workspace>(Routes.load);
             workspace.value = value;
-            collectionId.value = value.collections[0]?.id || '';
             workspaceReady.value = true;
             notification.value = '';
         } catch (error) {
