@@ -53,7 +53,6 @@ const {
   tabs,
   active,
   collectionId,
-  collection,
   search,
   addCollection,
   createRequest,
@@ -265,7 +264,7 @@ onBeforeUnmount(endRequestDrag);
       <div class="icon-actions">
         <IconButton
             icon="folder-plus"
-            :label="collection ? t.AddSubcollection() : t.NewCollection()"
+            :label="t.NewCollection()"
             @click="addCollection()"
         />
         <IconButton

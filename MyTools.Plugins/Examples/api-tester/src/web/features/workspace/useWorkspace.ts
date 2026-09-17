@@ -29,7 +29,7 @@ import {
     type Settings,
     type CookieRecord,
 } from '../../../shared/model.js';
-import {collectionSubtreeIds, newCollection} from '../../../shared/collectionTree.js';
+import {collectionSubtreeIds, newCollection, rootCollections} from '../../../shared/collectionTree.js';
 import {placeRequest, requestRelocation} from '../../../shared/requestPlacement.js';
 import {placeListItem} from '../../../shared/listReorder.js';
 
@@ -136,12 +136,11 @@ export function useWorkspace() {
     const mutate = createWorkspaceMutator(workspace, value => rpc(Routes.save, value));
 
     async function addCollection(parent?: Collection) {
-        const owner = parent ?? collection.value;
         const value = await name(t.value.NewCollection());
         if (value) {
             const id = uid();
             await mutate(() =>
-                workspace.value.collections.push(newCollection(id, value, owner?.id)),
+                workspace.value.collections.push(newCollection(id, value, parent?.id)),
             );
             collectionId.value = id;
         }
@@ -217,17 +216,19 @@ export function useWorkspace() {
         activateRequest(request.id);
     }
 
-    async function createRequest(
-        owner: Collection | undefined = collection.value ?? ownerCollection(tab.value?.collectionId),
-    ) {
-        if (!owner) {
+    async function createRequest(owner?: Collection) {
+        let target: Collection | undefined = owner
+            ?? collection.value
+            ?? ownerCollection(tab.value?.collectionId)
+            ?? rootCollections(workspace.value.collections)[0];
+        if (!target) {
             await addCollection();
-            owner = collection.value;
+            target = collection.value;
         }
-        if (!owner) return;
+        if (!target) return;
         const request = newRequest(uid(), t.value.NewRequest());
-        await mutate(() => owner!.requests.push(request));
-        open(request, owner.id);
+        await mutate(() => target.requests.push(request));
+        open(request, target.id);
         revealRequestId.value = request.id;
     }
 

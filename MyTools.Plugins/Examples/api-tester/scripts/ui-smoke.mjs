@@ -310,7 +310,8 @@ try {
     .getByRole('button', { name: 'Save', exact: true })
     .click();
   await page.getByRole('button', { name: /Users/ }).waitFor();
-  await page.locator('aside').getByRole('button', { name: 'Add subcollection', exact: true }).click();
+  await page.locator('.collection-title').filter({ hasText: 'Users' }).click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Add subcollection', exact: true }).click();
   await page.getByRole('dialog').getByRole('textbox').fill('Accounts');
   await page.getByRole('dialog').getByRole('button', { name: 'Save', exact: true }).click();
   const usersCollection = () => workspace.collections.find(item => item.name === 'Users');
@@ -354,10 +355,11 @@ try {
   assert.equal(accountsCollection().requests.length, 0);
   const sidebar = page.locator('aside');
   await sidebar.getByRole('button', { name: 'New collection', exact: true }).waitFor();
+  assert.equal(await sidebar.getByRole('button', { name: 'Add subcollection', exact: true }).count(), 0);
   assert.equal(await page.locator('.collection-heading.selected').count(), 0);
   await page.locator('.collection-title').filter({ hasText: 'Users' }).click();
   assert.equal(await page.locator('.collection-heading.selected').count(), 1);
-  await sidebar.getByRole('button', { name: 'Add subcollection', exact: true }).waitFor();
+  await sidebar.getByRole('button', { name: 'New collection', exact: true }).waitFor();
   await page.locator('.request-row.selected .request-title').click();
   await sidebar.getByRole('button', { name: 'New collection', exact: true }).waitFor();
   assert.equal(await page.locator('.collection-heading.selected').count(), 0);
