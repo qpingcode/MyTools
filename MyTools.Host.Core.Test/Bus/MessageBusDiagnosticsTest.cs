@@ -21,7 +21,7 @@ public class MessageBusDiagnosticsTest
         var nodeTransport = new InMemoryTransport();
         var hostTransport = new InMemoryTransport();
         var nodeEndpoint = new EndpointId("settings", "session-1", "node-main", IsNode: true);
-        var hostEndpoint = new EndpointId("settings", "session-1", "host", IsNode: false);
+        var hostEndpoint = new EndpointId("settings", "session-1", "web", IsNode: false);
         bus.RegisterEndpoint(nodeEndpoint, nodeTransport);
         bus.RegisterEndpoint(hostEndpoint, hostTransport);
 
@@ -30,7 +30,7 @@ public class MessageBusDiagnosticsTest
 
         var snapshot = diagnostics.GetSnapshot().Plugins.Single(plugin => plugin.PluginId == "settings");
         var call = snapshot.CallMetrics.Single(metric => metric.Route == "plugin.call.search");
-        var endpoint = snapshot.Endpoints.Single(metric => metric.EndpointId == "host");
+        var endpoint = snapshot.Endpoints.Single(metric => metric.EndpointId == "web");
 
         Assert.Multiple(() =>
         {
@@ -81,7 +81,7 @@ public class MessageBusDiagnosticsTest
         TraceId = id,
         SessionId = "session-1",
         PluginId = "settings",
-        EndpointId = "host",
+        EndpointId = "web",
         Kind = MessageKind.Request,
         Route = route,
         TimeoutMs = 5000

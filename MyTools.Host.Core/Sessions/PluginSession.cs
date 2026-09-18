@@ -15,6 +15,7 @@ public sealed class PluginSession
 
     private readonly PluginSessionStateMachine _sm = new();
     private readonly GenerationGuard _gen = new();
+    private readonly CancellationTokenSource _lifetime = new();
 
     public PluginSession(string pluginId, string sessionId)
     {
@@ -24,6 +25,7 @@ public sealed class PluginSession
 
     public SessionState State => _sm.State;
     public bool IsAvailable => _sm.IsAvailable;
+    public CancellationToken LifetimeToken => _lifetime.Token;
     internal GenerationGuard GenerationGuard => _gen;
 
     /// <summary>The process controller owning the Node child process; set by the manager on start.</summary>
@@ -43,5 +45,10 @@ public sealed class PluginSession
             _gen.Bump();
             Generation = _gen.Generation;
         }
+    }
+
+    internal void CancelLifetime()
+    {
+        try { _lifetime.Cancel(); } catch (ObjectDisposedException) { }
     }
 }

@@ -1,11 +1,4 @@
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MyTools.Host.Core.Backpressure;
@@ -21,37 +14,22 @@ using MyTools.Protocol.Versioning;
 namespace MyTools.Host.Core.Bus;
 
 /// <summary>
-/// Host-call handler registered per plugin. Invoked after <see cref="CapabilityGateway"/>
-/// authorizes the route. Returns a JSON payload on success or throws on failure.
+/// Routes envelopes between transport-bound endpoints. RPC waiting, timeout, cancellation,
+/// business execution, and event queueing belong to dedicated collaborators.
 /// </summary>
-public delegate Task<JsonElement> HostCallInvoker(
-    string method, JsonElement parameters, CancellationToken cancellationToken);
-
-/// <summary>
-/// The host-central message bus. Routes requests to the target Node endpoint within a session,
-/// correlates responses back to the originating endpoint, broadcasts events, and dispatches
-/// Node-originated <c>host.call.*</c> through <see cref="CapabilityGateway"/> then the registered
-/// <see cref="HostCallInvoker"/>.
-///
-/// Inbound identity fields are stamped from the transport-bound <see cref="EndpointId"/>; the bus
-/// never trusts peer-declared plugin/session/endpoint ids. Per-endpoint
-/// <see cref="PendingRequestTracker"/> and <see cref="BoundedEventQueue{T}"/> enforce Phase-1
-/// backpressure.
-/// </summary>
-public sealed class MessageBus
+public sealed class MessageBus : IMessageRouter
 {
     public const int DefaultPendingLimit = 64;
-    public const int DefaultEventQueueCapacity = 64;
+    public const int DefaultEventQueueCapacity = EventFanout.DefaultQueueCapacity;
 
     private readonly ConcurrentDictionary<string, SessionEndpoints> _sessions = new();
-    private readonly ConcurrentDictionary<string, PendingOrigin> _pending = new();
-    private readonly ConcurrentDictionary<string, HostCallInvoker> _hostCallHandlers = new();
-    private readonly CapabilityGateway _gateway;
+    private readonly ConcurrentDictionary<string, ResponseRoute> _responseRoutes = new();
+    private readonly HostCallDispatcher _hostCallDispatcher;
+    private readonly EventFanout _eventFanout;
     private readonly IIdGenerator _ids;
     private readonly ILogger _logger;
     private readonly IPluginDiagnosticsService? _diagnostics;
-    private readonly int _pendingLimit;
-    private readonly int _eventQueueCapacity;
+    private readonly int _externalRequestLimit;
 
     public MessageBus(
         CapabilityGateway? gateway = null,
@@ -59,142 +37,266 @@ public sealed class MessageBus
         ILogger? logger = null,
         IPluginDiagnosticsService? diagnostics = null,
         int pendingLimit = DefaultPendingLimit,
-        int eventQueueCapacity = DefaultEventQueueCapacity)
+        int eventQueueCapacity = DefaultEventQueueCapacity,
+        HostCallDispatcher? hostCallDispatcher = null,
+        EventFanout? eventFanout = null)
     {
-        _gateway = gateway ?? new CapabilityGateway();
+        var effectiveGateway = gateway ?? new CapabilityGateway();
         _ids = ids ?? new GuidIdGenerator();
         _logger = logger ?? NullLogger.Instance;
         _diagnostics = diagnostics;
-        _pendingLimit = pendingLimit;
-        _eventQueueCapacity = eventQueueCapacity;
+        _externalRequestLimit = pendingLimit;
+        _hostCallDispatcher = hostCallDispatcher
+            ?? new HostCallDispatcher(effectiveGateway, _ids, diagnostics, _logger, pendingLimit);
+        _eventFanout = eventFanout
+            ?? new EventFanout(diagnostics, _logger, eventQueueCapacity);
+        _hostCallDispatcher.AttachRouter(this);
     }
 
-    /// <summary>Sum of dropped outbound events across all registered endpoints (diagnostics).</summary>
-    public long TotalDroppedEvents
+    public HostCallDispatcher HostCallDispatcher => _hostCallDispatcher;
+    public long TotalDroppedEvents => _eventFanout.TotalDroppedEvents;
+    internal int ResponseRouteCount => _responseRoutes.Count;
+
+    public void RegisterEndpoint(EndpointId endpoint, IMessageTransport transport)
     {
-        get
+        var session = _sessions.GetOrAdd(
+            SessionKey(endpoint.PluginId, endpoint.SessionId),
+            _ => new SessionEndpoints());
+        Action<Envelope> handler = envelope => OnInbound(endpoint, envelope);
+        var binding = new EndpointBinding(
+            endpoint,
+            transport,
+            handler,
+            new PendingRequestTracker(_externalRequestLimit));
+
+        if (session.AddOrReplace(binding, out var replaced))
         {
-            long total = 0;
-            foreach (var session in _sessions.Values)
-            {
-                total += session.DroppedEvents;
-            }
-            return total;
+            replaced.Transport.MessageReceived -= replaced.Handler;
+            _eventFanout.UnregisterEndpoint(replaced.Id);
+            _hostCallDispatcher.RemoveEndpoint(replaced.Id);
+            RemoveResponseRoutes(route => route.Origin == replaced.Id);
         }
-    }
 
-    public void RegisterEndpoint(EndpointId id, IMessageTransport transport)
-    {
-        var key = SessionKey(id.PluginId, id.SessionId);
-        var session = _sessions.GetOrAdd(key, _ => new SessionEndpoints(this, _pendingLimit, _eventQueueCapacity));
-        Action<Envelope> handler = env => OnInbound(id, env);
-        session.Add(id, transport, handler);
         transport.MessageReceived += handler;
+        _eventFanout.RegisterEndpoint(endpoint, transport);
+        UpdateAdmissionDiagnostics(binding);
         _logger.LogDebug(
             "Bus endpoint registered plugin={PluginId} session={SessionId} ep={Endpoint} isNode={IsNode}",
-            id.PluginId, id.SessionId, id.EndpointLabel, id.IsNode);
+            endpoint.PluginId,
+            endpoint.SessionId,
+            endpoint.EndpointLabel,
+            endpoint.IsNode);
     }
 
-    public void UnregisterEndpoint(EndpointId id)
+    public void UnregisterEndpoint(EndpointId endpoint)
     {
-        var key = SessionKey(id.PluginId, id.SessionId);
-        if (_sessions.TryGetValue(key, out var session)
-            && session.TryRemove(id, out var transport, out var handler))
-        {
-            transport.MessageReceived -= handler;
-            _diagnostics?.RemoveEndpoint(id.PluginId, id.SessionId, id.EndpointLabel);
-            _logger.LogDebug(
-                "Bus endpoint unregistered plugin={PluginId} session={SessionId} ep={Endpoint}",
-                id.PluginId, id.SessionId, id.EndpointLabel);
-        }
-    }
-
-    public void RegisterHostCallHandler(string pluginId, HostCallInvoker handler)
-        => _hostCallHandlers[pluginId] = handler;
-
-    public void UnregisterHostCallHandler(string pluginId)
-        => _hostCallHandlers.TryRemove(pluginId, out _);
-
-    public void AbandonPendingRequest(string requestId, string route)
-    {
-        if (!_pending.TryRemove(requestId, out var pending))
+        var key = SessionKey(endpoint.PluginId, endpoint.SessionId);
+        if (!_sessions.TryGetValue(key, out var session)
+            || !session.TryRemove(endpoint.EndpointLabel, out var binding))
         {
             return;
         }
 
-        var key = SessionKey(pending.Origin.PluginId, pending.Origin.SessionId);
-        if (_sessions.TryGetValue(key, out var session))
+        binding.Transport.MessageReceived -= binding.Handler;
+        _eventFanout.UnregisterEndpoint(endpoint);
+        _hostCallDispatcher.RemoveEndpoint(endpoint);
+        RemoveResponseRoutes(route => route.Origin == endpoint);
+        _diagnostics?.RemoveEndpoint(endpoint.PluginId, endpoint.SessionId, endpoint.EndpointLabel);
+        if (session.IsEmpty)
         {
-            session.Release(pending.Origin.EndpointLabel, requestId, route);
+            ((ICollection<KeyValuePair<string, SessionEndpoints>>)_sessions)
+                .Remove(new KeyValuePair<string, SessionEndpoints>(key, session));
         }
+
+        _logger.LogDebug(
+            "Bus endpoint unregistered plugin={PluginId} session={SessionId} ep={Endpoint}",
+            endpoint.PluginId,
+            endpoint.SessionId,
+            endpoint.EndpointLabel);
     }
 
-    /// <summary>
-    /// Routes a request from <paramref name="origin"/> to the Node endpoint of the same session.
-    /// Records the correlation so the eventual response returns to the origin. Rejects with
-    /// <see cref="ErrorCode.TooManyRequests"/> when the origin's pending cap is reached.
-    /// </summary>
-    public async Task RouteRequestAsync(Envelope request, EndpointId origin)
+    public async Task RouteRequestToNodeAsync(
+        Envelope request,
+        EndpointId origin,
+        CancellationToken cancellationToken = default)
     {
-        var key = SessionKey(origin.PluginId, origin.SessionId);
-        if (!_sessions.TryGetValue(key, out var session) || session.NodeLabel is null)
-        {
-            throw new InvalidOperationException($"no node endpoint registered for session {key}");
-        }
+        ValidateOutboundRequest(request, origin);
+        var session = GetSession(origin);
+        var originBinding = session.Get(origin.EndpointLabel)
+            ?? throw RouteError(ErrorCode.TransportDisconnected, $"origin endpoint {origin} is unavailable");
+        var node = session.Node
+            ?? throw RouteError(
+                ErrorCode.TransportDisconnected,
+                $"no node endpoint registered for session {origin.PluginId}/{origin.SessionId}");
 
-        if (!session.TryReserve(origin.EndpointLabel, request.Id, request.Route))
+        var admissionReserved = false;
+        if (!IsHostOwnedEndpoint(origin))
         {
-            if (!Routes.IsPing(request.Route))
+            lock (originBinding.Gate)
             {
+                admissionReserved = originBinding.Admission.TryReserve(request.Id, request.Route);
+                UpdateAdmissionDiagnostics(originBinding);
+            }
+            if (!admissionReserved)
+            {
+                var message =
+                    $"pending request limit {_externalRequestLimit} reached for endpoint {origin.EndpointLabel}";
                 _diagnostics?.RecordCallRejected(
                     origin.PluginId,
                     origin.SessionId,
                     origin.EndpointLabel,
                     request.Route,
                     request.Id,
-                    $"pending request limit {_pendingLimit} reached for endpoint {origin.EndpointLabel}");
+                    message);
+                throw RouteError(ErrorCode.TooManyRequests, message, retryable: true);
             }
+        }
+
+        var responseRoute = new ResponseRoute(origin, request.Route, admissionReserved);
+        if (!_responseRoutes.TryAdd(request.Id, responseRoute))
+        {
+            ReleaseAdmission(responseRoute, request.Id);
+            throw RouteError(ErrorCode.InvalidPayload, $"duplicate request id '{request.Id}'");
+        }
+
+        try
+        {
+            _logger.Log(
+                Routes.IsPing(request.Route) ? LogLevel.Trace : LogLevel.Debug,
+                "RouteRequest id={Id} traceId={TraceId} route={Route} origin={Origin} -> node",
+                request.Id,
+                request.TraceId,
+                request.Route,
+                origin.EndpointLabel);
+            await node.Transport.SendAsync(request, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            RemoveResponseRoute(request.Id, responseRoute);
+            throw;
+        }
+        catch (Exception exception)
+        {
+            RemoveResponseRoute(request.Id, responseRoute);
+            throw new MessageRouteException(BusError.For(
+                ErrorCode.TransportDisconnected,
+                exception.Message,
+                retryable: true));
+        }
+    }
+
+    /// <summary>Compatibility entry point for existing in-process callers.</summary>
+    public async Task RouteRequestAsync(Envelope request, EndpointId origin)
+    {
+        try
+        {
+            await RouteRequestToNodeAsync(request, origin, CancellationToken.None);
+        }
+        catch (MessageRouteException exception) when (exception.Error.Code == ErrorCode.TooManyRequests)
+        {
+            await SendToEndpointAsync(origin, BuildErrorReply(request, origin, exception.Error));
+        }
+        catch (MessageRouteException exception)
+        {
+            throw new InvalidOperationException(exception.Message, exception);
+        }
+    }
+
+    public bool AbandonResponseRoute(string requestId, EndpointId origin)
+    {
+        if (!_responseRoutes.TryGetValue(requestId, out var route) || route.Origin != origin)
+        {
+            return false;
+        }
+        return RemoveResponseRoute(requestId, route);
+    }
+
+    public async Task SendToEndpointAsync(
+        EndpointId target,
+        Envelope envelope,
+        CancellationToken cancellationToken = default)
+    {
+        if (!_sessions.TryGetValue(SessionKey(target.PluginId, target.SessionId), out var session)
+            || session.Get(target.EndpointLabel) is not { } binding)
+        {
+            throw RouteError(ErrorCode.TransportDisconnected, $"target endpoint {target} is unavailable");
+        }
+
+        try
+        {
+            await binding.Transport.SendAsync(envelope, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            throw new MessageRouteException(BusError.For(
+                ErrorCode.TransportDisconnected,
+                exception.Message,
+                retryable: true));
+        }
+    }
+
+    public Task BroadcastAsync(
+        EndpointId sessionEndpoint,
+        Envelope envelope,
+        string? excludeEndpointId,
+        CancellationToken cancellationToken = default)
+        => _eventFanout.BroadcastAsync(
+            sessionEndpoint,
+            envelope,
+            excludeEndpointId,
+            cancellationToken);
+
+    public Task BroadcastHostEventAsync(EndpointId sessionEndpoint, Envelope envelope)
+        => BroadcastAsync(sessionEndpoint, envelope, excludeEndpointId: null);
+
+    /// <summary>Removes undeliverable routes; their owning RPC clients complete caller tasks.</summary>
+    public void ClearResponseRoutesForSession(string pluginId, string sessionId)
+        => RemoveResponseRoutes(route =>
+            route.Origin.PluginId == pluginId && route.Origin.SessionId == sessionId);
+
+    private void OnInbound(EndpointId source, Envelope envelope)
+    {
+        var stamped = EnvelopeIdentity.Stamp(source, envelope);
+        var validation = EnvelopeValidator.Validate(stamped);
+        var route = RouteRules.Classify(stamped.Route);
+        if (!validation.IsValid || !route.IsLegal)
+        {
             _logger.LogWarning(
-                "TooManyRequests origin={Endpoint} route={Route} traceId={TraceId} inFlightCap={Cap}",
-                origin.EndpointLabel, request.Route, request.TraceId, _pendingLimit);
-            await session.WriteOnAsync(origin.EndpointLabel, BuildErrorReply(request, origin,
-                BusError.For(ErrorCode.TooManyRequests,
-                    $"pending request limit {_pendingLimit} reached for endpoint {origin.EndpointLabel}",
-                    retryable: true)));
+                "Dropping invalid envelope endpoint={Endpoint} route={Route} error={Error}",
+                source.EndpointLabel,
+                stamped.Route,
+                validation.Error?.Message ?? route.Error?.Message);
+            if (stamped.Kind == MessageKind.Request)
+            {
+                _ = TrySendErrorReplyAsync(source, stamped, validation.Error ?? route.Error!);
+            }
             return;
         }
 
-        _pending[request.Id] = new PendingOrigin(origin, request.Route, Stopwatch.GetTimestamp());
-        _logger.Log(
-            Routes.IsPing(request.Route) ? LogLevel.Trace : LogLevel.Debug,
-            "RouteRequest id={Id} traceId={TraceId} route={Route} origin={Origin} -> node",
-            request.Id, request.TraceId, request.Route, origin.EndpointLabel);
-        await session.WriteOnAsync(session.NodeLabel, request);
-    }
-
-    private void OnInbound(EndpointId source, Envelope env)
-    {
-        var stamped = EnvelopeIdentity.Stamp(source, env);
         switch (stamped.Kind)
         {
             case MessageKind.Response:
-                HandleResponse(stamped);
+                HandleResponse(source, stamped);
                 break;
             case MessageKind.Event:
-                BroadcastEvent(source, stamped);
+                _ = BroadcastAsync(source, stamped, source.EndpointLabel);
                 break;
             case MessageKind.Request when Routes.IsHostCall(stamped.Route):
-                if (!source.IsNode)
-                {
-                    _ = RejectWebHostCallAsync(source, stamped);
-                }
-                else
-                {
-                    _ = DispatchHostCallAsync(source, stamped);
-                }
+                _ = DispatchHostCallAsync(source, stamped);
                 break;
             case MessageKind.Request when Routes.IsPluginCall(stamped.Route):
+            case MessageKind.Request when Routes.IsPing(stamped.Route):
                 _ = RouteInboundRequestAsync(stamped, source);
+                break;
+            default:
+                _ = TrySendErrorReplyAsync(
+                    source,
+                    stamped,
+                    BusError.For(ErrorCode.RouteNotFound, $"route '{stamped.Route}' is not valid for {stamped.Kind}"));
                 break;
         }
     }
@@ -203,595 +305,271 @@ public sealed class MessageBus
     {
         try
         {
-            await RouteRequestAsync(request, origin);
+            await RouteRequestToNodeAsync(request, origin, CancellationToken.None);
         }
-        catch (InvalidOperationException ex)
+        catch (MessageRouteException exception)
         {
-            _logger.LogWarning(ex,
-                "Cannot route inbound request id={Id} route={Route} origin={Origin}",
-                request.Id, request.Route, origin.EndpointLabel);
-            try
-            {
-                var key = SessionKey(origin.PluginId, origin.SessionId);
-                if (_sessions.TryGetValue(key, out var session))
-                {
-                    await session.WriteOnAsync(origin.EndpointLabel, BuildErrorReply(request, origin,
-                        BusError.For(ErrorCode.TransportDisconnected, ex.Message, retryable: true)));
-                }
-            }
-            catch (Exception replyException)
-            {
-                _logger.LogDebug(replyException,
-                    "Could not deliver route failure id={Id} to origin={Origin}",
-                    request.Id, origin.EndpointLabel);
-            }
+            await TrySendErrorReplyAsync(origin, request, exception.Error);
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            _logger.LogError(ex,
+            _logger.LogError(
+                exception,
                 "Failed to route inbound request id={Id} route={Route} origin={Origin}",
-                request.Id, request.Route, origin.EndpointLabel);
+                request.Id,
+                request.Route,
+                origin.EndpointLabel);
         }
     }
 
-    private async Task RejectWebHostCallAsync(EndpointId source, Envelope env)
+    private async Task DispatchHostCallAsync(EndpointId source, Envelope request)
     {
-        var reply = BuildHostCallReply(env, source, payload: null,
-            BusError.For(ErrorCode.CapabilityDenied,
-                "webview cannot call host.call.* directly; route through plugin.call.* to Node"));
-        var key = SessionKey(source.PluginId, source.SessionId);
-        if (_sessions.TryGetValue(key, out var session))
-        {
-            await session.WriteOnAsync(source.EndpointLabel, reply);
-        }
-    }
-
-    private async Task DispatchHostCallAsync(EndpointId source, Envelope env)
-    {
-        var key = SessionKey(source.PluginId, source.SessionId);
-        if (!_sessions.TryGetValue(key, out var session))
-        {
-            return;
-        }
-
-        if (!session.TryReserve(source.EndpointLabel, env.Id, env.Route))
-        {
-            if (!Routes.IsPing(env.Route))
-            {
-                _diagnostics?.RecordCallRejected(
-                    source.PluginId,
-                    source.SessionId,
-                    source.EndpointLabel,
-                    env.Route,
-                    env.Id,
-                    $"pending request limit {_pendingLimit} reached for endpoint {source.EndpointLabel}");
-            }
-            await session.WriteOnAsync(source.EndpointLabel, BuildHostCallReply(env, source, payload: null,
-                BusError.For(ErrorCode.TooManyRequests,
-                    $"pending request limit {_pendingLimit} reached for endpoint {source.EndpointLabel}",
-                    retryable: true)));
-            return;
-        }
-
         try
         {
-            var startedAt = Stopwatch.GetTimestamp();
-            var capability = Routes.StripHostCall(env.Route);
-            var decision = _gateway.Authorize(source.PluginId, capability);
-            _logger.LogDebug(
-                "CapabilityAudit plugin={PluginId} route={Route} allowed={Allowed}",
-                source.PluginId, capability, decision.IsAllowed);
-
-            Envelope reply;
-            if (!decision.IsAllowed)
-            {
-                reply = BuildHostCallReply(env, source, payload: null, decision.Error);
-            }
-            else if (!_hostCallHandlers.TryGetValue(source.PluginId, out var invoker))
-            {
-                reply = BuildHostCallReply(env, source, payload: null,
-                    BusError.For(ErrorCode.InternalError, $"no host call handler for {source.PluginId}"));
-            }
-            else
-            {
-                try
-                {
-                    var method = Routes.StripHostCall(env.Route);
-                    var parameters = env.Payload is null
-                        ? JsonDocument.Parse("{}").RootElement.Clone()
-                        : JsonDocument.Parse(env.Payload.ToJsonString()).RootElement.Clone();
-                    using var timeoutCts = env.TimeoutMs is > 0
-                        ? new CancellationTokenSource(env.TimeoutMs.Value)
-                        : null;
-                    var result = await invoker(method, parameters, timeoutCts?.Token ?? CancellationToken.None);
-                    reply = BuildHostCallReply(env, source,
-                        payload: JsonNode.Parse(result.GetRawText()), error: null);
-                }
-                catch (OperationCanceledException) when (env.TimeoutMs is > 0)
-                {
-                    reply = BuildHostCallReply(env, source, payload: null,
-                        BusError.For(ErrorCode.RequestTimeout,
-                            $"host.call '{env.Route}' timed out after {env.TimeoutMs}ms",
-                            retryable: true));
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(
-                        ex,
-                        "Host call failed plugin={PluginId} route={Route} requestId={RequestId}",
-                        source.PluginId,
-                        env.Route,
-                        env.Id);
-                    reply = BuildHostCallReply(env, source, payload: null,
-                        BusError.For(ErrorCode.InternalError, ex.Message));
-                }
-            }
-
-            if (session.NodeLabel is not null)
-            {
-                await session.WriteOnAsync(session.NodeLabel, reply);
-            }
-
-            if (!Routes.IsPing(env.Route))
-            {
-                var elapsedMs = Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds;
-                if (reply.Error?.Code == ErrorCode.RequestTimeout)
-                {
-                    _diagnostics?.RecordCallTimeout(
-                        source.PluginId,
-                        source.SessionId,
-                        source.EndpointLabel,
-                        env.Route,
-                        env.Id,
-                        elapsedMs,
-                        reply.Error.Message);
-                }
-                else
-                {
-                    _diagnostics?.RecordCallCompleted(
-                        source.PluginId,
-                        source.SessionId,
-                        source.EndpointLabel,
-                        env.Route,
-                        env.Id,
-                        elapsedMs,
-                        reply.Error is null ? PluginCallOutcome.Success : PluginCallOutcome.Failure,
-                        reply.Error?.Message);
-                }
-            }
+            await _hostCallDispatcher.DispatchAsync(source, request);
         }
-        finally
+        catch (Exception exception)
         {
-            session.Release(source.EndpointLabel, env.Id, env.Route);
+            _logger.LogError(
+                exception,
+                "Host call dispatch failed id={Id} route={Route} source={Source}",
+                request.Id,
+                request.Route,
+                source.EndpointLabel);
         }
     }
 
-    private Envelope BuildHostCallReply(Envelope request, EndpointId source, JsonNode? payload, BusError? error)
+    private void HandleResponse(EndpointId source, Envelope response)
+    {
+        if (response.CorrelationId is null
+            || !_responseRoutes.TryGetValue(response.CorrelationId, out var route))
+        {
+            _logger.LogDebug(
+                "Dropping response with unknown correlation id={CorrelationId}",
+                response.CorrelationId);
+            return;
+        }
+
+        if (!source.IsNode
+            || source.PluginId != route.Origin.PluginId
+            || source.SessionId != route.Origin.SessionId
+            || response.Route != route.Route)
+        {
+            _logger.LogWarning(
+                "Dropping response from invalid source={Source} correlation={CorrelationId} route={Route}",
+                source,
+                response.CorrelationId,
+                response.Route);
+            return;
+        }
+
+        if (!RemoveResponseRoute(response.CorrelationId, route))
+        {
+            return;
+        }
+        _ = DeliverResponseAsync(route.Origin, response);
+    }
+
+    private async Task DeliverResponseAsync(EndpointId origin, Envelope response)
+    {
+        try
+        {
+            await SendToEndpointAsync(origin, response, CancellationToken.None);
+        }
+        catch (MessageRouteException exception)
+        {
+            _logger.LogDebug(
+                exception,
+                "Could not deliver response correlation={CorrelationId} origin={Origin}",
+                response.CorrelationId,
+                origin);
+        }
+    }
+
+    private async Task TrySendErrorReplyAsync(EndpointId origin, Envelope request, BusError error)
+    {
+        try
+        {
+            await SendToEndpointAsync(origin, BuildErrorReply(request, origin, error));
+        }
+        catch (Exception exception)
+        {
+            _logger.LogDebug(
+                exception,
+                "Could not deliver route failure id={Id} origin={Origin}",
+                request.Id,
+                origin.EndpointLabel);
+        }
+    }
+
+    private SessionEndpoints GetSession(EndpointId endpoint)
+        => _sessions.TryGetValue(SessionKey(endpoint.PluginId, endpoint.SessionId), out var session)
+            ? session
+            : throw RouteError(
+                ErrorCode.TransportDisconnected,
+                $"session {endpoint.PluginId}/{endpoint.SessionId} is unavailable");
+
+    private static void ValidateOutboundRequest(Envelope request, EndpointId origin)
+    {
+        var validation = EnvelopeValidator.Validate(request);
+        if (!validation.IsValid)
+        {
+            throw new MessageRouteException(validation.Error!);
+        }
+        if (request.Kind != MessageKind.Request)
+        {
+            throw RouteError(ErrorCode.InvalidPayload, "only request envelopes can be routed to Node");
+        }
+        var route = RouteRules.Classify(request.Route);
+        if (!route.IsLegal || (!Routes.IsPluginCall(request.Route) && !Routes.IsPing(request.Route)))
+        {
+            throw new MessageRouteException(
+                route.Error ?? BusError.For(ErrorCode.RouteNotFound, $"route '{request.Route}' cannot target Node"));
+        }
+        if (request.PluginId != origin.PluginId
+            || request.SessionId != origin.SessionId
+            || request.EndpointId != origin.EndpointLabel)
+        {
+            throw RouteError(ErrorCode.InvalidPayload, "request identity does not match its origin endpoint");
+        }
+    }
+
+    private bool RemoveResponseRoute(string requestId, ResponseRoute expected)
+    {
+        var removed = ((ICollection<KeyValuePair<string, ResponseRoute>>)_responseRoutes)
+            .Remove(new KeyValuePair<string, ResponseRoute>(requestId, expected));
+        if (!removed)
+        {
+            return false;
+        }
+        ReleaseAdmission(expected, requestId);
+        return true;
+    }
+
+    private void RemoveResponseRoutes(Func<ResponseRoute, bool> predicate)
+    {
+        foreach (var pair in _responseRoutes.ToArray())
+        {
+            if (predicate(pair.Value))
+            {
+                RemoveResponseRoute(pair.Key, pair.Value);
+            }
+        }
+    }
+
+    private void ReleaseAdmission(ResponseRoute route, string requestId)
+    {
+        if (!route.AdmissionReserved
+            || !_sessions.TryGetValue(
+                SessionKey(route.Origin.PluginId, route.Origin.SessionId),
+                out var session)
+            || session.Get(route.Origin.EndpointLabel) is not { } binding)
+        {
+            return;
+        }
+
+        lock (binding.Gate)
+        {
+            binding.Admission.Release(requestId, route.Route);
+            UpdateAdmissionDiagnostics(binding);
+        }
+    }
+
+    private void UpdateAdmissionDiagnostics(EndpointBinding binding)
+        => _diagnostics?.UpdateEndpointPending(
+            binding.Id.PluginId,
+            binding.Id.SessionId,
+            binding.Id.EndpointLabel,
+            binding.Admission.InFlight,
+            binding.Admission.Limit,
+            binding.Admission.HighWaterMark);
+
+    private Envelope BuildErrorReply(Envelope request, EndpointId origin, BusError error)
         => new()
         {
             Version = ProtocolVersion.Current,
             Id = _ids.NewId(),
             CorrelationId = request.Id,
             TraceId = request.TraceId,
-            SessionId = source.SessionId,
-            PluginId = source.PluginId,
+            SessionId = origin.SessionId,
+            PluginId = origin.PluginId,
             EndpointId = EndpointIds.Host,
             Kind = MessageKind.Response,
             Route = request.Route,
-            Payload = payload,
             Error = error,
         };
 
-    private Envelope BuildErrorReply(Envelope request, EndpointId origin, BusError error) => new()
-    {
-        Version = ProtocolVersion.Current,
-        Id = _ids.NewId(),
-        CorrelationId = request.Id,
-        TraceId = request.TraceId,
-        SessionId = origin.SessionId,
-        PluginId = origin.PluginId,
-        EndpointId = origin.EndpointLabel,
-        Kind = MessageKind.Response,
-        Route = request.Route,
-        Error = error,
-    };
+    private static bool IsHostOwnedEndpoint(EndpointId endpoint)
+        => endpoint.EndpointLabel is EndpointIds.Host or EndpointIds.HostControl;
 
-    private void HandleResponse(Envelope env)
-    {
-        if (env.CorrelationId is null) return;
-        if (!_pending.TryRemove(env.CorrelationId, out var pending)) return;
-
-        var key = SessionKey(pending.Origin.PluginId, pending.Origin.SessionId);
-        if (!_sessions.TryGetValue(key, out var session)) return;
-
-        session.Release(pending.Origin.EndpointLabel, env.CorrelationId, pending.Route);
-        var elapsedMs = Stopwatch.GetElapsedTime(pending.StartedAt).TotalMilliseconds;
-        if (!Routes.IsPing(pending.Route))
-        {
-            _diagnostics?.RecordCallCompleted(
-                pending.Origin.PluginId,
-                pending.Origin.SessionId,
-                pending.Origin.EndpointLabel,
-                env.Route,
-                env.CorrelationId,
-                elapsedMs,
-                env.Error is null ? PluginCallOutcome.Success : PluginCallOutcome.Failure,
-                env.Error?.Message);
-        }
-        _logger.Log(
-            Routes.IsPing(pending.Route) ? LogLevel.Trace : LogLevel.Debug,
-            "Response correlated id={Corr} route={Route} result={Result} elapsedMs={ElapsedMs:0}",
-            env.CorrelationId, env.Route, env.Error is null ? "ok" : env.Error.Code.ToString(), elapsedMs);
-        _ = session.WriteOnAsync(pending.Origin.EndpointLabel, env);
-    }
-
-    private void BroadcastEvent(EndpointId source, Envelope env)
-    {
-        var key = SessionKey(source.PluginId, source.SessionId);
-        if (!_sessions.TryGetValue(key, out var session)) return;
-        session.BroadcastExcept(source.EndpointLabel, env);
-    }
-
-    /// <summary>
-    /// Broadcasts a <c>host.event.*</c> envelope to every endpoint in the target session. The host
-    /// is not itself an endpoint, so there is no source to exclude.
-    /// </summary>
-    public Task BroadcastHostEventAsync(EndpointId anyEndpointInSession, Envelope env)
-    {
-        var key = SessionKey(anyEndpointInSession.PluginId, anyEndpointInSession.SessionId);
-        if (!_sessions.TryGetValue(key, out var session)) return Task.CompletedTask;
-        session.BroadcastToAll(env);
-        return Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// Fails every pending request whose origin belongs to the given session (e.g. on Node
-    /// disconnect). Delivers an error response envelope to each origin endpoint.
-    /// </summary>
-    public void FailPendingForSession(string pluginId, string sessionId, BusError error)
-    {
-        foreach (var (requestId, pending) in _pending.ToArray())
-        {
-            if (pending.Origin.PluginId != pluginId || pending.Origin.SessionId != sessionId)
-            {
-                continue;
-            }
-
-            if (!_pending.TryRemove(requestId, out _)) continue;
-
-            var key = SessionKey(pending.Origin.PluginId, pending.Origin.SessionId);
-            if (!_sessions.TryGetValue(key, out var session)) continue;
-
-            session.Release(pending.Origin.EndpointLabel, requestId, pending.Route);
-            var elapsedMs = Stopwatch.GetElapsedTime(pending.StartedAt).TotalMilliseconds;
-            if (!Routes.IsPing(pending.Route))
-            {
-                _diagnostics?.RecordCallCompleted(
-                    pending.Origin.PluginId,
-                    pending.Origin.SessionId,
-                    pending.Origin.EndpointLabel,
-                    pending.Route,
-                    requestId,
-                    elapsedMs,
-                    PluginCallOutcome.Failure,
-                    error.Message);
-            }
-            var fail = new Envelope
-            {
-                Version = ProtocolVersion.Current,
-                Id = _ids.NewId(),
-                CorrelationId = requestId,
-                TraceId = requestId,
-                SessionId = sessionId,
-                PluginId = pluginId,
-                EndpointId = EndpointIds.NodeMain,
-                Kind = MessageKind.Response,
-                Route = pending.Route,
-                Error = error,
-            };
-            _ = session.WriteOnAsync(pending.Origin.EndpointLabel, fail);
-        }
-    }
+    private static MessageRouteException RouteError(
+        ErrorCode code,
+        string message,
+        bool retryable = false)
+        => new(BusError.For(code, message, retryable));
 
     private static string SessionKey(string pluginId, string sessionId)
         => $"{pluginId}\u001f{sessionId}";
 
-    private readonly record struct PendingOrigin(EndpointId Origin, string Route, long StartedAt);
-    private readonly record struct QueuedEvent(Envelope Envelope, long EnqueuedAt);
+    private sealed record ResponseRoute(EndpointId Origin, string Route, bool AdmissionReserved);
+
+    private sealed record EndpointBinding(
+        EndpointId Id,
+        IMessageTransport Transport,
+        Action<Envelope> Handler,
+        PendingRequestTracker Admission)
+    {
+        public object Gate { get; } = new();
+    }
 
     private sealed class SessionEndpoints
     {
-        private readonly MessageBus _owner;
         private readonly object _gate = new();
-        private readonly Dictionary<string, EndpointSlot> _byLabel = new();
-        private readonly int _pendingLimit;
-        private readonly int _eventCapacity;
+        private readonly Dictionary<string, EndpointBinding> _bindings = new();
 
-        public SessionEndpoints(MessageBus owner, int pendingLimit, int eventCapacity)
-        {
-            _owner = owner;
-            _pendingLimit = pendingLimit;
-            _eventCapacity = eventCapacity;
-        }
-
-        public string? NodeLabel { get; private set; }
-
-        public long DroppedEvents
+        public EndpointBinding? Node
         {
             get
             {
                 lock (_gate)
                 {
-                    long total = 0;
-                    foreach (var slot in _byLabel.Values)
-                    {
-                        total += slot.EventQueue.DroppedEvents;
-                    }
-                    return total;
+                    return _bindings.Values.FirstOrDefault(binding => binding.Id.IsNode);
                 }
             }
         }
 
-        public void Add(EndpointId id, IMessageTransport transport, Action<Envelope> handler)
+        public bool IsEmpty
+        {
+            get
+            {
+                lock (_gate) return _bindings.Count == 0;
+            }
+        }
+
+        public bool AddOrReplace(EndpointBinding binding, out EndpointBinding replaced)
         {
             lock (_gate)
             {
-                _byLabel[id.EndpointLabel] = new EndpointSlot(
-                    id, transport, handler,
-                    new PendingRequestTracker(_pendingLimit),
-                    new BoundedEventQueue<QueuedEvent>(_eventCapacity));
-                if (id.IsNode) NodeLabel = id.EndpointLabel;
-                _owner.UpdatePendingDiagnostics(id, _byLabel[id.EndpointLabel].Pending);
-                _owner.UpdateEventQueueDiagnostics(id, _byLabel[id.EndpointLabel].EventQueue);
+                var hadExisting = _bindings.Remove(binding.Id.EndpointLabel, out replaced!);
+                _bindings.Add(binding.Id.EndpointLabel, binding);
+                return hadExisting;
             }
         }
 
-        public bool TryRemove(EndpointId id, out IMessageTransport transport, out Action<Envelope> handler)
+        public EndpointBinding? Get(string endpointLabel)
         {
             lock (_gate)
             {
-                if (_byLabel.Remove(id.EndpointLabel, out var ep))
-                {
-                    if (NodeLabel == id.EndpointLabel) NodeLabel = null;
-                    transport = ep.Transport;
-                    handler = ep.Handler;
-                    return true;
-                }
+                return _bindings.GetValueOrDefault(endpointLabel);
             }
-
-            transport = null!;
-            handler = null!;
-            return false;
         }
 
-        public bool TryReserve(string label, string requestId, string route)
+        public bool TryRemove(string endpointLabel, out EndpointBinding binding)
         {
             lock (_gate)
             {
-                var reserved = _byLabel.TryGetValue(label, out var slot)
-                               && slot.Pending.TryReserve(requestId, route);
-                if (slot is not null)
-                {
-                    _owner.UpdatePendingDiagnostics(slot.Id, slot.Pending);
-                }
-
-                return reserved;
+                return _bindings.Remove(endpointLabel, out binding!);
             }
         }
-
-        public void Release(string label, string requestId, string route)
-        {
-            lock (_gate)
-            {
-                if (_byLabel.TryGetValue(label, out var slot))
-                {
-                    slot.Pending.Release(requestId, route);
-                    _owner.UpdatePendingDiagnostics(slot.Id, slot.Pending);
-                }
-            }
-        }
-
-        public Task WriteOnAsync(string label, Envelope env)
-        {
-            IMessageTransport? t;
-            lock (_gate) t = _byLabel.TryGetValue(label, out var ep) ? ep.Transport : null;
-            return t is null ? Task.CompletedTask : t.SendAsync(env, CancellationToken.None).AsTask();
-        }
-
-        public void BroadcastExcept(string sourceLabel, Envelope env)
-            => EnqueueAndDrain(env, excludeLabel: sourceLabel);
-
-        public void BroadcastToAll(Envelope env)
-            => EnqueueAndDrain(env, excludeLabel: null);
-
-        private void EnqueueAndDrain(Envelope env, string? excludeLabel)
-        {
-            List<EndpointSlot> toKick;
-            lock (_gate)
-            {
-                toKick = new List<EndpointSlot>(_byLabel.Count);
-                foreach (var (label, slot) in _byLabel)
-                {
-                    if (excludeLabel is not null && label == excludeLabel) continue;
-                    var queued = new QueuedEvent(env, Stopwatch.GetTimestamp());
-                    var dropped = slot.EventQueue.TryEnqueue(queued, out var droppedItem);
-                    _owner.RecordEventQueuedDiagnostics(
-                        slot.Id,
-                        env.Route,
-                        slot.EventQueue,
-                        dropped,
-                        dropped ? droppedItem.Envelope.Route : null);
-                    if (!slot.Draining)
-                    {
-                        slot.Draining = true;
-                        toKick.Add(slot);
-                    }
-                }
-            }
-
-            foreach (var slot in toKick)
-            {
-                _ = DrainEventsAsync(slot);
-            }
-        }
-
-        private async Task DrainEventsAsync(EndpointSlot slot)
-        {
-            try
-            {
-                while (true)
-                {
-                    IReadOnlyList<QueuedEvent> batch;
-                    lock (_gate)
-                    {
-                        batch = slot.EventQueue.Drain();
-                        _owner.UpdateEventQueueDiagnostics(slot.Id, slot.EventQueue);
-                        if (batch.Count == 0)
-                        {
-                            slot.Draining = false;
-                            return;
-                        }
-                    }
-
-                    foreach (var item in batch)
-                    {
-                        var queueWaitMs = Stopwatch.GetElapsedTime(item.EnqueuedAt).TotalMilliseconds;
-                        await slot.Transport.SendAsync(item.Envelope, CancellationToken.None);
-                        var deliveryMs = Stopwatch.GetElapsedTime(item.EnqueuedAt).TotalMilliseconds;
-                        int depth;
-                        int capacity;
-                        int highWaterMark;
-                        long droppedTotal;
-                        double oldestWaitMs;
-                        lock (_gate)
-                        {
-                            depth = slot.EventQueue.Count;
-                            capacity = slot.EventQueue.Capacity;
-                            highWaterMark = slot.EventQueue.HighWaterMark;
-                            droppedTotal = slot.EventQueue.DroppedEvents;
-                            oldestWaitMs = GetOldestWaitMs(slot.EventQueue);
-                        }
-                        _owner.RecordEventDeliveredDiagnostics(
-                            slot.Id,
-                            item.Envelope.Route,
-                            queueWaitMs,
-                            deliveryMs,
-                            depth,
-                            capacity,
-                            highWaterMark,
-                            droppedTotal,
-                            oldestWaitMs);
-                    }
-                }
-            }
-            catch
-            {
-                lock (_gate)
-                {
-                    slot.Draining = false;
-                }
-            }
-        }
-
-        private sealed class EndpointSlot
-        {
-            public EndpointSlot(
-                EndpointId id,
-                IMessageTransport transport,
-                Action<Envelope> handler,
-                PendingRequestTracker pending,
-                BoundedEventQueue<QueuedEvent> eventQueue)
-            {
-                Id = id;
-                Transport = transport;
-                Handler = handler;
-                Pending = pending;
-                EventQueue = eventQueue;
-            }
-
-            public EndpointId Id { get; }
-            public IMessageTransport Transport { get; }
-            public Action<Envelope> Handler { get; }
-            public PendingRequestTracker Pending { get; }
-            public BoundedEventQueue<QueuedEvent> EventQueue { get; }
-            public bool Draining;
-        }
-    }
-
-    private void UpdatePendingDiagnostics(EndpointId id, PendingRequestTracker pending)
-    {
-        _diagnostics?.UpdateEndpointPending(
-            id.PluginId,
-            id.SessionId,
-            id.EndpointLabel,
-            pending.InFlight,
-            pending.Limit,
-            pending.HighWaterMark);
-    }
-
-    private void UpdateEventQueueDiagnostics(EndpointId id, BoundedEventQueue<QueuedEvent> queue)
-    {
-        _diagnostics?.UpdateEventQueueState(
-            id.PluginId,
-            id.SessionId,
-            id.EndpointLabel,
-            queue.Count,
-            queue.Capacity,
-            queue.HighWaterMark,
-            queue.DroppedEvents,
-            GetOldestWaitMs(queue));
-    }
-
-    private void RecordEventQueuedDiagnostics(
-        EndpointId id,
-        string route,
-        BoundedEventQueue<QueuedEvent> queue,
-        bool dropped,
-        string? droppedRoute)
-    {
-        _diagnostics?.RecordEventQueued(
-            id.PluginId,
-            id.SessionId,
-            id.EndpointLabel,
-            route,
-            queue.Count,
-            queue.Capacity,
-            queue.HighWaterMark,
-            queue.DroppedEvents,
-            dropped,
-            GetOldestWaitMs(queue),
-            droppedRoute);
-    }
-
-    private void RecordEventDeliveredDiagnostics(
-        EndpointId id,
-        string route,
-        double queueWaitMs,
-        double deliveryMs,
-        int depth,
-        int capacity,
-        int highWaterMark,
-        long droppedTotal,
-        double oldestWaitMs)
-    {
-        _diagnostics?.RecordEventDelivered(
-            id.PluginId,
-            id.SessionId,
-            id.EndpointLabel,
-            route,
-            queueWaitMs,
-            deliveryMs,
-            depth,
-            capacity,
-            highWaterMark,
-            droppedTotal,
-            oldestWaitMs);
-    }
-
-    private static double GetOldestWaitMs(BoundedEventQueue<QueuedEvent> queue)
-    {
-        return queue.TryPeek(out var queued)
-            ? Stopwatch.GetElapsedTime(queued.EnqueuedAt).TotalMilliseconds
-            : 0;
     }
 }

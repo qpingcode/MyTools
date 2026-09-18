@@ -176,7 +176,7 @@ public class EndToEndScenariosTest
     }
 
     [Test]
-    public async Task SessionDisconnect_ShouldFailPendingAndRaiseSessionReplaced()
+    public async Task SessionDisconnect_ShouldClearRoutesAndRaiseSessionReplaced()
     {
         var replaced = new TaskCompletionSource<PluginSessionReplacedEventArgs>(
             TaskCreationOptions.RunContinuationsAsynchronously);
@@ -201,12 +201,9 @@ public class EndToEndScenariosTest
 
         ((InMemoryTransport)session.Controller!.Transport!).Disconnect();
 
-        Assert.That(await WaitForAsync(() => hostT.Sent.Count >= 1), Is.True);
-        Assert.That(hostT.Sent.ToArray()[^1].Error?.Code, Is.EqualTo(ErrorCode.TransportDisconnected));
-        Assert.That(hostT.Sent.ToArray()[^1].Route, Is.EqualTo(Routes.PluginCall.Search));
-
         var args = await replaced.Task.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.That(args.Current.SessionId, Is.Not.EqualTo(session.SessionId));
+        Assert.That(hostT.Sent, Is.Empty);
     }
 
     [Test]

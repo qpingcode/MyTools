@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -9,7 +8,6 @@ using MyTools.Host.Core.Bus;
 using MyTools.Host.Core.Diagnostics;
 using MyTools.Host.Core.Heartbeat;
 using MyTools.Host.Core.Sessions;
-using MyTools.Host.Core.Transports;
 using MyTools.Protocol.Errors;
 using MyTools.Protocol.Identity;
 using MyTools.Protocol.Manifest;
@@ -23,8 +21,8 @@ namespace MyTools.Plugins.NodePlugins;
 /// Message-bus runtime for a Node plugin. Each host method (<c>search</c>, <c>invokeAction</c>, …)
 /// is mapped to a <c>plugin.call.&lt;method&gt;</c> envelope; responses are correlated by request id
 /// via a registered host endpoint on the bus. Inbound <c>plugin.event.*</c> envelopes raise
-/// <see cref="EventReceived"/>; <c>host.call.*</c> is handled by the <see cref="MessageBus"/> through
-/// <see cref="HostCallHandler"/>.
+/// <see cref="EventReceived"/>; <c>host.call.*</c> is handled by <see cref="HostCallDispatcher"/>
+/// through <see cref="HostCallHandler"/>.
 /// </summary>
 internal sealed class NodePluginBusHost : INodePluginHost
 {
@@ -34,14 +32,13 @@ internal sealed class NodePluginBusHost : INodePluginHost
     private readonly IPluginDiagnosticsService _diagnostics;
     private readonly ILogger<NodePluginBusHost> _logger;
     private readonly IIdGenerator _ids;
-    private readonly ConcurrentDictionary<string, TaskCompletionSource<JsonNode?>> _pending = new();
     private readonly SemaphoreSlim _startLock = new(1, 1);
     private readonly object _disposeGate = new();
 
     private PluginSession? _session;
     private EndpointId? _nodeEndpoint;
-    private EndpointId? _hostEndpoint;
-    private HostEndpointTransport? _hostTransport;
+    private EndpointRpcClient? _rpcClient;
+    private EndpointRpcClient? _controlRpcClient;
     private CancellationTokenSource? _heartbeatCts;
     private int _started; // 0 = not started, 1 = started
     private int _disposed;
@@ -136,7 +133,10 @@ internal sealed class NodePluginBusHost : INodePluginHost
                 EndpointIds.NodeMain, IsNode: true);
             BindHostEndpoint();
 
-            _bus.RegisterHostCallHandler(_manifest.Id, InvokeHostCallAsync);
+            _bus.HostCallDispatcher.RegisterHandler(
+                _manifest.Id,
+                InvokeHostCallAsync,
+                _session.LifetimeToken);
 
             _heartbeatCts = new CancellationTokenSource();
             _ = RunHeartbeatAsync(_heartbeatCts.Token);
@@ -156,19 +156,26 @@ internal sealed class NodePluginBusHost : INodePluginHost
         _logger.LogWarning("Session replaced for {PluginId}: {Old} -> {New}",
             e.PluginId, e.Previous.SessionId, e.Current.SessionId);
 
-        FailLocalPending(ErrorCode.TransportDisconnected, "node session restarted");
-        UnbindHostEndpoint();
+        StopHeartbeat();
+        FailRpcClients(ErrorCode.TransportDisconnected, "node session restarted");
+        UnbindHostEndpoints();
 
         _session = e.Current;
         _nodeEndpoint = new EndpointId(_manifest.Id, _session.SessionId,
             EndpointIds.NodeMain, IsNode: true);
         BindHostEndpoint();
+        _bus.HostCallDispatcher.RegisterHandler(
+            _manifest.Id,
+            InvokeHostCallAsync,
+            _session.LifetimeToken);
+        _heartbeatCts = new CancellationTokenSource();
+        _ = RunHeartbeatAsync(_heartbeatCts.Token);
         Volatile.Write(ref _started, 1);
     }
 
     private void OnSessionUnavailable(object? sender, PluginSessionUnavailableEventArgs e)
     {
-        if (e.PluginId != _manifest.Id || e.WillRestart)
+        if (e.PluginId != _manifest.Id)
         {
             return;
         }
@@ -184,12 +191,13 @@ internal sealed class NodePluginBusHost : INodePluginHost
             e.PluginId,
             e.SessionId);
 
-        try { _heartbeatCts?.Cancel(); } catch { /* ignore */ }
-        _heartbeatCts?.Dispose();
-        _heartbeatCts = null;
-
-        FailLocalPending(ErrorCode.TransportDisconnected, "node session stopped");
-        UnbindHostEndpoint();
+        StopHeartbeat();
+        FailRpcClients(ErrorCode.TransportDisconnected, "node session stopped");
+        if (e.WillRestart)
+        {
+            return;
+        }
+        UnbindHostEndpoints();
         _session = null;
         _nodeEndpoint = null;
         Volatile.Write(ref _started, 0);
@@ -198,41 +206,48 @@ internal sealed class NodePluginBusHost : INodePluginHost
     private void BindHostEndpoint()
     {
         if (_session is null) return;
-        _hostTransport = new HostEndpointTransport();
-        _hostTransport.Delivered += OnHostDelivery;
-        _hostEndpoint = new EndpointId(_manifest.Id, _session.SessionId,
-            EndpointIds.Host, IsNode: false);
-        _bus.RegisterEndpoint(_hostEndpoint, _hostTransport);
+        _rpcClient = new EndpointRpcClient(
+            _bus,
+            new EndpointId(_manifest.Id, _session.SessionId, EndpointIds.Host, IsNode: false),
+            _ids,
+            _diagnostics,
+            _logger);
+        _rpcClient.EventReceived += HandleEvent;
+        _controlRpcClient = new EndpointRpcClient(
+            _bus,
+            new EndpointId(_manifest.Id, _session.SessionId, EndpointIds.HostControl, IsNode: false),
+            _ids,
+            _diagnostics,
+            _logger);
     }
 
-    private void UnbindHostEndpoint()
+    private void UnbindHostEndpoints()
     {
-        if (_hostEndpoint is not null)
+        if (_rpcClient is not null)
         {
-            _bus.UnregisterEndpoint(_hostEndpoint);
-            _hostEndpoint = null;
+            _rpcClient.EventReceived -= HandleEvent;
+            _ = _rpcClient.DisposeAsync();
+            _rpcClient = null;
         }
-
-        if (_hostTransport is not null)
+        if (_controlRpcClient is not null)
         {
-            _hostTransport.Delivered -= OnHostDelivery;
-            _ = _hostTransport.DisposeAsync();
-            _hostTransport = null;
+            _ = _controlRpcClient.DisposeAsync();
+            _controlRpcClient = null;
         }
     }
 
-    private void FailLocalPending(ErrorCode code, string message)
+    private void FailRpcClients(ErrorCode code, string message)
     {
-        foreach (var (_, tcs) in _pending)
-        {
-            if (tcs.TrySetException(new BusCallException(code, message)))
-            {
-                // Ensure faulted tasks without awaiters do not surface as UnobservedTaskException.
-                _ = tcs.Task.Exception;
-            }
-        }
+        var error = BusError.For(code, message, retryable: true);
+        _rpcClient?.FailPending(error);
+        _controlRpcClient?.FailPending(error);
+    }
 
-        _pending.Clear();
+    private void StopHeartbeat()
+    {
+        try { _heartbeatCts?.Cancel(); } catch { /* ignore */ }
+        _heartbeatCts?.Dispose();
+        _heartbeatCts = null;
     }
 
     private async Task RunHeartbeatAsync(CancellationToken cancellationToken)
@@ -256,57 +271,28 @@ internal sealed class NodePluginBusHost : INodePluginHost
                 }
 
                 var session = _session;
-                var hostEndpoint = _hostEndpoint;
-                if (session is null || !session.IsAvailable || hostEndpoint is null) continue;
-
-                var pingId = _ids.NewId();
-                var waiter = new TaskCompletionSource<JsonNode?>(TaskCreationOptions.RunContinuationsAsynchronously);
-                _pending[pingId] = waiter;
-
-                var ping = new Envelope
-                {
-                    Version = ProtocolVersion.Current,
-                    Id = pingId,
-                    TraceId = pingId,
-                    SessionId = session.SessionId,
-                    PluginId = _manifest.Id,
-                    EndpointId = EndpointIds.Host,
-                    Kind = MessageKind.Request,
-                    Route = Routes.Bus.Ping,
-                    TimeoutMs = (int)HeartbeatPingTimeout.TotalMilliseconds,
-                    Payload = JsonNode.Parse("""{"ok":true}"""),
-                };
+                var controlClient = _controlRpcClient;
+                if (session is null || !session.IsAvailable || controlClient is null) continue;
 
                 monitor.OnPingSent();
                 try
                 {
-                    await _bus.RouteRequestAsync(ping, hostEndpoint);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogTrace(ex, "bus.ping send failed");
-                    _pending.TryRemove(pingId, out _);
-                    continue;
-                }
-
-                try
-                {
-                    using var pingCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                    pingCts.CancelAfter(HeartbeatPingTimeout);
-                    await waiter.Task.WaitAsync(pingCts.Token);
+                    await controlClient.CallAsync(
+                        Routes.Bus.Ping,
+                        JsonNode.Parse("""{"ok":true}"""),
+                        HeartbeatPingTimeout,
+                        cancellationToken);
                     monitor.OnPong();
                 }
-                catch (BusCallException ex) when (ex.Code == ErrorCode.TransportDisconnected)
+                catch (RpcCallException ex) when (ex.Code == ErrorCode.TransportDisconnected)
                 {
-                    _pending.TryRemove(pingId, out _);
                     _logger.LogDebug(ex,
                         "Node heartbeat stopped for {PluginId} because the transport disconnected",
                         _manifest.Id);
                     break;
                 }
-                catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+                catch (RpcCallException ex) when (ex.Code == ErrorCode.RequestTimeout)
                 {
-                    _pending.TryRemove(pingId, out _);
                     var check = monitor.CheckTimeout();
                     _diagnostics.RecordHeartbeatTimeout(_manifest.Id, session.SessionId, monitor.ConsecutiveTimeouts, check.NowDead);
                     if (check.NowDead)
@@ -321,9 +307,13 @@ internal sealed class NodePluginBusHost : INodePluginHost
                 {
                     break;
                 }
+                catch (RpcCallException ex) when (ex.Code == ErrorCode.Cancelled && cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
             }
         }
-        catch (BusCallException ex) when (ex.Code == ErrorCode.TransportDisconnected)
+        catch (RpcCallException ex) when (ex.Code == ErrorCode.TransportDisconnected)
         {
             _logger.LogDebug(ex,
                 "Node heartbeat stopped for {PluginId} because the transport disconnected",
@@ -332,25 +322,6 @@ internal sealed class NodePluginBusHost : INodePluginHost
         catch (Exception ex)
         {
             _logger.LogError(ex, "Node heartbeat loop failed for {PluginId}", _manifest.Id);
-        }
-    }
-
-    private void OnHostDelivery(Envelope env)
-    {
-        if (!Routes.IsPing(env.Route))
-        {
-            _logger.LogDebug("HostDelivery: kind={Kind} route={Route} corr={CorrelationId}",
-                env.Kind, env.Route, env.CorrelationId);
-        }
-        
-        switch (env.Kind)
-        {
-            case MessageKind.Response:
-                HandleResponse(env);
-                break;
-            case MessageKind.Event:
-                HandleEvent(env);
-                break;
         }
     }
 
@@ -431,13 +402,10 @@ internal sealed class NodePluginBusHost : INodePluginHost
             _sessionManager.SessionReplaced -= OnSessionReplaced;
             _sessionManager.SessionUnavailable -= OnSessionUnavailable;
 
-            try { _heartbeatCts?.Cancel(); } catch { /* ignore */ }
-            _heartbeatCts?.Dispose();
-            _heartbeatCts = null;
-
-            FailLocalPending(ErrorCode.TransportDisconnected, "bus host disposed");
-            UnbindHostEndpoint();
-            _bus.UnregisterHostCallHandler(_manifest.Id);
+            StopHeartbeat();
+            FailRpcClients(ErrorCode.TransportDisconnected, "bus host disposed");
+            UnbindHostEndpoints();
+            _bus.HostCallDispatcher.UnregisterHandler(_manifest.Id);
 
             if (_session is not null)
             {
@@ -468,13 +436,10 @@ internal sealed class NodePluginBusHost : INodePluginHost
                 _session.SessionId);
         }
 
-        try { _heartbeatCts?.Cancel(); } catch { /* ignore */ }
-        _heartbeatCts?.Dispose();
-        _heartbeatCts = null;
-
-        FailLocalPending(ErrorCode.TransportDisconnected, "node session stopped");
-        UnbindHostEndpoint();
-        _bus.UnregisterHostCallHandler(_manifest.Id);
+        StopHeartbeat();
+        FailRpcClients(ErrorCode.TransportDisconnected, "node session stopped");
+        UnbindHostEndpoints();
+        _bus.HostCallDispatcher.UnregisterHandler(_manifest.Id);
 
         var sessionId = _session.SessionId;
         await _sessionManager.StopSessionAsync(_manifest.Id, sessionId);
@@ -497,95 +462,21 @@ internal sealed class NodePluginBusHost : INodePluginHost
     {
         await EnsureStartedAsync(cancellationToken);
 
-        if (_session is null || _hostEndpoint is null)
+        if (_session is null || _rpcClient is null)
         {
             throw new InvalidOperationException("bus host failed to start");
         }
-
-        var id = _ids.NewId();
-        var env = new Envelope
+        try
         {
-            Version = ProtocolVersion.Current,
-            Id = id,
-            TraceId = id,
-            SessionId = _session.SessionId,
-            PluginId = _manifest.Id,
-            EndpointId = EndpointIds.Host,
-            Kind = MessageKind.Request,
-            Route = route,
-            TimeoutMs = RequestTimeoutMs,
-            Payload = JsonNode.Parse(JsonSerializer.Serialize(parameters, ProtocolJsonOptions.Default)),
-        };
-
-        var tcs = new TaskCompletionSource<JsonNode?>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _pending[id] = tcs;
-
-        cancellationToken.ThrowIfCancellationRequested();
-
-        using var timeoutCts = new CancellationTokenSource();
-        timeoutCts.CancelAfter(RequestTimeoutMs);
-        var requestStartedAt = System.Diagnostics.Stopwatch.GetTimestamp();
-
-        void CompletePending(bool timedOut)
-        {
-            if (!_pending.TryRemove(id, out var pendingTcs))
-            {
-                return;
-            }
-
-            var elapsedMs = System.Diagnostics.Stopwatch.GetElapsedTime(requestStartedAt).TotalMilliseconds;
-            if (!timedOut || cancellationToken.IsCancellationRequested)
-            {
-                _bus.AbandonPendingRequest(id, route);
-                _logger.LogDebug(
-                    "plugin.call '{Route}' cancelled after {ElapsedMs}ms",
-                    route, elapsedMs);
-                pendingTcs.TrySetException(new BusCallException(
-                    ErrorCode.Cancelled,
-                    $"plugin.call '{route}' was cancelled"));
-                return;
-            }
-
-            _logger.LogWarning(
-                "plugin.call '{Route}' timed out after {ElapsedMs}ms (expected {TimeoutMs}ms)",
-                route, elapsedMs, RequestTimeoutMs);
-            _bus.AbandonPendingRequest(id, route);
-            _diagnostics.RecordCallTimeout(
-                _manifest.Id,
-                _session?.SessionId ?? string.Empty,
-                EndpointIds.Host,
+            return await _rpcClient.CallAsync(
                 route,
-                id,
-                elapsedMs,
-                $"timeoutMs={RequestTimeoutMs}");
-            pendingTcs.TrySetException(new BusCallException(
-                ErrorCode.RequestTimeout,
-                $"plugin.call '{route}' timed out after {RequestTimeoutMs}ms"));
+                JsonNode.Parse(JsonSerializer.Serialize(parameters, ProtocolJsonOptions.Default)),
+                TimeSpan.FromMilliseconds(RequestTimeoutMs),
+                cancellationToken);
         }
-
-        using var timeoutRegistration = timeoutCts.Token.Register(() => CompletePending(timedOut: true));
-        using var cancelRegistration = cancellationToken.Register(() => CompletePending(timedOut: false));
-
-        _logger.LogDebug("Sending plugin.call '{Route}' id={Id}, waiting for response", route, id);
-        await _bus.RouteRequestAsync(env, _hostEndpoint);
-
-        var response = await tcs.Task;
-        _logger.LogDebug("Completed plugin.call '{Route}' id={Id}", route, id);
-        return response;
-    }
-
-    private void HandleResponse(Envelope env)
-    {
-        if (env.CorrelationId is null) return;
-        if (!_pending.TryRemove(env.CorrelationId, out var tcs)) return;
-
-        if (env.Error is not null)
+        catch (RpcCallException exception)
         {
-            tcs.TrySetException(new BusCallException(env.Error.Code, env.Error.Message));
-        }
-        else
-        {
-            tcs.TrySetResult(env.Payload);
+            throw new BusCallException(exception.Code, exception.DetailMessage);
         }
     }
 
@@ -613,12 +504,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
 }
 
 /// <summary>Thrown when a plugin.call.* response carries an error, is cancelled, or times out.</summary>
-internal sealed class BusCallException : Exception
+internal sealed class BusCallException : RpcCallException
 {
-    public ErrorCode Code { get; }
-
-    public BusCallException(ErrorCode code, string message) : base($"{code}: {message}")
-    {
-        Code = code;
-    }
+    public BusCallException(ErrorCode code, string message) : base(code, message) { }
 }

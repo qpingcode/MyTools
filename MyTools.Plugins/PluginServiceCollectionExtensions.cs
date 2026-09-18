@@ -14,13 +14,22 @@ public static class PluginServiceCollectionExtensions
 {
     public static IServiceCollection AddPluginServices(this IServiceCollection services)
     {
-        // Gateway must be the same instance MessageBus uses so RegisterManifest and Authorize share state.
+        // Gateway must be shared by session registration and HostCallDispatcher authorization.
         services.AddSingleton<CapabilityGateway>();
         services.AddSingleton<IPluginDiagnosticsService, PluginDiagnosticsService>();
+        services.AddSingleton(sp => new HostCallDispatcher(
+            sp.GetRequiredService<CapabilityGateway>(),
+            diagnostics: sp.GetRequiredService<IPluginDiagnosticsService>(),
+            logger: sp.GetService<ILoggerFactory>()?.CreateLogger("MyTools.Host.Core.Bus.HostCallDispatcher")));
+        services.AddSingleton(sp => new EventFanout(
+            sp.GetRequiredService<IPluginDiagnosticsService>(),
+            sp.GetService<ILoggerFactory>()?.CreateLogger("MyTools.Host.Core.Bus.EventFanout")));
         services.AddSingleton(sp => new MessageBus(
             sp.GetRequiredService<CapabilityGateway>(),
             diagnostics: sp.GetRequiredService<IPluginDiagnosticsService>(),
-            logger: sp.GetService<ILoggerFactory>()?.CreateLogger("MyTools.Host.Core.Bus.MessageBus")));
+            logger: sp.GetService<ILoggerFactory>()?.CreateLogger("MyTools.Host.Core.Bus.MessageBus"),
+            hostCallDispatcher: sp.GetRequiredService<HostCallDispatcher>(),
+            eventFanout: sp.GetRequiredService<EventFanout>()));
         services.AddSingleton<INodeProcessControllerFactory>(_ =>
             new Host.Transports.Process.NodeProcessControllerFactory(ConfigPath.PluginsDataPath));
         services.AddSingleton(sp => new PluginSessionManager(

@@ -174,7 +174,7 @@ public class PluginSessionManagerTest
     }
 
     [Test]
-    public async Task Disconnect_ShouldFailPendingRequestsWithTransportDisconnected()
+    public async Task Disconnect_ShouldClearRoutesWithoutSynthesizingCallerResponses()
     {
         var bus = new MessageBus();
         var mgr = new PluginSessionManager(bus, new CapabilityGateway(),
@@ -200,10 +200,8 @@ public class PluginSessionManagerTest
 
         ((InMemoryTransport)session.Controller!.Transport!).Disconnect();
 
-        Assert.That(await WaitForAsync(() => hostT.Sent.Count >= 1), Is.True);
-        var fail = hostT.Sent.ToArray()[^1];
-        Assert.That(fail.CorrelationId, Is.EqualTo("pending-1"));
-        Assert.That(fail.Error?.Code, Is.EqualTo(ErrorCode.TransportDisconnected));
+        await Task.Delay(100);
+        Assert.That(hostT.Sent, Is.Empty);
     }
 
     [Test]

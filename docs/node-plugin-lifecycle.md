@@ -133,6 +133,27 @@ sequenceDiagram
 - Node 侧还有被动看门狗：15 秒未收到宿主 ping，或管道断开时，进程以错误码退出，避免孤儿进程。
 - 自动重启会创建新的 pipe、token 和 `sessionId`；旧请求失败。重启采用指数退避，并限制 5 分钟内最多 2 次；新会话下次使用时会重新初始化。
 
+## 已识别问题
+
+### 高优先级
+
+1. **心跳未与 Session 绑定**：心跳由 `NodePluginBusHost` 启动并跨 Session 读取可变字段；自动重启时可能永久停止，也可能把旧超时计数带入新 Session。详细方案见 [Node Plugin 心跳生命周期重构设计](node-plugin-heartbeat-design.md)。
+2. **重启失败可能留下假启动状态**：自动重启开始后 `_started` 仍为 `1`；若新 Session 启动失败，BusHost 可能继续持有旧 Session，后续调用也不会重新启动。
+3. **缺少整体启动超时**：10 秒握手超时只覆盖 Pipe 已连接后的握手；Node 若一直不连接 Pipe，启动可以无限等待。
+4. **Pending 请求重复管理**：`NodePluginBusHost` 和 `MessageBus` 各自维护关联状态，取消或发送异常时存在清理遗漏风险。
+
+### 中优先级
+
+5. **`Ready` 不等于业务可用**：Session 在握手后即为 `Ready`，插件的 `plugin.call.initialize` 尚未完成；自动重启后也不会立即重新初始化。
+6. **初始化缓存存在竞态**：初始化完成后读取当前 `sessionId / locale / theme` 写入缓存，可能把旧响应记到新会话或新语言上。
+7. **心跳与业务请求共用通道**：业务背压或异常响应可能终止未受监管的心跳任务。
+
+### 其他改进
+
+8. `EnvelopeValidator` 和路由规则尚未接入生产消息入口。
+9. 启动失败且未进入握手时，已签发 token 不会被主动撤销。
+10. `PluginLoader` 会并发初始化所有启用插件，插件较多时可能同时拉起大量 Node 进程。
+
 ## 关键实现
 
 - 宿主启动与握手：`MyTools.Host.Core/Sessions/PluginSessionManager.cs`、`PipeHandshake.cs`

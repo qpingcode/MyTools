@@ -11,4 +11,7 @@ public static class EndpointIds
 
     /// <summary>The host-side endpoint used for Host→Node calls and handshake replies.</summary>
     public const string Host = "host";
+
+    /// <summary>Independent host-side endpoint reserved for session health checks.</summary>
+    public const string HostControl = "host-control";
 }

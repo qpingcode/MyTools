@@ -35,8 +35,9 @@ public sealed class PluginSessionUnavailableEventArgs : EventArgs
 /// <summary>
 /// Creates, finds, stops and recovers plugin sessions. Each plugin owns a
 /// <see cref="SessionActor"/> and <see cref="RestartPolicy"/>. On Node disconnect or peer-dead,
-/// pending requests fail with <see cref="ErrorCode.TransportDisconnected"/>, the process tree is
-/// reclaimed, and a new session is started (new pipe/token/sessionId) while under the restart limit.
+/// RPC clients are notified through session lifecycle events, response routes are cleared, the
+/// process tree is reclaimed, and a new session is started (new pipe/token/sessionId) while under
+/// the restart limit.
 /// </summary>
 public sealed class PluginSessionManager
 {
@@ -158,8 +159,8 @@ public sealed class PluginSessionManager
             _diagnostics?.RecordSessionState(pluginId, sessionId, SessionState.Stopping, failureDetails: session.Controller?.FailureDetails);
         }
 
-        _bus.FailPendingForSession(pluginId, sessionId,
-            BusError.For(ErrorCode.TransportDisconnected, "node transport disconnected"));
+        session.CancelLifetime();
+        _bus.ClearResponseRoutesForSession(pluginId, sessionId);
 
         var nodeEp = new EndpointId(pluginId, sessionId, endpointId, IsNode: true);
         _bus.UnregisterEndpoint(nodeEp);
