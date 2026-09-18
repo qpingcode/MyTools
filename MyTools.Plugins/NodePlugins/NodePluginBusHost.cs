@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MyTools.Host.Core.Bus;
 using MyTools.Host.Core.Diagnostics;
-using MyTools.Host.Core.Heartbeat;
 using MyTools.Host.Core.Sessions;
 using MyTools.Protocol.Errors;
 using MyTools.Protocol.Identity;
@@ -38,20 +37,9 @@ internal sealed class NodePluginBusHost : INodePluginHost
     private PluginSession? _session;
     private EndpointId? _nodeEndpoint;
     private EndpointRpcClient? _rpcClient;
-    private EndpointRpcClient? _controlRpcClient;
-    private CancellationTokenSource? _heartbeatCts;
     private int _started; // 0 = not started, 1 = started
     private int _disposed;
     private Task? _disposeTask;
-
-    /// <summary>Host→Node ping interval.</summary>
-    internal static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(2);
-
-    /// <summary>Per-ping timeout before counting a consecutive miss.</summary>
-    internal static readonly TimeSpan HeartbeatPingTimeout = TimeSpan.FromSeconds(3);
-
-    /// <summary>Consecutive missed pongs before declaring the peer dead.</summary>
-    internal const int HeartbeatDeadAfter = 3;
 
     internal const int DefaultTimeoutMs = 30000;
 
@@ -138,9 +126,6 @@ internal sealed class NodePluginBusHost : INodePluginHost
                 InvokeHostCallAsync,
                 _session.LifetimeToken);
 
-            _heartbeatCts = new CancellationTokenSource();
-            _ = RunHeartbeatAsync(_heartbeatCts.Token);
-
             Volatile.Write(ref _started, 1);
         }
         finally
@@ -156,7 +141,6 @@ internal sealed class NodePluginBusHost : INodePluginHost
         _logger.LogWarning("Session replaced for {PluginId}: {Old} -> {New}",
             e.PluginId, e.Previous.SessionId, e.Current.SessionId);
 
-        StopHeartbeat();
         FailRpcClients(ErrorCode.TransportDisconnected, "node session restarted");
         UnbindHostEndpoints();
 
@@ -168,8 +152,6 @@ internal sealed class NodePluginBusHost : INodePluginHost
             _manifest.Id,
             InvokeHostCallAsync,
             _session.LifetimeToken);
-        _heartbeatCts = new CancellationTokenSource();
-        _ = RunHeartbeatAsync(_heartbeatCts.Token);
         Volatile.Write(ref _started, 1);
     }
 
@@ -191,7 +173,6 @@ internal sealed class NodePluginBusHost : INodePluginHost
             e.PluginId,
             e.SessionId);
 
-        StopHeartbeat();
         FailRpcClients(ErrorCode.TransportDisconnected, "node session stopped");
         if (e.WillRestart)
         {
@@ -213,12 +194,6 @@ internal sealed class NodePluginBusHost : INodePluginHost
             _diagnostics,
             _logger);
         _rpcClient.EventReceived += HandleEvent;
-        _controlRpcClient = new EndpointRpcClient(
-            _bus,
-            new EndpointId(_manifest.Id, _session.SessionId, EndpointIds.HostControl, IsNode: false),
-            _ids,
-            _diagnostics,
-            _logger);
     }
 
     private void UnbindHostEndpoints()
@@ -229,100 +204,12 @@ internal sealed class NodePluginBusHost : INodePluginHost
             _ = _rpcClient.DisposeAsync();
             _rpcClient = null;
         }
-        if (_controlRpcClient is not null)
-        {
-            _ = _controlRpcClient.DisposeAsync();
-            _controlRpcClient = null;
-        }
     }
 
     private void FailRpcClients(ErrorCode code, string message)
     {
         var error = BusError.For(code, message, retryable: true);
         _rpcClient?.FailPending(error);
-        _controlRpcClient?.FailPending(error);
-    }
-
-    private void StopHeartbeat()
-    {
-        try { _heartbeatCts?.Cancel(); } catch { /* ignore */ }
-        _heartbeatCts?.Dispose();
-        _heartbeatCts = null;
-    }
-
-    private async Task RunHeartbeatAsync(CancellationToken cancellationToken)
-    {
-        var monitor = new HeartbeatMonitor(
-            (long)HeartbeatPingTimeout.TotalMilliseconds,
-            HeartbeatDeadAfter,
-            () => Environment.TickCount64);
-
-        try
-        {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                try
-                {
-                    await Task.Delay(HeartbeatInterval, cancellationToken);
-                }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
-
-                var session = _session;
-                var controlClient = _controlRpcClient;
-                if (session is null || !session.IsAvailable || controlClient is null) continue;
-
-                monitor.OnPingSent();
-                try
-                {
-                    await controlClient.CallAsync(
-                        Routes.Bus.Ping,
-                        JsonNode.Parse("""{"ok":true}"""),
-                        HeartbeatPingTimeout,
-                        cancellationToken);
-                    monitor.OnPong();
-                }
-                catch (RpcCallException ex) when (ex.Code == ErrorCode.TransportDisconnected)
-                {
-                    _logger.LogDebug(ex,
-                        "Node heartbeat stopped for {PluginId} because the transport disconnected",
-                        _manifest.Id);
-                    break;
-                }
-                catch (RpcCallException ex) when (ex.Code == ErrorCode.RequestTimeout)
-                {
-                    var check = monitor.CheckTimeout();
-                    _diagnostics.RecordHeartbeatTimeout(_manifest.Id, session.SessionId, monitor.ConsecutiveTimeouts, check.NowDead);
-                    if (check.NowDead)
-                    {
-                        _logger.LogWarning(
-                            "Node heartbeat dead for {PluginId} after {N} timeouts; requesting restart",
-                            _manifest.Id, HeartbeatDeadAfter);
-                        await _sessionManager.NotifyPeerDeadAsync(_manifest.Id);
-                    }
-                }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
-                catch (RpcCallException ex) when (ex.Code == ErrorCode.Cancelled && cancellationToken.IsCancellationRequested)
-                {
-                    break;
-                }
-            }
-        }
-        catch (RpcCallException ex) when (ex.Code == ErrorCode.TransportDisconnected)
-        {
-            _logger.LogDebug(ex,
-                "Node heartbeat stopped for {PluginId} because the transport disconnected",
-                _manifest.Id);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Node heartbeat loop failed for {PluginId}", _manifest.Id);
-        }
     }
 
     private async Task<JsonElement> InvokeHostCallAsync(
@@ -402,7 +289,6 @@ internal sealed class NodePluginBusHost : INodePluginHost
             _sessionManager.SessionReplaced -= OnSessionReplaced;
             _sessionManager.SessionUnavailable -= OnSessionUnavailable;
 
-            StopHeartbeat();
             FailRpcClients(ErrorCode.TransportDisconnected, "bus host disposed");
             UnbindHostEndpoints();
             _bus.HostCallDispatcher.UnregisterHandler(_manifest.Id);
@@ -436,7 +322,6 @@ internal sealed class NodePluginBusHost : INodePluginHost
                 _session.SessionId);
         }
 
-        StopHeartbeat();
         FailRpcClients(ErrorCode.TransportDisconnected, "node session stopped");
         UnbindHostEndpoints();
         _bus.HostCallDispatcher.UnregisterHandler(_manifest.Id);

@@ -1,6 +1,6 @@
 # MessageBus 职责收敛与 EndpointRpcClient 设计
 
-> 状态：设计稿。该改造是 [Node Plugin 心跳生命周期重构](node-plugin-heartbeat-design.md) 的前置工作。
+> 状态：已实施（2026-09-18）。阶段一至三的职责收敛与阶段四的事件/心跳迁移均已完成。
 
 ## 1. 结论
 
@@ -459,3 +459,12 @@ WebView pending 由 Web SDK 自己超时；Session/WebView transport 关闭后�
 - Session 断开后不存在本地 pending 或 response route 泄漏。
 - 现有身份隔离、背压、事件丢弃和诊断能力不降低。
 - 完成阶段一至三后，再开始心跳生命周期代码迁移。
+
+## 17. 实施结果
+
+- `HostCallDispatcher`、`EndpointRpcClient` 和 `EventFanout` 已从 `MessageBus` 拆出。
+- 业务 `host` 与心跳 `host-control` 分别使用独立的 `EndpointRpcClient`。
+- `PluginSessionManager` 负责创建、监管和停止 Session 专属心跳 lease。
+- `NodePluginBusHost` 已删除 control client、心跳 CTS、判死常量与 fire-and-forget 心跳循环。
+- 物理断线与心跳判死统一经过 Session actor/state/generation 防护，同一 Session 只接受一次重启入口。
+- Node SDK 已删除按最后一次 ping 时间退出的反向 watchdog，保留 Pipe 断开退出。

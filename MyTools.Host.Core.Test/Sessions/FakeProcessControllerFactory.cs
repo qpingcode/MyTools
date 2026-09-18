@@ -73,6 +73,8 @@ internal sealed class FakeProcessController : INodeProcessController
 
 internal sealed class FakeProcessControllerFactory : INodeProcessControllerFactory
 {
+    public FakeProcessController? LastController { get; private set; }
+
     public INodeProcessController Create(string nodeExePath, string nodeEntryFullPath)
-        => new FakeProcessController();
+        => LastController = new FakeProcessController();
 }

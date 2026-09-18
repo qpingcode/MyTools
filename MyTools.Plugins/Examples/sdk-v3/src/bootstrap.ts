@@ -46,25 +46,11 @@ export async function runPlugin(handlers: PluginHandlers): Promise<PluginRuntime
   const router = new HandlerRouter({ send: (env: Envelope) => transport.send(env) });
   router.setIdentity(identity);
 
-  // Passive host-liveness watchdog: exit if Host stops sending bus.ping (orphan process).
-  // Threshold is well above the host ping interval (~2s) to tolerate brief host stalls.
-  const HOST_LOST_MS = 15_000;
-  let lastPingAt = Date.now();
-  const watchdog = setInterval(() => {
-    if (Date.now() - lastPingAt > HOST_LOST_MS) {
-      clearInterval(watchdog);
-      process.exit(1);
-    }
-  }, 1_000);
-  watchdog.unref?.();
-
   transport.onDisconnect(() => {
-    clearInterval(watchdog);
     process.exit(1);
   });
 
   transport.onMessage((env) => {
-    if (env.route === Routes.Bus.Ping) lastPingAt = Date.now();
     router.dispatch(env);
   });
 
@@ -76,7 +62,6 @@ export async function runPlugin(handlers: PluginHandlers): Promise<PluginRuntime
     transport,
     router,
     close: async () => {
-      clearInterval(watchdog);
       await transport.close();
     },
   };

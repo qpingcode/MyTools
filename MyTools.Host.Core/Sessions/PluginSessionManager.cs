@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MyTools.Host.Core.Bus;
 using MyTools.Host.Core.Capabilities;
 using MyTools.Host.Core.Diagnostics;
+using MyTools.Host.Core.Heartbeat;
 using MyTools.Host.Core.Reliability;
 using MyTools.Host.Core.Security;
 using MyTools.Host.Core.Transports;
@@ -56,6 +57,7 @@ public sealed class PluginSessionManager
     private readonly Func<RestartPolicy> _restartPolicyFactory;
     private readonly ILogger _logger;
     private readonly IPluginDiagnosticsService? _diagnostics;
+    private readonly SessionHeartbeatOptions _heartbeatOptions;
 
     public PluginSessionManager(MessageBus bus, CapabilityGateway gateway,
         INodeProcessControllerFactory processFactory, IIdGenerator? ids = null,
@@ -64,7 +66,8 @@ public sealed class PluginSessionManager
         TimeSpan? tokenTtl = null,
         Func<RestartPolicy>? restartPolicyFactory = null,
         IPluginDiagnosticsService? diagnostics = null,
-        ILogger? logger = null)
+        ILogger? logger = null,
+        SessionHeartbeatOptions? heartbeatOptions = null)
     {
         _bus = bus;
         _gateway = gateway;
@@ -81,6 +84,8 @@ public sealed class PluginSessionManager
             jitter: 0.2));
         _diagnostics = diagnostics;
         _logger = logger ?? NullLogger.Instance;
+        _heartbeatOptions = heartbeatOptions ?? SessionHeartbeatOptions.Default;
+        _heartbeatOptions.Validate();
     }
 
     /// <summary>Fired after a successful automatic restart replaces the live plugin session.</summary>
@@ -159,6 +164,7 @@ public sealed class PluginSessionManager
             _diagnostics?.RecordSessionState(pluginId, sessionId, SessionState.Stopping, failureDetails: session.Controller?.FailureDetails);
         }
 
+        await StopHeartbeatAsync(session);
         session.CancelLifetime();
         _bus.ClearResponseRoutesForSession(pluginId, sessionId);
 
@@ -208,6 +214,7 @@ public sealed class PluginSessionManager
 
     private async Task HandleDisconnectAsync(PluginRuntime runtime, PluginSession session, GenerationToken gen)
     {
+        var accepted = false;
         var shouldRestart = false;
         await runtime.Actor.PostAsync(() =>
         {
@@ -220,6 +227,7 @@ public sealed class PluginSessionManager
             try { session.Transition(SessionState.Restarting); }
             catch { return; }
 
+            accepted = true;
             shouldRestart = runtime.RestartPolicy.CanRestart();
             _logger.LogWarning(
                 "Session disconnect plugin={PluginId} session={SessionId} willRestart={WillRestart}",
@@ -235,9 +243,8 @@ public sealed class PluginSessionManager
             });
         });
 
-        if (session.State is not SessionState.Restarting && !shouldRestart)
+        if (!accepted)
         {
-            // Generation changed or already tearing down.
             return;
         }
 
@@ -337,13 +344,18 @@ public sealed class PluginSessionManager
 
             WireDisconnect(runtime, session);
 
+            var heartbeatLease = CreateHeartbeatLease(session);
+            session.HeartbeatLease = heartbeatLease;
+
             session.Transition(SessionState.Ready);
             _diagnostics?.RecordSessionState(manifest.Id, sessionId, SessionState.Ready, controller.ObservedIdentity?.Pid);
             runtime.Session = session;
+            heartbeatLease.ObserverTask = ObserveHeartbeatAsync(runtime, session, heartbeatLease);
             return session;
         }
         catch
         {
+            await StopHeartbeatAsync(session);
             try { await controller.StopAsync(); } catch { /* best-effort */ }
             _diagnostics?.DetachProcessController(manifest.Id, sessionId, controller);
             _gateway.UnregisterManifest(manifest.Id);
@@ -374,7 +386,7 @@ public sealed class PluginSessionManager
         {
             transport.Disconnected -= handler;
             session.DisconnectHandler = null;
-            _ = HandleDisconnectAsync(runtime, session, gen);
+            TrackRecovery(runtime, HandleDisconnectAsync(runtime, session, gen));
         };
         session.DisconnectHandler = handler;
         transport.Disconnected += handler;
@@ -396,12 +408,190 @@ public sealed class PluginSessionManager
     private static string SessionKey(string pluginId, string sessionId)
         => $"{pluginId}\u001f{sessionId}";
 
+    private SessionHeartbeatLease CreateHeartbeatLease(PluginSession session)
+    {
+        var controlClient = new EndpointRpcClient(
+            _bus,
+            new EndpointId(
+                session.PluginId,
+                session.SessionId,
+                EndpointIds.HostControl,
+                IsNode: false),
+            _ids,
+            _diagnostics,
+            _logger);
+        var cancellation = new CancellationTokenSource();
+        var worker = new SessionHeartbeat(
+            session,
+            session.GenerationGuard.Current,
+            controlClient,
+            _diagnostics,
+            _logger,
+            _heartbeatOptions);
+        return new SessionHeartbeatLease
+        {
+            ControlRpcClient = controlClient,
+            Cancellation = cancellation,
+            Worker = worker,
+            RunTask = worker.RunAsync(cancellation.Token),
+        };
+    }
+
+    private async Task ObserveHeartbeatAsync(
+        PluginRuntime runtime,
+        PluginSession session,
+        SessionHeartbeatLease lease)
+    {
+        HeartbeatExit exit;
+        try
+        {
+            exit = await lease.RunTask;
+        }
+        catch (Exception exception)
+        {
+            exit = HeartbeatExit.HostFault(exception);
+        }
+
+        if (exit.Kind == HeartbeatExitKind.Cancelled)
+        {
+            return;
+        }
+
+        TrackRecovery(runtime, HandleHeartbeatExitAsync(runtime, session, lease, exit));
+    }
+
+    private async Task HandleHeartbeatExitAsync(
+        PluginRuntime runtime,
+        PluginSession session,
+        SessionHeartbeatLease lease,
+        HeartbeatExit exit)
+    {
+        var generation = session.GenerationGuard.Current;
+        if (!ReferenceEquals(runtime.Session, session)
+            || session.State != SessionState.Ready
+            || !ReferenceEquals(session.HeartbeatLease, lease))
+        {
+            return;
+        }
+
+        if (exit.Kind is HeartbeatExitKind.PeerDead or HeartbeatExitKind.TransportDisconnected)
+        {
+            _logger.LogWarning(
+                "Node heartbeat exited plugin={PluginId} session={SessionId} result={Result}; requesting restart",
+                session.PluginId,
+                session.SessionId,
+                exit.Kind);
+            await HandleDisconnectAsync(runtime, session, generation);
+            return;
+        }
+
+        _logger.LogError(
+            exit.Exception,
+            "Node heartbeat worker failed plugin={PluginId} session={SessionId}; restarting heartbeat",
+            session.PluginId,
+            session.SessionId);
+
+        var shouldReplace = false;
+        await runtime.Actor.PostAsync(() =>
+        {
+            if (ReferenceEquals(runtime.Session, session)
+                && session.GenerationGuard.IsCurrent(generation)
+                && session.State == SessionState.Ready
+                && ReferenceEquals(session.HeartbeatLease, lease))
+            {
+                session.HeartbeatLease = null;
+                shouldReplace = true;
+            }
+        });
+        if (!shouldReplace)
+        {
+            return;
+        }
+
+        await DisposeHeartbeatLeaseAsync(lease);
+
+        SessionHeartbeatLease? replacement = null;
+        try
+        {
+            replacement = CreateHeartbeatLease(session);
+            var installed = false;
+            await runtime.Actor.PostAsync(() =>
+            {
+                if (ReferenceEquals(runtime.Session, session)
+                    && session.GenerationGuard.IsCurrent(generation)
+                    && session.State == SessionState.Ready
+                    && session.HeartbeatLease is null)
+                {
+                    session.HeartbeatLease = replacement;
+                    installed = true;
+                }
+            });
+            if (!installed)
+            {
+                await DisposeHeartbeatLeaseAsync(replacement);
+                return;
+            }
+
+            replacement.ObserverTask = ObserveHeartbeatAsync(runtime, session, replacement);
+        }
+        catch (Exception exception)
+        {
+            if (replacement is not null)
+            {
+                await DisposeHeartbeatLeaseAsync(replacement);
+            }
+            _logger.LogError(
+                exception,
+                "Failed to restart heartbeat plugin={PluginId} session={SessionId}",
+                session.PluginId,
+                session.SessionId);
+        }
+    }
+
+    private static async Task StopHeartbeatAsync(PluginSession session)
+    {
+        var lease = Interlocked.Exchange(ref session.HeartbeatLease, null);
+        if (lease is not null)
+        {
+            await DisposeHeartbeatLeaseAsync(lease);
+        }
+    }
+
+    private static async Task DisposeHeartbeatLeaseAsync(SessionHeartbeatLease lease)
+    {
+        try { lease.Cancellation.Cancel(); } catch (ObjectDisposedException) { }
+        try { await lease.RunTask; } catch { /* observed by the lease owner */ }
+        await lease.ControlRpcClient.DisposeAsync();
+        lease.Cancellation.Dispose();
+    }
+
+    private void TrackRecovery(PluginRuntime runtime, Task recoveryTask)
+    {
+        runtime.RecoveryTasks.TryAdd(recoveryTask, 0);
+        recoveryTask.ContinueWith(
+            completed =>
+            {
+                runtime.RecoveryTasks.TryRemove(completed, out _);
+                if (completed.Exception is { } exception)
+                {
+                    _logger.LogError(
+                        exception,
+                        "Supervised session recovery failed plugin={PluginId}",
+                        runtime.Manifest.Id);
+                }
+            },
+            CancellationToken.None,
+            TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default);
+    }
+
     private sealed class PluginRuntime
     {
         public required PluginManifestV3 Manifest { get; set; }
         public required string NodeExePath { get; set; }
         public required SessionActor Actor { get; init; }
         public required RestartPolicy RestartPolicy { get; init; }
+        public ConcurrentDictionary<Task, byte> RecoveryTasks { get; } = new();
         public PluginSession? Session { get; set; }
     }
 }

@@ -69,9 +69,17 @@ public sealed class HeartbeatMonitor
             return new HeartbeatCheck(false, IsDead);
         }
 
-        // Timed out.
+        return OnTimeout();
+    }
+
+    /// <summary>
+    /// Records a timeout already established by the RPC client's wait budget. Unlike
+    /// <see cref="CheckTimeout"/>, this does not perform a second clock comparison.
+    /// </summary>
+    public HeartbeatCheck OnTimeout()
+    {
         ConsecutiveTimeouts++;
-        _lastPingMs = -1; // consume this ping
+        _lastPingMs = -1;
         if (ConsecutiveTimeouts >= _deadAfter)
         {
             IsDead = true;

@@ -1,4 +1,5 @@
 using MyTools.Host.Core.Capabilities;
+using MyTools.Host.Core.Heartbeat;
 
 namespace MyTools.Host.Core.Sessions;
 
@@ -36,6 +37,9 @@ public sealed class PluginSession
 
     /// <summary>Process exit handler wired by the manager; cleared on tear-down.</summary>
     internal Action<Diagnostics.NodeProcessExitInfo>? ProcessExitHandler { get; set; }
+
+    /// <summary>The supervised heartbeat resources owned by this exact session.</summary>
+    internal SessionHeartbeatLease? HeartbeatLease;
 
     internal void Transition(SessionState target)
     {

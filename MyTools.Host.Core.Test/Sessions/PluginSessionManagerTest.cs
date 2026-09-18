@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using MyTools.Host.Core.Bus;
 using MyTools.Host.Core.Capabilities;
 using MyTools.Host.Core.Diagnostics;
+using MyTools.Host.Core.Heartbeat;
 using MyTools.Host.Core.Reliability;
 using MyTools.Host.Core.Sessions;
 using MyTools.Host.Core.Transports;
@@ -30,6 +31,11 @@ public class PluginSessionManagerTest
         window: TimeSpan.FromMinutes(5),
         maxRestartsPerWindow: maxRestarts,
         jitter: 0);
+
+    private static readonly SessionHeartbeatOptions FastHeartbeat = new(
+        TimeSpan.FromMilliseconds(10),
+        TimeSpan.FromMilliseconds(20),
+        2);
 
     [Test]
     public async Task StartSession_ShouldReachReadyAndRegisterCapabilityManifest()
@@ -171,6 +177,60 @@ public class PluginSessionManagerTest
         var args = await replaced.Task.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.That(args.Previous.SessionId, Is.EqualTo(oldId));
         Assert.That(args.Current.SessionId, Is.Not.EqualTo(oldId));
+    }
+
+    [Test]
+    public async Task HeartbeatTimeouts_ShouldRestartWithNewSession()
+    {
+        var replaced = new TaskCompletionSource<PluginSessionReplacedEventArgs>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var factory = new FakeProcessControllerFactory();
+        var mgr = new PluginSessionManager(
+            new MessageBus(),
+            new CapabilityGateway(),
+            factory,
+            restartPolicyFactory: () => FastRestartPolicy(maxRestarts: 1),
+            heartbeatOptions: FastHeartbeat);
+        mgr.SessionReplaced += (_, e) => replaced.TrySetResult(e);
+
+        var original = await mgr.StartSessionAsync(Manifest("settings"), "node");
+
+        var args = await replaced.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(args.Previous, Is.SameAs(original));
+            Assert.That(args.Current.SessionId, Is.Not.EqualTo(original.SessionId));
+            Assert.That(args.Current.State, Is.EqualTo(SessionState.Ready));
+        });
+
+        await mgr.StopSessionAsync(args.Current.PluginId, args.Current.SessionId);
+    }
+
+    [Test]
+    public async Task StopSession_ShouldCancelHeartbeatAndCleanControlRoute()
+    {
+        var bus = new MessageBus();
+        var factory = new FakeProcessControllerFactory();
+        var options = new SessionHeartbeatOptions(
+            TimeSpan.FromMilliseconds(10),
+            TimeSpan.FromSeconds(1),
+            FastHeartbeat.DeadAfter);
+        var mgr = new PluginSessionManager(
+            bus,
+            new CapabilityGateway(),
+            factory,
+            heartbeatOptions: options);
+        var session = await mgr.StartSessionAsync(Manifest("settings"), "node");
+
+        Assert.That(await WaitForAsync(() => bus.ResponseRouteCount == 1), Is.True);
+        await mgr.StopSessionAsync(session.PluginId, session.SessionId);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(session.HeartbeatLease, Is.Null);
+            Assert.That(bus.ResponseRouteCount, Is.Zero);
+            Assert.That(session.State, Is.EqualTo(SessionState.Stopped));
+        });
     }
 
     [Test]

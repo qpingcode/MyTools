@@ -1,6 +1,6 @@
 # Node Plugin 心跳生命周期重构设计
 
-> 状态：设计稿。依赖先完成 [MessageBus 职责收敛与 EndpointRpcClient 设计](message-bus-responsibility-refactor-design.md) 的阶段一至三；之后再迁移心跳。目标是不改变 `bus.ping` 协议和现有自动重启策略。
+> 状态：已实施（2026-09-18）。依赖的 [MessageBus 职责收敛与 EndpointRpcClient 设计](message-bus-responsibility-refactor-design.md) 阶段一至三已完成；实现未改变 `bus.ping` 协议和既有自动重启策略。
 
 ## 1. 当前问题
 
@@ -31,8 +31,10 @@ Node 进程回收    → 依赖 Job Object 和 Pipe 断开，不依赖时间型�
 本次不处理：
 
 - `plugin.call.initialize` 的 Ready 状态问题；
-- 将普通业务请求迁移到 `EndpointRpcClient`；本次只要求该抽象可复用，并先用于心跳；
 - 心跳间隔、超时和重启次数的产品参数调整。
+
+实施前置状态补充：普通业务请求在 MessageBus 职责收敛阶段已经迁移到独立的
+`EndpointRpcClient`；本次实现只迁移心跳所有权，不再次改变业务调用语义。
 
 ## 3. 职责调整
 
@@ -392,3 +394,12 @@ Node SDK 不再维护 Host 丢失时间参数；Host 退出后的 Node 回收由
 - Node 判死仍复用原有退避、重启上限和 `SessionReplaced` 语义。
 - 睡眠、休眠、调试暂停或单纯缺少 ping 不会直接导致 Node 自行退出。
 - Host 退出或 Pipe 断开后，Node 仍能由 Job Object 或断开处理可靠回收。
+
+## 15. 实施结果
+
+- 新增 `SessionHeartbeat`、`HeartbeatExitKind`、`SessionHeartbeatLease` 和集中管理默认参数的 `SessionHeartbeatOptions`。
+- `PluginSessionManager` 在 Session Ready 生命周期内持有并监管唯一 heartbeat lease；停止、替换和重启均先取消并等待 worker，再释放 control client。
+- `PeerDead` 与 `TransportDisconnected` 进入原有自动重启路径；`HostFault` 仅替换 heartbeat lease。
+- 心跳固定捕获 Session 与 generation，不读取 `NodePluginBusHost` 的可变 Session 字段。
+- control RPC 的 pending、超时、取消和 response route 清理由 `EndpointRpcClient` 统一负责。
+- Node SDK 的时间型反向 watchdog 已删除，Named Pipe 断开退出逻辑保留。
