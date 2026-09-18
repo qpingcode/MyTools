@@ -250,5 +250,8 @@
   "Plugin.ApiTester.ConsoleLog": "控制台日志",
   "Plugin.ApiTester.ResultFilters": "运行结果筛选",
   "Plugin.ApiTester.Iteration": "第 {{number}} 次迭代",
-  "Plugin.ApiTester.NoMatchingResults": "没有匹配的运行结果。"
+  "Plugin.ApiTester.NoMatchingResults": "没有匹配的运行结果。",
+  "Plugin.ApiTester.SaveFailedTitle": "保存失败",
+  "Plugin.ApiTester.SaveFailedClosePrompt": "最新更改可能尚未保存。是否不保存并直接退出？",
+  "Plugin.ApiTester.ExitWithoutSaving": "不保存并退出"
 }

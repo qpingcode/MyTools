@@ -608,6 +608,18 @@ export const text = {
         bus.i18n.t('Plugin.ApiTester.UnsavedChanges', {
             defaultValue: 'Unsaved changes',
         }),
+    SaveFailedTitle: () =>
+        bus.i18n.t('Plugin.ApiTester.SaveFailedTitle', {
+            defaultValue: 'Save failed',
+        }),
+    SaveFailedClosePrompt: () =>
+        bus.i18n.t('Plugin.ApiTester.SaveFailedClosePrompt', {
+            defaultValue: 'Your latest changes may not have been saved. Exit without saving?',
+        }),
+    ExitWithoutSaving: () =>
+        bus.i18n.t('Plugin.ApiTester.ExitWithoutSaving', {
+            defaultValue: 'Exit without saving',
+        }),
     DeleteCollection: (values: Record<string, string | number> = {}) =>
         bus.i18n.t('Plugin.ApiTester.DeleteCollection', {
             defaultValue: 'Delete this collection and its {{count}} requests?',

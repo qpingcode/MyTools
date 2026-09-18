@@ -47,6 +47,15 @@ export function useDialogs() {
         );
     }
 
+    async function confirmCloseWithoutSaving(): Promise<boolean> {
+        return choose(
+            DialogKind.SaveFailed,
+            t.value.SaveFailedTitle,
+            '',
+            {message: t.value.SaveFailedClosePrompt},
+        );
+    }
+
     function finishModal(save: boolean, discard = false) {
         const value = modal.value;
         if (!value) return;
@@ -57,7 +66,11 @@ export function useDialogs() {
             return;
         }
         if (!save) {
-            value.finish(value.kind === DialogKind.Confirm ? false : null);
+            value.finish(
+                value.kind === DialogKind.Confirm || value.kind === DialogKind.SaveFailed
+                    ? false
+                    : null,
+            );
             return;
         }
         if (value.kind === DialogKind.Name && !value.value.trim()) return;
@@ -80,5 +93,5 @@ export function useDialogs() {
         );
     }
 
-    return {modal, choose, name, confirm, finishModal};
+    return {modal, choose, name, confirm, confirmCloseWithoutSaving, finishModal};
 }

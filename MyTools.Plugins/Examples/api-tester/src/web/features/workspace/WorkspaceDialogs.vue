@@ -71,7 +71,9 @@ watch(modal, async (value) => {
       </button>
       <button class="primary" :disabled="!!modal.environment && !modal.environment.name.trim()"
               @click="finishModal(true)">
-        {{ modal.kind === DialogKind.Confirm ? t.Continue() : t.Save() }}
+        {{ modal.kind === DialogKind.SaveFailed
+            ? t.ExitWithoutSaving()
+            : modal.kind === DialogKind.Confirm ? t.Continue() : t.Save() }}
       </button>
     </div>
   </dialog>

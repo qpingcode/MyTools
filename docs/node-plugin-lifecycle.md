@@ -140,7 +140,6 @@ sequenceDiagram
 1. **心跳未与 Session 绑定**：心跳由 `NodePluginBusHost` 启动并跨 Session 读取可变字段；自动重启时可能永久停止，也可能把旧超时计数带入新 Session。详细方案见 [Node Plugin 心跳生命周期重构设计](node-plugin-heartbeat-design.md)。
 2. **重启失败可能留下假启动状态**：自动重启开始后 `_started` 仍为 `1`；若新 Session 启动失败，BusHost 可能继续持有旧 Session，后续调用也不会重新启动。
 3. **缺少整体启动超时**：10 秒握手超时只覆盖 Pipe 已连接后的握手；Node 若一直不连接 Pipe，启动可以无限等待。
-4. **Pending 请求重复管理**：`NodePluginBusHost` 和 `MessageBus` 各自维护关联状态，取消或发送异常时存在清理遗漏风险。
 
 ### 中优先级
 

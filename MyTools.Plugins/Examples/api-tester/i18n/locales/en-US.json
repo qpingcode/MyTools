@@ -250,5 +250,8 @@
   "Plugin.ApiTester.ConsoleLog": "Console log",
   "Plugin.ApiTester.ResultFilters": "Run result filters",
   "Plugin.ApiTester.Iteration": "Iteration {{number}}",
-  "Plugin.ApiTester.NoMatchingResults": "No matching run results."
+  "Plugin.ApiTester.NoMatchingResults": "No matching run results.",
+  "Plugin.ApiTester.SaveFailedTitle": "Save failed",
+  "Plugin.ApiTester.SaveFailedClosePrompt": "Your latest changes may not have been saved. Exit without saving?",
+  "Plugin.ApiTester.ExitWithoutSaving": "Exit without saving"
 }

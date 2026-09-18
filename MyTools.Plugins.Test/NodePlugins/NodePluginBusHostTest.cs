@@ -28,6 +28,9 @@ namespace MyTools.Plugins.Test.NodePlugins;
 [TestFixture]
 public class NodePluginBusHostTest
 {
+    private const int AutomaticRestartLimit = 1;
+    private static readonly TimeSpan RestartTrackingWindow = TimeSpan.FromMinutes(5);
+
     private static NodePluginManifest Manifest() => new()
     {
         Id = "settings",
@@ -324,6 +327,68 @@ public class NodePluginBusHostTest
         await host.DisposeAsync();
     }
 
+    [Test]
+    public async Task Disconnect_WhenAutomaticRestartFails_ShouldRestartOnNextCall()
+    {
+        var gateway = new CapabilityGateway();
+        var diagnostics = new PluginDiagnosticsService();
+        var bus = new MessageBus(gateway, diagnostics: diagnostics);
+        var factory = new FailSecondStartFactory();
+        var manager = new PluginSessionManager(
+            bus,
+            gateway,
+            factory,
+            restartPolicyFactory: () => new RestartPolicy(
+                TimeSpan.Zero,
+                TimeSpan.Zero,
+                RestartTrackingWindow,
+                maxRestartsPerWindow: AutomaticRestartLimit,
+                jitter: 0));
+        var host = new NodePluginBusHost(
+            Manifest(), manager, bus, diagnostics, NullLogger<NodePluginBusHost>.Instance);
+
+        await host.StartAsync("node", CancellationToken.None);
+        var oldSessionId = host.SessionId;
+        var oldTransport = (InMemoryTransport)factory.LastController!.Transport!;
+
+        oldTransport.Disconnect();
+        Assert.That(await WaitForAsync(() => host.SessionId is null), Is.True);
+
+        var searchTask = host.SearchAsync(
+            "hello", "global", "en-US", "en-US", "dark", CancellationToken.None);
+        Assert.That(
+            await WaitForAsync(() => factory.CreateCount == FailSecondStartFactory.RecoveryCreateCount),
+            Is.True);
+
+        var newTransport = (InMemoryTransport)factory.LastController!.Transport!;
+        Envelope? sentRequest = null;
+        Assert.That(await WaitForAsync(() =>
+        {
+            sentRequest = newTransport.Sent.FirstOrDefault(e => e.Route == "plugin.call.search");
+            return sentRequest is not null;
+        }), Is.True);
+
+        newTransport.Deliver(new Envelope
+        {
+            Version = ProtocolVersion.Current,
+            Id = "resp-after-restart-failure",
+            CorrelationId = sentRequest!.Id,
+            TraceId = sentRequest.TraceId,
+            SessionId = sentRequest.SessionId,
+            PluginId = "settings",
+            EndpointId = "node-main",
+            Kind = MessageKind.Response,
+            Route = "plugin.call.search",
+            Payload = JsonNode.Parse("""{"items":[{"id":"1","title":"Recovered","subtitle":"","priority":0}]}"""),
+        });
+
+        var response = await searchTask;
+        Assert.That(response.Items.Single().Title, Is.EqualTo("Recovered"));
+        Assert.That(host.SessionId, Is.Not.Null.And.Not.EqualTo(oldSessionId));
+
+        await host.DisposeAsync();
+    }
+
     private static async Task<(NodePluginBusHost host, InMemoryTransport nodeT, string sessionId, PluginDiagnosticsService diagnostics)>
         CreateStartedHostAsync(IReadOnlyList<string>? capabilities = null,
             Func<RestartPolicy>? restartPolicyFactory = null)
@@ -373,7 +438,7 @@ public class NodePluginBusHostTest
         return predicate();
     }
 
-    private sealed class FakeController : INodeProcessController
+    private sealed class FakeController(bool failOnStart = false) : INodeProcessController
     {
         public IMessageTransport? Transport { get; private set; }
         public ProcessIdentity? ObservedIdentity { get; private set; }
@@ -389,6 +454,11 @@ public class NodePluginBusHostTest
             Func<ProcessIdentity, string> issueToken,
             CancellationToken ct)
         {
+            if (failOnStart)
+            {
+                throw new InvalidOperationException("Simulated process start failure.");
+            }
+
             var transport = new InMemoryTransport();
             Transport = transport;
             ObservedIdentity = new ProcessIdentity(7, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
@@ -421,5 +491,21 @@ public class NodePluginBusHostTest
         public FakeController? LastController { get; private set; }
         public INodeProcessController Create(string nodeExePath, string nodeEntryFullPath)
             => LastController = new FakeController();
+    }
+
+    private sealed class FailSecondStartFactory : INodeProcessControllerFactory
+    {
+        private const int AutomaticRestartCreateCount = 2;
+        public const int RecoveryCreateCount = 3;
+
+        public int CreateCount { get; private set; }
+        public FakeController? LastController { get; private set; }
+
+        public INodeProcessController Create(string nodeExePath, string nodeEntryFullPath)
+        {
+            CreateCount++;
+            return LastController = new FakeController(
+                failOnStart: CreateCount == AutomaticRestartCreateCount);
+        }
     }
 }

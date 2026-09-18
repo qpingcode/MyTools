@@ -42,6 +42,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
     private Task? _disposeTask;
 
     internal const int DefaultTimeoutMs = 30000;
+    private const string NodeSessionStoppedError = "node session stopped";
 
     /// <summary>Host wait budget for <c>plugin.call.*</c>. Overridable in tests.</summary>
     internal int RequestTimeoutMs { get; set; } = DefaultTimeoutMs;
@@ -65,6 +66,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
         _ids = ids ?? new GuidIdGenerator();
         _sessionManager.SessionReplaced += OnSessionReplaced;
         _sessionManager.SessionUnavailable += OnSessionUnavailable;
+        _sessionManager.SessionRestartFailed += OnSessionRestartFailed;
         _logger.LogInformation("NodePluginBusHost created for plugin={PluginId}", manifest.Id);
     }
 
@@ -173,12 +175,40 @@ internal sealed class NodePluginBusHost : INodePluginHost
             e.PluginId,
             e.SessionId);
 
-        FailRpcClients(ErrorCode.TransportDisconnected, "node session stopped");
+        FailRpcClients(ErrorCode.TransportDisconnected, NodeSessionStoppedError);
         if (e.WillRestart)
         {
             return;
         }
         UnbindHostEndpoints();
+        _session = null;
+        _nodeEndpoint = null;
+        Volatile.Write(ref _started, 0);
+    }
+
+    private void OnSessionRestartFailed(object? sender, PluginSessionRestartFailedEventArgs e)
+    {
+        if (e.PluginId != _manifest.Id)
+        {
+            return;
+        }
+
+        var current = _session;
+        if (current is null
+            || !string.Equals(current.SessionId, e.PreviousSessionId, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _logger.LogError(
+            e.Exception,
+            "Automatic session restart failed for plugin={PluginId} session={SessionId}",
+            e.PluginId,
+            e.PreviousSessionId);
+
+        FailRpcClients(ErrorCode.TransportDisconnected, NodeSessionStoppedError);
+        UnbindHostEndpoints();
+        _bus.HostCallDispatcher.UnregisterHandler(_manifest.Id);
         _session = null;
         _nodeEndpoint = null;
         Volatile.Write(ref _started, 0);
@@ -288,6 +318,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
         {
             _sessionManager.SessionReplaced -= OnSessionReplaced;
             _sessionManager.SessionUnavailable -= OnSessionUnavailable;
+            _sessionManager.SessionRestartFailed -= OnSessionRestartFailed;
 
             FailRpcClients(ErrorCode.TransportDisconnected, "bus host disposed");
             UnbindHostEndpoints();
@@ -322,7 +353,7 @@ internal sealed class NodePluginBusHost : INodePluginHost
                 _session.SessionId);
         }
 
-        FailRpcClients(ErrorCode.TransportDisconnected, "node session stopped");
+        FailRpcClients(ErrorCode.TransportDisconnected, NodeSessionStoppedError);
         UnbindHostEndpoints();
         _bus.HostCallDispatcher.UnregisterHandler(_manifest.Id);
 

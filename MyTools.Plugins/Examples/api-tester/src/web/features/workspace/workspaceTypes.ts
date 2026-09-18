@@ -18,6 +18,7 @@ export enum DialogKind {
     Name = 'name',
     Confirm = 'confirm',
     Unsaved = 'unsaved',
+    SaveFailed = 'saveFailed',
     Collection = 'collection',
     Environment = 'environment',
     Defaults = 'defaults',

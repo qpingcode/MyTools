@@ -3342,6 +3342,9 @@
     {"key":"Plugin.ApiTester.ConsoleLog","defaultValue":"Console log","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"控制台日志"}},
     {"key":"Plugin.ApiTester.ResultFilters","defaultValue":"Run result filters","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"运行结果筛选"}},
     {"key":"Plugin.ApiTester.Iteration","defaultValue":"Iteration {{number}}","placeholders":["number"],"references":[],"existingTranslations":{"zh-CN":"第 {{number}} 次迭代"}},
-    {"key":"Plugin.ApiTester.NoMatchingResults","defaultValue":"No matching run results.","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"没有匹配的运行结果。"}}
+    {"key":"Plugin.ApiTester.NoMatchingResults","defaultValue":"No matching run results.","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"没有匹配的运行结果。"}},
+    {"key":"Plugin.ApiTester.SaveFailedTitle","defaultValue":"Save failed","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"保存失败"}},
+    {"key":"Plugin.ApiTester.SaveFailedClosePrompt","defaultValue":"Your latest changes may not have been saved. Exit without saving?","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"最新更改可能尚未保存。是否不保存并直接退出？"}},
+    {"key":"Plugin.ApiTester.ExitWithoutSaving","defaultValue":"Exit without saving","placeholders":[],"references":[],"existingTranslations":{"zh-CN":"不保存并退出"}}
   ]
 }

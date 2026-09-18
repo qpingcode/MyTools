@@ -64,7 +64,14 @@ export function useWorkspace() {
         ),
     );
     const cookies = ref<CookieRecord[]>([]);
-    const {modal, choose, name, confirm, finishModal} = useDialogs();
+    const {
+        modal,
+        choose,
+        name,
+        confirm,
+        confirmCloseWithoutSaving,
+        finishModal,
+    } = useDialogs();
     const {
         batch,
         batchId,
@@ -531,6 +538,14 @@ export function useWorkspace() {
 
     let closing = false;
 
+    async function releaseBestEffort(id: string): Promise<void> {
+        try {
+            await bus.call(Routes.release, {id});
+        } catch (error) {
+            console.warn('Could not release API Tester run during close.', error);
+        }
+    }
+
     async function beforeClose(): Promise<boolean> {
         if (closing) return false;
         closing = true;
@@ -540,20 +555,25 @@ export function useWorkspace() {
                 const choice = await choose<Choice>(DialogKind.Unsaved, () =>
                     t.value.Unsaved({name: item.request.name}),
                 );
-                if (
-                    choice === Choice.Cancel ||
-                    (choice === Choice.Save && !(await saveTab(item)))
-                )
-                    return false;
+                if (choice === Choice.Cancel) return false;
+                if (choice === Choice.Save) {
+                    try {
+                        if (!(await saveTab(item))) return false;
+                    } catch (error) {
+                        console.error(error);
+                        if (!(await confirmCloseWithoutSaving())) return false;
+                        break;
+                    }
+                }
             }
             for (const item of tabs.value) {
                 item.baseline = JSON.stringify(item.request);
-                if (item.runId) await rpc(Routes.release, {id: item.runId});
+                if (item.runId) await releaseBestEffort(item.runId);
             }
             if (batchId.value) {
                 const id = batchId.value;
                 batchId.value = '';
-                await rpc(Routes.release, {id});
+                await releaseBestEffort(id);
             }
             return true;
         } finally {

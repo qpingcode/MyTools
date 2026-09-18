@@ -33,6 +33,14 @@ public sealed class PluginSessionUnavailableEventArgs : EventArgs
     public string? FailureDetails { get; init; }
 }
 
+/// <summary>Raised after an automatic restart fails to create a replacement session.</summary>
+public sealed class PluginSessionRestartFailedEventArgs : EventArgs
+{
+    public required string PluginId { get; init; }
+    public required string PreviousSessionId { get; init; }
+    public required Exception Exception { get; init; }
+}
+
 /// <summary>
 /// Creates, finds, stops and recovers plugin sessions. Each plugin owns a
 /// <see cref="SessionActor"/> and <see cref="RestartPolicy"/>. On Node disconnect or peer-dead,
@@ -93,6 +101,9 @@ public sealed class PluginSessionManager
 
     /// <summary>Fired when a Node backend disconnects so active detail views can report the failure.</summary>
     public event EventHandler<PluginSessionUnavailableEventArgs>? SessionUnavailable;
+
+    /// <summary>Fired when an automatic restart cannot create a replacement session.</summary>
+    public event EventHandler<PluginSessionRestartFailedEventArgs>? SessionRestartFailed;
 
     public async Task<PluginSession> StartSessionAsync(PluginManifestV3 manifest,
         string nodeExePath, CancellationToken cancellationToken = default)
@@ -288,8 +299,15 @@ public sealed class PluginSessionManager
                     try { runtime.Session.Transition(SessionState.Stopping); } catch { }
                     try { runtime.Session.Transition(SessionState.Stopped); } catch { }
                 }
+                runtime.Session = null;
             });
             _plugins.TryRemove(runtime.Manifest.Id, out _);
+            SessionRestartFailed?.Invoke(this, new PluginSessionRestartFailedEventArgs
+            {
+                PluginId = runtime.Manifest.Id,
+                PreviousSessionId = session.SessionId,
+                Exception = ex,
+            });
         }
     }
 
