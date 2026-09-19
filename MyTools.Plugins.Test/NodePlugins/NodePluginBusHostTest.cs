@@ -13,7 +13,6 @@ using MyTools.Host.Core.Sessions;
 using MyTools.Host.Core.Transports;
 using MyTools.Plugins.NodePlugins;
 using MyTools.Protocol.Errors;
-using MyTools.Protocol.Handshake;
 using MyTools.Protocol.Messages;
 using MyTools.Protocol.Versioning;
 using NUnit.Framework;
@@ -441,7 +440,6 @@ public class NodePluginBusHostTest
         public Task StartAsync(
             string pipeName,
             string pluginId,
-            Func<ProcessIdentity, string> issueToken,
             CancellationToken ct)
         {
             if (failOnStart)
@@ -453,18 +451,6 @@ public class NodePluginBusHostTest
             Transport = transport;
             ObservedIdentity = new ProcessIdentity(7, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                 pluginId);
-            var token = issueToken(ObservedIdentity);
-            var payload = HandshakePayload.BuildNamedPipeRequest(token);
-            transport.Deliver(new Envelope
-            {
-                Version = ProtocolVersion.Current,
-                Id = "hs-1",
-                TraceId = "hs-1",
-                Kind = MessageKind.Request,
-                Route = "bus.handshake",
-                TimeoutMs = 5000,
-                Payload = JsonSerializer.SerializeToNode(payload, ProtocolJsonOptions.Default),
-            });
             return Task.CompletedTask;
         }
 

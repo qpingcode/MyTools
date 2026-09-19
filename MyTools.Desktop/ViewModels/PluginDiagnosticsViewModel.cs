@@ -419,7 +419,6 @@ public sealed partial class PluginDiagnosticsViewModel : ObservableObject, IDisp
         return item.RuntimeSnapshot?.SessionState switch
         {
             SessionState.Starting => L("PluginDiagnostics.State.Starting", "Starting"),
-            SessionState.Handshaking => L("PluginDiagnostics.State.Handshaking", "Handshaking"),
             SessionState.Ready => L("PluginDiagnostics.State.Running", "Running"),
             SessionState.Restarting => L("PluginDiagnostics.State.Restarting", "Restarting"),
             SessionState.Stopping => L("PluginDiagnostics.State.Stopping", "Stopping"),

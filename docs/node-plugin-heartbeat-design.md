@@ -190,7 +190,7 @@ setInterval watchdog
 
 `StartNewSessionAsync()` 调整为：
 
-1. 启动 Node 并完成握手。
+1. 启动 Node 并等待管道连接。
 2. 注册 Node endpoint。
 3. 创建 `host-control` 的 `EndpointRpcClient`，由它注册控制 endpoint。
 4. 将 Session 置为 `Ready` 并写入 `runtime.Session`。
@@ -237,7 +237,7 @@ sequenceDiagram
 
     Note over SDK: 不再因长时间未收到 ping 自行退出；Pipe 断开时仍立即退出
 
-    SM->>PC: 启动 Node + 完成握手
+    SM->>PC: 启动 Node 并等待管道连接
     SM->>MB: 注册 node-main 和 host-control
     SM->>SM: Session = Ready
     SM->>HB: RunAsync(sessionId, generation, token)

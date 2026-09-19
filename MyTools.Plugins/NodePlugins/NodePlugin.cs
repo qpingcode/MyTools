@@ -123,7 +123,7 @@ public sealed class NodePlugin : IPlugin, IDisposable
     /// <summary>Recent stderr/stdout and exit information from the Node backend.</summary>
     public string? BackendFailureDetails => processHost.FailureDetails;
 
-    /// <summary>Ensures the Node session is Ready (starts pipe/handshake if needed).</summary>
+    /// <summary>Ensures the Node session is Ready (starts the pipe if needed).</summary>
     public Task EnsureV3SessionAsync(CancellationToken cancellationToken = default)
     {
         var busHost = (NodePluginBusHost)processHost;

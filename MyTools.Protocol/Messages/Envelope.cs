@@ -9,7 +9,7 @@ namespace MyTools.Protocol.Messages;
 /// semantics are frozen; see design doc §统一消息协议. New fields may only be added as optional
 /// with defaults and a corresponding manifest protocol-version update.
 /// </summary>
-public sealed record class Envelope
+public sealed record Envelope
 {
     /// <summary>Manifest protocol major.minor version (e.g. "3.0").</summary>
     public ProtocolVersion Version { get; init; }

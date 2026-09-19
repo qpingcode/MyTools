@@ -343,7 +343,7 @@ public class PluginDiagnosticsServiceTest
             remove { }
         }
 
-        public Task StartAsync(string pipeName, string pluginId, Func<ProcessIdentity, string> issueToken, CancellationToken cancellationToken)
+        public Task StartAsync(string pipeName, string pluginId, CancellationToken cancellationToken)
             => Task.CompletedTask;
 
         public Task StopAsync() => Task.CompletedTask;

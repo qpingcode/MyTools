@@ -63,13 +63,11 @@ public class NodePluginFactoryTransportSelectionTest
             public Task StartAsync(
                 string pipeName,
                 string pluginId,
-                Func<MyTools.Host.Core.Security.ProcessIdentity, string> issueToken,
                 CancellationToken c)
             {
                 Transport = new InMemoryTransport();
                 ObservedIdentity = new MyTools.Host.Core.Security.ProcessIdentity(
                     1, DateTime.UtcNow, pluginId);
-                issueToken(ObservedIdentity);
                 return Task.CompletedTask;
             }
 

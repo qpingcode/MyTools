@@ -4,7 +4,7 @@ namespace MyTools.Host.Core.Sessions;
 /// A monotonically-increasing generation counter for a plugin session. Each new run attempt bumps
 /// the generation; async callbacks capture the generation at issue time and, upon completion, are
 /// discarded if the generation has advanced (the design's "旧回调由 generation 拒绝" rule). This
-/// prevents a stale process's exit/handshake/health callbacks from mutating a new session.
+/// prevents a stale process's exit/health callbacks from mutating a new session.
 /// </summary>
 public sealed class GenerationGuard
 {

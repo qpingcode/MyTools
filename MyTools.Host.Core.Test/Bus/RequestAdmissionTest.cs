@@ -13,7 +13,6 @@ public class RequestAdmissionTest
     {
         var sm = new PluginSessionStateMachine();
         sm.Transition(SessionState.Starting);
-        sm.Transition(SessionState.Handshaking);
         sm.Transition(SessionState.Ready);
 
         var result = RequestAdmission.Check(sm);
@@ -24,7 +23,6 @@ public class RequestAdmissionTest
 
     [TestCase(SessionState.Created)]
     [TestCase(SessionState.Starting)]
-    [TestCase(SessionState.Handshaking)]
     [TestCase(SessionState.Restarting)]
     [TestCase(SessionState.Stopping)]
     [TestCase(SessionState.Stopped)]
@@ -39,18 +37,12 @@ public class RequestAdmissionTest
             case SessionState.Starting:
                 sm.Transition(SessionState.Starting);
                 break;
-            case SessionState.Handshaking:
-                sm.Transition(SessionState.Starting);
-                sm.Transition(SessionState.Handshaking);
-                break;
             case SessionState.Ready:
                 sm.Transition(SessionState.Starting);
-                sm.Transition(SessionState.Handshaking);
                 sm.Transition(SessionState.Ready);
                 break;
             case SessionState.Restarting:
                 sm.Transition(SessionState.Starting);
-                sm.Transition(SessionState.Handshaking);
                 sm.Transition(SessionState.Ready);
                 sm.Transition(SessionState.Restarting);
                 break;

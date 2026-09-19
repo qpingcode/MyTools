@@ -175,9 +175,9 @@ public class NodePluginKeywordRouteTest
             }
 
             public Task StartAsync(
-                string pipeName, string pluginId,
-                Func<MyTools.Host.Core.Security.ProcessIdentity, string> issueToken,
-                CancellationToken c) => Task.CompletedTask;
+                string pipeName,
+                string pluginId,
+                CancellationToken ct) => Task.CompletedTask;
 
             public Task StopAsync() => Task.CompletedTask;
 

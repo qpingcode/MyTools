@@ -10,13 +10,13 @@ using MyTools.Host.Transports.NamedPipe;
 namespace MyTools.Host.Transports.Process;
 
 /// <summary>
-/// Real <see cref="INodeProcessController"/>: spawns the Node child process, writes the bootstrap
-/// token as the first stdin line, owns the server side of the named pipe via a
+/// Real <see cref="INodeProcessController"/>: spawns the Node child process, writes the named-pipe
+/// path as the first stdin line, owns the server side of the named pipe via a
 /// <see cref="NamedPipeTransport"/>, and assigns the process to a <see cref="ProcessTreeJob"/> so
 /// the whole tree is reclaimed on stop/host-exit. stdout/stderr carry logs only.
 ///
-/// The Node SDK entry reads the token from stdin, connects to the pipe at the given path, and
-/// speaks the v3 protocol. This controller is agnostic to the plugin's business logic.
+/// The Node SDK entry reads the pipe path from stdin and connects. This controller is agnostic
+/// to the plugin's business logic.
 /// </summary>
 public sealed class NodeProcessController : INodeProcessController
 {
@@ -59,7 +59,6 @@ public sealed class NodeProcessController : INodeProcessController
     public async Task StartAsync(
         string pipeName,
         string pluginId,
-        Func<ProcessIdentity, string> issueToken,
         CancellationToken cancellationToken)
     {
         lock (_diagnosticsGate)
@@ -152,9 +151,8 @@ public sealed class NodeProcessController : INodeProcessController
             Pid: _process.Id,
             CreationTime: _process.StartTime.ToUniversalTime(),
             PluginId: pluginId);
-        var bootstrapToken = issueToken(ObservedIdentity);
 
-        await _process.StandardInput.WriteLineAsync($"{pipePath}\t{bootstrapToken}");
+        await _process.StandardInput.WriteLineAsync(pipePath);
         await _process.StandardInput.FlushAsync();
 
         // Wait for the Node SDK to connect the pipe.

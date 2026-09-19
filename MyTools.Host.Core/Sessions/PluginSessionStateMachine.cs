@@ -6,20 +6,19 @@ namespace MyTools.Host.Core.Sessions;
 /// <summary>
 /// Plugin session lifecycle states per the design state machine:
 /// <code>
-/// Created -&gt; Starting -&gt; Handshaking -&gt; Ready
-///               |             |           |
-///               +-------------+-----------+-&gt; Restarting -&gt; Starting
-///                                            |
-///                                            v
-///                                          Stopped
-/// Created / Starting / Handshaking / Ready / Restarting -&gt; Stopping -&gt; Stopped
+/// Created -&gt; Starting -&gt; Ready
+///               |           |
+///               +-----------+-&gt; Restarting -&gt; Starting
+///                                      |
+///                                      v
+///                                    Stopped
+/// Created / Starting / Ready / Restarting -&gt; Stopping -&gt; Stopped
 /// </code>
 /// </summary>
 public enum SessionState
 {
     Created,
     Starting,
-    Handshaking,
     Ready,
     Restarting,
     Stopping,
@@ -37,8 +36,7 @@ public sealed class PluginSessionStateMachine
     private static readonly Dictionary<SessionState, HashSet<SessionState>> LegalTransitions = new()
     {
         [SessionState.Created] = [SessionState.Starting, SessionState.Stopping],
-        [SessionState.Starting] = [SessionState.Handshaking, SessionState.Restarting, SessionState.Stopping],
-        [SessionState.Handshaking] = [SessionState.Ready, SessionState.Restarting, SessionState.Stopping],
+        [SessionState.Starting] = [SessionState.Ready, SessionState.Restarting, SessionState.Stopping],
         [SessionState.Ready] = [SessionState.Restarting, SessionState.Stopping],
         [SessionState.Restarting] = [SessionState.Starting, SessionState.Stopping],
         [SessionState.Stopping] = [SessionState.Stopped],

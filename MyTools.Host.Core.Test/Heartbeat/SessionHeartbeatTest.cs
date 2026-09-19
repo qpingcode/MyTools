@@ -115,7 +115,6 @@ public class SessionHeartbeatTest
     {
         var session = new PluginSession("settings", "session-1");
         session.Transition(SessionState.Starting);
-        session.Transition(SessionState.Handshaking);
         session.Transition(SessionState.Ready);
         return session;
     }

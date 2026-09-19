@@ -108,20 +108,20 @@
 状态机为：
 
 ```text
-Created -> Starting -> Handshaking -> Ready
-              |             |           |
-              +-------------+-----------+-> Restarting -> Starting
-                                          |
-                                          v
-                                        Stopped
+Created -> Starting -> Ready
+              |           |
+              +-----------+-> Restarting -> Starting
+                                      |
+                                      v
+                                    Stopped
 
-Created / Starting / Handshaking / Ready / Restarting
+Created / Starting / Ready / Restarting
     -> Stopping -> Stopped
 ```
 
 - 心跳连续超时不定义中间状态，直接按主 Node 断线流程重启；WebView 正常关闭只注销 endpoint，不影响会话状态。插件自报健康的 `Degraded` 状态推迟到有真实使用者时作为纯增量加回（见非目标第 13 条）。
 - 主 Node 断线、崩溃或用户主动 reload 进入 `Restarting`；宿主终止旧进程树并创建全新会话。
-- 启动或握手失败按重启策略进入 `Restarting`；不可恢复错误或超过重启次数上限进入 `Stopped`。
+- 启动失败按重启策略进入 `Restarting`；不可恢复错误或超过重启次数上限进入 `Stopped`。
 - `Stopping` 表示已停止接收新请求，正在等待优雅关闭或终止进程树。
 - 超过重启次数上限后必须由用户或宿主策略重新启动。
 
@@ -159,15 +159,15 @@ Created / Starting / Handshaking / Ready / Restarting
 - `payload`：路由对应的结构化数据
 - `error`：失败响应的标准错误对象，其他消息为 `null`
 
-身份不出现在 envelope 上，因此对端无从声明也无从伪造。命名管道握手只验证 token，不向 Node 返回身份；握手成功后宿主把该 transport 注册为一个 endpoint，插件包、会话与连接身份此后只由这一绑定决定，路由、能力鉴权、事件广播和诊断全部以它为准。入站 `timeoutMs` 由宿主钳制到路由配置的上限，缺失或非法时使用路由默认值；格式非法的 `traceId` 由宿主重新生成。
+身份不出现在 envelope 上，因此对端无从声明也无从伪造。命名管道连上后宿主把该 transport 注册为一个 endpoint，插件包、会话与连接身份此后只由这一绑定决定，路由、能力鉴权、事件广播和诊断全部以它为准。入站 `timeoutMs` 由宿主钳制到路由配置的上限，缺失或非法时使用路由默认值；格式非法的 `traceId` 由宿主重新生成。
 
 第一期超时为**每跳独立超时**：每条链路（宿主等待 Node、Node 等待宿主 capability）使用各自路由配置的超时，超时返回 `RequestTimeout`。跨跳的端到端预算扣减与传播见二期设计。超时后下游工作的结果未知，调用方不得自动重试；需要更强保证的路由必须单独定义幂等键或结果查询。
 
 命名管道采用 4 字节小端无符号长度前缀加 UTF-8 JSON 帧。`MaxFrameBytes` 默认为 4 MiB，路由可以设置更低但不能设置更高的上限。WebView2 transport 使用相同 envelope，由 WebView2 提供消息边界。只支持 JSON，不预留 `encoding` 字段或二进制帧类型，也不把大块二进制转为 base64 规避限制；超过路由上限的内容返回 `MessageTooLarge`。
 
-所有 transport 的连接都以 `bus.handshake` 开始，但不协商版本：宿主在启动 Node 和加载页面前已校验插件 manifest 的精确协议版本。命名管道握手携带一次性令牌，用于认证本次子进程连接；WebView2 握手不带 payload，只表示页面 JavaScript 已注册消息处理器，可以接收初始化和搜索事件。两种成功响应都不带 payload，身份始终由宿主在创建 transport 时绑定。
+Node 管道连上后即可收发业务消息，不再发送 `bus.handshake`。WebView2 连接以无 payload 的 `bus.handshake` 开始，只表示页面 JavaScript 已注册消息处理器，可以接收初始化和搜索事件；成功响应不带 payload。身份始终由宿主在创建 transport 时绑定。
 
-握手请求、响应和失败响应继续使用冻结的 envelope 字段。已就绪连接忽略 envelope 和 payload 中未知的可选字段，未知 route 返回 `RouteNotFound`，缺少必填字段返回 `InvalidPayload`。
+已就绪连接忽略 envelope 和 payload 中未知的可选字段，未知 route 返回 `RouteNotFound`，缺少必填字段返回 `InvalidPayload`。
 
 协议交付语义为 at-most-once：不重放、不持久化队列、不在断线或重启后自动重试。连接断开时所有未完成请求失败，调用方只有在业务路由明确幂等时才能主动重试。
 
@@ -177,7 +177,7 @@ Created / Starting / Handshaking / Ready / Restarting
 - `host.call.*`：Node 调用宿主 capability
 - `plugin.event.*`：插件发布的业务事件
 - `host.event.*`：语言、主题、查询和生命周期等宿主事件
-- `bus.handshake`：连接建立前唯一允许的请求
+- `bus.handshake`：WebView 页面就绪信号；Node 管道不再使用
 - `bus.ping`：宿主发起的应用层心跳请求；Node 以普通 response 应答，不定义独立的 pong 路由
 - 保留 route 名（第一期不实现，收到返回 `RouteNotFound`）：`bus.cancel`、`bus.subscribe`、`bus.unsubscribe`、`diagnostics.*`
 
@@ -276,7 +276,7 @@ sequenceDiagram
 
 1. manifest 必须按 entry 声明所需 capability，例如 `clipboard.read`、`configuration.write`。未声明的调用返回 `CapabilityNotDeclared`——即使插件可信也强制声明，保证 manifest 反映真实能力面。
 2. 声明即授予：第一期不弹授权确认，不实现按来源和签名的授权绑定。`CapabilityGateway` 中授权决策为一个总是通过的接口点（返回结构化授权结果），三期在此接入真实决策。
-3. 每次调用都由 `CapabilityGateway` 校验 endpoint 身份、manifest 声明和路由级 DTO，不因同一进程已通过握手而跳过。
+3. 每次调用都由 `CapabilityGateway` 校验 endpoint 身份、manifest 声明和路由级 DTO，不因同一进程已连接而跳过。
 4. 每次 capability 调用记录结构化审计日志（谁、什么路由、结果），为三期的授权 UI 和诊断积累数据形态。
 5. 禁止把宿主内部对象、原始进程句柄或任意命令执行接口暴露给插件。
 
@@ -286,11 +286,11 @@ sequenceDiagram
 
 ### Node 与命名管道
 
-1. 宿主生成随机管道名和短时一次性启动令牌。
+1. 宿主生成随机管道名。
 2. 宿主必须先使用 `PipeOptions.FirstPipeInstance`、当前用户 ACL 和必要系统主体 ACL 创建服务端，再启动 Node 子进程，防止管道名抢占。
-3. 启动令牌通过 Node stdin 的 bootstrap 首行传递，不通过命令行参数或环境变量传递；令牌握手成功后立即作废，并设置短过期时间。
-4. 握手验证协议版本、令牌、插件 ID、entry ID、预期 PID 和进程创建时间。Windows 实现还应持有预期进程句柄，避免仅依赖可复用 PID。
-5. stdout/stderr 只承载日志，不承载协议或令牌；日志采集时附加插件和进程身份。
+3. 管道路径通过 Node stdin 的 bootstrap 首行传递，不通过命令行参数或环境变量传递。连上管道即视为该子进程的 Node endpoint，不再做 token 握手。
+4. 协议版本在启动前由 `plugin.json` 校验。Windows 实现记录观察到的 PID 与进程创建时间，用于诊断。
+5. stdout/stderr 只承载日志，不承载协议；日志采集时附加插件和进程身份。
 
 ### WebView
 
@@ -300,13 +300,13 @@ sequenceDiagram
 
 ## 故障处理
 
-- 启动、握手、请求和应用层心跳分别配置超时。
+- 启动、请求和应用层心跳分别配置超时。
 - 每个协议帧和各路由 payload 设置大小上限。
 - 非法帧最多关闭对应连接并记录诊断，不终止消息总线。
 - 主 Node transport 断线后，所有未完成请求返回 `TransportDisconnected`。宿主终止整个 Job Object 进程树并进入 `Restarting`，不允许旧进程重连。
-- Starting、Handshaking、Restarting、Stopping 和 Stopped 期间的新请求返回 `PluginUnavailable`，不静默排队。
+- Starting、Restarting、Stopping 和 Stopped 期间的新请求返回 `PluginUnavailable`，不静默排队。
 - 插件异常退出采用带抖动的指数退避，并设置时间窗口内的最大重启次数。
-- 每次重启使用新的管道名、令牌、session ID 和 Node endpoint ID，并强制重载该 entry 的所有插件页面；承载页面的窗口和控件保留，重载后的页面重新握手并注册为新的 WebView endpoint。
+- 每次重启使用新的管道名、session ID 和 Node endpoint ID，并强制重载该 entry 的所有插件页面；承载页面的窗口和控件保留，重载后的页面重新握手并注册为新的 WebView endpoint。
 - Job Object 只用于进程树回收，不是安全沙箱；资源配额见非目标第 14 条。
 - 宿主退出时先停止接受请求，再通知会话关闭，最后在超时后终止残留进程树。
 
@@ -367,7 +367,7 @@ sequenceDiagram
 - capability 调用审计
 - 插件重启次数及退出码
 - 丢弃的超大或非法消息、事件丢弃计数
-- 握手失败原因分类，不记录启动令牌
+- 会话启动失败原因分类
 
 默认日志不记录完整业务 payload。
 
@@ -377,7 +377,7 @@ sequenceDiagram
 
 - envelope 和长度前缀帧的编解码
 - 帧解码器 fuzz：零长度、超大长度、截断、分片、粘包和非法 JSON
-- manifest 协议版本校验、命名管道 token 握手和 WebView readiness 握手
+- manifest 协议版本校验和 WebView readiness 握手
 - 请求响应关联和 trace
 - 事件会话内广播和插件隔离
 - capability 声明校验和 DTO 校验
@@ -389,11 +389,11 @@ sequenceDiagram
 
 ### 组件测试
 
-使用内存 fake transport 验证消息总线、多个 endpoint、断线、乱序响应和旧 session 迟到消息。使用 fake process controller 验证启动失败、握手失败、崩溃、主动 reload、进程树终止和退避重启。
+使用内存 fake transport 验证消息总线、多个 endpoint、断线、乱序响应和旧 session 迟到消息。使用 fake process controller 验证启动失败、崩溃、主动 reload、进程树终止和退避重启。
 
 ### 集成测试
 
-使用真实测试 Node 插件验证命名管道握手、双向调用、事件广播、超大消息拒绝、进程崩溃和自动重启。安全用例覆盖管道名抢占、令牌重放、伪造 plugin/entry/session 身份和跨插件路由。
+使用真实测试 Node 插件验证命名管道连接、双向调用、事件广播、超大消息拒绝、进程崩溃和自动重启。安全用例覆盖管道名抢占、伪造 plugin/entry/session 身份和跨插件路由。
 
 协议样例消息作为共享 fixture 同时喂给 C# 和 TypeScript 编解码测试，在 CI 中暴露手写类型漂移。
 

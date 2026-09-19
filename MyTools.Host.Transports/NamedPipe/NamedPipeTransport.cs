@@ -20,8 +20,8 @@ namespace MyTools.Host.Transports.NamedPipe;
 /// pipe fires <see cref="Disconnected"/>.
 ///
 /// Inbound envelopes arriving before any <see cref="MessageReceived"/> subscriber are buffered so
-/// the host can attach a handshake waiter after <see cref="ConnectAsync"/> without racing the
-/// Node's immediate <c>bus.handshake</c> request.
+/// the host can attach the bus after <see cref="ConnectAsync"/> without racing the Node's first
+/// business message.
 /// </summary>
 public sealed class NamedPipeTransport : IMessageTransport
 {

@@ -12,7 +12,7 @@
 
 | 阶段 | 文档 | 范围 | 触发条件 |
 | --- | --- | --- | --- |
-| 一期（核心） | [v3 核心设计](2026-08-14-plugin-bus-v3-core.md) | envelope 与握手、会话状态机与自动重启、命名管道 + 一次性令牌、WebView2 transport 与重启强制重载、事件会话内广播、capability 骨架（声明即授予）、简化背压、Host→Node 心跳、结构化日志 | 立即实施 |
+| 一期（核心） | [v3 核心设计](2026-08-14-plugin-bus-v3-core.md) | envelope 与会话状态机与自动重启、命名管道、WebView2 transport 与重启强制重载、事件会话内广播、capability 骨架（声明即授予）、简化背压、Host→Node 心跳、结构化日志 | 立即实施 |
 | 二期（可靠性） | [取消、订阅与完整背压](2026-08-14-plugin-bus-v3-phase2-reliability.md) | `bus.cancel` 与 AbortSignal/CancellationToken 传播、`bus.subscribe` 与状态 revision 协议、三通道背压与 entry 级执行预算、端到端超时预算传播 | 出现长时操作需要取消、事件广播造成可测浪费、或简化背压出现实际拥塞 |
 | 三期（安全） | [第三方插件安全与诊断](2026-08-14-plugin-bus-v3-phase3-security.md) | 不可信插件威胁模型、用户授权同意、发布者签名与来源绑定、速率限制、授权撤销 UI、独立诊断管道 | 决定接受非本项目作者编写的插件 |
 

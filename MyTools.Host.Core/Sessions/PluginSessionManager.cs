@@ -8,9 +8,7 @@ using MyTools.Host.Core.Capabilities;
 using MyTools.Host.Core.Diagnostics;
 using MyTools.Host.Core.Heartbeat;
 using MyTools.Host.Core.Reliability;
-using MyTools.Host.Core.Security;
 using MyTools.Host.Core.Transports;
-using MyTools.Protocol.Errors;
 using MyTools.Protocol.Identity;
 using MyTools.Protocol.Manifest;
 
@@ -45,23 +43,17 @@ public sealed class PluginSessionRestartFailedEventArgs : EventArgs
 /// Creates, finds, stops and recovers plugin sessions. Each plugin owns a
 /// <see cref="SessionActor"/> and <see cref="RestartPolicy"/>. On Node disconnect or peer-dead,
 /// RPC clients are notified through session lifecycle events, response routes are cleared, the
-/// process tree is reclaimed, and a new session is started (new pipe/token/sessionId) while under
+/// process tree is reclaimed, and a new session is started (new pipe/sessionId) while under
 /// the restart limit.
 /// </summary>
 public sealed class PluginSessionManager
 {
-    public static readonly TimeSpan DefaultHandshakeTimeout = TimeSpan.FromSeconds(10);
-    public static readonly TimeSpan DefaultTokenTtl = TimeSpan.FromSeconds(30);
-
     private readonly MessageBus _bus;
     private readonly CapabilityGateway _gateway;
     private readonly INodeProcessControllerFactory _processFactory;
     private readonly ConcurrentDictionary<string, PluginSession> _sessions = new();
     private readonly ConcurrentDictionary<string, PluginRuntime> _plugins = new(StringComparer.OrdinalIgnoreCase);
     private readonly IIdGenerator _ids;
-    private readonly BootstrapTokenValidator _tokens;
-    private readonly TimeSpan _handshakeTimeout;
-    private readonly TimeSpan _tokenTtl;
     private readonly Func<RestartPolicy> _restartPolicyFactory;
     private readonly ILogger _logger;
     private readonly IPluginDiagnosticsService? _diagnostics;
@@ -69,9 +61,6 @@ public sealed class PluginSessionManager
 
     public PluginSessionManager(MessageBus bus, CapabilityGateway gateway,
         INodeProcessControllerFactory processFactory, IIdGenerator? ids = null,
-        BootstrapTokenValidator? tokens = null,
-        TimeSpan? handshakeTimeout = null,
-        TimeSpan? tokenTtl = null,
         Func<RestartPolicy>? restartPolicyFactory = null,
         IPluginDiagnosticsService? diagnostics = null,
         ILogger? logger = null,
@@ -81,9 +70,6 @@ public sealed class PluginSessionManager
         _gateway = gateway;
         _processFactory = processFactory;
         _ids = ids ?? new GuidIdGenerator();
-        _tokens = tokens ?? new BootstrapTokenValidator();
-        _handshakeTimeout = handshakeTimeout ?? DefaultHandshakeTimeout;
-        _tokenTtl = tokenTtl ?? DefaultTokenTtl;
         _restartPolicyFactory = restartPolicyFactory ?? (() => new RestartPolicy(
             baseDelay: TimeSpan.FromMilliseconds(200),
             maxDelay: TimeSpan.FromSeconds(5),
@@ -327,32 +313,20 @@ public sealed class PluginSessionManager
 
         try
         {
-            await controller.StartAsync(pipeName, manifest.Id, identity =>
-            {
-                var issued = _tokens.Issue(identity, _tokenTtl);
-                return issued.Value;
-            }, cancellationToken);
+            await controller.StartAsync(pipeName, manifest.Id, cancellationToken);
 
-            var observed = controller.ObservedIdentity
-                ?? throw new InvalidOperationException("process controller did not report identity");
+            if (controller.ObservedIdentity is null)
+            {
+                throw new InvalidOperationException("process controller did not report identity");
+            }
 
             session.Controller = controller;
             _diagnostics?.AttachProcessController(manifest.Id, sessionId, controller);
             WireProcessExit(session);
-            session.Transition(SessionState.Handshaking);
-            _diagnostics?.RecordSessionState(manifest.Id, sessionId, SessionState.Handshaking, controller.ObservedIdentity?.Pid);
-
-            await PipeHandshake.CompleteAsHostAsync(
-                controller.Transport!,
-                _tokens,
-                observed,
-                _ids,
-                _handshakeTimeout,
-                cancellationToken);
 
             var nodeEp = new EndpointId(manifest.Id, sessionId, endpointId, IsNode: true);
             // Manifest must be in the gateway before the endpoint is live: settings (and other
-            // hostCall clients) send host.call immediately after handshake, on the inbound
+            // hostCall clients) send host.call immediately after the pipe connects, on the inbound
             // transport thread.
             _gateway.RegisterManifest(new PluginManifest(manifest.Id, manifest.Capabilities));
             _bus.RegisterEndpoint(nodeEp, controller.Transport!);

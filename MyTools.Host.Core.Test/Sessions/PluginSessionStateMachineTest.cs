@@ -22,11 +22,10 @@ public class PluginSessionStateMachineTest
     }
 
     [Test]
-    public void HappyPath_CreatedStartingHandshakingReady()
+    public void HappyPath_CreatedStartingReady()
     {
         var sm = new PluginSessionStateMachine();
         sm.Transition(SessionState.Starting);
-        sm.Transition(SessionState.Handshaking);
         sm.Transition(SessionState.Ready);
 
         Assert.That(sm.State, Is.EqualTo(SessionState.Ready));
@@ -37,7 +36,6 @@ public class PluginSessionStateMachineTest
     {
         var sm = new PluginSessionStateMachine();
         sm.Transition(SessionState.Starting);
-        sm.Transition(SessionState.Handshaking);
         sm.Transition(SessionState.Ready);
         sm.Transition(SessionState.Restarting);
         sm.Transition(SessionState.Starting);
@@ -60,7 +58,7 @@ public class PluginSessionStateMachineTest
     public void Transition_IllegalJump_ShouldThrow()
     {
         var sm = new PluginSessionStateMachine();
-        // Cannot go directly from Created to Ready (must pass through Starting/Handshaking).
+        // Cannot go directly from Created to Ready (must pass through Starting).
         Assert.That(() => sm.Transition(SessionState.Ready), Throws.InvalidOperationException);
     }
 
@@ -82,9 +80,6 @@ public class PluginSessionStateMachineTest
         Assert.That(sm.IsAvailable, Is.False);
 
         sm.Transition(SessionState.Starting);
-        Assert.That(sm.IsAvailable, Is.False);
-
-        sm.Transition(SessionState.Handshaking);
         Assert.That(sm.IsAvailable, Is.False);
 
         sm.Transition(SessionState.Ready);

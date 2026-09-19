@@ -142,7 +142,7 @@ flowchart LR
 | Node | `plugin.event.*` event | 同 Session Web endpoints |
 | Host | `host.event.*` event | 指定 Session endpoints |
 
-Node Named Pipe 的 `bus.handshake` 不进入这里：它在 Node endpoint 注册到 MessageBus 之前由 `PipeHandshake` 单独完成。
+Node Named Pipe 连接完成后直接注册 endpoint，不再经过 `bus.handshake`。WebView2 仍用无 payload 的 `bus.handshake` 作为页面就绪信号。
 
 ## 5. MessageBus API
 

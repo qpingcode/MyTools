@@ -100,12 +100,10 @@ internal static class PluginDiagnosticsTestHelper
         public Task StartAsync(
             string pipeName,
             string pluginId,
-            Func<ProcessIdentity, string> issueToken,
             CancellationToken cancellationToken)
         {
             Transport = new InMemoryTransport();
             ObservedIdentity = new ProcessIdentity(1, DateTime.UtcNow, pluginId);
-            issueToken(ObservedIdentity);
             return Task.CompletedTask;
         }
 

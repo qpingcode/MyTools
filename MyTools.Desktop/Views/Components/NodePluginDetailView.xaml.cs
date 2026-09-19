@@ -232,13 +232,6 @@ public partial class NodePluginDetailView : UserControl
             var themedPath = ResolveThemedEntryPath(entryPath);
             PluginBrowser.Source = BuildPluginEntryUri(themedPath);
         }
-        catch (HandshakeException ex)
-        {
-            StaticLogger.LogWarning(ex,
-                "Node session handshake failed plugin={Plugin} code={Code}",
-                viewModel?.CurrentContext?.PluginId, ex.Error.Code);
-            await ShowBackendErrorAsync(ex);
-        }
         catch (Exception ex)
         {
             GlobalExceptionHandler.ReportStatic(ex, "Plugin WebView2 navigation");
