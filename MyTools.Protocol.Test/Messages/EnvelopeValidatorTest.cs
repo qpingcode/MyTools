@@ -17,8 +17,7 @@ public class EnvelopeValidatorTest
     {
         var env = new Envelope
         {
-            Version = ProtocolVersion.Current, Id = "id1", TraceId = "t1", SessionId = "s1",
-            PluginId = "settings", EndpointId = "web-1",
+            Version = ProtocolVersion.Current, Id = "id1", TraceId = "t1",
             Kind = MessageKind.Request, Route = "plugin.call.save",
             TimeoutMs = 30000, Payload = P(new { x = 1 })
         };
@@ -33,8 +32,7 @@ public class EnvelopeValidatorTest
     {
         var env = new Envelope
         {
-            Version = ProtocolVersion.Current, Id = "", TraceId = "t1", SessionId = "s1",
-            PluginId = "settings", EndpointId = "web-1",
+            Version = ProtocolVersion.Current, Id = "", TraceId = "t1",
             Kind = MessageKind.Request, Route = "plugin.call.save", TimeoutMs = 30000
         };
 
@@ -50,8 +48,7 @@ public class EnvelopeValidatorTest
     {
         var env = new Envelope
         {
-            Version = ProtocolVersion.Current, Id = "id1", TraceId = "t1", SessionId = "s1",
-            PluginId = "settings", EndpointId = "web-1",
+            Version = ProtocolVersion.Current, Id = "id1", TraceId = "t1",
             Kind = MessageKind.Request, Route = "", TimeoutMs = 30000
         };
 
@@ -68,7 +65,6 @@ public class EnvelopeValidatorTest
         var env = new Envelope
         {
             Version = ProtocolVersion.Current, Id = "id1", CorrelationId = null, TraceId = "t1",
-            SessionId = "s1", PluginId = "settings", EndpointId = "node-1",
             Kind = MessageKind.Response, Route = "plugin.call.save"
         };
 
@@ -84,8 +80,7 @@ public class EnvelopeValidatorTest
     {
         var env = new Envelope
         {
-            Version = ProtocolVersion.Current, Id = "id1", TraceId = "t1", SessionId = "s1",
-            PluginId = "settings", EndpointId = "web-1",
+            Version = ProtocolVersion.Current, Id = "id1", TraceId = "t1",
             Kind = MessageKind.Request, Route = "plugin.call.save", TimeoutMs = 30000,
             Error = BusError.For(ErrorCode.InternalError)
         };

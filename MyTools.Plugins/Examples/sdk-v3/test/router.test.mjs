@@ -8,8 +8,7 @@ import { HandlerRouter } from "../src/router.ts";
 
 function req(id, route, payload = {}) {
   return {
-    version: "3.0", id, traceId: id, sessionId: "s",
-    pluginId: "p", endpointId: "node-main",
+    version: "3.0", id, traceId: id,
     kind: "request", route, timeoutMs: 5000, payload,
   };
 }
@@ -29,9 +28,6 @@ test("router dispatches plugin.call.* to a registered handler", async () => {
   assert.equal(responses.length, 1);
   assert.equal(responses[0].correlationId, "r1");
   assert.equal(responses[0].kind, "response");
-  assert.equal(responses[0].pluginId, "");
-  assert.equal(responses[0].sessionId, "");
-  assert.equal(responses[0].endpointId, "");
   assert.deepEqual(responses[0].payload, { saved: true });
 });
 
@@ -78,14 +74,10 @@ test("host.call client sends a request envelope and correlates the response", as
   assert.equal(sent.length, 1);
   assert.equal(sent[0].route, "host.call.configuration.read");
   assert.equal(sent[0].kind, "request");
-  assert.equal(sent[0].pluginId, "");
-  assert.equal(sent[0].sessionId, "");
-  assert.equal(sent[0].endpointId, "");
 
   // Simulate the host replying with a correlated response.
   await router.dispatch({
     version: "3.0", id: "resp-x", correlationId: sent[0].id, traceId: sent[0].traceId,
-    sessionId: "s", pluginId: "p", endpointId: "host",
     kind: "response", route: "host.call.configuration.read",
     payload: { value: "dark" },
   });
@@ -182,9 +174,6 @@ async function replyHostCall(router, request) {
     id: "host-resp",
     correlationId: request.id,
     traceId: request.traceId,
-    sessionId: "s",
-    pluginId: "p",
-    endpointId: "host",
     kind: "response",
     route: request.route,
     payload: {},

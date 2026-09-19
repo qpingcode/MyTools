@@ -24,8 +24,7 @@ public class NodeProcessControllerTest
 {
     private static Envelope Ping(string id, string sessionId, string pluginId) => new()
     {
-        Version = ProtocolVersion.Current, Id = id, TraceId = id, SessionId = sessionId,
-        PluginId = pluginId, EndpointId = "node-main",
+        Version = ProtocolVersion.Current, Id = id, TraceId = id,
         Kind = MessageKind.Request, Route = "bus.ping", TimeoutMs = 5000
     };
 

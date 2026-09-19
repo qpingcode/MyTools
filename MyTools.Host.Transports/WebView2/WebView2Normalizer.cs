@@ -23,15 +23,14 @@ public readonly record struct NormalizationResult(bool IsRejected, BusError? Err
 
 /// <summary>
 /// Normalizes outbound WebView2 messages at the transport boundary, enforcing the design's
-/// WebView rules: (1) the host stamps pluginId/sessionId/endpointId from the fixed binding,
-/// ignoring whatever the page declared; (2) webview may only call <c>plugin.call.*</c> or publish
+/// WebView rules: (1) webview may only call <c>plugin.call.*</c> or publish
 /// <c>plugin.event.*</c> — a <c>host.call.*</c> is rejected with <see cref="ErrorCode.CapabilityDenied">;
-/// (3) message byte-size is prechecked before deserialization would matter; (4) on Node restart the
+/// (2) message byte-size is prechecked before deserialization would matter; (3) on Node restart the
 /// binding is invalidated and the old page's messages are rejected (<c>PluginUnavailable</c>).
+/// Endpoint identity is never carried by the message; it comes from the transport binding.
 /// </summary>
 public sealed class WebView2Normalizer
 {
-    private readonly EndpointBinding _binding;
     private bool _valid = true;
 
     /// <summary>
@@ -40,8 +39,6 @@ public sealed class WebView2Normalizer
     /// </summary>
     public const string BaselineCsp =
         "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'";
-
-    public WebView2Normalizer(EndpointBinding binding) => _binding = binding;
 
     /// <summary>Marks this binding as stale (Node restarted). Subsequent messages are rejected.</summary>
     public void Invalidate() => _valid = false;
@@ -62,18 +59,10 @@ public sealed class WebView2Normalizer
                 "webview cannot call host.call.* directly; route through plugin.call.* to Node"));
         }
 
-        // Stamp the bound identity over whatever the page declared.
-        var stamped = env with
-        {
-            PluginId = _binding.PluginId,
-            SessionId = _binding.SessionId,
-            EndpointId = _binding.EndpointId,
-        };
-
         // Byte-size precheck (simulates pre-deserialization byte-length check on the wire frame).
         if (maxBytes is { } cap)
         {
-            var serialized = JsonSerializer.SerializeToUtf8Bytes(stamped, ProtocolJsonOptions.Default);
+            var serialized = JsonSerializer.SerializeToUtf8Bytes(env, ProtocolJsonOptions.Default);
             if (serialized.Length > cap)
             {
                 return NormalizationResult.Reject(BusError.For(ErrorCode.MessageTooLarge,
@@ -81,6 +70,6 @@ public sealed class WebView2Normalizer
             }
         }
 
-        return NormalizationResult.Ok(stamped);
+        return NormalizationResult.Ok(env);
     }
 }

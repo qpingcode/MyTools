@@ -374,7 +374,7 @@ WebView pending 由 Web SDK 自己超时；Session/WebView transport 关闭后�
 
 - `timeoutMs` 表示发送方声明的本地等待预算；接收方不得据此取消 handler；
 - `correlationId` 继续关联 response；
-- `endpointId` 继续表示发送方身份，不改成目标地址；
+- 发送方身份由 transport 绑定决定，不写进 envelope；
 - 不新增 `targetEndpointId` 或 `replyTo`。
 
 未来协议若增加可信目标 endpoint，可再移除 response route 表；本次不做协议升级。

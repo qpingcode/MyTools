@@ -61,8 +61,8 @@ public class NodePluginBusHostTest
         nodeT.Deliver(new Envelope
         {
             Version = ProtocolVersion.Current, Id = "resp-1", CorrelationId = sentRequest.Id,
-            TraceId = sentRequest.TraceId, SessionId = sessionId, PluginId = "settings",
-            EndpointId = "node-main", Kind = MessageKind.Response,
+            TraceId = sentRequest.TraceId,
+            Kind = MessageKind.Response,
             Route = "plugin.call.search",
             Payload = JsonNode.Parse("""{"items":[{"id":"1","title":"Hi","subtitle":"","priority":0}]}"""),
         });
@@ -122,8 +122,7 @@ public class NodePluginBusHostTest
 
         nodeT.Deliver(new Envelope
         {
-            Version = ProtocolVersion.Current, Id = "evt-1", TraceId = "evt-1", SessionId = sessionId,
-            PluginId = "settings", EndpointId = "node-main",
+            Version = ProtocolVersion.Current, Id = "evt-1", TraceId = "evt-1",
             Kind = MessageKind.Event, Route = "plugin.event.configChanged",
             Payload = JsonNode.Parse("""{"key":"theme"}"""),
         });
@@ -143,8 +142,7 @@ public class NodePluginBusHostTest
 
         nodeT.Deliver(new Envelope
         {
-            Version = ProtocolVersion.Current, Id = "hc-1", TraceId = "hc-1", SessionId = sessionId,
-            PluginId = "forged", EndpointId = "forged",
+            Version = ProtocolVersion.Current, Id = "hc-1", TraceId = "hc-1",
             Kind = MessageKind.Request, Route = "host.call.configuration.read", TimeoutMs = 5000,
             Payload = JsonNode.Parse("{}"),
         });
@@ -160,7 +158,6 @@ public class NodePluginBusHostTest
         Assert.That(reply, Is.Not.Null, "host must reply to host.call on the node transport");
         Assert.That(reply!.Route, Is.EqualTo("host.call.configuration.read"));
         Assert.That(reply.Error, Is.Null);
-        Assert.That(reply.PluginId, Is.EqualTo("settings"), "inbound identity must be stamped");
         Assert.That(reply.Payload?.ToJsonString(), Does.Contain("light"));
     }
 
@@ -174,8 +171,7 @@ public class NodePluginBusHostTest
 
         nodeT.Deliver(new Envelope
         {
-            Version = ProtocolVersion.Current, Id = "hc-deny", TraceId = "hc-deny", SessionId = sessionId,
-            PluginId = "settings", EndpointId = "node-main",
+            Version = ProtocolVersion.Current, Id = "hc-deny", TraceId = "hc-deny",
             Kind = MessageKind.Request, Route = "host.call.configuration.read", TimeoutMs = 5000,
             Payload = JsonNode.Parse("{}"),
         });
@@ -311,9 +307,6 @@ public class NodePluginBusHostTest
             Id = "resp-after-exhausted",
             CorrelationId = sentRequest!.Id,
             TraceId = sentRequest.TraceId,
-            SessionId = sentRequest.SessionId,
-            PluginId = "settings",
-            EndpointId = "node-main",
             Kind = MessageKind.Response,
             Route = "plugin.call.search",
             Payload = JsonNode.Parse("""{"items":[{"id":"1","title":"Recovered","subtitle":"","priority":0}]}"""),
@@ -374,9 +367,6 @@ public class NodePluginBusHostTest
             Id = "resp-after-restart-failure",
             CorrelationId = sentRequest!.Id,
             TraceId = sentRequest.TraceId,
-            SessionId = sentRequest.SessionId,
-            PluginId = "settings",
-            EndpointId = "node-main",
             Kind = MessageKind.Response,
             Route = "plugin.call.search",
             Payload = JsonNode.Parse("""{"items":[{"id":"1","title":"Recovered","subtitle":"","priority":0}]}"""),
@@ -470,9 +460,6 @@ public class NodePluginBusHostTest
                 Version = ProtocolVersion.Current,
                 Id = "hs-1",
                 TraceId = "hs-1",
-                SessionId = "",
-                PluginId = pluginId,
-                EndpointId = "node-main",
                 Kind = MessageKind.Request,
                 Route = "bus.handshake",
                 TimeoutMs = 5000,

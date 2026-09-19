@@ -15,7 +15,6 @@ import {
   MessageKind,
   ProtocolVersion,
   Routes,
-  EndpointIds,
 } from "../src/protocol.ts";
 import { encodeFrame, encodeFrameString, MAX_FRAME_BYTES } from "../src/framing.ts";
 import { FrameDecoder } from "../src/framing.ts";
@@ -44,7 +43,6 @@ test("runtime constants match the frozen wire vocabulary", () => {
   assert.equal(MessageKind.Response, "response");
   assert.equal(MessageKind.Event, "event");
   assert.equal(ProtocolVersion, "3.0");
-  assert.equal(EndpointIds.NodeMain, "node-main");
   assert.equal(Routes.Bus.Ping, "bus.ping");
   assert.equal(Routes.Bus.Handshake, "bus.handshake");
   assert.equal(Routes.PluginCall.Search, "plugin.call.search");

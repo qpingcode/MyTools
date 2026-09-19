@@ -25,8 +25,7 @@ public class MessageBusBroadcastTest
 
         var evt = new Envelope
         {
-            Version = ProtocolVersion.Current, Id = "evt", TraceId = "evt", SessionId = "s1",
-            PluginId = "settings", EndpointId = "node-main",
+            Version = ProtocolVersion.Current, Id = "evt", TraceId = "evt",
             Kind = MessageKind.Event, Route = "plugin.event.configChanged"
         };
         nodeT.Deliver(evt);
@@ -52,8 +51,7 @@ public class MessageBusBroadcastTest
 
         var evt = new Envelope
         {
-            Version = ProtocolVersion.Current, Id = "evt", TraceId = "evt", SessionId = "s1",
-            PluginId = "settings", EndpointId = "web-1",
+            Version = ProtocolVersion.Current, Id = "evt", TraceId = "evt",
             Kind = MessageKind.Event, Route = "plugin.event.configChanged"
         };
         web1T.Deliver(evt);
@@ -77,8 +75,7 @@ public class MessageBusBroadcastTest
         // Host emits an event into the session via a dedicated bus method.
         var evt = new Envelope
         {
-            Version = ProtocolVersion.Current, Id = "hevt", TraceId = "hevt", SessionId = "s1",
-            PluginId = "settings", EndpointId = "host",
+            Version = ProtocolVersion.Current, Id = "hevt", TraceId = "hevt",
             Kind = MessageKind.Event, Route = "host.event.themeChanged"
         };
         bus.BroadcastHostEventAsync(node with { }, evt).Wait();

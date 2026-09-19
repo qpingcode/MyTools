@@ -51,7 +51,7 @@ sequenceDiagram
 1. 宿主创建 Named Pipe、启动 Node，并通过 stdin 发送：`<pipePath>\t<一次性 token>`。
 2. Node 连接管道，发送只携带 token 的 `bus.handshake`。
 3. 宿主校验 token 是否未过期、未使用且属于当前进程；协议版本已在启动前通过 `plugin.json` 校验。
-4. 成功后宿主返回无 payload 的确认，在宿主侧把 transport 绑定到 `pluginId`、`sessionId`、`endpointId`，注册总线端点并将会话置为 `Ready`。Node 发出的身份字段不受信任，进入总线前由宿主按 transport 绑定值统一盖章。
+4. 成功后宿主返回无 payload 的确认，在宿主侧把 transport 绑定到 `pluginId`、`sessionId`、`endpointId`，注册总线端点并将会话置为 `Ready`。envelope 不携带身份字段，来源完全由这一 transport 绑定决定。
 
 会话状态为：`Created → Starting → Handshaking → Ready`。token 有效期 30 秒且只能使用一次；失败或超时会停止该 Node 进程。
 

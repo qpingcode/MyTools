@@ -79,9 +79,6 @@ public class MessageBusDiagnosticsTest
         Version = ProtocolVersion.Current,
         Id = id,
         TraceId = id,
-        SessionId = "session-1",
-        PluginId = "settings",
-        EndpointId = "web",
         Kind = MessageKind.Request,
         Route = route,
         TimeoutMs = 5000
@@ -92,9 +89,6 @@ public class MessageBusDiagnosticsTest
         Version = ProtocolVersion.Current,
         Id = id,
         TraceId = id,
-        SessionId = "session-1",
-        PluginId = "settings",
-        EndpointId = "node-main",
         Kind = MessageKind.Event,
         Route = "plugin.event.changed"
     };

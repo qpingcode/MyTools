@@ -739,16 +739,12 @@ public partial class NodePluginDetailView : UserControl
             return;
         }
 
-        var binding = _webTransport.Binding;
         var id = _ids.NewId();
         var envelope = new Envelope
         {
             Version = ProtocolVersion.Current,
             Id = id,
             TraceId = id,
-            SessionId = binding.SessionId,
-            PluginId = binding.PluginId,
-            EndpointId = binding.EndpointId,
             Kind = MessageKind.Event,
             Route = route,
             Payload = JsonSerializer.SerializeToNode(payload, ProtocolJsonOptions.Default),

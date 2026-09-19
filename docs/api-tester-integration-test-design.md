@@ -22,7 +22,7 @@ Playwright → dist/web/index.html → TestHostBroker → dist/backend/index.mjs
 
 - `IntegrationRuntime`：创建并清理 worker 的全部资源。
 - `BackendProcess`：按 `dist/plugin.json` 启动后端，设置 `MYTOOLS_PLUGIN_DATA_DIR`，收集 stdout/stderr。
-- `TestHostBroker`：完成两侧握手、身份盖章、消息转发、correlation、心跳和 Host event。
+- `TestHostBroker`：完成两侧握手、endpoint 绑定、消息转发、correlation、心跳和 Host event。
 - `WebViewBridgeShim`：在页面加载前注入 `window.chrome.webview`，只转发 envelope。
 - `HostCapabilityRegistry`：按白名单模拟 `path.pick` 等 `host.call.*`。
 - `StaticPluginServer`：按 manifest 提供 `dist/web` 静态资源；API fixture 使用独立 HTTP 服务。

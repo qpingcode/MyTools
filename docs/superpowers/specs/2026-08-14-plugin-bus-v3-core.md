@@ -103,7 +103,7 @@
 
 窗口只是 WebView endpoint，不拥有 Node 生命周期。关闭窗口仅注销对应 endpoint；停止插件、重新加载插件或退出宿主时才停止会话。
 
-`sessionId` 标识主 Node 的一次运行，随每次重启更新。承载 WebView 的窗口和控件跨 Node 重启保留，但主 Node 重启时宿主强制重载该 entry 的所有插件页面：旧页面连同其 endpoint 和未完成请求一并作废，新页面重新握手并注册为新会话下的 WebView endpoint。页面状态与 Node 状态因此总是同代，插件不需要实现跨 Node 重启的页面状态恢复逻辑。WebView 出站消息的 `sessionId` 由宿主在规范化时盖上当前值，页面不感知也不提供该字段；命名管道连接与单次运行同生命周期，旧进程的帧由 `sessionId` 拒绝。
+`sessionId` 标识主 Node 的一次运行，随每次重启更新。承载 WebView 的窗口和控件跨 Node 重启保留，但主 Node 重启时宿主强制重载该 entry 的所有插件页面：旧页面连同其 endpoint 和未完成请求一并作废，新页面重新握手并注册为新会话下的 WebView endpoint。页面状态与 Node 状态因此总是同代，插件不需要实现跨 Node 重启的页面状态恢复逻辑。页面不感知也不提供会话身份；旧页面的 endpoint 在 Node 重启时被作废，其后续消息一律拒绝。命名管道连接与单次运行同生命周期，旧进程的连接随进程一同注销。
 
 状态机为：
 
@@ -127,11 +127,11 @@ Created / Starting / Handshaking / Ready / Restarting
 
 每个逻辑 entry 拥有一个串行 session actor。状态转换、endpoint 注册或注销、重启计数和当前 session 快照只能在 actor 队列中修改。actor 不能在处理消息时等待 transport、进程或 capability I/O；它先发起异步操作，操作完成后再把结果投递回队列。
 
-每次创建新的运行尝试、进入 `Starting` 前递增内部 `generation`，并生成新的 `sessionId`。所有异步回调都捕获发起时的 generation；回到 actor 后若 generation 已变化，则直接丢弃结果并记录诊断，防止旧进程的退出、握手或健康检查回调修改新会话。外部旧帧由 `sessionId` 拒绝，内部旧回调由 generation 拒绝。
+每次创建新的运行尝试、进入 `Starting` 前递增内部 `generation`，并生成新的 `sessionId`。所有异步回调都捕获发起时的 generation；回到 actor 后若 generation 已变化，则直接丢弃结果并记录诊断，防止旧进程的退出、握手或健康检查回调修改新会话。外部旧帧由已注销的 endpoint 绑定拒绝，内部旧回调由 generation 拒绝。
 
 ## 统一消息协议
 
-所有 transport 使用同一 envelope。插件模型限定为单入口，因此身份只包含插件、会话与 endpoint；新增 envelope 字段仅限可选、有默认行为的字段，并随 manifest 协议版本更新，旧端按"忽略未知可选字段"规则兼容：
+所有 transport 使用同一 envelope。envelope 不携带任何身份字段：插件、会话与 endpoint 身份由宿主在创建 transport 时绑定，总线按消息到达的 transport 判定来源。新增 envelope 字段仅限可选、有默认行为的字段，并随 manifest 协议版本更新，旧端按"忽略未知可选字段"规则兼容：
 
 ```json
 {
@@ -139,9 +139,6 @@ Created / Starting / Handshaking / Ready / Restarting
   "id": "01J...",
   "correlationId": null,
   "traceId": "01J...",
-  "sessionId": "01J...",
-  "pluginId": "settings",
-  "endpointId": "node-main",
   "kind": "request",
   "route": "plugin.call.saveConfiguration",
   "timeoutMs": 30000,
@@ -156,16 +153,13 @@ Created / Starting / Handshaking / Ready / Restarting
 - `id`：本消息的全局唯一 ID
 - `correlationId`：响应指向原请求 ID；其他消息为 `null`（二期的 `bus.cancel` 复用此字段）
 - `traceId`：根请求 ID；嵌套调用沿用同一 trace，独立事件使用自身 ID
-- `sessionId`：本次插件运行的会话身份
-- `pluginId`：插件包身份
-- `endpointId`：会话内连接身份
 - `kind`：`request`、`response` 或 `event`
 - `route`：受约束的路由名
 - `timeoutMs`：请求的超时时长；响应和事件为 `null`
 - `payload`：路由对应的结构化数据
 - `error`：失败响应的标准错误对象，其他消息为 `null`
 
-宿主不信任入站 envelope 声明的 `pluginId`、`sessionId` 或 `endpointId`。命名管道握手只验证 token，不向 Node 返回身份；握手成功后，transport 必须用宿主注册 endpoint 时的绑定值生成规范化消息后再交给总线。会话不匹配的消息直接丢弃并记录诊断，不能参与响应关联或路由。入站 `timeoutMs` 由宿主钳制到路由配置的上限，缺失或非法时使用路由默认值；格式非法的 `traceId` 由宿主重新生成。
+身份不出现在 envelope 上，因此对端无从声明也无从伪造。命名管道握手只验证 token，不向 Node 返回身份；握手成功后宿主把该 transport 注册为一个 endpoint，插件包、会话与连接身份此后只由这一绑定决定，路由、能力鉴权、事件广播和诊断全部以它为准。入站 `timeoutMs` 由宿主钳制到路由配置的上限，缺失或非法时使用路由默认值；格式非法的 `traceId` 由宿主重新生成。
 
 第一期超时为**每跳独立超时**：每条链路（宿主等待 Node、Node 等待宿主 capability）使用各自路由配置的超时，超时返回 `RequestTimeout`。跨跳的端到端预算扣减与传播见二期设计。超时后下游工作的结果未知，调用方不得自动重试；需要更强保证的路由必须单独定义幂等键或结果查询。
 
@@ -227,7 +221,7 @@ sequenceDiagram
     Web->>WebSDK: call(plugin.call.xxx, payload)
     WebSDK->>WebSDK: 生成 id、traceId 和 Request Envelope
     WebSDK->>WebTransport: postMessage
-    WebTransport->>Bus: 绑定 pluginId 和 endpointId
+    WebTransport->>Bus: 按 transport 绑定确定来源 endpoint
     Bus->>Session: 查找目标 Node endpoint
     Session->>Pipe: 转发 Request Envelope
     Pipe->>NodeSDK: 命名管道传输

@@ -12,8 +12,7 @@ public class MessageBusIsolationTest
 {
     private static Envelope Request(EndpointId from, string route, string id) => new()
     {
-        Version = ProtocolVersion.Current, Id = id, TraceId = id, SessionId = from.SessionId,
-        PluginId = from.PluginId, EndpointId = from.EndpointLabel,
+        Version = ProtocolVersion.Current, Id = id, TraceId = id,
         Kind = MessageKind.Request, Route = route, TimeoutMs = 5000
     };
 
@@ -46,8 +45,7 @@ public class MessageBusIsolationTest
 
         var evt = new Envelope
         {
-            Version = ProtocolVersion.Current, Id = "evt", TraceId = "evt", SessionId = "sA",
-            PluginId = "pluginA", EndpointId = "node-main",
+            Version = ProtocolVersion.Current, Id = "evt", TraceId = "evt",
             Kind = MessageKind.Event, Route = "plugin.event.changed"
         };
         nodeAT.Deliver(evt);

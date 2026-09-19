@@ -15,7 +15,7 @@ import {
   Routes,
 } from "./protocol.ts";
 
-type Handler = (payload: unknown, context: { sessionId: string }) => Promise<unknown> | unknown;
+type Handler = (payload: unknown) => Promise<unknown> | unknown;
 type Sender = (env: Envelope) => void;
 
 interface PendingHostCall {
@@ -95,7 +95,7 @@ export class HandlerRouter {
     try {
       const result = await requestScope.run(
         { deadlineMs },
-        () => handler(env.payload, { sessionId: env.sessionId }),
+        () => handler(env.payload),
       );
       this.send(this.responseFor(env, result ?? {}));
     } catch (err) {
@@ -117,9 +117,6 @@ export class HandlerRouter {
         version: ProtocolVersion,
         id,
         traceId: id,
-        sessionId: "",
-        pluginId: "",
-        endpointId: "",
         kind: MessageKind.Request,
         route,
         timeoutMs: effectiveTimeoutMs,
@@ -159,9 +156,6 @@ export class HandlerRouter {
       id: randomBytesHex(),
       correlationId: req.id,
       traceId: req.traceId,
-      sessionId: "",
-      pluginId: "",
-      endpointId: "",
       kind: MessageKind.Response,
       route: req.route,
       payload,

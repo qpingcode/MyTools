@@ -23,9 +23,6 @@ public static class EnvelopeValidator
     {
         if (string.IsNullOrEmpty(env.Id)) return EnvelopeValidationResult.Fail("id");
         if (string.IsNullOrEmpty(env.TraceId)) return EnvelopeValidationResult.Fail("traceId");
-        if (string.IsNullOrEmpty(env.SessionId)) return EnvelopeValidationResult.Fail("sessionId");
-        if (string.IsNullOrEmpty(env.PluginId)) return EnvelopeValidationResult.Fail("pluginId");
-        if (string.IsNullOrEmpty(env.EndpointId)) return EnvelopeValidationResult.Fail("endpointId");
         if (string.IsNullOrEmpty(env.Route)) return EnvelopeValidationResult.Fail("route");
 
         // Responses must carry correlationId pointing to the original request.

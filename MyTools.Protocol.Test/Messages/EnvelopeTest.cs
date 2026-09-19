@@ -16,9 +16,6 @@ public class EnvelopeTest
         Id = "abc123",
         CorrelationId = null,
         TraceId = "trace1",
-        SessionId = "sess1",
-        PluginId = "settings",
-        EndpointId = "webview-1",
         Kind = MessageKind.Request,
         Route = "plugin.call.saveConfiguration",
         TimeoutMs = 30000,
@@ -36,10 +33,10 @@ public class EnvelopeTest
         Assert.That(json, Does.Contain("\"version\":\"3.0\""));
         Assert.That(json, Does.Contain("\"id\":\"abc123\""));
         Assert.That(json, Does.Contain("\"traceId\":\"trace1\""));
-        Assert.That(json, Does.Contain("\"sessionId\":\"sess1\""));
-        Assert.That(json, Does.Contain("\"pluginId\":\"settings\""));
-        Assert.That(json, Does.Not.Contain("\"entryId\""));
-        Assert.That(json, Does.Contain("\"endpointId\":\"webview-1\""));
+        // Endpoint identity is bound to the transport, never carried by the envelope.
+        Assert.That(json, Does.Not.Contain("\"sessionId\""));
+        Assert.That(json, Does.Not.Contain("\"pluginId\""));
+        Assert.That(json, Does.Not.Contain("\"endpointId\""));
         Assert.That(json, Does.Contain("\"kind\":\"request\""));
         Assert.That(json, Does.Contain("\"route\":\"plugin.call.saveConfiguration\""));
         Assert.That(json, Does.Contain("\"timeoutMs\":30000"));
@@ -59,9 +56,6 @@ public class EnvelopeTest
 
         Assert.That(back.Id, Is.EqualTo("abc123"));
         Assert.That(back.TraceId, Is.EqualTo("trace1"));
-        Assert.That(back.SessionId, Is.EqualTo("sess1"));
-        Assert.That(back.PluginId, Is.EqualTo("settings"));
-        Assert.That(back.EndpointId, Is.EqualTo("webview-1"));
         Assert.That(back.Kind, Is.EqualTo(MessageKind.Request));
         Assert.That(back.Route, Is.EqualTo("plugin.call.saveConfiguration"));
         Assert.That(back.TimeoutMs, Is.EqualTo(30000));
@@ -79,9 +73,6 @@ public class EnvelopeTest
             Id = "resp1",
             CorrelationId = "abc123",
             TraceId = "trace1",
-            SessionId = "sess1",
-            PluginId = "settings",
-            EndpointId = "node-main",
             Kind = MessageKind.Response,
             Route = "plugin.call.saveConfiguration",
             TimeoutMs = null,
@@ -105,9 +96,6 @@ public class EnvelopeTest
             Id = "resp2",
             CorrelationId = "abc123",
             TraceId = "trace1",
-            SessionId = "sess1",
-            PluginId = "settings",
-            EndpointId = "node-main",
             Kind = MessageKind.Response,
             Route = "plugin.call.saveConfiguration",
             TimeoutMs = null,

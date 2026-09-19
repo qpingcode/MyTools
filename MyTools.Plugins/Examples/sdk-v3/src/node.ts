@@ -83,7 +83,6 @@ export type SearchResult = {
 
 /** Keeps `context.item` available without letting a long-lived session grow without bound. */
 const ItemCacheLimit = 1000;
-const SessionCacheLimit = 8;
 
 type PluginInitializeHandler = (params: PluginInitializeParams) => unknown | Promise<unknown>;
 type PluginSearchHandler = (params: PluginSearchParams) => SearchResult | Promise<SearchResult>;
@@ -95,7 +94,7 @@ export class Plugin {
   #searchHandler: PluginSearchHandler | null = null;
   #initializeHandler: PluginInitializeHandler | null = null;
   #runtime: PluginRuntime | null = null;
-  #itemsBySession = new Map<string, Map<string, unknown>>();
+  #items = new Map<string, unknown>();
 
   initialize(handler: PluginInitializeHandler): this {
     this.#initializeHandler = handler;
@@ -150,9 +149,6 @@ export class Plugin {
       version: ProtocolVersion,
       id: crypto.randomUUID().replace(/-/g, "").slice(0, 32),
       traceId: crypto.randomUUID().replace(/-/g, "").slice(0, 32),
-      sessionId: "",
-      pluginId: "",
-      endpointId: "",
       kind: MessageKind.Event,
       route,
       payload,
@@ -178,14 +174,8 @@ export class Plugin {
    * Builds the v3 route map from the fluent registrations. Exposed for unit testing the mapping
    * without connecting a pipe.
    */
-  buildRoutes(): Record<
-    string,
-    (payload: any, context?: { sessionId: string }) => unknown | Promise<unknown>
-  > {
-    const routes: Record<
-      string,
-      (payload: any, context?: { sessionId: string }) => unknown | Promise<unknown>
-    > = {};
+  buildRoutes(): Record<string, (payload: any) => unknown | Promise<unknown>> {
+    const routes: Record<string, (payload: any) => unknown | Promise<unknown>> = {};
 
     // initialize always answers, even without a handler, because the host reads the action
     // registry out of this response.
@@ -198,15 +188,14 @@ export class Plugin {
     };
 
     if (this.#searchHandler) {
-      routes[Routes.PluginCall.Search] = async (p, request) => {
+      routes[Routes.PluginCall.Search] = async (p) => {
         const result = await this.#searchHandler!(asSearchParams(p));
-        return { items: this.#trackItems(request?.sessionId ?? "default", result?.items ?? []) };
+        return { items: this.#trackItems(result?.items ?? []) };
       };
     }
 
     if (this.#actions.size > 0) {
-      routes[Routes.PluginCall.InvokeAction] = (p, request) =>
-        this.#invokeAction(request?.sessionId ?? "default", p);
+      routes[Routes.PluginCall.InvokeAction] = (p) => this.#invokeAction(p);
     }
 
     for (const [action, handler] of this.#handlers) {
@@ -226,27 +215,26 @@ export class Plugin {
   }
 
   /** Remembers the full items and returns the trimmed rows the host actually renders. */
-  #trackItems(sessionId: string, items: SearchItem[]): Record<string, unknown>[] {
-    const sessionItems = this.#sessionItems(sessionId);
+  #trackItems(items: SearchItem[]): Record<string, unknown>[] {
     const wire: Record<string, unknown>[] = [];
     for (const item of items) {
       if (!item || typeof item !== "object") continue;
       const id = typeof item.id === "string" ? item.id : "";
       if (id) {
-        sessionItems.delete(id);
-        sessionItems.set(id, item);
+        this.#items.delete(id);
+        this.#items.set(id, item);
       }
       wire.push(toWireItem(item));
     }
-    while (sessionItems.size > ItemCacheLimit) {
-      const oldest = sessionItems.keys().next();
+    while (this.#items.size > ItemCacheLimit) {
+      const oldest = this.#items.keys().next();
       if (oldest.done) break;
-      sessionItems.delete(oldest.value);
+      this.#items.delete(oldest.value);
     }
     return wire;
   }
 
-  async #invokeAction(sessionId: string, payload: any): Promise<ActionOutcome> {
+  async #invokeAction(payload: any): Promise<ActionOutcome> {
     const env = asHostEnv(payload);
     const actionId = typeof payload?.actionId === "string" ? payload.actionId : "";
     const itemId = typeof payload?.itemId === "string" ? payload.itemId : "";
@@ -262,24 +250,9 @@ export class Plugin {
       actionId,
       itemId,
       query,
-      item: this.#itemsBySession.get(sessionId)?.get(itemId),
+      item: this.#items.get(itemId),
     })) as ActionOutcome | undefined;
     return outcome ?? {};
-  }
-
-  #sessionItems(sessionId: string): Map<string, unknown> {
-    const key = sessionId || "default";
-    let items = this.#itemsBySession.get(key);
-    if (!items) {
-      items = new Map<string, unknown>();
-      this.#itemsBySession.set(key, items);
-      while (this.#itemsBySession.size > SessionCacheLimit) {
-        const oldest = this.#itemsBySession.keys().next();
-        if (oldest.done) break;
-        this.#itemsBySession.delete(oldest.value);
-      }
-    }
-    return items;
   }
 }
 

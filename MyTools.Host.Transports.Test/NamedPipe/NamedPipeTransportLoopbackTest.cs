@@ -14,8 +14,7 @@ public class NamedPipeTransportLoopbackTest
 {
     private static Envelope Sample(string id) => new()
     {
-        Version = ProtocolVersion.Current, Id = id, TraceId = id, SessionId = "s",
-        PluginId = "p", EndpointId = "end",
+        Version = ProtocolVersion.Current, Id = id, TraceId = id,
         Kind = MessageKind.Request, Route = "plugin.call.x", TimeoutMs = 1000
     };
 

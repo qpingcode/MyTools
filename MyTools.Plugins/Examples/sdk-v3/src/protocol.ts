@@ -7,7 +7,7 @@
  * Field names are camelCase on the wire (System.Text.Json camelCase policy on the C# side).
  * Null fields are omitted on the wire (WhenWritingNull).
  *
- * Runtime constants mirror MyTools.Protocol (MessageKindWire, Routes, EndpointIds,
+ * Runtime constants mirror MyTools.Protocol (MessageKindWire, Routes,
  * ProtocolVersion.CurrentWire). Do not re-hardcode those strings in SDK source.
  */
 
@@ -37,11 +37,6 @@ export const ErrorCode = {
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
 
 export const ProtocolVersion = "3.0";
-
-export const EndpointIds = {
-  NodeMain: "node-main",
-  Host: "host",
-} as const;
 
 export const Routes = {
   Bus: {
@@ -101,16 +96,14 @@ export interface BusError {
 
 /**
  * The frozen Phase-1 envelope. All fields except correlationId/timeoutMs/error/payload are
- * required; the optional ones are omitted on the wire when null.
+ * required; the optional ones are omitted on the wire when null. Endpoint identity is not carried
+ * by the message: the host derives it from the transport binding.
  */
 export interface Envelope {
   version: string; // e.g. ProtocolVersion
   id: string;
   correlationId?: string | null;
   traceId: string;
-  sessionId: string;
-  pluginId: string;
-  endpointId: string;
   kind: MessageKind;
   route: string;
   timeoutMs?: number | null;

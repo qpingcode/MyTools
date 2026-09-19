@@ -19,7 +19,7 @@ import {
 } from "./protocol.ts";
 
 export interface PluginHandlers {
-  [route: string]: (payload: any, context: { sessionId: string }) => Promise<any> | any;
+  [route: string]: (payload: any) => Promise<any> | any;
 }
 
 export interface PluginRuntime {
@@ -94,9 +94,6 @@ export async function completeHandshake(
     version: ProtocolVersion,
     id,
     traceId: id,
-    sessionId: "",
-    pluginId: "",
-    endpointId: "",
     kind: MessageKind.Request,
     route: Routes.Bus.Handshake,
     timeoutMs,

@@ -42,7 +42,7 @@ public sealed class WebView2Transport : IMessageTransport
     {
         _binding = binding;
         _channel = channel;
-        _normalizer = new WebView2Normalizer(binding);
+        _normalizer = new WebView2Normalizer();
         _dispatchAsync = dispatchAsync;
         _enrichPluginCallPayload = enrichPluginCallPayload;
         _channel.WebMessageReceived += OnChannelMessage;
@@ -154,9 +154,6 @@ public sealed class WebView2Transport : IMessageTransport
             Id = Guid.NewGuid().ToString("N"),
             CorrelationId = request.Id,
             TraceId = request.TraceId,
-            SessionId = "",
-            PluginId = "",
-            EndpointId = "",
             Kind = MessageKind.Response,
             Route = Routes.Bus.Handshake,
         };
@@ -190,9 +187,6 @@ public sealed class WebView2Transport : IMessageTransport
         Id = Guid.NewGuid().ToString("N"),
         CorrelationId = request.Id,
         TraceId = request.TraceId,
-        SessionId = _binding.SessionId,
-        PluginId = _binding.PluginId,
-        EndpointId = _binding.EndpointId,
         Kind = MessageKind.Response,
         Route = request.Route,
         Error = error,

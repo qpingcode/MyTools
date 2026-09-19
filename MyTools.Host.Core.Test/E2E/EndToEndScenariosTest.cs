@@ -31,8 +31,7 @@ public class EndToEndScenariosTest
 
     private static Envelope Req(EndpointId from, string route, string id) => new()
     {
-        Version = ProtocolVersion.Current, Id = id, TraceId = id, SessionId = from.SessionId,
-        PluginId = from.PluginId, EndpointId = from.EndpointLabel,
+        Version = ProtocolVersion.Current, Id = id, TraceId = id,
         Kind = MessageKind.Request, Route = route, TimeoutMs = 5000
     };
 
@@ -54,8 +53,8 @@ public class EndToEndScenariosTest
         nodeT.Deliver(new Envelope
         {
             Version = ProtocolVersion.Current, Id = "resp-1", CorrelationId = receivedReq.Id,
-            TraceId = receivedReq.TraceId, SessionId = "s1", PluginId = "settings",
-            EndpointId = "node-main", Kind = MessageKind.Response, Route = "plugin.call.save"
+            TraceId = receivedReq.TraceId,
+            Kind = MessageKind.Response, Route = "plugin.call.save"
         });
 
         Assert.That(webT.Sent, Has.Count.EqualTo(1));
@@ -76,8 +75,8 @@ public class EndToEndScenariosTest
         oldNodeT.Deliver(new Envelope
         {
             Version = ProtocolVersion.Current, Id = "late", CorrelationId = "never-issued",
-            TraceId = "t", SessionId = "s1", PluginId = "settings",
-            EndpointId = "node-main", Kind = MessageKind.Response, Route = "plugin.call.save"
+            TraceId = "t",
+            Kind = MessageKind.Response, Route = "plugin.call.save"
         });
 
         Assert.That(webNew.Sent, Is.Empty);
@@ -116,33 +115,30 @@ public class EndToEndScenariosTest
     }
 
     [Test]
-    public async Task MessageBus_InboundPluginCall_ShouldStampIdentityIgnoringForgedFields()
+    public async Task MessageBus_InboundPluginCall_ShouldRouteToTheBoundSessionNode()
     {
         var bus = new MessageBus();
         var webT = new InMemoryTransport();
         var nodeT = new InMemoryTransport();
+        var otherNodeT = new InMemoryTransport();
         bus.RegisterEndpoint(Web("settings", "s1"), webT);
         bus.RegisterEndpoint(Node("settings", "s1"), nodeT);
+        bus.RegisterEndpoint(Node("evil", "s2"), otherNodeT);
 
-        // Page forges another plugin's identity — bus must stamp the transport binding.
+        // The page declares no identity; routing follows the transport the message arrived on.
         webT.Deliver(new Envelope
         {
             Version = ProtocolVersion.Current,
-            Id = "forged-1",
-            TraceId = "forged-1",
-            SessionId = "OTHER-SESSION",
-            PluginId = "evil",
-            EndpointId = "forged-ep",
+            Id = "call-1",
+            TraceId = "call-1",
             Kind = MessageKind.Request,
             Route = "plugin.call.refresh",
             TimeoutMs = 5000,
         });
 
         Assert.That(await WaitForAsync(() => nodeT.Sent.Count >= 1), Is.True);
-        var delivered = nodeT.Sent.ToArray()[0];
-        Assert.That(delivered.PluginId, Is.EqualTo("settings"));
-        Assert.That(delivered.SessionId, Is.EqualTo("s1"));
-        Assert.That(delivered.EndpointId, Is.EqualTo("web-1"));
+        Assert.That(nodeT.Sent.ToArray()[0].Id, Is.EqualTo("call-1"));
+        Assert.That(otherNodeT.Sent, Is.Empty);
     }
 
     [Test]
@@ -163,9 +159,6 @@ public class EndToEndScenariosTest
             Version = ProtocolVersion.Current,
             Id = "ev1",
             TraceId = "ev1",
-            SessionId = "s1",
-            PluginId = "a",
-            EndpointId = "node-main",
             Kind = MessageKind.Event,
             Route = "plugin.event.tick",
         });
@@ -222,9 +215,6 @@ public class EndToEndScenariosTest
                 Version = ProtocolVersion.Current,
                 Id = $"e{i}",
                 TraceId = $"e{i}",
-                SessionId = "s1",
-                PluginId = "settings",
-                EndpointId = "node-main",
                 Kind = MessageKind.Event,
                 Route = "plugin.event.n",
             });

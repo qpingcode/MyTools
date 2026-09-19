@@ -23,15 +23,6 @@ public sealed record class Envelope
     /// <summary>Root request id; nested calls share one trace, standalone events use their own id.</summary>
     public required string TraceId { get; init; }
 
-    /// <summary>Identity of this plugin run.</summary>
-    public required string SessionId { get; init; }
-
-    /// <summary>Plugin package identity.</summary>
-    public required string PluginId { get; init; }
-
-    /// <summary>Connection identity within the session.</summary>
-    public required string EndpointId { get; init; }
-
     public required MessageKind Kind { get; init; }
 
     /// <summary>Constrained route name (see RouteRules).</summary>

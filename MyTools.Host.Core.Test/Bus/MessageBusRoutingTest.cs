@@ -20,16 +20,14 @@ public class MessageBusRoutingTest
 
     private static Envelope Request(EndpointId from, string route, string id) => new()
     {
-        Version = ProtocolVersion.Current, Id = id, TraceId = id, SessionId = from.SessionId,
-        PluginId = from.PluginId, EndpointId = from.EndpointLabel,
+        Version = ProtocolVersion.Current, Id = id, TraceId = id,
         Kind = MessageKind.Request, Route = route, TimeoutMs = 5000
     };
 
     private static Envelope Response(EndpointId from, string corrId) => new()
     {
         Version = ProtocolVersion.Current, Id = "resp-" + corrId, CorrelationId = corrId,
-        TraceId = corrId, SessionId = from.SessionId, PluginId = from.PluginId,
-        EndpointId = from.EndpointLabel,
+        TraceId = corrId,
         Kind = MessageKind.Response, Route = "plugin.call.save"
     };
 

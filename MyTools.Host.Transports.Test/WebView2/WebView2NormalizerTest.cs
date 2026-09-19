@@ -11,65 +11,16 @@ namespace MyTools.Host.Transports.Test.WebView2;
 [TestFixture]
 public class WebView2NormalizerTest
 {
-    private static readonly EndpointBinding Binding =
-        new(PluginId: "settings", SessionId: "s1", EndpointId: "web-1");
-
     private static JsonNode Payload => JsonNode.Parse("""{"x":1}""")!;
-
-    // Test 28 — identity stamping: outbound session/plugin/endpoint overwritten by the binding.
-    [Test]
-    public void Normalize_Outbound_ShouldStampBoundIdentityOverPageDeclaredFields()
-    {
-        var normalizer = new WebView2Normalizer(Binding);
-        var env = new Envelope
-        {
-            Version = ProtocolVersion.Current, Id = "m1", TraceId = "t1",
-            SessionId = "DECLARED-BY-PAGE",     // page tries to set its own session
-            PluginId = "evil",                   // page tries to impersonate another plugin
-            EndpointId = "forged",
-            Kind = MessageKind.Request, Route = "plugin.call.save", TimeoutMs = 1000,
-            Payload = Payload
-        };
-
-        var result = normalizer.NormalizeOutbound(env);
-
-        Assert.That(result.Envelope!.SessionId, Is.EqualTo("s1"));
-        Assert.That(result.Envelope!.PluginId, Is.EqualTo("settings"));
-        Assert.That(result.Envelope!.EndpointId, Is.EqualTo("web-1"));
-    }
-
-    // Test 28b — identity cannot be switched after binding.
-    [Test]
-    public void Normalize_Outbound_ShouldAlwaysUseBindingRegardlessOfInput()
-    {
-        var normalizer = new WebView2Normalizer(Binding);
-        var env = new Envelope
-        {
-            Version = ProtocolVersion.Current, Id = "m", TraceId = "t",
-            SessionId = "x", PluginId = "y", EndpointId = "w",
-            Kind = MessageKind.Request, Route = "plugin.call.save", TimeoutMs = 1000,
-            Payload = Payload
-        };
-
-        var r1 = normalizer.NormalizeOutbound(env);
-        var r2 = normalizer.NormalizeOutbound(env);
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(r1.Envelope!.PluginId, Is.EqualTo(r2.Envelope!.PluginId).And.EqualTo("settings"));
-            Assert.That(r1.Envelope!.EndpointId, Is.EqualTo(r2.Envelope!.EndpointId).And.EqualTo("web-1"));
-        });
-    }
 
     // Test 32 — webview calling host.call.* must be denied.
     [Test]
     public void Normalize_Outbound_HostCallRoute_ShouldReturnCapabilityDenied()
     {
-        var normalizer = new WebView2Normalizer(Binding);
+        var normalizer = new WebView2Normalizer();
         var env = new Envelope
         {
-            Version = ProtocolVersion.Current, Id = "m", TraceId = "t", SessionId = "s1",
-            PluginId = "settings", EndpointId = "web-1",
+            Version = ProtocolVersion.Current, Id = "m", TraceId = "t",
             Kind = MessageKind.Request, Route = "host.call.configuration.write", TimeoutMs = 1000,
             Payload = Payload
         };
@@ -85,12 +36,11 @@ public class WebView2NormalizerTest
     [TestCase("plugin.event.changed")]
     public void Normalize_Outbound_AllowedRoutes_ShouldNotReject(string route)
     {
-        var normalizer = new WebView2Normalizer(Binding);
+        var normalizer = new WebView2Normalizer();
         var kind = route.StartsWith("plugin.event.") ? MessageKind.Event : MessageKind.Request;
         var env = new Envelope
         {
-            Version = ProtocolVersion.Current, Id = "m", TraceId = "t", SessionId = "s1",
-            PluginId = "settings", EndpointId = "web-1",
+            Version = ProtocolVersion.Current, Id = "m", TraceId = "t",
             Kind = kind, Route = route, TimeoutMs = 1000, Payload = Payload
         };
 
@@ -103,12 +53,11 @@ public class WebView2NormalizerTest
     [Test]
     public void Normalize_Outbound_OverGlobalMaxFrameBytes_ShouldReturnMessageTooLarge()
     {
-        var normalizer = new WebView2Normalizer(Binding);
+        var normalizer = new WebView2Normalizer();
         var big = new string('x', FrameLimits.MaxFrameBytes + 10);
         var env = new Envelope
         {
-            Version = ProtocolVersion.Current, Id = "m", TraceId = "t", SessionId = "s1",
-            PluginId = "settings", EndpointId = "web-1",
+            Version = ProtocolVersion.Current, Id = "m", TraceId = "t",
             Kind = MessageKind.Request, Route = "plugin.call.save", TimeoutMs = 1000,
             Payload = JsonNode.Parse($"{{\"big\":\"{big}\"}}")
         };
@@ -123,11 +72,10 @@ public class WebView2NormalizerTest
     [Test]
     public void Normalize_Outbound_OverRoutePayloadCapButUnderGlobal_ShouldReturnMessageTooLarge()
     {
-        var normalizer = new WebView2Normalizer(Binding);
+        var normalizer = new WebView2Normalizer();
         var env = new Envelope
         {
-            Version = ProtocolVersion.Current, Id = "m", TraceId = "t", SessionId = "s1",
-            PluginId = "settings", EndpointId = "web-1",
+            Version = ProtocolVersion.Current, Id = "m", TraceId = "t",
             Kind = MessageKind.Request, Route = "plugin.call.save", TimeoutMs = 1000,
             Payload = JsonNode.Parse("{\"x\":\"" + new string('y', 500) + "\"}")
         };
@@ -142,11 +90,10 @@ public class WebView2NormalizerTest
     [Test]
     public void InvalidateOldBinding_AfterReload_OldEndpointMessagesRejected()
     {
-        var normalizer = new WebView2Normalizer(Binding);
+        var normalizer = new WebView2Normalizer();
         var env = new Envelope
         {
-            Version = ProtocolVersion.Current, Id = "m", TraceId = "t", SessionId = "s1",
-            PluginId = "settings", EndpointId = "web-1",
+            Version = ProtocolVersion.Current, Id = "m", TraceId = "t",
             Kind = MessageKind.Request, Route = "plugin.call.save", TimeoutMs = 1000,
             Payload = Payload
         };

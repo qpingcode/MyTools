@@ -38,9 +38,6 @@ public class PipeHandshakeTest
         Assert.That(reply.CorrelationId, Is.EqualTo("hs-1"));
         Assert.That(reply.Error, Is.Null);
         Assert.That(reply.Payload, Is.Null);
-        Assert.That(reply.PluginId, Is.Empty);
-        Assert.That(reply.SessionId, Is.Empty);
-        Assert.That(reply.EndpointId, Is.Empty);
     }
 
     [Test]
@@ -69,9 +66,6 @@ public class PipeHandshakeTest
         Version = ProtocolVersion.Current,
         Id = "hs-1",
         TraceId = "hs-1",
-        SessionId = "",
-        PluginId = "",
-        EndpointId = "",
         Kind = MessageKind.Request,
         Route = "bus.handshake",
         TimeoutMs = 5000,

@@ -120,7 +120,7 @@ public sealed class MessageBus : IMessageRouter
         EndpointId origin,
         CancellationToken cancellationToken = default)
     {
-        ValidateOutboundRequest(request, origin);
+        ValidateOutboundRequest(request);
         var session = GetSession(origin);
         var originBinding = session.Get(origin.EndpointLabel)
             ?? throw RouteError(ErrorCode.TransportDisconnected, $"origin endpoint {origin} is unavailable");
@@ -194,7 +194,7 @@ public sealed class MessageBus : IMessageRouter
         }
         catch (MessageRouteException exception) when (exception.Error.Code == ErrorCode.TooManyRequests)
         {
-            await SendToEndpointAsync(origin, BuildErrorReply(request, origin, exception.Error));
+            await SendToEndpointAsync(origin, BuildErrorReply(request, exception.Error));
         }
         catch (MessageRouteException exception)
         {
@@ -260,43 +260,42 @@ public sealed class MessageBus : IMessageRouter
 
     private void OnInbound(EndpointId source, Envelope envelope)
     {
-        var stamped = EnvelopeIdentity.Stamp(source, envelope);
-        var validation = EnvelopeValidator.Validate(stamped);
-        var route = RouteRules.Classify(stamped.Route);
+        var validation = EnvelopeValidator.Validate(envelope);
+        var route = RouteRules.Classify(envelope.Route);
         if (!validation.IsValid || !route.IsLegal)
         {
             _logger.LogWarning(
                 "Dropping invalid envelope endpoint={Endpoint} route={Route} error={Error}",
                 source.EndpointLabel,
-                stamped.Route,
+                envelope.Route,
                 validation.Error?.Message ?? route.Error?.Message);
-            if (stamped.Kind == MessageKind.Request)
+            if (envelope.Kind == MessageKind.Request)
             {
-                _ = TrySendErrorReplyAsync(source, stamped, validation.Error ?? route.Error!);
+                _ = TrySendErrorReplyAsync(source, envelope, validation.Error ?? route.Error!);
             }
             return;
         }
 
-        switch (stamped.Kind)
+        switch (envelope.Kind)
         {
             case MessageKind.Response:
-                HandleResponse(source, stamped);
+                HandleResponse(source, envelope);
                 break;
             case MessageKind.Event:
-                _ = BroadcastAsync(source, stamped, source.EndpointLabel);
+                _ = BroadcastAsync(source, envelope, source.EndpointLabel);
                 break;
-            case MessageKind.Request when Routes.IsHostCall(stamped.Route):
-                _ = DispatchHostCallAsync(source, stamped);
+            case MessageKind.Request when Routes.IsHostCall(envelope.Route):
+                _ = DispatchHostCallAsync(source, envelope);
                 break;
-            case MessageKind.Request when Routes.IsPluginCall(stamped.Route):
-            case MessageKind.Request when Routes.IsPing(stamped.Route):
-                _ = RouteInboundRequestAsync(stamped, source);
+            case MessageKind.Request when Routes.IsPluginCall(envelope.Route):
+            case MessageKind.Request when Routes.IsPing(envelope.Route):
+                _ = RouteInboundRequestAsync(envelope, source);
                 break;
             default:
                 _ = TrySendErrorReplyAsync(
                     source,
-                    stamped,
-                    BusError.For(ErrorCode.RouteNotFound, $"route '{stamped.Route}' is not valid for {stamped.Kind}"));
+                    envelope,
+                    BusError.For(ErrorCode.RouteNotFound, $"route '{envelope.Route}' is not valid for {envelope.Kind}"));
                 break;
         }
     }
@@ -390,7 +389,7 @@ public sealed class MessageBus : IMessageRouter
     {
         try
         {
-            await SendToEndpointAsync(origin, BuildErrorReply(request, origin, error));
+            await SendToEndpointAsync(origin, BuildErrorReply(request, error));
         }
         catch (Exception exception)
         {
@@ -409,7 +408,7 @@ public sealed class MessageBus : IMessageRouter
                 ErrorCode.TransportDisconnected,
                 $"session {endpoint.PluginId}/{endpoint.SessionId} is unavailable");
 
-    private static void ValidateOutboundRequest(Envelope request, EndpointId origin)
+    private static void ValidateOutboundRequest(Envelope request)
     {
         var validation = EnvelopeValidator.Validate(request);
         if (!validation.IsValid)
@@ -425,12 +424,6 @@ public sealed class MessageBus : IMessageRouter
         {
             throw new MessageRouteException(
                 route.Error ?? BusError.For(ErrorCode.RouteNotFound, $"route '{request.Route}' cannot target Node"));
-        }
-        if (request.PluginId != origin.PluginId
-            || request.SessionId != origin.SessionId
-            || request.EndpointId != origin.EndpointLabel)
-        {
-            throw RouteError(ErrorCode.InvalidPayload, "request identity does not match its origin endpoint");
         }
     }
 
@@ -484,16 +477,13 @@ public sealed class MessageBus : IMessageRouter
             binding.Admission.Limit,
             binding.Admission.HighWaterMark);
 
-    private Envelope BuildErrorReply(Envelope request, EndpointId origin, BusError error)
+    private Envelope BuildErrorReply(Envelope request, BusError error)
         => new()
         {
             Version = ProtocolVersion.Current,
             Id = _ids.NewId(),
             CorrelationId = request.Id,
             TraceId = request.TraceId,
-            SessionId = origin.SessionId,
-            PluginId = origin.PluginId,
-            EndpointId = EndpointIds.Host,
             Kind = MessageKind.Response,
             Route = request.Route,
             Error = error,

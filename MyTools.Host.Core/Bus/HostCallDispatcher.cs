@@ -126,11 +126,11 @@ public sealed class HostCallDispatcher
 
             if (!decision.IsAllowed)
             {
-                reply = BuildReply(request, source, null, decision.Error);
+                reply = BuildReply(request, null, decision.Error);
             }
             else if (!_handlers.TryGetValue(source.PluginId, out var registration))
             {
-                reply = BuildReply(request, source, null,
+                reply = BuildReply(request, null,
                     BusError.For(ErrorCode.InternalError, $"no host call handler for {source.PluginId}"));
             }
             else
@@ -146,13 +146,12 @@ public sealed class HostCallDispatcher
                         registration.LifecycleToken);
                     reply = BuildReply(
                         request,
-                        source,
                         JsonNode.Parse(result.GetRawText()),
                         error: null);
                 }
                 catch (OperationCanceledException) when (registration.LifecycleToken.IsCancellationRequested)
                 {
-                    reply = BuildReply(request, source, null,
+                    reply = BuildReply(request, null,
                         BusError.For(ErrorCode.TransportDisconnected, "host call lifecycle ended", retryable: true));
                 }
                 catch (Exception exception)
@@ -163,7 +162,7 @@ public sealed class HostCallDispatcher
                         source.PluginId,
                         request.Route,
                         request.Id);
-                    reply = BuildReply(request, source, null,
+                    reply = BuildReply(request, null,
                         BusError.For(ErrorCode.InternalError, exception.Message));
                 }
             }
@@ -213,12 +212,11 @@ public sealed class HostCallDispatcher
         BusError? error)
         => router.SendToEndpointAsync(
             source,
-            BuildReply(request, source, payload, error),
+            BuildReply(request, payload, error),
             CancellationToken.None);
 
     private Envelope BuildReply(
         Envelope request,
-        EndpointId source,
         JsonNode? payload,
         BusError? error)
         => new()
@@ -227,9 +225,6 @@ public sealed class HostCallDispatcher
             Id = _ids.NewId(),
             CorrelationId = request.Id,
             TraceId = request.TraceId,
-            SessionId = source.SessionId,
-            PluginId = source.PluginId,
-            EndpointId = EndpointIds.Host,
             Kind = MessageKind.Response,
             Route = request.Route,
             Payload = payload,
