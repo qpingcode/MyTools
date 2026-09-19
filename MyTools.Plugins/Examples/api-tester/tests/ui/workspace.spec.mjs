@@ -19,6 +19,7 @@ const TreeAutoScrollPointerInsetPx = 4;
 
 test('authors, executes, and manages an API request workspace', async ({app, page}) => {
   const {
+    bridgeFailures,
     errors,
     historyEntries,
     messages: {en, zh},
@@ -650,6 +651,36 @@ test('authors, executes, and manages an API request workspace', async ({app, pag
     .getByRole('button', { name: 'Cancel', exact: true })
     .click();
   assert.equal(await close, false);
+  });
+
+  await test.step('offers exit without saving and ignores release failures during host close', async () => {
+  bridgeFailures.failNextSave = true;
+  bridgeFailures.failRelease = true;
+  let close = page.evaluate(() => window.mytoolsBeforeClose());
+  await page
+    .getByRole('dialog', {name: 'Unsaved changes', exact: true})
+    .getByRole('button', {name: 'Save', exact: true})
+    .click();
+  const saveFailed = page.getByRole('dialog', {name: 'Save failed', exact: true});
+  await saveFailed.getByText(
+    'Your latest changes may not have been saved. Exit without saving?',
+    {exact: true},
+  ).waitFor();
+  await saveFailed.getByRole('button', {name: 'Cancel', exact: true}).click();
+  assert.equal(await close, false);
+
+  bridgeFailures.failNextSave = true;
+  close = page.evaluate(() => window.mytoolsBeforeClose());
+  await page
+    .getByRole('dialog', {name: 'Unsaved changes', exact: true})
+    .getByRole('button', {name: 'Save', exact: true})
+    .click();
+  await page
+    .getByRole('dialog', {name: 'Save failed', exact: true})
+    .getByRole('button', {name: 'Exit without saving', exact: true})
+    .click();
+  assert.equal(await close, true);
+  assert.ok(bridgeFailures.failedReleaseAttempts > 0);
   });
 
   await test.step('applies live language and theme host events', async () => {

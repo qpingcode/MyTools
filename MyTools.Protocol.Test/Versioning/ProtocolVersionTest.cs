@@ -43,43 +43,4 @@ public class ProtocolVersionTest
         Assert.That(v30.CompareTo(v30), Is.EqualTo(0));
     }
 
-    [Test]
-    public void MajorMismatch_ShouldBeDetected()
-    {
-        var a = new ProtocolVersion(3, 0);
-        var b = new ProtocolVersion(4, 0);
-
-        Assert.That(a.IsMajorCompatibleWith(b), Is.False);
-    }
-
-    [Test]
-    public void SameMajor_ShouldBeMajorCompatible()
-    {
-        var a = new ProtocolVersion(3, 0);
-        var b = new ProtocolVersion(3, 5);
-
-        Assert.That(a.IsMajorCompatibleWith(b), Is.True);
-    }
-
-    [Test]
-    public void HighestCommonMinor_ShouldReturnGreatestSharedMinor()
-    {
-        var ours = new ProtocolVersion(3, 2);
-        var theirs = new[] { new ProtocolVersion(3, 0), new ProtocolVersion(3, 1) };
-
-        var result = ours.HighestCommonMinor(theirs);
-
-        Assert.That(result, Is.Not.Null);
-        // ReSharper disable once PossibleNullReferenceException
-        Assert.That(result!.Value.minor, Is.EqualTo(1));
-    }
-
-    [Test]
-    public void HighestCommonMinor_ShouldReturnNullWhenNoCommonMinor()
-    {
-        var ours = new ProtocolVersion(4, 0);
-        var theirs = new[] { new ProtocolVersion(3, 0), new ProtocolVersion(3, 1) };
-
-        Assert.That(ours.HighestCommonMinor(theirs), Is.Null);
-    }
 }

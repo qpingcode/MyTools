@@ -67,7 +67,6 @@ public class NodeProcessControllerTest
         var ids = new GuidIdGenerator();
         const string pluginId = "fixture";
         const string sessionId = "sess-it-1";
-        const string endpointId = "node-main";
 
         await controller.StartAsync(
             $"mytools-it-{System.Guid.NewGuid():N}",
@@ -86,8 +85,6 @@ public class NodeProcessControllerTest
             controller.Transport!,
             tokens,
             controller.ObservedIdentity!,
-            sessionId,
-            endpointId,
             ids,
             TimeSpan.FromSeconds(10),
             default);
@@ -139,8 +136,6 @@ public class NodeProcessControllerTest
             controller.Transport,
             tokens,
             controller.ObservedIdentity!,
-            "sess-crash",
-            "node-main",
             new GuidIdGenerator(),
             TimeSpan.FromSeconds(10),
             default);

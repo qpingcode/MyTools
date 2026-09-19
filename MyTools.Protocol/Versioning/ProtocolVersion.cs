@@ -4,8 +4,8 @@ using System.Text.Json.Serialization;
 namespace MyTools.Protocol.Versioning;
 
 /// <summary>
-/// Protocol version with frozen major/minor semantics. Major mismatch is fatal (ProtocolMismatch);
-/// minor is negotiated during handshake to the highest common value.
+/// Protocol version declared by the plugin manifest and carried on protocol envelopes.
+/// Compatibility is validated before a plugin process starts.
 /// </summary>
 [JsonConverter(typeof(ProtocolVersionJsonConverter))]
 public readonly record struct ProtocolVersion(int Major, int Minor) : IComparable<ProtocolVersion>
@@ -22,25 +22,6 @@ public readonly record struct ProtocolVersion(int Major, int Minor) : IComparabl
     {
         var majorComparison = Major.CompareTo(other.Major);
         return majorComparison != 0 ? majorComparison : Minor.CompareTo(other.Minor);
-    }
-
-    /// <summary>True when both sides share the same major version (the only compatibility gate).</summary>
-    public bool IsMajorCompatibleWith(ProtocolVersion other) => Major == other.Major;
-
-    /// <summary>
-    /// Returns the highest minor version present in <paramref name="theirs"/> that is both
-    /// ≤ this version and major-compatible, or <see langword="null"/> when no common minor exists.
-    /// </summary>
-    public (int major, int minor)? HighestCommonMinor(IEnumerable<ProtocolVersion> theirs)
-    {
-        var best = -1;
-        foreach (var t in theirs)
-        {
-            if (t.Major != Major) continue;
-            if (t.Minor > Minor) continue;
-            if (t.Minor > best) best = t.Minor;
-        }
-        return best >= 0 ? (Major, best) : null;
     }
 
     public static ProtocolVersion Parse(string text)

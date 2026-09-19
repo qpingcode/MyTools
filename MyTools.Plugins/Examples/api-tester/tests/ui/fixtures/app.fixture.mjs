@@ -79,6 +79,11 @@ async function installHostBridge(page, runtime, failInitialWorkspaceLoad) {
     delete snapshot.result.sentRequest;
     historyEntries.unshift(snapshot);
   });
+  const bridgeFailures = {
+    failNextSave: false,
+    failRelease: false,
+    failedReleaseAttempts: 0,
+  };
   let failWorkspaceLoad = failInitialWorkspaceLoad;
   await page.exposeFunction('testBusRequest', async envelope => {
     if (envelope.route === BusRoutes.Bus.Handshake)
@@ -93,6 +98,10 @@ async function installHostBridge(page, runtime, failInitialWorkspaceLoad) {
       }
       value = workspace;
     } else if (method === runtime.Routes.save) {
+      if (bridgeFailures.failNextSave) {
+        bridgeFailures.failNextSave = false;
+        return {ok: false, error: {kind: runtime.ErrorKind.Storage}};
+      }
       const snapshot = structuredClone(payload);
       for (const key of Object.keys(workspace)) delete workspace[key];
       Object.assign(workspace, snapshot);
@@ -113,7 +122,13 @@ async function installHostBridge(page, runtime, failInitialWorkspaceLoad) {
       const view = runner.poll(payload.id);
       value = {...view, results: view.results.slice(payload.from || 0)};
     } else if (method === runtime.Routes.cancel) runner.cancel(payload.id);
-    else if (method === runtime.Routes.release) runner.release(payload.id);
+    else if (method === runtime.Routes.release) {
+      if (bridgeFailures.failRelease) {
+        bridgeFailures.failedReleaseAttempts++;
+        return {ok: false, error: {kind: runtime.ErrorKind.Cache}};
+      }
+      runner.release(payload.id);
+    }
     else if (method === runtime.Routes.download)
       value = runner.download(payload.id, payload.index);
     else throw new Error(`Unexpected route: ${method}`);
@@ -155,7 +170,7 @@ async function installHostBridge(page, runtime, failInitialWorkspaceLoad) {
     },
     {messages: runtime.messages.en, kind: MessageKind, routes: BusRoutes},
   );
-  return {historyEntries, runner, workspace};
+  return {bridgeFailures, historyEntries, runner, workspace};
 }
 
 export const test = base.extend({

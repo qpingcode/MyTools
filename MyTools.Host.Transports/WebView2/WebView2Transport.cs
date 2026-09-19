@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using MyTools.Host.Core.Transports;
 using MyTools.Protocol.Errors;
 using MyTools.Protocol.Framing;
-using MyTools.Protocol.Handshake;
 using MyTools.Protocol.Messages;
 using MyTools.Protocol.Routing;
 using MyTools.Protocol.Versioning;
@@ -20,11 +19,10 @@ namespace MyTools.Host.Transports.WebView2;
 /// Outbound page messages are normalized via <see cref="WebView2Normalizer"/> (including
 /// <c>host.call.*</c> → <see cref="ErrorCode.CapabilityDenied"/>). Send operations are marshalled
 /// onto the UI dispatcher when one is provided. The connection is not ready for business
-/// messages until <c>bus.handshake</c> succeeds.
+/// messages until the page's <c>bus.handshake</c> readiness signal succeeds.
 /// </summary>
 public sealed class WebView2Transport : IMessageTransport
 {
-    public static readonly ProtocolVersion[] HostSupportedVersions = [new(3, 0)];
     public static readonly TimeSpan HandshakeTimeout = TimeSpan.FromSeconds(8);
 
     private readonly EndpointBinding _binding;
@@ -54,12 +52,10 @@ public sealed class WebView2Transport : IMessageTransport
     public WebView2Normalizer Normalizer => _normalizer;
     public bool IsHandshaken => _handshaken;
     public bool IsConnected => _connected;
-    public ProtocolVersion? NegotiatedVersion { get; private set; }
 
     public event Action<Envelope>? MessageReceived;
     public event Action? Disconnected;
-    public event Action<ProtocolVersion>? HandshakeSucceeded;
-    public event Action<BusError>? HandshakeFailed;
+    public event Action? HandshakeSucceeded;
 
     public void Invalidate() => _normalizer.Invalidate();
 
@@ -110,7 +106,7 @@ public sealed class WebView2Transport : IMessageTransport
 
         if (Routes.IsHandshake(env.Route) && env.Kind == MessageKind.Request)
         {
-            _ = HandleHandshakeAsync(env);
+            _ = HandleReadinessHandshakeAsync(env);
             return;
         }
 
@@ -149,57 +145,23 @@ public sealed class WebView2Transport : IMessageTransport
         MessageReceived?.Invoke(result.Envelope!);
     }
 
-    private async Task HandleHandshakeAsync(Envelope request)
+    private async Task HandleReadinessHandshakeAsync(Envelope request)
     {
-        HandshakePayload? payload = null;
-        try
-        {
-            if (request.Payload is not null)
-            {
-                payload = request.Payload.Deserialize<HandshakePayload>(ProtocolJsonOptions.Default);
-            }
-        }
-        catch
-        {
-            payload = null;
-        }
-
-        var theirs = payload?.SupportedVersions
-            ?? (payload?.Version is { } v ? new[] { v } : Array.Empty<ProtocolVersion>());
-        var negotiated = HandshakeNegotiator.Negotiate(HostSupportedVersions, theirs);
-        Envelope reply;
-        if (!negotiated.IsSuccess)
-        {
-            reply = BuildErrorResponse(request, negotiated.Error!);
-            await SendAsync(reply, CancellationToken.None).ConfigureAwait(false);
-            HandshakeFailed?.Invoke(negotiated.Error!);
-            return;
-        }
-
         _handshaken = true;
-        var version = negotiated.Negotiated
-            ?? throw new InvalidOperationException("handshake succeeded without negotiated version");
-        NegotiatedVersion = version;
-        var successPayload = HandshakePayload.BuildSuccessResponse(
-            version,
-            _binding.PluginId,
-            _binding.SessionId,
-            _binding.EndpointId);
-        reply = new Envelope
+        var reply = new Envelope
         {
-            Version = version,
+            Version = ProtocolVersion.Current,
             Id = Guid.NewGuid().ToString("N"),
             CorrelationId = request.Id,
             TraceId = request.TraceId,
-            SessionId = _binding.SessionId,
-            PluginId = _binding.PluginId,
-            EndpointId = _binding.EndpointId,
+            SessionId = "",
+            PluginId = "",
+            EndpointId = "",
             Kind = MessageKind.Response,
             Route = Routes.Bus.Handshake,
-            Payload = JsonSerializer.SerializeToNode(successPayload, ProtocolJsonOptions.Default),
         };
         await SendAsync(reply, CancellationToken.None).ConfigureAwait(false);
-        HandshakeSucceeded?.Invoke(version);
+        HandshakeSucceeded?.Invoke();
     }
 
     private async ValueTask PostRawAsync(string json, CancellationToken cancellationToken)
@@ -224,7 +186,7 @@ public sealed class WebView2Transport : IMessageTransport
 
     private Envelope BuildErrorResponse(Envelope request, BusError error) => new()
     {
-        Version = NegotiatedVersion ?? ProtocolVersion.Current,
+        Version = ProtocolVersion.Current,
         Id = Guid.NewGuid().ToString("N"),
         CorrelationId = request.Id,
         TraceId = request.TraceId,

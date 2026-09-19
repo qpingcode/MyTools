@@ -20,8 +20,8 @@
 
 以下决定在第一期做出并对所有阶段有效：
 
-1. 已有 envelope 字段的名称、类型和语义冻结；新增仅限可选字段并经次版本协商，旧端忽略未知字段。
-2. 握手是永久冻结的 bootstrap 契约，任何版本都能解析并回应 `ProtocolMismatch`。
+1. 已有 envelope 字段的名称、类型和语义冻结；新增仅限可选字段并随 manifest 协议版本更新，旧端忽略未知字段。
+2. 宿主在启动插件前校验 manifest 的精确协议版本；运行期握手只负责 Node token 认证或 WebView 页面就绪确认。
 3. 交付语义 at-most-once：不重放、不持久化、断线不自动重试。
 4. 宿主不信任入站身份字段，由 transport 按已认证绑定规范化。
 5. `plugin.call.*` / `plugin.event.*` 的 payload 对总线不透明，插件业务 Schema 属于插件内部实现。

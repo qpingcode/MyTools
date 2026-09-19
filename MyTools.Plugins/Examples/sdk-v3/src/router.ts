@@ -9,7 +9,6 @@ import { randomBytes } from "node:crypto";
 import {
   type Envelope,
   type BusError,
-  EndpointIds,
   ErrorCode,
   MessageKind,
   ProtocolVersion,
@@ -61,22 +60,11 @@ function deadlineFromTimeoutMs(timeoutMs: number | null | undefined): number | n
 export class HandlerRouter {
   private handlers = new Map<string, Handler>();
   private pendingHostCalls = new Map<string, PendingHostCall>();
-  private pluginId = "p";
-  private sessionId = "s";
-  private endpointId: string = EndpointIds.NodeMain;
-
   /** Injected transport send fn; tests can override `router.send` directly. */
   send: Sender;
 
   constructor(deps: { send: Sender }) {
     this.send = deps.send;
-  }
-
-  /** Sets the bound identity stamped on outbound messages (after handshake). */
-  setIdentity(ids: { pluginId: string; sessionId: string; endpointId: string }): void {
-    this.pluginId = ids.pluginId;
-    this.sessionId = ids.sessionId;
-    this.endpointId = ids.endpointId;
   }
 
   handle(route: string, handler: Handler): void {
@@ -129,9 +117,9 @@ export class HandlerRouter {
         version: ProtocolVersion,
         id,
         traceId: id,
-        sessionId: this.sessionId,
-        pluginId: this.pluginId,
-        endpointId: this.endpointId,
+        sessionId: "",
+        pluginId: "",
+        endpointId: "",
         kind: MessageKind.Request,
         route,
         timeoutMs: effectiveTimeoutMs,
@@ -171,9 +159,9 @@ export class HandlerRouter {
       id: randomBytesHex(),
       correlationId: req.id,
       traceId: req.traceId,
-      sessionId: req.sessionId,
-      pluginId: req.pluginId,
-      endpointId: this.endpointId,
+      sessionId: "",
+      pluginId: "",
+      endpointId: "",
       kind: MessageKind.Response,
       route: req.route,
       payload,

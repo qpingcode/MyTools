@@ -210,8 +210,7 @@
   <data name="Theme.light" xml:space="preserve"><value>浅色</value></data>
   <data name="Theme.dark" xml:space="preserve"><value>深色</value></data>
   <data name="PluginPage.HandshakeFailed" xml:space="preserve"><value>插件页面无法连接</value></data>
-  <data name="PluginPage.HandshakeTimeout" xml:space="preserve"><value>插件页面未完成协议握手。</value></data>
-  <data name="PluginPage.ProtocolMismatch" xml:space="preserve"><value>此插件与当前 MyTools 版本不兼容。</value></data>
+  <data name="PluginPage.HandshakeTimeout" xml:space="preserve"><value>插件页面未准备就绪。</value></data>
   <data name="PluginPage.BackendStopped" xml:space="preserve"><value>插件后端已停止</value></data>
   <data name="PluginPage.BackendStoppedDetail" xml:space="preserve"><value>插件的 Node 进程当前不可用。后端诊断信息如下。</value></data>
   <data name="PluginPage.BackendNoDetails" xml:space="preserve"><value>未捕获到后端诊断信息。</value></data>

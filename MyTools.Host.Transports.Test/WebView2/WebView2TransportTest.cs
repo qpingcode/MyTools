@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using MyTools.Host.Core.Bus;
@@ -26,14 +27,13 @@ public class WebView2TransportTest
     private static void CompleteHandshake(FakeChannel channel)
     {
         channel.Emit("""
-            {"version":"3.0","id":"hs1","traceId":"hs1","sessionId":"","pluginId":"",
-             "endpointId":"web-1","kind":"request","route":"bus.handshake","timeoutMs":5000,
-             "payload":{"version":"3.0","supportedVersions":["3.0"]}}
+             {"version":"3.0","id":"hs1","traceId":"hs1","sessionId":"","pluginId":"",
+             "endpointId":"","kind":"request","route":"bus.handshake","timeoutMs":5000}
             """);
     }
 
     [Test]
-    public async Task Handshake_ShouldBindIdentityAndMarkReady()
+    public async Task Handshake_ShouldAcknowledgePageReadinessWithoutPayload()
     {
         var channel = new FakeChannel();
         var transport = new WebView2Transport(Binding, channel);
@@ -42,29 +42,11 @@ public class WebView2TransportTest
 
         Assert.That(await WaitForAsync(() => channel.Posted.Count > 0), Is.True);
         Assert.That(transport.IsHandshaken, Is.True);
-        Assert.That(transport.NegotiatedVersion, Is.EqualTo(ProtocolVersion.Current));
-        Assert.That(channel.Posted[0], Does.Contain("negotiatedVersion").Or.Contain("pluginId"));
-    }
-
-    [Test]
-    public async Task Handshake_MajorMismatch_ShouldFailAndKeepClosed()
-    {
-        var channel = new FakeChannel();
-        var transport = new WebView2Transport(Binding, channel);
-        BusError? failed = null;
-        transport.HandshakeFailed += err => failed = err;
-
-        channel.Emit("""
-            {"version":"9.0","id":"hs1","traceId":"hs1","sessionId":"","pluginId":"",
-             "endpointId":"web-1","kind":"request","route":"bus.handshake","timeoutMs":5000,
-             "payload":{"version":"9.0","supportedVersions":["9.0"]}}
-            """);
-
-        Assert.That(await WaitForAsync(() => channel.Posted.Count > 0), Is.True);
-        Assert.That(transport.IsHandshaken, Is.False);
-        Assert.That(failed, Is.Not.Null);
-        Assert.That(failed!.Code, Is.EqualTo(ErrorCode.ProtocolMismatch));
-        Assert.That(channel.Posted[0], Does.Contain("ProtocolMismatch"));
+        var reply = JsonSerializer.Deserialize<Envelope>(channel.Posted[0], ProtocolJsonOptions.Default)!;
+        Assert.That(reply.Payload, Is.Null);
+        Assert.That(reply.PluginId, Is.Empty);
+        Assert.That(reply.SessionId, Is.Empty);
+        Assert.That(reply.EndpointId, Is.Empty);
     }
 
     [Test]

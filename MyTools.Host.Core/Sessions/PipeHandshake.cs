@@ -15,19 +15,15 @@ namespace MyTools.Host.Core.Sessions;
 
 /// <summary>
 /// Completes the named-pipe <c>bus.handshake</c> exchange on the host side: waits for the Node
-/// request, validates the one-shot bootstrap token against the expected process identity,
-/// negotiates the protocol version, and replies with the bound session identity.
+/// request and validates the one-shot bootstrap token against the expected process identity.
+/// Protocol compatibility is already enforced by manifest validation before process startup.
 /// </summary>
 public static class PipeHandshake
 {
-    public static readonly ProtocolVersion[] HostSupportedVersions = [ProtocolVersion.Current];
-
-    public static async Task<ProtocolVersion> CompleteAsHostAsync(
+    public static async Task CompleteAsHostAsync(
         IMessageTransport transport,
         BootstrapTokenValidator tokens,
         ProcessIdentity expectedIdentity,
-        string sessionId,
-        string endpointId,
         IIdGenerator ids,
         TimeSpan timeout,
         CancellationToken cancellationToken)
@@ -48,37 +44,19 @@ public static class PipeHandshake
             throw new HandshakeException(fail.Error!);
         }
 
-        var theirs = payload.SupportedVersions is { Count: > 0 }
-            ? payload.SupportedVersions
-            : payload.Version is { } single ? new[] { single } : Array.Empty<ProtocolVersion>();
-        var negotiated = HandshakeNegotiator.Negotiate(HostSupportedVersions, theirs);
-        if (!negotiated.IsSuccess)
-        {
-            var fail = BuildErrorReply(request, ids, negotiated.Error!);
-            await transport.SendAsync(fail, cancellationToken);
-            throw new HandshakeException(negotiated.Error!);
-        }
-
-        var successPayload = HandshakePayload.BuildSuccessResponse(
-            negotiated.Negotiated!.Value,
-            expectedIdentity.PluginId,
-            sessionId,
-            endpointId);
         var reply = new Envelope
         {
             Version = ProtocolVersion.Current,
             Id = ids.NewId(),
             CorrelationId = request.Id,
             TraceId = request.TraceId,
-            SessionId = sessionId,
-            PluginId = expectedIdentity.PluginId,
-            EndpointId = EndpointIds.Host,
+            SessionId = "",
+            PluginId = "",
+            EndpointId = "",
             Kind = MessageKind.Response,
             Route = Routes.Bus.Handshake,
-            Payload = JsonSerializer.SerializeToNode(successPayload, ProtocolJsonOptions.Default),
         };
         await transport.SendAsync(reply, cancellationToken);
-        return negotiated.Negotiated!.Value;
     }
 
     private static async Task<Envelope> WaitForHandshakeRequestAsync(
@@ -124,9 +102,9 @@ public static class PipeHandshake
             Id = ids.NewId(),
             CorrelationId = request.Id,
             TraceId = request.TraceId,
-            SessionId = request.SessionId,
-            PluginId = request.PluginId,
-            EndpointId = EndpointIds.Host,
+            SessionId = "",
+            PluginId = "",
+            EndpointId = "",
             Kind = MessageKind.Response,
             Route = Routes.Bus.Handshake,
             Error = error,

@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using MyTools.Host.Core.Security;
 using MyTools.Host.Core.Sessions;
@@ -20,29 +19,28 @@ public class PipeHandshakeTest
         new(99, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc), "settings");
 
     [Test]
-    public async Task CompleteAsHost_ValidToken_ShouldReplyWithBoundIdentity()
+    public async Task CompleteAsHost_ValidToken_ShouldReplyWithoutPayload()
     {
         var transport = new InMemoryTransport();
         var tokens = new BootstrapTokenValidator(() => Identity.CreationTime);
         var issued = tokens.Issue(Identity, TimeSpan.FromSeconds(30));
         var ids = new GuidIdGenerator();
 
-        var payload = HandshakePayload.BuildNamedPipeRequest(PipeHandshake.HostSupportedVersions, issued.Value);
+        var payload = HandshakePayload.BuildNamedPipeRequest(issued.Value);
         transport.Deliver(HandshakeRequest(payload));
 
-        var negotiated = await PipeHandshake.CompleteAsHostAsync(
-            transport, tokens, Identity, "sess-1", "node-main", ids, TimeSpan.FromSeconds(2), default);
+        await PipeHandshake.CompleteAsHostAsync(
+            transport, tokens, Identity, ids, TimeSpan.FromSeconds(2), default);
 
-        Assert.That(negotiated, Is.EqualTo(ProtocolVersion.Current));
         Assert.That(transport.Sent, Has.Count.EqualTo(1));
         var reply = transport.Sent.ToArray()[0];
         Assert.That(reply.Route, Is.EqualTo("bus.handshake"));
         Assert.That(reply.CorrelationId, Is.EqualTo("hs-1"));
         Assert.That(reply.Error, Is.Null);
-        var body = reply.Payload!.Deserialize<HandshakePayload>(ProtocolJsonOptions.Default)!;
-        Assert.That(body.PluginId, Is.EqualTo("settings"));
-        Assert.That(body.SessionId, Is.EqualTo("sess-1"));
-        Assert.That(body.EndpointId, Is.EqualTo("node-main"));
+        Assert.That(reply.Payload, Is.Null);
+        Assert.That(reply.PluginId, Is.Empty);
+        Assert.That(reply.SessionId, Is.Empty);
+        Assert.That(reply.EndpointId, Is.Empty);
     }
 
     [Test]
@@ -54,39 +52,16 @@ public class PipeHandshakeTest
         tokens.Validate(issued.Value, Identity); // consume once
         var ids = new GuidIdGenerator();
 
-        var payload = HandshakePayload.BuildNamedPipeRequest(PipeHandshake.HostSupportedVersions, issued.Value);
+        var payload = HandshakePayload.BuildNamedPipeRequest(issued.Value);
         transport.Deliver(HandshakeRequest(payload));
 
         var ex = Assert.ThrowsAsync<HandshakeException>(async () =>
             await PipeHandshake.CompleteAsHostAsync(
-                transport, tokens, Identity, "sess-1", "node-main", ids, TimeSpan.FromSeconds(2), default));
+                transport, tokens, Identity, ids, TimeSpan.FromSeconds(2), default));
 
         Assert.That(ex!.Error.Code, Is.EqualTo(ErrorCode.HandshakeFailed));
         Assert.That(transport.Sent, Has.Count.EqualTo(1));
         Assert.That(transport.Sent.ToArray()[0].Error!.Code, Is.EqualTo(ErrorCode.HandshakeFailed));
-    }
-
-    [Test]
-    public async Task CompleteAsHost_MajorMismatch_ShouldReturnProtocolMismatch()
-    {
-        var transport = new InMemoryTransport();
-        var tokens = new BootstrapTokenValidator(() => Identity.CreationTime);
-        var issued = tokens.Issue(Identity, TimeSpan.FromSeconds(30));
-        var ids = new GuidIdGenerator();
-
-        var payload = new HandshakePayload
-        {
-            Version = new ProtocolVersion(9, 0),
-            SupportedVersions = [new ProtocolVersion(9, 0)],
-            Token = issued.Value,
-        };
-        transport.Deliver(HandshakeRequest(payload));
-
-        var ex = Assert.ThrowsAsync<HandshakeException>(async () =>
-            await PipeHandshake.CompleteAsHostAsync(
-                transport, tokens, Identity, "sess-1", "node-main", ids, TimeSpan.FromSeconds(2), default));
-
-        Assert.That(ex!.Error.Code, Is.EqualTo(ErrorCode.ProtocolMismatch));
     }
 
     private static Envelope HandshakeRequest(HandshakePayload payload) => new()
@@ -95,8 +70,8 @@ public class PipeHandshakeTest
         Id = "hs-1",
         TraceId = "hs-1",
         SessionId = "",
-        PluginId = "settings",
-        EndpointId = "node-main",
+        PluginId = "",
+        EndpointId = "",
         Kind = MessageKind.Request,
         Route = "bus.handshake",
         TimeoutMs = 5000,

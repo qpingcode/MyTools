@@ -237,7 +237,7 @@ public partial class NodePluginDetailView : UserControl
             StaticLogger.LogWarning(ex,
                 "Node session handshake failed plugin={Plugin} code={Code}",
                 viewModel?.CurrentContext?.PluginId, ex.Error.Code);
-            ShowHandshakeError(ex.Error.Code);
+            await ShowBackendErrorAsync(ex);
         }
         catch (Exception ex)
         {
@@ -408,7 +408,6 @@ public partial class NodePluginDetailView : UserControl
             },
             enrichPluginCallPayload: EnrichPluginCallPayload);
         _webTransport.HandshakeSucceeded += OnWebHandshakeSucceeded;
-        _webTransport.HandshakeFailed += OnWebHandshakeFailed;
 
         _webEndpoint = new EndpointId(
             binding.PluginId, binding.SessionId, binding.EndpointId, IsNode: false);
@@ -431,28 +430,16 @@ public partial class NodePluginDetailView : UserControl
         return payload;
     }
 
-    private void OnWebHandshakeSucceeded(ProtocolVersion version)
+    private void OnWebHandshakeSucceeded()
     {
         _ = Dispatcher.InvokeAsync(() =>
         {
             CancelHandshakeTimeout();
             HideHandshakeError();
             StaticLogger.LogDebug(
-                "WebView handshake succeeded endpoint={Endpoint} version={Version}",
-                _webTransport?.Binding.EndpointId, version);
+                "WebView readiness handshake succeeded endpoint={Endpoint}",
+                _webTransport?.Binding.EndpointId);
             TrySendPageReadyMessages();
-        });
-    }
-
-    private void OnWebHandshakeFailed(BusError error)
-    {
-        _ = Dispatcher.InvokeAsync(() =>
-        {
-            CancelHandshakeTimeout();
-            StaticLogger.LogWarning(
-                "WebView handshake failed plugin={Plugin} code={Code} message={Message}",
-                viewModel?.CurrentContext?.PluginId, error.Code, error.Message);
-            ShowHandshakeError(error.Code);
         });
     }
 
@@ -483,7 +470,7 @@ public partial class NodePluginDetailView : UserControl
             StaticLogger.LogWarning(
                 "WebView handshake timed out plugin={Plugin}",
                 viewModel?.CurrentContext?.PluginId);
-            ShowHandshakeError(null);
+            ShowHandshakeError();
         });
     }
 
@@ -501,21 +488,17 @@ public partial class NodePluginDetailView : UserControl
         SendSearchMessage();
     }
 
-    private void ShowHandshakeError(ErrorCode? code)
+    private void ShowHandshakeError()
     {
         _handshakeFailed = true;
         CancelHandshakeTimeout();
         var title = localizationService.GetCaption(
             "PluginPage.HandshakeFailed",
             "Plugin page could not connect");
-        var detailKey = code == ErrorCode.ProtocolMismatch
-            ? "PluginPage.ProtocolMismatch"
-            : "PluginPage.HandshakeTimeout";
-        var detailDefault = code == ErrorCode.ProtocolMismatch
-            ? "This plugin is not compatible with the current MyTools version."
-            : "The plugin page did not complete protocol handshake.";
         HandshakeErrorTitle.Text = title;
-        HandshakeErrorDetail.Text = localizationService.GetCaption(detailKey, detailDefault);
+        HandshakeErrorDetail.Text = localizationService.GetCaption(
+            "PluginPage.HandshakeTimeout",
+            "The plugin page did not become ready.");
         BackendErrorDetails.Text = "";
         BackendErrorDetails.Visibility = Visibility.Collapsed;
         HandshakeErrorOverlay.Visibility = Visibility.Visible;
@@ -573,7 +556,6 @@ public partial class NodePluginDetailView : UserControl
         if (_webTransport is not null)
         {
             _webTransport.HandshakeSucceeded -= OnWebHandshakeSucceeded;
-            _webTransport.HandshakeFailed -= OnWebHandshakeFailed;
             _webTransport.Invalidate();
             _ = _webTransport.DisposeAsync();
             _webTransport = null;
@@ -749,7 +731,7 @@ public partial class NodePluginDetailView : UserControl
         if (!browserReady || _webTransport is not { IsHandshaken: true })
         {
             // Expected while the plugin window is still loading: SetContext / DataContextChanged
-            // can raise CurrentQuery before WebView2 navigation and protocol handshake finish.
+            // can raise CurrentQuery before WebView2 navigation and page readiness finish.
             // TrySendPageReadyMessages() resends initialize + search once both are ready.
             StaticLogger.LogDebug(
                 "SendHostEvent: deferred (browserReady={BrowserReady}, handshaken={Handshaken}), route={Route}",
@@ -761,7 +743,7 @@ public partial class NodePluginDetailView : UserControl
         var id = _ids.NewId();
         var envelope = new Envelope
         {
-            Version = _webTransport.NegotiatedVersion ?? ProtocolVersion.Current,
+            Version = ProtocolVersion.Current,
             Id = id,
             TraceId = id,
             SessionId = binding.SessionId,

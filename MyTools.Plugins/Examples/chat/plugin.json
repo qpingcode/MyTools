@@ -32,9 +32,6 @@
   "search": {
     "global": false
   },
-  "window": {
-    "showStatusBar": false
-  },
   "detail": {
     "type": "web",
     "entry": "web/index.html"

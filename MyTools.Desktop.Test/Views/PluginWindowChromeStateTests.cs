@@ -7,25 +7,18 @@ namespace MyTools.Desktop.Test.Views;
 [TestFixture]
 public class PluginWindowChromeStateTests
 {
-    [TestCase(true, 0)]
-    [TestCase(false, 8)]
-    public void PluginContentMargin_WhenRestored_PreservesWebViewResizeHitAreas(
-        bool isStatusBarVisible,
-        double expectedBottom)
+    [Test]
+    public void PluginContentMargin_WhenRestored_PreservesSideWebViewResizeHitAreas()
     {
-        var margin = PluginWindowLayoutMetrics.GetPluginContentMargin(
-            WindowState.Normal,
-            isStatusBarVisible);
+        var margin = PluginWindowLayoutMetrics.GetPluginContentMargin(WindowState.Normal);
 
-        Assert.That(margin, Is.EqualTo(new Thickness(8, 0, 8, expectedBottom)));
+        Assert.That(margin, Is.EqualTo(new Thickness(8, 0, 8, 0)));
     }
 
     [Test]
     public void PluginContentMargin_WhenMaximized_FillsWindow()
     {
-        var margin = PluginWindowLayoutMetrics.GetPluginContentMargin(
-            WindowState.Maximized,
-            isStatusBarVisible: false);
+        var margin = PluginWindowLayoutMetrics.GetPluginContentMargin(WindowState.Maximized);
 
         Assert.That(margin, Is.EqualTo(new Thickness(0)));
     }

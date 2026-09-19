@@ -346,8 +346,6 @@ public sealed class PluginSessionManager
                 controller.Transport!,
                 _tokens,
                 observed,
-                sessionId,
-                endpointId,
                 _ids,
                 _handshakeTimeout,
                 cancellationToken);

@@ -14,7 +14,6 @@ import { runPlugin, type PluginRuntime } from "./bootstrap.ts";
 import { asHostEnv, type PluginHostEnv, type PluginTheme } from "./hostEnv.ts";
 import { toActionManifest, type ActionDefinition, type ActionOutcome } from "./actions.ts";
 import {
-  EndpointIds,
   MessageKind,
   ProtocolVersion,
   Routes,
@@ -153,7 +152,7 @@ export class Plugin {
       traceId: crypto.randomUUID().replace(/-/g, "").slice(0, 32),
       sessionId: "",
       pluginId: "",
-      endpointId: EndpointIds.NodeMain,
+      endpointId: "",
       kind: MessageKind.Event,
       route,
       payload,

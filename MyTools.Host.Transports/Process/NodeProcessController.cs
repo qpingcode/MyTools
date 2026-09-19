@@ -93,7 +93,7 @@ public sealed class NodeProcessController : INodeProcessController
         PrependNodeDirectoryToPath(psi, _nodeExePath);
 
         _process = System.Diagnostics.Process.Start(psi)
-            ?? throw new System.Exception($"failed to start node: {_nodeExePath}");
+            ?? throw new Exception($"failed to start node: {_nodeExePath}");
 
         var startedProcess = _process;
         startedProcess.EnableRaisingEvents = true;
@@ -128,7 +128,7 @@ public sealed class NodeProcessController : INodeProcessController
             if (!string.IsNullOrEmpty(e.Data))
             {
                 AppendDiagnostic("stderr", e.Data);
-                System.Console.Error.WriteLine($"[node-stderr] {e.Data}");
+                Console.Error.WriteLine($"[node-stderr] {e.Data}");
             }
         };
         _process.OutputDataReceived += (sender, e) =>
@@ -136,7 +136,7 @@ public sealed class NodeProcessController : INodeProcessController
             if (!string.IsNullOrEmpty(e.Data))
             {
                 AppendDiagnostic("stdout", e.Data);
-                System.Console.Out.WriteLine($"[node-stdout] {e.Data}");
+                Console.Out.WriteLine($"[node-stdout] {e.Data}");
             }
         };
         _process.BeginErrorReadLine();
@@ -145,7 +145,7 @@ public sealed class NodeProcessController : INodeProcessController
         // Detect early exit: if the Node process exits before we write stdin, WriteLineAsync will hang.
         if (_process.HasExited)
         {
-            throw new System.Exception($"node exited immediately (code {_process.ExitCode}), entry: {_nodeEntryFullPath}");
+            throw new Exception($"node exited immediately (code {_process.ExitCode}), entry: {_nodeEntryFullPath}");
         }
 
         ObservedIdentity = new ProcessIdentity(

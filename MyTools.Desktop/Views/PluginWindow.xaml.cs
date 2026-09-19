@@ -101,9 +101,6 @@ public partial class PluginWindow
     {
         PluginId = plugin.PluginId.Value;
         PluginIcon = plugin.GetIcon();
-        PluginStatusBar.Visibility = plugin.ShowStatusBarInPluginWindow
-            ? Visibility.Visible
-            : Visibility.Collapsed;
         ApplyPluginContentMargin();
         viewModel.SetPluginIdentity(plugin, context);
     }
@@ -404,9 +401,7 @@ public partial class PluginWindow
 
     private void ApplyPluginContentMargin()
     {
-        PluginContentView.Margin = PluginWindowLayoutMetrics.GetPluginContentMargin(
-            WindowState,
-            PluginStatusBar.Visibility == Visibility.Visible);
+        PluginContentView.Margin = PluginWindowLayoutMetrics.GetPluginContentMargin(WindowState);
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)

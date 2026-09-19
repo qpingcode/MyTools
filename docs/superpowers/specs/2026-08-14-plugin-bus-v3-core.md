@@ -131,7 +131,7 @@ Created / Starting / Handshaking / Ready / Restarting
 
 ## 统一消息协议
 
-所有 transport 使用同一 envelope。插件模型限定为单入口，因此身份只包含插件、会话与 endpoint；新增 envelope 字段仅限可选、有默认行为的字段，且必须经握手协商，旧端按"忽略未知可选字段"规则兼容：
+所有 transport 使用同一 envelope。插件模型限定为单入口，因此身份只包含插件、会话与 endpoint；新增 envelope 字段仅限可选、有默认行为的字段，并随 manifest 协议版本更新，旧端按"忽略未知可选字段"规则兼容：
 
 ```json
 {
@@ -152,7 +152,7 @@ Created / Starting / Handshaking / Ready / Restarting
 
 字段规则：
 
-- `version`：该连接握手后协商出的协议主次版本；握手消息本身填写发送方支持的最高版本
+- `version`：插件 manifest 声明且由宿主在启动前校验的协议主次版本
 - `id`：本消息的全局唯一 ID
 - `correlationId`：响应指向原请求 ID；其他消息为 `null`（二期的 `bus.cancel` 复用此字段）
 - `traceId`：根请求 ID；嵌套调用沿用同一 trace，独立事件使用自身 ID
@@ -165,21 +165,15 @@ Created / Starting / Handshaking / Ready / Restarting
 - `payload`：路由对应的结构化数据
 - `error`：失败响应的标准错误对象，其他消息为 `null`
 
-除握手前的 `bus.handshake` 外，宿主不信任入站 envelope 声明的 `pluginId`、`sessionId` 或 `endpointId`。transport 必须用已认证 endpoint 的绑定值生成规范化消息后再交给总线。会话不匹配的消息直接丢弃并记录诊断，不能参与响应关联或路由。入站 `timeoutMs` 由宿主钳制到路由配置的上限，缺失或非法时使用路由默认值；格式非法的 `traceId` 由宿主重新生成。
+宿主不信任入站 envelope 声明的 `pluginId`、`sessionId` 或 `endpointId`。命名管道握手只验证 token，不向 Node 返回身份；握手成功后，transport 必须用宿主注册 endpoint 时的绑定值生成规范化消息后再交给总线。会话不匹配的消息直接丢弃并记录诊断，不能参与响应关联或路由。入站 `timeoutMs` 由宿主钳制到路由配置的上限，缺失或非法时使用路由默认值；格式非法的 `traceId` 由宿主重新生成。
 
 第一期超时为**每跳独立超时**：每条链路（宿主等待 Node、Node 等待宿主 capability）使用各自路由配置的超时，超时返回 `RequestTimeout`。跨跳的端到端预算扣减与传播见二期设计。超时后下游工作的结果未知，调用方不得自动重试；需要更强保证的路由必须单独定义幂等键或结果查询。
 
 命名管道采用 4 字节小端无符号长度前缀加 UTF-8 JSON 帧。`MaxFrameBytes` 默认为 4 MiB，路由可以设置更低但不能设置更高的上限。WebView2 transport 使用相同 envelope，由 WebView2 提供消息边界。只支持 JSON，不预留 `encoding` 字段或二进制帧类型，也不把大块二进制转为 base64 规避限制；超过路由上限的内容返回 `MessageTooLarge`。
 
-所有 transport 的连接都以 `bus.handshake` 开始：命名管道握手携带一次性令牌并验证进程身份，WebView2 握手仅协商版本，身份由宿主在创建 transport 时绑定。
+所有 transport 的连接都以 `bus.handshake` 开始，但不协商版本：宿主在启动 Node 和加载页面前已校验插件 manifest 的精确协议版本。命名管道握手携带一次性令牌，用于认证本次子进程连接；WebView2 握手不带 payload，只表示页面 JavaScript 已注册消息处理器，可以接收初始化和搜索事件。两种成功响应都不带 payload，身份始终由宿主在创建 transport 时绑定。
 
-握手先于版本协商，不能依赖协商结果来解析自身，其格式定义为固定的 bootstrap 契约：
-
-- 握手请求、响应和失败响应只使用一组永久冻结的字段：`version`、`id`、`correlationId`、`kind`、`route`、`payload`、`error`。任何未来版本（包括主版本变更）都不得改变这些字段的名称、类型和语义，只能在 payload 内新增可选字段。
-- 握手请求的 `version` 填发起方支持的最高版本，payload 携带其支持的全部主次版本。
-- 主版本不一致时返回 `ProtocolMismatch` 并关闭连接；接收方即使不支持对方主版本，也必须能解析 bootstrap 字段并完成该响应。
-- 主版本一致时选择双方共同支持的最高次版本；没有共同次版本则握手失败。响应 payload 携带协商结果或双方版本集合以便诊断。
-- 已协商连接忽略 envelope 和 payload 中未知的可选字段，未知 route 返回 `RouteNotFound`，缺少必填字段返回 `InvalidPayload`。
+握手请求、响应和失败响应继续使用冻结的 envelope 字段。已就绪连接忽略 envelope 和 payload 中未知的可选字段，未知 route 返回 `RouteNotFound`，缺少必填字段返回 `InvalidPayload`。
 
 协议交付语义为 at-most-once：不重放、不持久化队列、不在断线或重启后自动重试。连接断开时所有未完成请求失败，调用方只有在业务路由明确幂等时才能主动重试。
 
@@ -389,7 +383,7 @@ sequenceDiagram
 
 - envelope 和长度前缀帧的编解码
 - 帧解码器 fuzz：零长度、超大长度、截断、分片、粘包和非法 JSON
-- 协议版本与握手校验，包括不支持的主版本仍能按 bootstrap 契约解析并返回 `ProtocolMismatch`
+- manifest 协议版本校验、命名管道 token 握手和 WebView readiness 握手
 - 请求响应关联和 trace
 - 事件会话内广播和插件隔离
 - capability 声明校验和 DTO 校验

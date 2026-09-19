@@ -7,11 +7,11 @@ namespace MyTools.Protocol.Messages;
 /// <summary>
 /// The frozen Phase-1 message envelope carried by every transport. Field names, types and
 /// semantics are frozen; see design doc §统一消息协议. New fields may only be added as optional
-/// with defaults, accompanied by a minor-version bump negotiated at handshake.
+/// with defaults and a corresponding manifest protocol-version update.
 /// </summary>
 public sealed record class Envelope
 {
-    /// <summary>Negotiated protocol major.minor version (e.g. "3.0"). Handshake messages fill the sender's highest.</summary>
+    /// <summary>Manifest protocol major.minor version (e.g. "3.0").</summary>
     public ProtocolVersion Version { get; init; }
 
     /// <summary>Globally-unique message id.</summary>

@@ -464,7 +464,7 @@ public class NodePluginBusHostTest
             ObservedIdentity = new ProcessIdentity(7, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                 pluginId);
             var token = issueToken(ObservedIdentity);
-            var payload = HandshakePayload.BuildNamedPipeRequest(PipeHandshake.HostSupportedVersions, token);
+            var payload = HandshakePayload.BuildNamedPipeRequest(token);
             transport.Deliver(new Envelope
             {
                 Version = ProtocolVersion.Current,

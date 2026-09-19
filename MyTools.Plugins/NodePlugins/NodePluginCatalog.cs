@@ -170,7 +170,6 @@ public sealed class NodePluginCatalog
                     DetailEntry = detailEntry,
                     DetailEntryFullPath = detailEntryFullPath,
                     PinnedActions = fileModel.Detail?.PinnedActions ?? [],
-                    ShowStatusBarInPluginWindow = fileModel.Window?.ShowStatusBar ?? true,
                     Keywords = fileModel.Alias ?? [],
                     SearchGlobal = ResolveSearchGlobal(fileModel.Search),
                     HotKey = fileModel.HotKey,
@@ -252,7 +251,6 @@ public sealed class NodePluginCatalog
         public string? Entry { get; init; }
         public List<string>? Alias { get; init; }
         public SearchManifestFile? Search { get; init; }
-        public WindowManifestFile? Window { get; init; }
         public string? HotKey { get; init; }
         public List<string>? Capabilities { get; init; }
         public DetailManifestFile? Detail { get; init; }
@@ -265,11 +263,6 @@ public sealed class NodePluginCatalog
     private sealed class SearchManifestFile
     {
         public bool? Global { get; init; }
-    }
-
-    private sealed class WindowManifestFile
-    {
-        public bool? ShowStatusBar { get; init; }
     }
 
     /// <summary>

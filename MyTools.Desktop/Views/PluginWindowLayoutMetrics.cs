@@ -17,7 +17,7 @@ internal static class PluginWindowLayoutMetrics
         CaptionButtonsWidth +
         MinimumTitleIdentityRegionWidth;
 
-    public static Thickness GetPluginContentMargin(WindowState windowState, bool isStatusBarVisible)
+    public static Thickness GetPluginContentMargin(WindowState windowState)
     {
         if (windowState == WindowState.Maximized)
         {
@@ -30,7 +30,7 @@ internal static class PluginWindowLayoutMetrics
             ResizeBorderThickness,
             0,
             ResizeBorderThickness,
-            isStatusBarVisible ? 0 : ResizeBorderThickness);
+            0);
     }
 
     public static int DipToDevicePixels(double dip, double dpiScale)

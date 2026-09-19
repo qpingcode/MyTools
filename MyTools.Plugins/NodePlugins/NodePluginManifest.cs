@@ -31,8 +31,6 @@ public sealed class NodePluginManifest
     /// Empty means the existing single-default behavior.
     /// </summary>
     public IReadOnlyList<string> PinnedActions { get; init; } = [];
-    /// <summary>Show the host status bar in a standalone PluginWindow. Defaults to true.</summary>
-    public bool ShowStatusBarInPluginWindow { get; init; } = true;
     public IReadOnlyList<string> Keywords { get; init; } = [];
     /// <summary>Participate in unscoped (global) search. Default false when omitted in plugin.json.</summary>
     public bool SearchGlobal { get; init; }

@@ -2,8 +2,8 @@
  * v3 Web SDK: speaks protocol envelopes over chrome.webview.postMessage.
  * Host stamps identity; the page does not supply plugin/entry/session ids.
  *
- * Connections start with bus.handshake. Subsequent plugin.call.* envelopes use the
- * negotiated version. call("refresh") is sent as plugin.call.refresh.
+ * Connections start with a payload-free bus.handshake readiness signal. The host validates the
+ * plugin manifest version before loading the page. call("refresh") is sent as plugin.call.refresh.
  */
 
 import { mytoolsI18n } from "./i18n.ts";
@@ -116,14 +116,6 @@ function applyHostSideEffects(env: Envelope): void {
   }
 }
 
-function negotiatedVersionFrom(payload: unknown): string {
-  if (payload && typeof payload === "object" && "negotiatedVersion" in payload) {
-    const value = (payload as { negotiatedVersion?: unknown }).negotiatedVersion;
-    if (typeof value === "string" && value.length > 0) return value;
-  }
-  return ProtocolVersion;
-}
-
 /**
  * Creates a Web bus client. Registers the message listener immediately so host
  * events that arrive before `on()` are buffered and replayed.
@@ -138,7 +130,6 @@ export function createWebBusClient(options?: {
   const eventHandlers = new Set<(env: Envelope) => void>();
   const lastByRoute = new Map<string, Envelope>();
   const defaultTimeout = options?.timeoutMs ?? 30_000;
-  let wireVersion = ProtocolVersion;
   let handshakeError: Error | null = null;
 
   const onMessage = (event: MessageEvent) => {
@@ -165,10 +156,7 @@ export function createWebBusClient(options?: {
   let handshakeDone: Promise<void> = Promise.resolve();
   if (hasWebView()) {
     (window as any).chrome.webview.addEventListener("message", onMessage);
-    handshakeDone = handshake(HandshakeTimeoutMs)
-      .then((version) => {
-        wireVersion = version;
-      })
+    handshakeDone = signalPageReady(HandshakeTimeoutMs)
       .catch((err: unknown) => {
         handshakeError = err instanceof Error ? err : new Error(String(err));
         throw handshakeError;
@@ -203,7 +191,7 @@ export function createWebBusClient(options?: {
             },
           });
           post({
-            version: wireVersion,
+            version: ProtocolVersion,
             id,
             traceId: id,
             sessionId: "",
@@ -245,7 +233,7 @@ export function createWebBusClient(options?: {
   };
 }
 
-function handshake(timeoutMs: number): Promise<string> {
+function signalPageReady(timeoutMs: number): Promise<void> {
   const id = randomId();
   return new Promise((resolve, reject) => {
     const timer = window.setTimeout(() => {
@@ -260,7 +248,7 @@ function handshake(timeoutMs: number): Promise<string> {
       if (env.error) {
         reject(new Error(`${env.error.code}: ${env.error.message}`));
       } else {
-        resolve(negotiatedVersionFrom(env.payload));
+        resolve();
       }
     };
 
@@ -280,7 +268,6 @@ function handshake(timeoutMs: number): Promise<string> {
       kind: MessageKind.Request,
       route: Routes.Bus.Handshake,
       timeoutMs,
-      payload: { version: ProtocolVersion, supportedVersions: [ProtocolVersion] },
     });
   });
 }

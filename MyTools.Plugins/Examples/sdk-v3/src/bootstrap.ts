@@ -1,7 +1,6 @@
 /**
  * v3 Node SDK bootstrap entry. Reads the bootstrap line from stdin (pipePath\ttoken), connects to
- * the named pipe, completes bus.handshake (presenting the token and receiving bound identity),
- * and starts a HandlerRouter stamped with that identity.
+ * the named pipe, completes bus.handshake by presenting the token, and starts a HandlerRouter.
  *
  * This mirrors the C# NodeProcessController's spawn contract: the host writes one line to the
  * Node process's stdin — "<pipePath>\t<token>" — then waits for the Node side to connect the pipe
@@ -14,7 +13,6 @@ import { NodeTransport } from "./transport.ts";
 import { HandlerRouter } from "./router.ts";
 import {
   type Envelope,
-  EndpointIds,
   MessageKind,
   ProtocolVersion,
   Routes,
@@ -30,8 +28,6 @@ export interface PluginRuntime {
   close(): Promise<void>;
 }
 
-const SUPPORTED_VERSIONS = [ProtocolVersion];
-
 /**
  * Connects to the host pipe (reading the bootstrap line from stdin), completes handshake, and
  * returns a runtime whose router dispatches inbound plugin.call.* requests to the given handlers.
@@ -42,9 +38,8 @@ export async function runPlugin(handlers: PluginHandlers): Promise<PluginRuntime
   const transport = new NodeTransport();
   await transport.connect(pipePath);
 
-  const identity = await completeHandshake(transport, token);
+  await completeHandshake(transport, token);
   const router = new HandlerRouter({ send: (env: Envelope) => transport.send(env) });
-  router.setIdentity(identity);
 
   transport.onDisconnect(() => {
     process.exit(1);
@@ -86,14 +81,14 @@ async function readBootstrapLine(): Promise<{ pipePath: string; token: string }>
 }
 
 /**
- * Sends bus.handshake with the bootstrap token and waits for the host response that binds
- * plugin/session/endpoint identity. Rejects on HandshakeFailed / ProtocolMismatch / timeout.
+ * Sends bus.handshake with the bootstrap token and waits for host acknowledgement.
+ * Protocol compatibility has already been checked from the manifest before process startup.
  */
 export async function completeHandshake(
   transport: NodeTransport,
   token: string,
   timeoutMs = 10000,
-): Promise<{ pluginId: string; sessionId: string; endpointId: string }> {
+): Promise<void> {
   const id = randomBytes(16).toString("hex");
   const req: Envelope = {
     version: ProtocolVersion,
@@ -101,15 +96,11 @@ export async function completeHandshake(
     traceId: id,
     sessionId: "",
     pluginId: "",
-    endpointId: EndpointIds.NodeMain,
+    endpointId: "",
     kind: MessageKind.Request,
     route: Routes.Bus.Handshake,
     timeoutMs,
-    payload: {
-      version: ProtocolVersion,
-      supportedVersions: SUPPORTED_VERSIONS,
-      token,
-    },
+    payload: { token },
   };
 
   return new Promise((resolve, reject) => {
@@ -126,15 +117,7 @@ export async function completeHandshake(
         reject(new Error(`${env.error.code}: ${env.error.message}`));
         return;
       }
-      const p = (env.payload ?? {}) as Record<string, unknown>;
-      const pluginId = String(p.pluginId ?? "");
-      const sessionId = String(p.sessionId ?? "");
-      const endpointId = String(p.endpointId ?? EndpointIds.NodeMain);
-      if (!pluginId || !sessionId) {
-        reject(new Error("bus.handshake success response missing bound identity"));
-        return;
-      }
-      resolve({ pluginId, sessionId, endpointId });
+      resolve();
     });
 
     transport.send(req);

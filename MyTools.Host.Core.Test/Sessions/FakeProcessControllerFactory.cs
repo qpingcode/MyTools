@@ -39,7 +39,7 @@ internal sealed class FakeProcessController : INodeProcessController
             PluginId: pluginId);
         var token = issueToken(ObservedIdentity);
 
-        var payload = HandshakePayload.BuildNamedPipeRequest(PipeHandshake.HostSupportedVersions, token);
+        var payload = HandshakePayload.BuildNamedPipeRequest(token);
         transport.Deliver(new Envelope
         {
             Version = ProtocolVersion.Current,

@@ -73,6 +73,18 @@ public class PluginWindowTitleLayoutTests
     }
 
     [Test]
+    public void NewWindow_ShowsStatusBarByDefault()
+    {
+        using var services = new ServiceCollection().BuildServiceProvider();
+        using var viewModel = new PluginViewModel(services);
+        var window = new PluginWindow(viewModel);
+
+        var statusBar = (FrameworkElement?)window.FindName("PluginStatusBar");
+
+        Assert.That(statusBar?.Visibility, Is.EqualTo(Visibility.Visible));
+    }
+
+    [Test]
     public void Window_UsesNativeResizableChrome()
     {
         var services = new ServiceCollection().BuildServiceProvider();
