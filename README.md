@@ -32,9 +32,10 @@ MyTools is published as a Full build (bundled .NET and Node.js runtimes) and a L
 | --- | --- | --- | --- | --- |
 | **Full** | **Stable** | translator-local-v1 | Not published yet | Not published yet |
 | **Lite** | **Stable** | translator-local-v1 | Not published yet | Not published yet |
-| **Full** | **Beta** | 0.0.75 | [Download](https://github.com/qpingcode/MyTools/releases/download/v0.0.75/MyTools-0.0.75-windows-x64-full-setup.exe) | [Download](https://github.com/qpingcode/MyTools/releases/download/v0.0.75/MyTools-0.0.75-windows-x64-full-portable.zip) |
-| **Lite** | **Beta** | 0.0.75 | [Download](https://github.com/qpingcode/MyTools/releases/download/v0.0.75/MyTools-0.0.75-windows-x64-lite-setup.exe) | [Download](https://github.com/qpingcode/MyTools/releases/download/v0.0.75/MyTools-0.0.75-windows-x64-lite-portable.zip) |
+| **Full** | **Beta** | 0.0.76 | [Download](https://github.com/qpingcode/MyTools/releases/download/v0.0.76/MyTools-0.0.76-windows-x64-full-setup.exe) | [Download](https://github.com/qpingcode/MyTools/releases/download/v0.0.76/MyTools-0.0.76-windows-x64-full-portable.zip) |
+| **Lite** | **Beta** | 0.0.76 | [Download](https://github.com/qpingcode/MyTools/releases/download/v0.0.76/MyTools-0.0.76-windows-x64-lite-setup.exe) | [Download](https://github.com/qpingcode/MyTools/releases/download/v0.0.76/MyTools-0.0.76-windows-x64-lite-portable.zip) |
 <!-- mytools-downloads:end -->
+
 
 
 
