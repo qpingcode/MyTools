@@ -2270,6 +2270,36 @@
       }
     },
     {
+      "key": "Plugin.ApiTester.MaximizeResponse",
+      "defaultValue": "Maximize response",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/localization/i18n.ts",
+          "line": 804,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "最大化响应区域"
+      }
+    },
+    {
+      "key": "Plugin.ApiTester.RestoreRequestResponse",
+      "defaultValue": "Restore request and response panes",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/localization/i18n.ts",
+          "line": 808,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "恢复请求和响应区域"
+      }
+    },
+    {
       "key": "Plugin.ApiTester.ResizeRequestResponse",
       "defaultValue": "Drag to resize request and response panes; double-click to reset",
       "placeholders": [],

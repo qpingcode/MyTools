@@ -800,6 +800,14 @@ export const text = {
             defaultValue: 'Body',
             ...values,
         }),
+    MaximizeResponse: () =>
+        bus.i18n.t('Plugin.ApiTester.MaximizeResponse', {
+            defaultValue: 'Maximize response',
+        }),
+    RestoreRequestResponse: () =>
+        bus.i18n.t('Plugin.ApiTester.RestoreRequestResponse', {
+            defaultValue: 'Restore request and response panes',
+        }),
     Confirm: () => bus.i18n.t('Plugin.ApiTester.Confirm', {defaultValue: 'Confirm action'}),
     OverrideCollectionSettings: () => bus.i18n.t('Plugin.ApiTester.OverrideCollectionSettings', {defaultValue: 'Override global settings for this collection'}),
     RequestHistory: (values: {name: string}) => bus.i18n.t('Plugin.ApiTester.RequestHistory', {defaultValue: 'History · {{name}}', ...values}),

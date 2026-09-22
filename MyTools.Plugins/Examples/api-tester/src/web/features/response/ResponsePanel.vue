@@ -24,7 +24,10 @@ const props = defineProps<{
   index: number;
   requestId?: string;
   requestName?: string;
+  maximizable?: boolean;
+  maximized?: boolean;
 }>();
+const emit = defineEmits<{toggleMaximized: []}>();
 const t = useText();
 const {responsePanels: responsePanelSelections} = useWorkspaceContext();
 
@@ -104,6 +107,13 @@ const responsePanels = [
 function panelLabel(item: ResponsePanelId) {
   return item === ResponsePanelId.Body ? t.value.ResponseBody() : t.value[item]();
 }
+
+function toggleMaximizedFromToolbar(event: MouseEvent) {
+  const target = event.target;
+  if (!props.maximizable || target instanceof Element && target.closest('button, select, input, textarea, a')) return;
+  event.preventDefault();
+  emit('toggleMaximized');
+}
 </script>
 <template>
   <div class="response-panel">
@@ -111,7 +121,15 @@ function panelLabel(item: ResponsePanelId) {
     <p v-if="result?.warnings.length" class="muted">
       {{ t.ContentTypeWarning() }}
     </p>
-    <div class="response-toolbar">
+    <div class="response-toolbar" @dblclick="toggleMaximizedFromToolbar">
+      <IconButton
+          v-if="maximizable"
+          class="response-maximize-button"
+          :icon="maximized ? 'chevron-down' : 'chevron-up'"
+          :label="maximized ? t.RestoreRequestResponse() : t.MaximizeResponse()"
+          :aria-pressed="maximized"
+          @click="emit('toggleMaximized')"
+      />
       <div v-if="result" class="config-tabs response-tabs">
         <button
             v-for="item in responsePanels"

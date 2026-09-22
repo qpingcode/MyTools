@@ -150,6 +150,8 @@
   "Plugin.ApiTester.Missing": "Missing field",
   "Plugin.ApiTester.ResizeSidebar": "Drag to resize sidebar; double-click to reset",
   "Plugin.ApiTester.ResponseBody": "Body",
+  "Plugin.ApiTester.MaximizeResponse": "Maximize response",
+  "Plugin.ApiTester.RestoreRequestResponse": "Restore request and response panes",
   "Plugin.ApiTester.ResizeRequestResponse": "Drag to resize request and response panes; double-click to reset",
   "Plugin.ApiTester.VariableNotInEnvironment": "Variable is not defined or enabled in the current environment",
   "Plugin.ApiTester.VariableEmptyValue": "(empty value)",

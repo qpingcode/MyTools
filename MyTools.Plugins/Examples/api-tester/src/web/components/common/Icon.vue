@@ -7,6 +7,7 @@ const paths = {
   edit: 'm16 3 5 5-12 12-6 1 1-6ZM13 6l5 5',
   'arrow-up': 'M12 20V4m-6 6 6-6 6 6',
   'arrow-down': 'M12 4v16m-6-6 6 6 6-6',
+  'chevron-up': 'm6 15 6-6 6 6',
   'chevron-down': 'm6 9 6 6 6-6',
   'chevron-left': 'm15 6-6 6 6 6',
   'chevron-right': 'm9 6 6 6-6 6',

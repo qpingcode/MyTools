@@ -12,6 +12,7 @@ const root = ref<HTMLElement | null>(null);
 const requestPercent = ref(DefaultRequestPercent);
 const dragging = ref(false);
 const t = useText();
+const props = defineProps<{responseMaximized?: boolean}>();
 let startY = 0;
 let startPercent = DefaultRequestPercent;
 
@@ -44,12 +45,15 @@ function keyboard(event: KeyboardEvent) {
 }
 </script>
 <template>
-  <div ref="root" class="request-response-split" :class="{ 'resizing-vertical': dragging }"
-       :style="{ gridTemplateRows: `${requestPercent}fr ${SeparatorHeight}px ${PercentScale - requestPercent}fr` }">
-    <div class="request-pane">
+  <div ref="root" class="request-response-split"
+       :class="{ 'resizing-vertical': dragging, 'response-maximized': responseMaximized }"
+       :style="{ gridTemplateRows: responseMaximized
+       ? 'minmax(0, 1fr)'
+       : `${requestPercent}fr ${SeparatorHeight}px ${PercentScale - requestPercent}fr` }">
+    <div v-show="!responseMaximized" class="request-pane">
       <slot name="request"/>
     </div>
-    <div class="response-splitter" role="separator" aria-orientation="horizontal"
+    <div v-show="!responseMaximized" class="response-splitter" role="separator" aria-orientation="horizontal"
          :aria-label="t.ResizeRequestResponse()" :title="t.ResizeRequestResponse()"
          :aria-valuemin="MinimumRequestPercent" :aria-valuemax="MaximumRequestPercent"
          :aria-valuenow="requestPercent" tabindex="0"

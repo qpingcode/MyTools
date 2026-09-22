@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {provide} from 'vue';
+import {provide, ref} from 'vue';
 import {useWorkspace} from './features/workspace/useWorkspace.js';
 import {WorkspaceKey} from './features/workspace/context.js';
 import Sidebar from './features/sidebar/Sidebar.vue';
@@ -20,6 +20,7 @@ import {WorkspaceTool} from './features/workspace/workspaceToolTypes.js';
 const controller = useWorkspace();
 provide(WorkspaceKey, controller);
 const {t, workspaceReady, workspaceLoadFailed, loadWorkspace, tab, runnerActive, notificationText} = controller;
+const responseMaximized = ref(false);
 </script>
 <template>
   <div v-if="!workspaceReady" class="workspace-overlay" role="status" aria-live="polite">
@@ -46,7 +47,7 @@ const {t, workspaceReady, workspaceLoadFailed, loadWorkspace, tab, runnerActive,
       <section class="workspace">
         <RequestTabs/>
         <RunResults v-if="runnerActive"/>
-        <RequestResponseSplit v-else>
+        <RequestResponseSplit v-else :response-maximized="responseMaximized">
           <template #request>
             <RequestEditor v-if="tab"/>
             <div v-else class="empty-state">
@@ -70,6 +71,9 @@ const {t, workspaceReady, workspaceLoadFailed, loadWorkspace, tab, runnerActive,
                 :index="0"
                 :request-id="tab.request.id"
                 :request-name="tab.request.name"
+                maximizable
+                :maximized="responseMaximized"
+                @toggle-maximized="responseMaximized = !responseMaximized"
             >
               <template #empty>
                 <div class="empty-response">
