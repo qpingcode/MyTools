@@ -25,6 +25,7 @@ import {
     ScriptPhase,
     parseQuery,
     queryUrl,
+    urlForSending,
     type ApiRequest,
     type Pair,
     type Settings,
@@ -249,7 +250,7 @@ export async function executeRequest(request: ApiRequest, settings: Settings, va
         } : p);
         let address: URL;
         try {
-            address = new URL(queryUrl(replace(request.url, 'url'), params));
+            address = new URL(queryUrl(urlForSending(replace(request.url, 'url')), params));
         } catch (error) {
             if (error instanceof RequestError) throw error;
             throw new RequestError(ErrorKind.Configuration, 'url');

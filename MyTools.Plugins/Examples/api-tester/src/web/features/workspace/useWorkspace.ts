@@ -32,7 +32,6 @@ import {
     ErrorKind,
     emptyWorkspace,
     newRequest,
-    withDefaultHttpProtocol,
     parseQuery,
     queryUrl,
     type Workspace,
@@ -564,9 +563,7 @@ export function useWorkspace() {
     }
 
     async function changeUrl(event: Event, item: Tab) {
-        const value = withDefaultHttpProtocol(
-            (event.target as HTMLInputElement).value,
-        );
+        const value = (event.target as HTMLInputElement).value;
         if (
             item.request.params.some((pair) => !pair.enabled) &&
             !(await confirm(() => t.value.ReplaceParams()))
@@ -575,7 +572,7 @@ export function useWorkspace() {
             return;
         }
         try {
-            const parsed = parseQuery(value);
+            const parsed = parseQuery(value.trim());
             item.request.url = value;
             item.request.params = parsed;
         } catch {

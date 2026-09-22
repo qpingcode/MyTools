@@ -212,7 +212,7 @@ test('authors, executes, and manages an API request workspace', async ({app, pag
   const originalUrl = await urlInput.inputValue();
   await urlInput.fill('example.com/users?active=true');
   await urlInput.press('Tab');
-  assert.equal(await urlInput.inputValue(), 'https://example.com/users?active=true');
+  assert.equal(await urlInput.inputValue(), 'example.com/users?active=true');
   await urlInput.fill('{{baseUrl}}/users/{{userId}}');
   assert.deepEqual(await page.locator('.url-bar .variable-token').allTextContents(), ['{{baseUrl}}', '{{userId}}']);
   await page.screenshot({ path: 'bin/AgentVerification/variable-highlighting.png' });

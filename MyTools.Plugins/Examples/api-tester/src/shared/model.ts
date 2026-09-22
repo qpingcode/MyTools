@@ -312,12 +312,15 @@ export const newRequest = (id: string, name: string): ApiRequest => ({
 });
 
 const DefaultHttpProtocolPrefix = 'https://';
-const HttpProtocolPrefixPattern = /^https?:\/\//i;
+const ProtocolRelativePrefix = '//';
+const UrlSchemePattern = /^[a-z][a-z\d+.-]*:(?!\d+(?:[/?#]|$))/i;
 
-export function withDefaultHttpProtocol(url: string): string {
-    return url && !HttpProtocolPrefixPattern.test(url)
-        ? DefaultHttpProtocolPrefix + url
-        : url;
+export function urlForSending(url: string): string {
+    const trimmed = url.trim();
+    if (!trimmed || UrlSchemePattern.test(trimmed)) return trimmed;
+    return trimmed.startsWith(ProtocolRelativePrefix)
+        ? DefaultHttpProtocolPrefix.slice(0, -ProtocolRelativePrefix.length) + trimmed
+        : DefaultHttpProtocolPrefix + trimmed;
 }
 
 export function parseQuery(url: string): Pair[] {

@@ -14,7 +14,7 @@ import {WorkspaceStore} from '../src/backend/persistence/storage.mjs';
 import {createWorkspaceMutator} from '../src/web/features/workspace/workspacePersistence.js';
 import {
     newRequest,
-    withDefaultHttpProtocol,
+    urlForSending,
     defaultSettings,
     emptyWorkspace,
     parseQuery,
@@ -68,11 +68,33 @@ const requestAt = (url: string) => {
 };
 const send = (request: ApiRequest, jar = new CookieJar(), signal = new AbortController().signal) => executeRequest(request, request.settings || defaultSettings(), {}, jar, signal);
 
-test('URL input defaults to HTTPS when the HTTP protocol is omitted', () => {
-    assert.equal(withDefaultHttpProtocol('example.com/users'), 'https://example.com/users');
-    assert.equal(withDefaultHttpProtocol('http://example.com/users'), 'http://example.com/users');
-    assert.equal(withDefaultHttpProtocol('HTTPS://example.com/users'), 'HTTPS://example.com/users');
-    assert.equal(withDefaultHttpProtocol(''), '');
+test('send-time URL normalization trims edges and defaults missing protocols to HTTPS', () => {
+    assert.equal(urlForSending(' \r\n example.com/users?active=true \t'), 'https://example.com/users?active=true');
+    assert.equal(urlForSending(' http://example.com/users '), 'http://example.com/users');
+    assert.equal(urlForSending('\nHTTPS://example.com/users\r'), 'HTTPS://example.com/users');
+    assert.equal(urlForSending('localhost:3000/users'), 'https://localhost:3000/users');
+    assert.equal(urlForSending('//example.com/users'), 'https://example.com/users');
+    assert.equal(urlForSending(' mailto:test@example.com '), 'mailto:test@example.com');
+    assert.equal(urlForSending(' \n '), '');
+});
+
+test('sending trims the effective URL without changing the request URL', async () => {
+    let receivedUrl = '';
+    const server = await fixture((request, response) => {
+        receivedUrl = request.url || '';
+        response.end('ok');
+    });
+    const request = requestAt(` \r\n${server.url}/trimmed?active=true \t`);
+    const originalUrl = request.url;
+    request.params = parseQuery(urlForSending(originalUrl));
+    try {
+        const output = await send(request);
+        assert.equal(receivedUrl, '/trimmed?active=true');
+        assert.equal(request.url, originalUrl);
+        assert.equal(output.result.sentRequest?.url, `${server.url}/trimmed?active=true`);
+    } finally {
+        await server.close();
+    }
 });
 
 test('binary responses retain a base64 preview for hex and base64 views', async () => {
