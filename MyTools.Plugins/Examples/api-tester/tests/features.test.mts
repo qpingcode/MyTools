@@ -58,6 +58,10 @@ import {
     ResponseBodyViewKind,
     ResponsePanelId,
 } from '../src/web/features/workspace/workspaceTypes.js';
+import {
+    httpStatusCategory,
+    HttpStatusCategory,
+} from '../src/web/features/response/httpStatusCategory.js';
 
 const SuccessStatus = 200;
 const PollIntervalMs = 10;
@@ -84,6 +88,17 @@ test('workspace view state accepts known selections and discards invalid persist
     assert.deepEqual(restored.responsePanels, {first: ResponsePanelId.ResponseHeaders});
     assert.deepEqual(restored.responseBodyViews, {first: ResponseBodyViewKind.Tree});
     assert.deepEqual(parseWorkspaceViewState('{'), emptyWorkspaceViewState());
+});
+
+test('HTTP response statuses use semantic categories including custom codes', () => {
+    assert.equal(httpStatusCategory(100), HttpStatusCategory.Informational);
+    assert.equal(httpStatusCategory(200), HttpStatusCategory.Success);
+    assert.equal(httpStatusCategory(301), HttpStatusCategory.Redirection);
+    assert.equal(httpStatusCategory(404), HttpStatusCategory.ClientError);
+    assert.equal(httpStatusCategory(599), HttpStatusCategory.ServerError);
+    assert.equal(httpStatusCategory(99), HttpStatusCategory.Unknown);
+    assert.equal(httpStatusCategory(600), HttpStatusCategory.Unknown);
+    assert.equal(httpStatusCategory(undefined), HttpStatusCategory.Unknown);
 });
 
 async function fixture() {

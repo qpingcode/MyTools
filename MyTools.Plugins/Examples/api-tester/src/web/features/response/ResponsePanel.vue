@@ -17,6 +17,7 @@ import WorkspaceTools from '../workspace/WorkspaceTools.vue';
 import {WorkspaceTool} from '../workspace/workspaceToolTypes.js';
 import {useWorkspaceContext} from '../workspace/context.js';
 import {ResponsePanelId} from '../workspace/workspaceTypes.js';
+import {httpStatusCategory} from './httpStatusCategory.js';
 
 const props = defineProps<{
   result?: RequestResult;
@@ -149,6 +150,7 @@ function toggleMaximizedFromToolbar(event: MouseEvent) {
       <div v-if="result" class="response-toolbar-trailing">
         <div class="response-meta" :title="result.url">
           <span class="status-badge" :data-state="result.execution"
+                :data-status-category="httpStatusCategory(result.status)"
           >{{ result.status ?? execution(result.execution) }}
             {{ result.statusText }}</span
           ><span class="muted">{{

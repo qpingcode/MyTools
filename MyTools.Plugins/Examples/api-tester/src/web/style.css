@@ -15,6 +15,9 @@
     --interactive-text: #a8ceff;
     --danger: var(--mt-error, #f18484);
     --success: var(--mt-success, #62cba4);
+    --status-informational: var(--interactive-text);
+    --status-redirection: #e7b863;
+    --status-server-error: #ff6b81;
     /* Separate HTTP method hues, with brighter text on dark surfaces. */
     --method-get: #62cba4;
     --method-post: #e7b863;
@@ -29,6 +32,8 @@
 :root[data-theme='light'] {
     color-scheme: light;
     --interactive-text: #245fc0;
+    --status-redirection: #885b08;
+    --status-server-error: #c6283d;
     --method-get: #16734e;
     --method-post: #885b08;
     --method-put: #245fc0;
@@ -1541,19 +1546,42 @@ button.primary:hover:not(:disabled) {
 }
 
 .status-badge {
-    border: 1px solid var(--border);
-    background: var(--surface);
-    padding: 3px 7px;
-    border-radius: 4px;
+    --status-color: var(--muted);
+    border: 1px solid color-mix(in srgb, var(--status-color) 55%, var(--border));
+    background: color-mix(in srgb, var(--status-color) 14%, transparent);
+    color: var(--status-color);
+    padding: 4px 9px;
+    border-radius: 5px;
     font-size: 11px;
+    font-weight: 700;
 }
 
-.status-badge[data-state='complete'] {
-    color: var(--success);
+.status-badge[data-status-category='informational'] {
+    --status-color: var(--status-informational);
 }
 
-.status-badge[data-state='failed'] {
-    color: var(--danger);
+.status-badge[data-status-category='success'] {
+    --status-color: var(--success);
+}
+
+.status-badge[data-status-category='redirection'] {
+    --status-color: var(--status-redirection);
+}
+
+.status-badge[data-status-category='client-error'] {
+    --status-color: var(--danger);
+}
+
+.status-badge[data-status-category='server-error'] {
+    --status-color: var(--status-server-error);
+}
+
+.status-badge[data-status-category='unknown'][data-state='complete'] {
+    --status-color: var(--success);
+}
+
+.status-badge[data-status-category='unknown'][data-state='failed'] {
+    --status-color: var(--danger);
 }
 
 .response-toolbar {

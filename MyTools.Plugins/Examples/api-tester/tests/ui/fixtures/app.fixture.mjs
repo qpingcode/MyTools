@@ -52,6 +52,11 @@ async function createRuntime(workerIndex) {
       response.end(JSON.stringify({auth: request.headers.authorization || ''}));
       return;
     }
+    if (request.url === '/redirect-status') {
+      response.writeHead(301);
+      response.end();
+      return;
+    }
     if (!WebAssets.has(request.url)) {
       response.writeHead(404);
       response.end();
