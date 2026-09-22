@@ -92,11 +92,14 @@ test('authors, executes, and manages an API request workspace', async ({app, pag
   assert.equal(await page.locator('.collection-heading.selected').count(), 0);
   await page.locator('.collection-title').filter({ hasText: 'Users' }).click();
   assert.equal(await page.locator('.collection-heading.selected').count(), 1);
+  const usersToggle = page.locator('.collection-tree > .collection > .collection-heading .collection-toggle');
+  assert.equal(await usersToggle.getAttribute('aria-expanded'), 'false');
+  await page.locator('.collection-title').filter({ hasText: 'Users' }).click();
+  assert.equal(await usersToggle.getAttribute('aria-expanded'), 'true');
   await sidebar.getByRole('button', { name: 'New collection', exact: true }).waitFor();
   await page.locator('.request-row.selected .request-title').click();
   await sidebar.getByRole('button', { name: 'New collection', exact: true }).waitFor();
   assert.equal(await page.locator('.collection-heading.selected').count(), 0);
-  const usersToggle = page.locator('.collection-tree > .collection > .collection-heading .collection-toggle');
   assert.equal(await usersToggle.getAttribute('aria-expanded'), 'true');
   await usersToggle.click();
   assert.equal(await usersToggle.getAttribute('aria-expanded'), 'false');
@@ -286,8 +289,6 @@ test('authors, executes, and manages an API request workspace', async ({app, pag
   assert.equal(workspace.collections[0].requests.length, 2);
   await page.locator('.collection-title').filter({ hasText: 'Accounts' }).click();
   const accountsToggle = page.locator('.request-branches > .collection > .collection-heading .collection-toggle');
-  assert.equal(await accountsToggle.getAttribute('aria-expanded'), 'true');
-  await accountsToggle.click();
   assert.equal(await accountsToggle.getAttribute('aria-expanded'), 'false');
   await page.locator('aside').getByRole('button', { name: 'New request', exact: true }).click();
   const nestedSelectedRow = page.locator('.request-branches > .collection .request-row.selected');
@@ -483,6 +484,11 @@ test('authors, executes, and manages an API request workspace', async ({app, pag
   await page.getByRole('button', { name: 'History · User', exact: true }).click();
   const requestHistoryDialog = page.getByRole('dialog', { name: 'History · User', exact: true });
   await requestHistoryDialog.locator('.history-row').first().waitFor();
+  await requestHistoryDialog.getByRole('button', {name: 'Response headers', exact: true}).click();
+  assert.equal(await requestHistoryDialog.getByRole('button', {name: 'Response headers', exact: true}).getAttribute('aria-pressed'), 'true');
+  const mainResponsePanel = response.locator(':scope > .response-panel');
+  const mainResponseTabs = mainResponsePanel.locator(':scope > .response-toolbar > .response-tabs');
+  assert.equal(await mainResponseTabs.getByRole('button', {name: 'Test results', exact: true}).getAttribute('aria-pressed'), 'true');
   assert.equal(await requestHistoryDialog.locator('.history-row').filter({hasText: 'Login'}).count(), 0);
   const requestHistorySnapshot = structuredClone(historyEntries);
   const userRequestId = workspace.collections[0].requests.find(request => request.name === 'User').id;

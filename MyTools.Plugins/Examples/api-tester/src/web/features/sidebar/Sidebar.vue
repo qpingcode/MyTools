@@ -104,11 +104,19 @@ function expandWithAncestors(id: string | undefined) {
   if (changed) expanded.value = next;
 }
 
-watch(collectionId, id => expandWithAncestors(id), {immediate: true});
+let selectingCollectionNode = false;
+watch(collectionId, id => {
+  if (!selectingCollectionNode) expandWithAncestors(id);
+}, {immediate: true, flush: 'sync'});
 
 function selectCollectionNode(id: string) {
-  selectCollection(id);
-  expandWithAncestors(id);
+  selectingCollectionNode = true;
+  try {
+    selectCollection(id);
+  } finally {
+    selectingCollectionNode = false;
+  }
+  toggleCollection(id);
 }
 
 function toggleCollection(id: string) {

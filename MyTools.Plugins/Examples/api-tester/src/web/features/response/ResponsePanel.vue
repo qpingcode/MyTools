@@ -93,7 +93,9 @@ async function copyHeaders() {
 }
 
 const fallbackPanel = ref(ResponsePanelId.Body);
-const viewStateRequestId = computed(() => props.requestId || props.result?.requestId || '');
+// Only the main request editor passes requestId. History and runner panels keep
+// local selections so inspecting a snapshot cannot change the main response view.
+const viewStateRequestId = computed(() => props.requestId || '');
 const panel = computed({
   get: () => viewStateRequestId.value
       ? responsePanelSelections.value[viewStateRequestId.value] ?? ResponsePanelId.Body
