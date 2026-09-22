@@ -2,7 +2,7 @@ import {
     DialogKind,
     Choice,
     RequestPanelId,
-    ResponseBodyViewKind,
+    ResponseBodyFormat,
     ResponsePanelId,
     type Tab,
 } from './workspaceTypes.js';
@@ -62,7 +62,8 @@ export function useWorkspace() {
     const expandedCollectionIds = ref(new Set<string>());
     const requestPanels = ref<Record<string, RequestPanelId>>({});
     const responsePanels = ref<Record<string, ResponsePanelId>>({});
-    const responseBodyViews = ref<Record<string, ResponseBodyViewKind>>({});
+    const responseBodyFormats = ref<Record<string, ResponseBodyFormat>>({});
+    const responseBodyPreviews = ref<Record<string, boolean>>({});
     const runnerOpen = ref(false);
     const runnerActive = ref(false);
     const revealRequestId = ref('');
@@ -189,7 +190,8 @@ export function useWorkspace() {
         );
         requestPanels.value = saved.requestPanels;
         responsePanels.value = saved.responsePanels;
-        responseBodyViews.value = saved.responseBodyViews;
+        responseBodyFormats.value = saved.responseBodyFormats;
+        responseBodyPreviews.value = saved.responseBodyPreviews;
     }
 
     let pendingViewStateSave = Promise.resolve();
@@ -204,7 +206,7 @@ export function useWorkspace() {
     }
 
     watch(
-        [documentTabIds, active, expandedCollectionIds, requestPanels, responsePanels, responseBodyViews],
+        [documentTabIds, active, expandedCollectionIds, requestPanels, responsePanels, responseBodyFormats, responseBodyPreviews],
         () => {
             if (!workspaceReady.value) return;
             const requestIds = new Set(workspace.value.collections.flatMap(owner =>
@@ -212,7 +214,7 @@ export function useWorkspace() {
             ));
             const collectionIds = new Set(workspace.value.collections.map(owner => owner.id));
             const openTabIds = new Set(tabs.value.map(item => item.request.id));
-            const filterRecord = <T extends string>(values: Record<string, T>) =>
+            const filterRecord = <T>(values: Record<string, T>) =>
                 Object.fromEntries(Object.entries(values).filter(([id]) =>
                     requestIds.has(id) || openTabIds.has(id),
                 ));
@@ -226,7 +228,8 @@ export function useWorkspace() {
                 expandedCollectionIds: [...expandedCollectionIds.value].filter(id => collectionIds.has(id)),
                 requestPanels: filterRecord(requestPanels.value),
                 responsePanels: filterRecord(responsePanels.value),
-                responseBodyViews: filterRecord(responseBodyViews.value),
+                responseBodyFormats: filterRecord(responseBodyFormats.value),
+                responseBodyPreviews: filterRecord(responseBodyPreviews.value),
             }).catch(error => console.error('Could not persist API Tester view state.', error));
         },
         {deep: true, flush: 'sync'},
@@ -736,7 +739,8 @@ export function useWorkspace() {
         expandedCollectionIds,
         requestPanels,
         responsePanels,
-        responseBodyViews,
+        responseBodyFormats,
+        responseBodyPreviews,
         runnerOpen,
         runnerActive,
         revealRequestId,
@@ -821,7 +825,7 @@ export function useWorkspace() {
         Choice,
         RequestPanelId,
         ResponsePanelId,
-        ResponseBodyViewKind,
+        ResponseBodyFormat,
         Routes,
         HttpMethod,
         BodyKind,

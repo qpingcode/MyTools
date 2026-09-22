@@ -38,6 +38,7 @@ async function createRuntime(workerIndex) {
     en: JSON.parse(await readFile('i18n/locales/en-US.json', 'utf8')),
     zh: JSON.parse(await readFile('i18n/locales/zh-CN.json', 'utf8')),
   };
+  let changingResponseCount = 0;
   const server = http.createServer(async (request, response) => {
     if (request.url === '/login') {
       response.writeHead(FixtureStatus, {
@@ -50,6 +51,33 @@ async function createRuntime(workerIndex) {
     if (request.url === '/user') {
       response.writeHead(FixtureStatus, {'Content-Type': 'application/json'});
       response.end(JSON.stringify({auth: request.headers.authorization || ''}));
+      return;
+    }
+    if (request.url === '/html-response') {
+      response.writeHead(FixtureStatus, {'Content-Type': 'text/html'});
+      response.end('<!doctype html><html lang="en"><body><h1>Preview fixture</h1><script>document.body.dataset.script="ran"</script></body></html>');
+      return;
+    }
+    if (request.url === '/xml-response') {
+      response.writeHead(FixtureStatus, {'Content-Type': 'application/xml'});
+      response.end('<?xml version="1.0"?><root><item>value</item></root>');
+      return;
+    }
+    if (request.url === '/javascript-response') {
+      response.writeHead(FixtureStatus, {'Content-Type': 'text/javascript'});
+      response.end('// fixture\nconst answer = 42;\nconst ready = true;\nconsole.log(`answer: ${answer}`);');
+      return;
+    }
+    if (request.url === '/changing-response') {
+      changingResponseCount++;
+      const html = changingResponseCount % 2 === 1;
+      response.writeHead(FixtureStatus, {'Content-Type': html ? 'text/html' : 'application/xml'});
+      response.end(html ? '<!doctype html><html><body>Changing preview</body></html>' : '<root>Changed format</root>');
+      return;
+    }
+    if (request.url === '/text-response') {
+      response.writeHead(FixtureStatus, {'Content-Type': 'text/plain'});
+      response.end('plain response');
       return;
     }
     if (request.url === '/redirect-status') {

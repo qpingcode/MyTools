@@ -444,6 +444,30 @@ dialog.workspace-tools-dialog {
     color: var(--method-patch);
 }
 
+.syntax-property,
+.syntax-tag,
+.syntax-keyword {
+    color: var(--method-put);
+}
+
+.syntax-string {
+    color: var(--method-get);
+}
+
+.syntax-number {
+    color: var(--method-post);
+}
+
+.syntax-literal,
+.syntax-attribute {
+    color: var(--method-patch);
+}
+
+.syntax-comment,
+.syntax-punctuation {
+    color: var(--muted);
+}
+
 .response-code mark {
     background: var(--method-post);
     color: #15171b;
@@ -1011,7 +1035,12 @@ dialog.workspace-tools-dialog {
 }
 
 .request-response-split.response-maximized > .workspace-scroll {
-    grid-row: 1;
+    grid-row: 2;
+}
+
+.request-response-split.response-maximized .config-bar,
+.request-response-split.response-maximized .config-panel {
+    display: none;
 }
 
 .request-response-split > .workspace-scroll > .response {
@@ -1717,6 +1746,12 @@ button.primary:hover:not(:disabled) {
     width: var(--response-search-input-width);
 }
 
+.response-format-select {
+    min-width: 112px;
+    font-size: 11px;
+    padding: 4px 24px 4px 8px;
+}
+
 .body-toolbar button {
     font-size: 11px;
     padding: 4px 8px;
@@ -1756,6 +1791,23 @@ pre {
     padding: 12px 14px;
     background: var(--surface-muted);
     border-radius: 5px;
+}
+
+.html-response-preview {
+    display: block;
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    margin-top: 8px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: white;
+}
+
+.response-body-content:has(> .html-response-preview) {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 table {

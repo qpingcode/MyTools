@@ -3163,6 +3163,69 @@
       }
     },
     {
+      "key": "Plugin.ApiTester.ResponseFormat",
+      "defaultValue": "Response format",
+      "placeholders": [],
+      "references": [{"filePath": "src/web/localization/i18n.ts", "line": 52, "column": 5}],
+      "existingTranslations": {"zh-CN": "响应格式"}
+    },
+    {
+      "key": "Plugin.ApiTester.AutoFormat",
+      "defaultValue": "Auto ({{format}})",
+      "placeholders": ["format"],
+      "references": [{"filePath": "src/web/localization/i18n.ts", "line": 53, "column": 5}],
+      "existingTranslations": {"zh-CN": "自动（{{format}}）"}
+    },
+    {
+      "key": "Plugin.ApiTester.Xml",
+      "defaultValue": "XML",
+      "placeholders": [],
+      "references": [{"filePath": "src/web/localization/i18n.ts", "line": 54, "column": 5}],
+      "existingTranslations": {"zh-CN": "XML"}
+    },
+    {
+      "key": "Plugin.ApiTester.Html",
+      "defaultValue": "HTML",
+      "placeholders": [],
+      "references": [{"filePath": "src/web/localization/i18n.ts", "line": 55, "column": 5}],
+      "existingTranslations": {"zh-CN": "HTML"}
+    },
+    {
+      "key": "Plugin.ApiTester.JavaScript",
+      "defaultValue": "JavaScript",
+      "placeholders": [],
+      "references": [{"filePath": "src/web/localization/i18n.ts", "line": 67, "column": 5}],
+      "existingTranslations": {"zh-CN": "JavaScript"}
+    },
+    {
+      "key": "Plugin.ApiTester.Preview",
+      "defaultValue": "Preview",
+      "placeholders": [],
+      "references": [{"filePath": "src/web/localization/i18n.ts", "line": 56, "column": 5}],
+      "existingTranslations": {"zh-CN": "预览"}
+    },
+    {
+      "key": "Plugin.ApiTester.PreviewUnavailable",
+      "defaultValue": "The current response format cannot be previewed.",
+      "placeholders": [],
+      "references": [{"filePath": "src/web/localization/i18n.ts", "line": 69, "column": 5}],
+      "existingTranslations": {"zh-CN": "当前响应格式不支持预览。"}
+    },
+    {
+      "key": "Plugin.ApiTester.HtmlPreview",
+      "defaultValue": "HTML response preview",
+      "placeholders": [],
+      "references": [{"filePath": "src/web/localization/i18n.ts", "line": 57, "column": 5}],
+      "existingTranslations": {"zh-CN": "HTML 响应预览"}
+    },
+    {
+      "key": "Plugin.ApiTester.InvalidJsonPreview",
+      "defaultValue": "This response is not valid JSON and cannot be shown as a tree.",
+      "placeholders": [],
+      "references": [{"filePath": "src/web/localization/i18n.ts", "line": 58, "column": 5}],
+      "existingTranslations": {"zh-CN": "此响应不是有效的 JSON，无法以树形结构预览。"}
+    },
+    {
       "key": "Plugin.ApiTester.ExpandAll",
       "defaultValue": "Expand all",
       "placeholders": [],

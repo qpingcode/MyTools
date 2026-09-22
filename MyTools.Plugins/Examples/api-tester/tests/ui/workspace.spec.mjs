@@ -509,11 +509,20 @@ test('authors, executes, and manages an API request workspace', async ({app, pag
   const responseBodyToolbar = page.locator('.response .body-toolbar');
   const responseSearchInput = responseBodyToolbar.getByRole('textbox', {name: 'Search response', exact: true});
   await responseSearchInput.waitFor();
-  const rawButtonBounds = await responseBodyToolbar.getByRole('button', {name: 'Raw', exact: true}).boundingBox();
+  const formatSelect = responseBodyToolbar.getByRole('combobox', {name: 'Response format', exact: true});
+  assert.equal(await formatSelect.inputValue(), 'auto');
+  assert.equal((await formatSelect.locator('option:checked').textContent()).trim(), 'Auto (JSON)');
+  const formatSelectBounds = await formatSelect.boundingBox();
   const responseSearchBounds = await responseSearchInput.boundingBox();
-  assert.ok(rawButtonBounds && responseSearchBounds && responseSearchBounds.x > rawButtonBounds.x);
+  assert.ok(formatSelectBounds && responseSearchBounds && responseSearchBounds.x > formatSelectBounds.x);
   assert.equal(responseSearchBounds.width, ResponseSearchInputWidth);
-  await page.locator('.response').getByRole('button', { name: 'JSON tree', exact: true }).click();
+  const previewButton = responseBodyToolbar.getByRole('button', {name: 'Preview', exact: true});
+  assert.equal(await previewButton.isEnabled(), true);
+  await formatSelect.selectOption('xml');
+  assert.equal(await previewButton.isDisabled(), true);
+  await formatSelect.selectOption('json');
+  assert.equal(await previewButton.isEnabled(), true);
+  await previewButton.click();
   await page.locator('.response').getByRole('button', { name: 'Collapse all', exact: true }).click();
   assert.equal(await page.locator('.response .json-tree details').first().evaluate(element => element.open), false);
   await page.locator('.response').getByRole('button', { name: 'Expand all', exact: true }).click();
@@ -521,6 +530,12 @@ test('authors, executes, and manages an API request workspace', async ({app, pag
   assert.equal(await page.locator('.response mark').count(), 1);
   await page.locator('.response').getByRole('button', { name: 'Next', exact: true }).click();
   assert.equal(await page.locator('.response mark.active-match').count(), 1);
+  await previewButton.click();
+  await formatSelect.selectOption('html');
+  assert.equal(await previewButton.isEnabled(), true);
+  await previewButton.click();
+  await page.locator('.response iframe[title="HTML response preview"]').waitFor();
+  await formatSelect.selectOption('auto');
   });
 
   const importButton = page.locator('.app-header').getByRole('button', { name: 'Import', exact: true });

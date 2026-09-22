@@ -43,15 +43,21 @@ test('resizes both workspace dividers with pointer and keyboard input', async ({
   assert.equal(await responseDivider.getAttribute('aria-valuenow'), initialRequestPercent);
 
   const restoredRequestHeight = (await requestPane.boundingBox()).height;
+  const urlBar = page.locator('.url-bar');
+  const requestHeading = page.locator('.request-heading');
+  const configBar = page.locator('.config-bar');
   const maximizeResponse = page.getByRole('button', {name: 'Maximize response', exact: true});
   assert.equal(await page.locator('.response-toolbar > button').first().getAttribute('aria-label'), 'Maximize response');
   await maximizeResponse.click();
-  await requestPane.waitFor({state: 'hidden'});
+  await urlBar.waitFor({state: 'visible'});
+  await requestHeading.waitFor({state: 'visible'});
+  await configBar.waitFor({state: 'hidden'});
   await responseDivider.waitFor({state: 'hidden'});
   const restorePanes = page.getByRole('button', {name: 'Restore request and response panes', exact: true});
   assert.equal(await restorePanes.getAttribute('aria-pressed'), 'true');
   await restorePanes.click();
-  await requestPane.waitFor({state: 'visible'});
+  await requestHeading.waitFor({state: 'visible'});
+  await configBar.waitFor({state: 'visible'});
   assert.equal(Math.round((await requestPane.boundingBox()).height), Math.round(restoredRequestHeight));
 
   const responseToolbar = page.locator('.response-toolbar');
@@ -60,10 +66,13 @@ test('resizes both workspace dividers with pointer and keyboard input', async ({
     return {x: bounds.width / 2, y: bounds.height / 2};
   };
   await responseToolbar.dblclick({position: await toolbarCenter()});
-  await requestPane.waitFor({state: 'hidden'});
+  await urlBar.waitFor({state: 'visible'});
+  await requestHeading.waitFor({state: 'visible'});
+  await configBar.waitFor({state: 'hidden'});
   await page.getByRole('button', {name: 'Restore request and response panes', exact: true}).waitFor();
   await responseToolbar.dblclick({position: await toolbarCenter()});
-  await requestPane.waitFor({state: 'visible'});
+  await requestHeading.waitFor({state: 'visible'});
+  await configBar.waitFor({state: 'visible'});
   await page.getByRole('button', {name: 'Maximize response', exact: true}).waitFor();
   assert.deepEqual(errors, []);
 });

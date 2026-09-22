@@ -55,7 +55,7 @@ import {
 } from '../src/web/features/workspace/workspaceViewState.js';
 import {
     RequestPanelId,
-    ResponseBodyViewKind,
+    ResponseBodyFormat,
     ResponsePanelId,
 } from '../src/web/features/workspace/workspaceTypes.js';
 import {
@@ -77,7 +77,8 @@ test('workspace view state accepts known selections and discards invalid persist
         expandedCollectionIds: ['root', false],
         requestPanels: {first: RequestPanelId.Headers, second: 'Missing'},
         responsePanels: {first: ResponsePanelId.ResponseHeaders, second: 'Missing'},
-        responseBodyViews: {first: ResponseBodyViewKind.Tree, second: 'Missing'},
+        responseBodyFormats: {first: ResponseBodyFormat.Json, second: 'Missing'},
+        responseBodyPreviews: {first: true, second: 'Missing'},
     }));
 
     assert.deepEqual(restored.openRequestIds, ['first', 'second']);
@@ -86,7 +87,18 @@ test('workspace view state accepts known selections and discards invalid persist
     assert.deepEqual(restored.expandedCollectionIds, ['root']);
     assert.deepEqual(restored.requestPanels, {first: RequestPanelId.Headers});
     assert.deepEqual(restored.responsePanels, {first: ResponsePanelId.ResponseHeaders});
-    assert.deepEqual(restored.responseBodyViews, {first: ResponseBodyViewKind.Tree});
+    assert.deepEqual(restored.responseBodyFormats, {first: ResponseBodyFormat.Json});
+    assert.deepEqual(restored.responseBodyPreviews, {first: true});
+
+    const migrated = parseWorkspaceViewState({version: WorkspaceViewStateVersion, responseBodyViews: {
+        first: 'formatted',
+        second: 'tree',
+        third: 'missing',
+    }});
+    assert.deepEqual(migrated.responseBodyFormats, {
+        first: ResponseBodyFormat.Json,
+        second: ResponseBodyFormat.Json,
+    });
     assert.deepEqual(parseWorkspaceViewState('{'), emptyWorkspaceViewState());
 });
 

@@ -1,6 +1,6 @@
 import {
     RequestPanelId,
-    ResponseBodyViewKind,
+    ResponseBodyFormat,
     ResponsePanelId,
 } from './workspaceTypes.js';
 import {emptyWorkspace, type ApiRequest} from '../../../shared/model.js';
@@ -8,6 +8,8 @@ import {validateWorkspace} from '../../../shared/workspaceValidation.js';
 
 export const WorkspaceViewStateVersion = 1;
 const DetachedRequestValidationCollectionIdPrefix = 'api-tester:view-state-owner';
+const LegacyFormattedResponseBodyView = 'formatted';
+const LegacyTreeResponseBodyView = 'tree';
 
 export interface WorkspaceViewState {
     version: typeof WorkspaceViewStateVersion;
@@ -17,7 +19,8 @@ export interface WorkspaceViewState {
     expandedCollectionIds: string[];
     requestPanels: Record<string, RequestPanelId>;
     responsePanels: Record<string, ResponsePanelId>;
-    responseBodyViews: Record<string, ResponseBodyViewKind>;
+    responseBodyFormats: Record<string, ResponseBodyFormat>;
+    responseBodyPreviews: Record<string, boolean>;
 }
 
 export function emptyWorkspaceViewState(): WorkspaceViewState {
@@ -29,7 +32,8 @@ export function emptyWorkspaceViewState(): WorkspaceViewState {
         expandedCollectionIds: [],
         requestPanels: {},
         responsePanels: {},
-        responseBodyViews: {},
+        responseBodyFormats: {},
+        responseBodyPreviews: {},
     };
 }
 
@@ -64,6 +68,26 @@ function enumRecord<T extends string>(value: unknown, allowed: readonly T[]): Re
     return Object.fromEntries(entries);
 }
 
+function booleanRecord(value: unknown): Record<string, boolean> {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+    return Object.fromEntries(Object.entries(value).filter(
+        (entry): entry is [string, boolean] => typeof entry[1] === 'boolean',
+    ));
+}
+
+function responseBodyFormats(value: Record<string, unknown>): Record<string, ResponseBodyFormat> {
+    const current = enumRecord(value.responseBodyFormats, Object.values(ResponseBodyFormat));
+    if (Object.keys(current).length || !value.responseBodyViews || typeof value.responseBodyViews !== 'object') return current;
+    const migrated: Record<string, ResponseBodyFormat> = {};
+    for (const [requestId, legacy] of Object.entries(value.responseBodyViews)) {
+        if (legacy === ResponseBodyFormat.Raw) migrated[requestId] = ResponseBodyFormat.Raw;
+        if (legacy === LegacyFormattedResponseBodyView || legacy === LegacyTreeResponseBodyView) {
+            migrated[requestId] = ResponseBodyFormat.Json;
+        }
+    }
+    return migrated;
+}
+
 export function parseWorkspaceViewState(source: unknown): WorkspaceViewState {
     if (!source) return emptyWorkspaceViewState();
     try {
@@ -77,7 +101,8 @@ export function parseWorkspaceViewState(source: unknown): WorkspaceViewState {
             expandedCollectionIds: stringList(value.expandedCollectionIds),
             requestPanels: enumRecord(value.requestPanels, Object.values(RequestPanelId)),
             responsePanels: enumRecord(value.responsePanels, Object.values(ResponsePanelId)),
-            responseBodyViews: enumRecord(value.responseBodyViews, Object.values(ResponseBodyViewKind)),
+            responseBodyFormats: responseBodyFormats(value),
+            responseBodyPreviews: booleanRecord(value.responseBodyPreviews),
         };
     } catch {
         return emptyWorkspaceViewState();

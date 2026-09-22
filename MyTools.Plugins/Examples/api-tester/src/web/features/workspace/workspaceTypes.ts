@@ -31,10 +31,13 @@ export enum ResponsePanelId {
     ScriptConsole = 'ScriptConsole',
 }
 
-export enum ResponseBodyViewKind {
+export enum ResponseBodyFormat {
+    Auto = 'auto',
+    Json = 'json',
+    Xml = 'xml',
+    Html = 'html',
+    JavaScript = 'javascript',
     Raw = 'raw',
-    Formatted = 'formatted',
-    Tree = 'tree',
 }
 
 export enum DialogKind {

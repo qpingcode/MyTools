@@ -48,9 +48,9 @@ function keyboard(event: KeyboardEvent) {
   <div ref="root" class="request-response-split"
        :class="{ 'resizing-vertical': dragging, 'response-maximized': responseMaximized }"
        :style="{ gridTemplateRows: responseMaximized
-       ? 'minmax(0, 1fr)'
+       ? 'auto minmax(0, 1fr)'
        : `${requestPercent}fr ${SeparatorHeight}px ${PercentScale - requestPercent}fr` }">
-    <div v-show="!responseMaximized" class="request-pane">
+    <div class="request-pane">
       <slot name="request"/>
     </div>
     <div v-show="!responseMaximized" class="response-splitter" role="separator" aria-orientation="horizontal"
