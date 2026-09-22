@@ -59,6 +59,7 @@ const mirror = ref<HTMLElement | null>(null);
 const mirrorStyle = ref<Record<string, string>>({});
 // Match the execution engine's variable syntax, including the braces.
 const parts = computed(() => text.value.split(/(\{\{[^{}]+\}\})/g));
+const hasVariables = computed(() => parts.value.length > 1);
 let observer: ResizeObserver | undefined;
 watch(() => props.modelValue ?? attrs.value, value => {
   text.value = String(value ?? '');
@@ -203,7 +204,7 @@ onBeforeUnmount(() => {
         </button>
       </li>
     </ul>
-    <div ref="mirror" class="variable-input-mirror" :class="{ multiline }" :style="mirrorStyle" aria-hidden="true">
+    <div v-if="hasVariables" ref="mirror" class="variable-input-mirror" :class="{ multiline }" :style="mirrorStyle" aria-hidden="true">
       <template v-for="(part, index) in parts" :key="index">
         <mark v-if="index % 2" class="variable-token">{{ part }}</mark>
         <span v-else>{{ part }}</span></template>

@@ -1167,6 +1167,8 @@ dialog.workspace-tools-dialog {
     border-radius: 0;
     font-family: 'Cascadia Code', Consolas, monospace;
     font-size: 12px;
+    font-variant-ligatures: none;
+    font-feature-settings: 'liga' 0, 'calt' 0;
 }
 
 select:focus-visible,
@@ -1199,6 +1201,8 @@ select:focus-visible,
     border-style: solid;
     border-color: transparent;
     pointer-events: none;
+    font-variant-ligatures: none;
+    font-feature-settings: 'liga' 0, 'calt' 0;
 }
 
 .variable-input-mirror.multiline {
