@@ -4,7 +4,7 @@ import {ErrorKind, type Failure} from '../../shared/model.js';
 
 export const notification = ref<Failure | string>('');
 
-export function errorText(error: Failure): string {
+export function errorCaption(error: Failure): string {
     const captions: Record<ErrorKind, () => string> = {
         [ErrorKind.Configuration]: text.ConfigurationError,
         [ErrorKind.Variable]: text.VariableError,
@@ -22,10 +22,18 @@ export function errorText(error: Failure): string {
         [ErrorKind.Cache]: text.CacheError,
         [ErrorKind.Script]: text.ScriptError,
     };
+    return (captions[error.kind] || text.TransportError)();
+}
+
+export function errorDetails(error: Failure): string {
+    return [error.field, error.detail].filter(Boolean).join('\n');
+}
+
+export function errorText(error: Failure): string {
+    const details = errorDetails(error);
     return (
-        (captions[error.kind] || text.TransportError)() +
-        (error.field ? '\n' + error.field : '') +
-        (error.detail ? '\n' + error.detail : '')
+        errorCaption(error) +
+        (details ? '\n' + details : '')
     );
 }
 

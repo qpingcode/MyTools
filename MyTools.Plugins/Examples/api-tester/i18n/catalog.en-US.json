@@ -2300,6 +2300,21 @@
       }
     },
     {
+      "key": "Plugin.ApiTester.NoHttpResponse",
+      "defaultValue": "No HTTP response was received.",
+      "placeholders": [],
+      "references": [
+        {
+          "filePath": "src/web/localization/i18n.ts",
+          "line": 812,
+          "column": 16
+        }
+      ],
+      "existingTranslations": {
+        "zh-CN": "未收到 HTTP 响应。"
+      }
+    },
+    {
       "key": "Plugin.ApiTester.ResizeRequestResponse",
       "defaultValue": "Drag to resize request and response panes; double-click to reset",
       "placeholders": [],

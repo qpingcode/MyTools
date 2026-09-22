@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import IconButton from '../../components/common/IconButton.vue';
+import Icon from '../../components/common/Icon.vue';
 import ResponseBodyView from './ResponseBodyView.vue';
 import {computed, ref} from 'vue';
 import {
   HttpHeader,
   Routes,
   ExecutionState,
+  ErrorKind,
   Limits,
   ScriptPhase,
   ScriptLogLevel,
   type RequestResult,
 } from '../../../shared/model.js';
-import {rpc, errorText, notification} from '../../services/rpc.js';
+import {rpc, errorCaption, errorDetails, notification} from '../../services/rpc.js';
 import {useText} from '../../localization/locale.js';
 import WorkspaceTools from '../workspace/WorkspaceTools.vue';
 import {WorkspaceTool} from '../workspace/workspaceToolTypes.js';
@@ -31,6 +33,10 @@ const props = defineProps<{
 const emit = defineEmits<{toggleMaximized: []}>();
 const t = useText();
 const {responsePanels: responsePanelSelections} = useWorkspaceContext();
+const hasHttpResponse = computed(() => props.result?.status !== undefined);
+const standaloneError = computed(() => !hasHttpResponse.value ? props.result?.error : undefined);
+const responseError = computed(() => hasHttpResponse.value ? props.result?.error : undefined);
+const errorCancelled = computed(() => standaloneError.value?.kind === ErrorKind.Cancelled);
 
 function currentResult(): RequestResult {
   if (!props.result) throw new Error('Response result is unavailable');
@@ -118,10 +124,6 @@ function toggleMaximizedFromToolbar(event: MouseEvent) {
 </script>
 <template>
   <div class="response-panel">
-    <p v-if="result?.error" class="error">{{ errorText(result.error) }}</p>
-    <p v-if="result?.warnings.length" class="muted">
-      {{ t.ContentTypeWarning() }}
-    </p>
     <div class="response-toolbar" @dblclick="toggleMaximizedFromToolbar">
       <IconButton
           v-if="maximizable"
@@ -131,7 +133,7 @@ function toggleMaximizedFromToolbar(event: MouseEvent) {
           :aria-pressed="maximized"
           @click="emit('toggleMaximized')"
       />
-      <div v-if="result" class="config-tabs response-tabs">
+      <div v-if="result && hasHttpResponse" class="config-tabs response-tabs">
         <button
             v-for="item in responsePanels"
             :key="item"
@@ -142,12 +144,12 @@ function toggleMaximizedFromToolbar(event: MouseEvent) {
           {{ panelLabel(item) }}
         </button>
       </div>
-      <select v-if="result" v-model="panel" class="panel-select response-panel-select" :aria-label="t.Response()">
+      <select v-if="result && hasHttpResponse" v-model="panel" class="panel-select response-panel-select" :aria-label="t.Response()">
         <option v-for="item in responsePanels" :key="item" :value="item">
           {{ panelLabel(item) }}
         </option>
       </select>
-      <div v-if="result" class="response-toolbar-trailing">
+      <div v-if="result && hasHttpResponse" class="response-toolbar-trailing">
         <div class="response-meta" :title="result.url">
           <span class="status-badge" :data-state="result.execution"
                 :data-status-category="httpStatusCategory(result.status)"
@@ -190,7 +192,24 @@ function toggleMaximizedFromToolbar(event: MouseEvent) {
       </div>
     </div>
     <slot v-if="!result" name="empty"/>
+    <div v-else-if="standaloneError" class="response-error-state" role="alert">
+      <div class="response-error-card" :data-cancelled="errorCancelled">
+        <Icon name="alert-circle"/>
+        <h2>{{ errorCaption(standaloneError) }}</h2>
+        <p>{{ t.NoHttpResponse() }}</p>
+        <pre v-if="errorDetails(standaloneError)">{{ errorDetails(standaloneError) }}</pre>
+      </div>
+    </div>
     <template v-else>
+    <div v-if="responseError" class="response-error-banner" role="alert">
+      <Icon name="alert-circle"/>
+      <div><strong>{{ errorCaption(responseError) }}</strong>
+        <pre v-if="errorDetails(responseError)">{{ errorDetails(responseError) }}</pre>
+      </div>
+    </div>
+    <p v-if="result.warnings.length" class="muted response-warning">
+      {{ t.ContentTypeWarning() }}
+    </p>
     <ResponseBodyView v-if="panel === ResponsePanelId.Body" :result="result" :request-id="viewStateRequestId"/>
     <div v-if="panel === ResponsePanelId.ScriptConsole" class="response-code script-console">
       <p v-if="!result.scriptLogs?.length" class="muted">{{ t.NoScriptLogs() }}</p>

@@ -28,6 +28,7 @@ const paths = {
   download: 'M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4',
   upload: 'M12 16V3m-5 5 5-5 5 5M4 17v4h16v-4',
   history: 'M3 11a9 9 0 1 1 2 7M3 4v7h7M12 7v5l3 2',
+  'alert-circle': 'M12 3a9 9 0 1 1-9 9 9 9 0 0 1 9-9m0 5v5m0 4h.01',
 } as const;
 defineProps<{ name: keyof typeof paths }>();
 </script>

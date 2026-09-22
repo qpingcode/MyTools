@@ -14,6 +14,17 @@ test('colors success, redirection, and client error response statuses', async ({
     request.url = url + item.path;
     collection.requests.push(request);
   }
+  const noResponse = runtime.newRequest('no-response', 'No response');
+  noResponse.url = 'mailto:test@example.com';
+  collection.requests.push(noResponse);
+  const responseWithError = runtime.newRequest('response-error', 'Response with error');
+  responseWithError.url = url + '/user';
+  responseWithError.scripts = {
+    enabled: true,
+    before: '',
+    after: "throw new Error('ui response failure')",
+  };
+  collection.requests.push(responseWithError);
   workspace.collections.push(collection);
   await page.reload();
   await page.locator('.collection-title').getByText(collection.name, {exact: true}).click();
@@ -33,4 +44,21 @@ test('colors success, redirection, and client error response statuses', async ({
     colors.push(appearance.color);
   }
   assert.equal(new Set(colors).size, cases.length);
+
+  await page.locator('.request-title').getByText(noResponse.name, {exact: true}).click();
+  await page.getByRole('button', {name: 'Send', exact: true}).click();
+  const errorCard = page.locator('.response-error-card');
+  await errorCard.getByRole('heading', {name: 'Invalid request configuration', exact: true}).waitFor();
+  await errorCard.getByText('No HTTP response was received.', {exact: true}).waitFor();
+  assert.match(await errorCard.locator('pre').innerText(), /url/);
+  assert.equal(await page.locator('.response-tabs').count(), 0);
+  await page.getByRole('button', {name: 'Maximize response', exact: true}).waitFor();
+
+  await page.locator('.request-title').getByText(responseWithError.name, {exact: true}).click();
+  await page.getByRole('button', {name: 'Send', exact: true}).click();
+  const errorBanner = page.locator('.response-error-banner');
+  await errorBanner.getByText('Script execution failed.', {exact: true}).waitFor();
+  assert.match(await errorBanner.locator('pre').innerText(), /after[\s\S]*ui response failure/);
+  await page.locator('.response-tabs').waitFor();
+  await page.locator('.response .status-badge').filter({hasText: '200'}).waitFor();
 });

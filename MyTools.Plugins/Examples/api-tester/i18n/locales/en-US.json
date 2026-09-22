@@ -152,6 +152,7 @@
   "Plugin.ApiTester.ResponseBody": "Body",
   "Plugin.ApiTester.MaximizeResponse": "Maximize response",
   "Plugin.ApiTester.RestoreRequestResponse": "Restore request and response panes",
+  "Plugin.ApiTester.NoHttpResponse": "No HTTP response was received.",
   "Plugin.ApiTester.ResizeRequestResponse": "Drag to resize request and response panes; double-click to reset",
   "Plugin.ApiTester.VariableNotInEnvironment": "Variable is not defined or enabled in the current environment",
   "Plugin.ApiTester.VariableEmptyValue": "(empty value)",

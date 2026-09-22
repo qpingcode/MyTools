@@ -152,6 +152,7 @@
   "Plugin.ApiTester.ResponseBody": "响应体",
   "Plugin.ApiTester.MaximizeResponse": "最大化响应区域",
   "Plugin.ApiTester.RestoreRequestResponse": "恢复请求和响应区域",
+  "Plugin.ApiTester.NoHttpResponse": "未收到 HTTP 响应。",
   "Plugin.ApiTester.ResizeRequestResponse": "拖动调整请求和响应区域高度；双击恢复默认",
   "Plugin.ApiTester.VariableNotInEnvironment": "当前环境未定义或未启用此变量",
   "Plugin.ApiTester.VariableEmptyValue": "（空值）",

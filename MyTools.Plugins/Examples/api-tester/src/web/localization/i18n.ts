@@ -808,6 +808,10 @@ export const text = {
         bus.i18n.t('Plugin.ApiTester.RestoreRequestResponse', {
             defaultValue: 'Restore request and response panes',
         }),
+    NoHttpResponse: () =>
+        bus.i18n.t('Plugin.ApiTester.NoHttpResponse', {
+            defaultValue: 'No HTTP response was received.',
+        }),
     Confirm: () => bus.i18n.t('Plugin.ApiTester.Confirm', {defaultValue: 'Confirm action'}),
     OverrideCollectionSettings: () => bus.i18n.t('Plugin.ApiTester.OverrideCollectionSettings', {defaultValue: 'Override global settings for this collection'}),
     RequestHistory: (values: {name: string}) => bus.i18n.t('Plugin.ApiTester.RequestHistory', {defaultValue: 'History · {{name}}', ...values}),
