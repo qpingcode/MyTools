@@ -14,6 +14,29 @@ export interface Tab {
     running: boolean;
 }
 
+export enum RequestPanelId {
+    Params = 'Params',
+    Headers = 'Headers',
+    Authentication = 'Authentication',
+    Body = 'Body',
+    Scripts = 'Scripts',
+    Settings = 'Settings',
+}
+
+export enum ResponsePanelId {
+    Body = 'Body',
+    ResponseHeaders = 'ResponseHeaders',
+    RequestHeaders = 'RequestHeaders',
+    TestResults = 'TestResults',
+    ScriptConsole = 'ScriptConsole',
+}
+
+export enum ResponseBodyViewKind {
+    Raw = 'raw',
+    Formatted = 'formatted',
+    Tree = 'tree',
+}
+
 export enum DialogKind {
     Name = 'name',
     Confirm = 'confirm',

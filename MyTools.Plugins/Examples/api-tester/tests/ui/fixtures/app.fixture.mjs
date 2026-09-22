@@ -84,6 +84,7 @@ async function installHostBridge(page, runtime, failInitialWorkspaceLoad) {
     failRelease: false,
     failedReleaseAttempts: 0,
   };
+  let viewState = null;
   let failWorkspaceLoad = failInitialWorkspaceLoad;
   await page.exposeFunction('testBusRequest', async envelope => {
     if (envelope.route === BusRoutes.Bus.Handshake)
@@ -97,6 +98,11 @@ async function installHostBridge(page, runtime, failInitialWorkspaceLoad) {
         return {ok: false, error: {kind: runtime.ErrorKind.Storage}};
       }
       value = workspace;
+    } else if (method === runtime.Routes.loadViewState) {
+      value = structuredClone(viewState);
+    } else if (method === runtime.Routes.saveViewState) {
+      viewState = structuredClone(payload);
+      value = true;
     } else if (method === runtime.Routes.save) {
       if (bridgeFailures.failNextSave) {
         bridgeFailures.failNextSave = false;
@@ -188,6 +194,7 @@ export const test = base.extend({
     await page.goto(runtime.url + '/index.html');
     await use({
       ...state,
+      runtime,
       errors,
       messages: runtime.messages,
       routes: BusRoutes,

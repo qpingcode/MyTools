@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import IconButton from '../../components/common/IconButton.vue';
 import ResponseBodyView from './ResponseBodyView.vue';
-import {ref} from 'vue';
+import {computed, ref} from 'vue';
 import {
   HttpHeader,
   Routes,
@@ -15,6 +15,8 @@ import {rpc, errorText, notification} from '../../services/rpc.js';
 import {useText} from '../../localization/locale.js';
 import WorkspaceTools from '../workspace/WorkspaceTools.vue';
 import {WorkspaceTool} from '../workspace/workspaceToolTypes.js';
+import {useWorkspaceContext} from '../workspace/context.js';
+import {ResponsePanelId} from '../workspace/workspaceTypes.js';
 
 const props = defineProps<{
   result?: RequestResult;
@@ -24,6 +26,7 @@ const props = defineProps<{
   requestName?: string;
 }>();
 const t = useText();
+const {responsePanels: responsePanelSelections} = useWorkspaceContext();
 
 function currentResult(): RequestResult {
   if (!props.result) throw new Error('Response result is unavailable');
@@ -79,15 +82,17 @@ async function copyHeaders() {
   );
 }
 
-enum ResponsePanelId {
-  Body = 'Body',
-  ResponseHeaders = 'ResponseHeaders',
-  RequestHeaders = 'RequestHeaders',
-  TestResults = 'TestResults',
-  ScriptConsole = 'ScriptConsole',
-}
-
-const panel = ref(ResponsePanelId.Body);
+const fallbackPanel = ref(ResponsePanelId.Body);
+const viewStateRequestId = computed(() => props.requestId || props.result?.requestId || '');
+const panel = computed({
+  get: () => viewStateRequestId.value
+      ? responsePanelSelections.value[viewStateRequestId.value] ?? ResponsePanelId.Body
+      : fallbackPanel.value,
+  set: value => {
+    if (viewStateRequestId.value) responsePanelSelections.value[viewStateRequestId.value] = value;
+    else fallbackPanel.value = value;
+  },
+});
 const responsePanels = [
   ResponsePanelId.Body,
   ResponsePanelId.ResponseHeaders,
@@ -166,7 +171,7 @@ function panelLabel(item: ResponsePanelId) {
     </div>
     <slot v-if="!result" name="empty"/>
     <template v-else>
-    <ResponseBodyView v-if="panel === ResponsePanelId.Body" :result="result"/>
+    <ResponseBodyView v-if="panel === ResponsePanelId.Body" :result="result" :request-id="viewStateRequestId"/>
     <div v-if="panel === ResponsePanelId.ScriptConsole" class="response-code script-console">
       <p v-if="!result.scriptLogs?.length" class="muted">{{ t.NoScriptLogs() }}</p>
       <div v-for="(log, index) in result.scriptLogs" :key="index"

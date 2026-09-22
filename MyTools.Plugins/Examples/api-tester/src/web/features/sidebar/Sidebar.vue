@@ -16,7 +16,6 @@ const RequestDragThresholdPx = 12;
 const RequestDragButton = 0;
 
 const settingsCollection = ref<Collection>();
-const expanded = ref(new Set<string>());
 const requestMenu = ref<{ request: ApiRequest; owner: Collection; x: number; y: number; trigger: HTMLElement }>();
 const collectionMenu = ref<{ owner: Collection; x: number; y: number; trigger: HTMLElement }>();
 
@@ -50,6 +49,7 @@ function showRequestMenu(event: MouseEvent | KeyboardEvent, request: ApiRequest,
 const {
   t,
   workspace,
+  expandedCollectionIds,
   tabs,
   active,
   collectionId,
@@ -67,6 +67,7 @@ const {
   selectCollection,
   revealRequestId,
 } = useWorkspaceContext();
+const expanded = expandedCollectionIds;
 
 type RequestDropTarget = {collectionId: string; requestId?: string; kind: RequestDropKind};
 type RequestDragSession = {

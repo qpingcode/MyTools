@@ -3,7 +3,7 @@ import {mytoolsI18n} from '@qping/plugin-bus/i18n';
 import {stat} from 'node:fs/promises';
 import path from 'node:path';
 import {ContentType, Routes, ErrorKind, type Workspace} from '../shared/model.js';
-import {WorkspaceStore, HistoryStore} from './persistence/storage.mjs';
+import {WorkspaceStore, ViewStateStore, HistoryStore} from './persistence/storage.mjs';
 import {Runner, type RunInput} from './execution/runner.mjs';
 import {RequestError} from './execution/engine.mjs';
 
@@ -11,6 +11,7 @@ const FilePickCapability = 'path.pick';
 const SearchItemId = 'api-tester-workspace';
 const plugin = createPlugin();
 const store = new WorkspaceStore(process.env.MYTOOLS_PLUGIN_DATA_DIR);
+const viewState = new ViewStateStore(process.env.MYTOOLS_PLUGIN_DATA_DIR);
 const history = new HistoryStore(process.env.MYTOOLS_PLUGIN_DATA_DIR);
 const runner = new Runner(entry => history.append(entry));
 const guarded = <T, R>(handler: (payload: T) => Promise<R> | R) => async (payload: T) => {
@@ -53,6 +54,11 @@ plugin.initialize(params => {
     }))
     .handle(Routes.save, guarded(async (workspace: Workspace) => {
         await store.save(workspace);
+        return true;
+    }))
+    .handle(Routes.loadViewState, guarded(() => viewState.load()))
+    .handle(Routes.saveViewState, guarded(async (value: unknown) => {
+        await viewState.save(value);
         return true;
     }))
     .handle(Routes.history, guarded(() => history.list()))

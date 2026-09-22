@@ -30,7 +30,7 @@ import {
 } from '../src/shared/model.js';
 import {executeRequest} from '../src/backend/execution/engine.mjs';
 import {runScript} from '../src/backend/scripting/scripts.mjs';
-import {HistoryStore, WorkspaceStore} from '../src/backend/persistence/storage.mjs';
+import {HistoryStore, ViewStateStore, WorkspaceStore} from '../src/backend/persistence/storage.mjs';
 import {Runner} from '../src/backend/execution/runner.mjs';
 import {validateWorkspace} from '../src/shared/workspaceValidation.js';
 import {newCollection} from '../src/shared/collectionTree.js';
@@ -48,11 +48,43 @@ import {
     DocumentTabRevealNone,
     DocumentTabRevealPrevious,
 } from '../src/web/features/request/documentTabDragScroll.js';
+import {
+    emptyWorkspaceViewState,
+    parseWorkspaceViewState,
+    WorkspaceViewStateVersion,
+} from '../src/web/features/workspace/workspaceViewState.js';
+import {
+    RequestPanelId,
+    ResponseBodyViewKind,
+    ResponsePanelId,
+} from '../src/web/features/workspace/workspaceTypes.js';
 
 const SuccessStatus = 200;
 const PollIntervalMs = 10;
 const TestDeadlineMs = 10_000;
 const HistoryDirectoryPrefix = 'api-tester-history-';
+
+test('workspace view state accepts known selections and discards invalid persisted values', () => {
+    const restored = parseWorkspaceViewState(JSON.stringify({
+        version: WorkspaceViewStateVersion,
+        openRequestIds: ['first', 'first', 'second', 3],
+        detachedRequests: [newRequest('detached', 'History request')],
+        activeRequestId: 'second',
+        expandedCollectionIds: ['root', false],
+        requestPanels: {first: RequestPanelId.Headers, second: 'Missing'},
+        responsePanels: {first: ResponsePanelId.ResponseHeaders, second: 'Missing'},
+        responseBodyViews: {first: ResponseBodyViewKind.Tree, second: 'Missing'},
+    }));
+
+    assert.deepEqual(restored.openRequestIds, ['first', 'second']);
+    assert.equal(restored.detachedRequests[0].name, 'History request');
+    assert.equal(restored.activeRequestId, 'second');
+    assert.deepEqual(restored.expandedCollectionIds, ['root']);
+    assert.deepEqual(restored.requestPanels, {first: RequestPanelId.Headers});
+    assert.deepEqual(restored.responsePanels, {first: ResponsePanelId.ResponseHeaders});
+    assert.deepEqual(restored.responseBodyViews, {first: ResponseBodyViewKind.Tree});
+    assert.deepEqual(parseWorkspaceViewState('{'), emptyWorkspaceViewState());
+});
 
 async function fixture() {
     const received: { url: string; headers: http.IncomingHttpHeaders; text: string }[] = [];
@@ -549,6 +581,11 @@ test('history persists actual request snapshots across restarts, bounds previews
         });
         await workspaceStore.save(workspace);
         assert.deepEqual(await new WorkspaceStore(directory).load(), workspace);
+        const viewStateStore = new ViewStateStore(directory);
+        const firstViewState = {...emptyWorkspaceViewState(), activeRequestId: 'first'};
+        const latestViewState = {...emptyWorkspaceViewState(), activeRequestId: 'latest'};
+        await Promise.all([viewStateStore.save(firstViewState), viewStateStore.save(latestViewState)]);
+        assert.deepEqual(await new ViewStateStore(directory).load(), latestViewState);
     } finally {
         await server.close();
         await rm(directory, {recursive: true, force: true});

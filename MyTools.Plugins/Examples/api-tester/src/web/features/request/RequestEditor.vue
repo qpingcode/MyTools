@@ -8,7 +8,8 @@ const {
   HttpMethods,
   t,
   tab,
-  tabs,
+  requestPanels,
+  RequestPanelId,
   workspace,
   saveTab,
   dirty,
@@ -19,7 +20,7 @@ const {
   refreshCookies,
 } = useWorkspaceContext();
 import CookiesDialog from './CookiesDialog.vue';
-import {computed, ref, watch} from 'vue';
+import {computed, ref} from 'vue';
 import Icon from '../../components/common/Icon.vue';
 import AuthenticationEditor from '../../components/common/AuthenticationEditor.vue';
 import BodyEditor from './BodyEditor.vue';
@@ -60,15 +61,22 @@ const requestCollectionPath = computed(() =>
         : t.value.Collections(),
 );
 const panels = [
-  'Params',
-  'Headers',
-  'Authentication',
-  'Body',
-  'Scripts',
-  'Settings',
+  RequestPanelId.Params,
+  RequestPanelId.Headers,
+  RequestPanelId.Authentication,
+  RequestPanelId.Body,
+  RequestPanelId.Scripts,
+  RequestPanelId.Settings,
 ] as const;
 type Panel = (typeof panels)[number];
-const current = ref<Panel>('Params');
+const current = computed<Panel>({
+  get: () => tab.value
+      ? requestPanels.value[tab.value.request.id] ?? RequestPanelId.Params
+      : RequestPanelId.Params,
+  set: value => {
+    if (tab.value) requestPanels.value[tab.value.request.id] = value;
+  },
+});
 const cookiesOpen = ref(false);
 
 async function openCookies() {
@@ -76,36 +84,12 @@ async function openCookies() {
   cookiesOpen.value = true;
 }
 
-const remembered = new Map<string, Panel>();
-watch(
-    current,
-    (value) => {
-      if (tab.value) remembered.set(tab.value.request.id, value);
-    },
-    {flush: 'sync'},
-);
-watch(
-    () => tab.value?.request.id,
-    (id, oldId) => {
-      if (oldId) remembered.set(oldId, current.value);
-      current.value = id ? remembered.get(id) || 'Params' : 'Params';
-    },
-    {flush: 'sync'},
-);
-watch(
-    () => tabs.value.map((item) => item.request.id),
-    (ids) => {
-      for (const id of remembered.keys())
-        if (!ids.includes(id)) remembered.delete(id);
-    },
-);
-
 function count(panel: Panel) {
   const request = tab.value?.request;
   if (!request) return 0;
-  return panel === 'Params'
+  return panel === RequestPanelId.Params
       ? request.params.length
-      : panel === 'Headers'
+      : panel === RequestPanelId.Headers
           ? request.headers.length
           : 0;
 }

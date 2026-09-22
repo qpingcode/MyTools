@@ -44,6 +44,8 @@ export const ContentType = {
 export const Routes = {
     load: 'loadWorkspace',
     save: 'saveWorkspace',
+    loadViewState: 'loadViewState',
+    saveViewState: 'saveViewState',
     start: 'startRun',
     poll: 'pollRun',
     cancel: 'cancelRun',

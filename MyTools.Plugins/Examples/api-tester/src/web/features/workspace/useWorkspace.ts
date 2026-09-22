@@ -1,9 +1,21 @@
-import {DialogKind, Choice, type Tab} from './workspaceTypes.js';
+import {
+    DialogKind,
+    Choice,
+    RequestPanelId,
+    ResponseBodyViewKind,
+    ResponsePanelId,
+    type Tab,
+} from './workspaceTypes.js';
 import {useDialogs} from './useDialogs.js';
 import {useRuns} from '../runs/useRuns.js';
 import {createWorkspaceMutator} from './workspacePersistence.js';
+import {
+    parseWorkspaceViewState,
+    WorkspaceViewStateVersion,
+    type WorkspaceViewState,
+} from './workspaceViewState.js';
 
-import {computed, ref} from 'vue';
+import {computed, ref, watch} from 'vue';
 import {HostEvents} from '@qping/plugin-bus/web';
 import {bus} from '../../localization/i18n.js';
 import {useText} from '../../localization/locale.js';
@@ -47,6 +59,10 @@ export function useWorkspace() {
     const tabs = ref<Tab[]>([]);
     const documentTabIds = ref<string[]>([]);
     const active = ref('');
+    const expandedCollectionIds = ref(new Set<string>());
+    const requestPanels = ref<Record<string, RequestPanelId>>({});
+    const responsePanels = ref<Record<string, ResponsePanelId>>({});
+    const responseBodyViews = ref<Record<string, ResponseBodyViewKind>>({});
     const runnerOpen = ref(false);
     const runnerActive = ref(false);
     const revealRequestId = ref('');
@@ -142,6 +158,79 @@ export function useWorkspace() {
     }
 
     const mutate = createWorkspaceMutator(workspace, value => rpc(Routes.save, value));
+
+    function restoreViewState(value: Workspace, source: unknown) {
+        const saved = parseWorkspaceViewState(source);
+        const requests = new Map<string, {request: ApiRequest; collectionId: string; detached: boolean}>(
+            value.collections.flatMap(owner =>
+            owner.requests.map(request => [request.id, {request, collectionId: owner.id, detached: false}] as const),
+            ),
+        );
+        for (const request of saved.detachedRequests) if (!requests.has(request.id)) {
+            requests.set(request.id, {request, collectionId: '', detached: true});
+        }
+        const collectionIds = new Set(value.collections.map(owner => owner.id));
+        tabs.value = saved.openRequestIds.flatMap(id => {
+            const item = requests.get(id);
+            return item ? [{
+                request: clone(item.request),
+                collectionId: item.collectionId,
+                baseline: item.detached ? '' : JSON.stringify(item.request),
+                runId: '',
+                running: false,
+            }] : [];
+        });
+        documentTabIds.value = tabs.value.map(item => item.request.id);
+        active.value = documentTabIds.value.includes(saved.activeRequestId)
+            ? saved.activeRequestId
+            : documentTabIds.value.at(-1) || '';
+        expandedCollectionIds.value = new Set(
+            saved.expandedCollectionIds.filter(id => collectionIds.has(id)),
+        );
+        requestPanels.value = saved.requestPanels;
+        responsePanels.value = saved.responsePanels;
+        responseBodyViews.value = saved.responseBodyViews;
+    }
+
+    let pendingViewStateSave = Promise.resolve();
+
+    function persistViewState(state: WorkspaceViewState): Promise<void> {
+        const operation = pendingViewStateSave.catch(() => {
+        }).then(async () => {
+            await rpc(Routes.saveViewState, state);
+        });
+        pendingViewStateSave = operation;
+        return operation;
+    }
+
+    watch(
+        [documentTabIds, active, expandedCollectionIds, requestPanels, responsePanels, responseBodyViews],
+        () => {
+            if (!workspaceReady.value) return;
+            const requestIds = new Set(workspace.value.collections.flatMap(owner =>
+                owner.requests.map(request => request.id),
+            ));
+            const collectionIds = new Set(workspace.value.collections.map(owner => owner.id));
+            const openTabIds = new Set(tabs.value.map(item => item.request.id));
+            const filterRecord = <T extends string>(values: Record<string, T>) =>
+                Object.fromEntries(Object.entries(values).filter(([id]) =>
+                    requestIds.has(id) || openTabIds.has(id),
+                ));
+            void persistViewState({
+                version: WorkspaceViewStateVersion,
+                openRequestIds: documentTabIds.value.filter(id => openTabIds.has(id)),
+                detachedRequests: tabs.value
+                    .filter(item => !requestIds.has(item.request.id))
+                    .map(item => clone(item.request)),
+                activeRequestId: active.value,
+                expandedCollectionIds: [...expandedCollectionIds.value].filter(id => collectionIds.has(id)),
+                requestPanels: filterRecord(requestPanels.value),
+                responsePanels: filterRecord(responsePanels.value),
+                responseBodyViews: filterRecord(responseBodyViews.value),
+            }).catch(error => console.error('Could not persist API Tester view state.', error));
+        },
+        {deep: true, flush: 'sync'},
+    );
 
     async function addCollection(parent?: Collection) {
         const value = await name(t.value.NewCollection());
@@ -575,6 +664,9 @@ export function useWorkspace() {
                 batchId.value = '';
                 await releaseBestEffort(id);
             }
+            await pendingViewStateSave.catch(error =>
+                console.error('Could not finish persisting API Tester view state.', error),
+            );
             return true;
         } finally {
             closing = false;
@@ -602,8 +694,15 @@ export function useWorkspace() {
         loadingWorkspace.value = true;
         workspaceLoadFailed.value = false;
         try {
-            const value = await rpc<Workspace>(Routes.load);
+            const [value, savedViewState] = await Promise.all([
+                rpc<Workspace>(Routes.load),
+                rpc<unknown>(Routes.loadViewState).catch(error => {
+                    console.warn('Could not load API Tester view state.', error);
+                    return null;
+                }),
+            ]);
             workspace.value = value;
+            restoreViewState(value, savedViewState);
             workspaceReady.value = true;
             notification.value = '';
         } catch (error) {
@@ -634,6 +733,10 @@ export function useWorkspace() {
         documentTabIds,
         RunnerTabId,
         active,
+        expandedCollectionIds,
+        requestPanels,
+        responsePanels,
+        responseBodyViews,
         runnerOpen,
         runnerActive,
         revealRequestId,
@@ -716,6 +819,9 @@ export function useWorkspace() {
         clone,
         DialogKind,
         Choice,
+        RequestPanelId,
+        ResponsePanelId,
+        ResponseBodyViewKind,
         Routes,
         HttpMethod,
         BodyKind,

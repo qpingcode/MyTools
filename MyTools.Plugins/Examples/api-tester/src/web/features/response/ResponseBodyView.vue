@@ -5,14 +5,24 @@ import {Limits} from '../../../shared/model.js';
 import {useText} from '../../localization/locale.js';
 import JsonTreeNode from './JsonTreeNode.vue';
 import SearchText from '../../components/common/SearchText.vue';
-
-enum ViewKind { Raw = 'raw', Formatted = 'formatted', Tree = 'tree' }
+import {useWorkspaceContext} from '../workspace/context.js';
+import {ResponseBodyViewKind} from '../workspace/workspaceTypes.js';
 
 const MaximumJsonDepth = 64;
 const JsonIndent = 2;
-const props = defineProps<{ result: RequestResult }>();
+const props = defineProps<{ result: RequestResult; requestId?: string }>();
 const t = useText();
-const mode = ref(ViewKind.Raw);
+const {responseBodyViews} = useWorkspaceContext();
+const fallbackMode = ref(ResponseBodyViewKind.Raw);
+const mode = computed({
+  get: () => props.requestId
+      ? responseBodyViews.value[props.requestId] ?? ResponseBodyViewKind.Raw
+      : fallbackMode.value,
+  set: value => {
+    if (props.requestId) responseBodyViews.value[props.requestId] = value;
+    else fallbackMode.value = value;
+  },
+});
 const search = ref('');
 const expanded = ref(true);
 const revision = ref(0);
@@ -43,7 +53,7 @@ const treeAllowed = computed(() => {
 const text = computed(() => {
   if (props.result.previewAvailable === false) return t.value.CacheError();
   if (props.result.binary) return t.value.BinaryResponse();
-  if (mode.value === ViewKind.Formatted && parsed.value) {
+  if (mode.value === ResponseBodyViewKind.Formatted && parsed.value) {
     try {
       return JSON.stringify(parsed.value.value, null, JsonIndent).slice(0, Limits.previewBytes);
     } catch {
@@ -66,14 +76,13 @@ const matches = computed(() => {
 });
 watch([search, mode], () => {
   activeMatch.value = -1;
-  if (search.value && mode.value === ViewKind.Tree) {
+  if (search.value && mode.value === ResponseBodyViewKind.Tree) {
     expanded.value = true;
     revision.value++;
   }
 });
 watch(() => props.result, () => {
   activeMatch.value = -1;
-  mode.value = ViewKind.Raw;
 });
 
 function toggleAll(value: boolean) {
@@ -92,14 +101,14 @@ function navigate(direction: number) {
 </script>
 <template>
   <div class="body-toolbar">
-    <button :class="{ selected: mode === ViewKind.Raw }" @click="mode = ViewKind.Raw">{{ t.Raw() }}</button>
-    <button :class="{ selected: mode === ViewKind.Formatted }" :disabled="!parsed" @click="mode = ViewKind.Formatted">
+    <button :class="{ selected: mode === ResponseBodyViewKind.Raw }" @click="mode = ResponseBodyViewKind.Raw">{{ t.Raw() }}</button>
+    <button :class="{ selected: mode === ResponseBodyViewKind.Formatted }" :disabled="!parsed" @click="mode = ResponseBodyViewKind.Formatted">
       {{ t.Formatted() }}
     </button>
-    <button :class="{ selected: mode === ViewKind.Tree }" :disabled="!treeAllowed" @click="mode = ViewKind.Tree">
+    <button :class="{ selected: mode === ResponseBodyViewKind.Tree }" :disabled="!treeAllowed" @click="mode = ResponseBodyViewKind.Tree">
       {{ t.JsonTree() }}
     </button>
-    <template v-if="mode === ViewKind.Tree">
+    <template v-if="mode === ResponseBodyViewKind.Tree">
       <button @click="toggleAll(true)">{{ t.ExpandAll() }}</button>
       <button @click="toggleAll(false)">{{ t.CollapseAll() }}</button>
     </template>
@@ -115,7 +124,7 @@ function navigate(direction: number) {
   <p v-if="result.truncated" class="muted">{{ t.PreviewLimit() }}</p>
   <p v-if="parsed && !treeAllowed" class="muted">{{ t.JsonTreeLimit() }}</p>
   <div ref="content" class="response-body-content">
-    <div v-if="mode === ViewKind.Tree && parsed" class="response-code json-tree">
+    <div v-if="mode === ResponseBodyViewKind.Tree && parsed" class="response-code json-tree">
       <JsonTreeNode :value="parsed.value" :search="search" :expanded="expanded" :revision="revision"/>
     </div>
     <pre v-else class="response-code"><SearchText :text="text" :search="search"/></pre>

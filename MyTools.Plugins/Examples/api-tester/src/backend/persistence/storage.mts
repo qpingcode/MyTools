@@ -5,6 +5,8 @@ import {emptyWorkspace, Limits, type HistoryEntry, type Workspace} from '../../s
 import {validateWorkspace} from '../../shared/workspaceValidation.js';
 
 const WorkspaceFilename = 'workspace.json';
+const ViewStateFilename = 'view-state.json';
+const MaximumViewStateBytes = Limits.importBytes;
 
 export class WorkspaceStore {
     private writes = Promise.resolve();
@@ -45,6 +47,45 @@ export class WorkspaceStore {
 }
 
 export {validateWorkspace} from '../../shared/workspaceValidation.js';
+
+export class ViewStateStore {
+    private writes = Promise.resolve();
+
+    constructor(private directory: string | undefined) {
+    }
+
+    private file(): string {
+        if (!this.directory) throw new Error('MYTOOLS_PLUGIN_DATA_DIR is not set');
+        return path.join(this.directory, ViewStateFilename);
+    }
+
+    async load(): Promise<unknown> {
+        await this.writes.catch(() => {
+        });
+        try {
+            return JSON.parse(await readFile(this.file(), 'utf8'));
+        } catch (error) {
+            if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+            throw error;
+        }
+    }
+
+    save(value: unknown): Promise<void> {
+        const snapshot = JSON.stringify(value);
+        if (Buffer.byteLength(snapshot) > MaximumViewStateBytes) {
+            throw new Error('View state exceeds the storage limit');
+        }
+        const operation = this.writes.catch(() => {
+        }).then(async () => {
+            const file = this.file();
+            await mkdir(path.dirname(file), {recursive: true});
+            await writeFile(file + '.pending', snapshot, 'utf8');
+            await rename(file + '.pending', file);
+        });
+        this.writes = operation;
+        return operation;
+    }
+}
 
 const HistoryFilename = 'history.json';
 
