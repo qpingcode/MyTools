@@ -151,6 +151,7 @@ function navigate(event: KeyboardEvent, panel: Panel) {
           :placeholder="t.UrlPlaceholder()"
           data-primary-input="true"
           @change="changeUrl($event, tab)"
+          @keydown.enter.prevent="send(tab)"
       />
       <button class="primary send-button" @click="send(tab)">
         <Icon :name="tab.running ? 'stop' : 'play'"/>
