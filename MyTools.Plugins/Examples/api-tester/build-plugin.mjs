@@ -69,11 +69,14 @@ const builds = [
         plugins: [refreshPlugin]
     },
     {
-        entryPoints: ["src/web/main.ts"],
+        entryPoints: {
+            main: "src/web/main.ts",
+            "response-formatter.worker": "src/web/features/response/responseFormatter.worker.ts"
+        },
         bundle: true,
         format: "iife",
         target: "es2024",
-        outfile: "dist/web/main.js",
+        outdir: "dist/web",
         plugins: [vuePlugin, refreshPlugin],
         define: {
             __VUE_OPTIONS_API__: 'false',

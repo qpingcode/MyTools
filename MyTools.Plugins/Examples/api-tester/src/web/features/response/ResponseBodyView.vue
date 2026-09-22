@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import {computed, ref, watch} from 'vue';
+import {computed, onBeforeUnmount, ref, watch} from 'vue';
+import type {LanguageId} from '@qping/content-formatter';
 import type {RequestResult} from '../../../shared/model.js';
-import {Limits} from '../../../shared/model.js';
+import {Limits, Routes} from '../../../shared/model.js';
+import {rpc} from '../../services/rpc.js';
 import {useText} from '../../localization/locale.js';
 import JsonTreeNode from './JsonTreeNode.vue';
 import SearchText from '../../components/common/SearchText.vue';
@@ -10,20 +12,24 @@ import {useWorkspaceContext} from '../workspace/context.js';
 import {ResponseBodyFormat} from '../workspace/workspaceTypes.js';
 import {
   createHtmlPreviewDocument,
-  formatHtml,
   formatXml,
   inferResponseBodyFormat,
+  inferResponseMediaPreview,
   parseJson,
+  responseMediaType,
+  ResponseMediaPreview,
 } from './responseBodyFormat.js';
+import {decodeBase64, encodeBase64, formatBase64, formatHex} from './binaryBodyFormat.js';
 
 const MaximumJsonDepth = 64;
-const JsonIndent = 2;
 const HtmlMarkupPattern = /<\/?[A-Za-z][^>]*>|<!doctype\s+html\b/i;
-const props = defineProps<{ result: RequestResult; requestId?: string }>();
+const ResponseFormatterWorkerPath = 'response-formatter.worker.js';
+const props = defineProps<{ result: RequestResult; requestId?: string; runId?: string; resultIndex?: number }>();
 const t = useText();
-const {responseBodyFormats, responseBodyPreviews} = useWorkspaceContext();
+const {responseBodyFormats, responseBodyPreviews, responseBodyFormatting} = useWorkspaceContext();
 const fallbackFormat = ref(ResponseBodyFormat.Auto);
 const fallbackPreview = ref(false);
+const fallbackFormatting = ref(false);
 const format = computed({
   get: () => props.requestId
       ? responseBodyFormats.value[props.requestId] ?? ResponseBodyFormat.Auto
@@ -42,6 +48,15 @@ const previewRequested = computed({
     else fallbackPreview.value = value;
   },
 });
+const formatRequested = computed({
+  get: () => props.requestId
+      ? responseBodyFormatting.value[props.requestId] ?? false
+      : fallbackFormatting.value,
+  set: value => {
+    if (props.requestId) responseBodyFormatting.value[props.requestId] = value;
+    else fallbackFormatting.value = value;
+  },
+});
 const inferredFormat = computed(() => inferResponseBodyFormat(props.result));
 const effectiveFormat = computed(() => format.value === ResponseBodyFormat.Auto ? inferredFormat.value : format.value);
 const formats = Object.values(ResponseBodyFormat);
@@ -50,6 +65,12 @@ const expanded = ref(true);
 const revision = ref(0);
 const content = ref<HTMLElement>();
 const activeMatch = ref(-1);
+const formattedText = ref(props.result.preview);
+const mediaPreviewUrl = ref('');
+const mediaPreviewFailed = ref(false);
+const formatterWorker = new Worker(ResponseFormatterWorkerPath);
+let formatterRequestId = 0;
+let mediaPreviewRequestId = 0;
 const parsedJson = computed(() => {
   if (props.result.binary || props.result.truncated || props.result.previewAvailable === false) return undefined;
   return parseJson(props.result.preview);
@@ -68,12 +89,39 @@ const treeAllowed = computed(() => {
   }
   return true;
 });
+const mediaPreview = computed(() => inferResponseMediaPreview(props.result));
+const mediaPreviewSupported = computed(() =>
+    mediaPreview.value !== ResponseMediaPreview.None
+    && props.result.bodyAvailable
+    && Boolean(props.runId)
+    && props.resultIndex !== undefined,
+);
 const previewSupported = computed(() =>
-    effectiveFormat.value === ResponseBodyFormat.Json || effectiveFormat.value === ResponseBodyFormat.Html,
+    effectiveFormat.value === ResponseBodyFormat.Json
+    || effectiveFormat.value === ResponseBodyFormat.Html
+    || mediaPreviewSupported.value,
 );
 const previewActive = computed(() => previewRequested.value && previewSupported.value);
 const htmlPreviewDocument = computed(() => createHtmlPreviewDocument(props.result.preview));
 const formattedXml = computed(() => formatXml(props.result.preview));
+const formatLanguage = computed<LanguageId | undefined>(() => ({
+  [ResponseBodyFormat.Json]: 'json' as const,
+  [ResponseBodyFormat.Xml]: 'xml' as const,
+  [ResponseBodyFormat.Html]: 'html' as const,
+  [ResponseBodyFormat.JavaScript]: 'javascript' as const,
+  [ResponseBodyFormat.Hex]: undefined,
+  [ResponseBodyFormat.Base64]: undefined,
+  [ResponseBodyFormat.Auto]: undefined,
+  [ResponseBodyFormat.Raw]: undefined,
+})[effectiveFormat.value]);
+const formatSupported = computed(() =>
+    !props.result.binary
+    && effectiveFormat.value !== ResponseBodyFormat.Hex
+    && effectiveFormat.value !== ResponseBodyFormat.Base64
+    && props.result.previewAvailable !== false
+    && Boolean(props.result.preview),
+);
+const formatActive = computed(() => formatRequested.value && formatSupported.value);
 const syntaxFormat = computed(() => {
   if (effectiveFormat.value === ResponseBodyFormat.Json) {
     return parsedJson.value === undefined ? undefined : ResponseBodyFormat.Json;
@@ -92,13 +140,13 @@ const syntaxFormat = computed(() => {
 });
 const text = computed(() => {
   if (props.result.previewAvailable === false) return t.value.CacheError();
+  const encodedPreview = props.result.binary
+      ? props.result.preview
+      : encodeBase64(new TextEncoder().encode(props.result.preview));
+  if (effectiveFormat.value === ResponseBodyFormat.Hex) return formatHex(encodedPreview);
+  if (effectiveFormat.value === ResponseBodyFormat.Base64) return formatBase64(encodedPreview);
   if (props.result.binary) return t.value.BinaryResponse();
-  if (effectiveFormat.value === ResponseBodyFormat.Json && parsedJson.value !== undefined) {
-    return JSON.stringify(parsedJson.value, null, JsonIndent).slice(0, Limits.previewBytes);
-  }
-  if (effectiveFormat.value === ResponseBodyFormat.Xml) return formattedXml.value ?? props.result.preview;
-  if (effectiveFormat.value === ResponseBodyFormat.Html) return formatHtml(props.result.preview);
-  return props.result.preview;
+  return formatActive.value ? formattedText.value : props.result.preview;
 });
 const matches = computed(() => {
   if (!search.value) return 0;
@@ -126,6 +174,59 @@ watch(() => props.result, () => {
   activeMatch.value = -1;
 });
 
+function releaseMediaPreviewUrl() {
+  if (mediaPreviewUrl.value) URL.revokeObjectURL(mediaPreviewUrl.value);
+  mediaPreviewUrl.value = '';
+}
+
+watch(
+    [previewActive, mediaPreview, () => props.runId, () => props.resultIndex,
+      () => props.result.bodyAvailable, () => props.result.completedAt],
+    () => {
+      const requestId = ++mediaPreviewRequestId;
+      releaseMediaPreviewUrl();
+      mediaPreviewFailed.value = false;
+      if (!previewActive.value || !mediaPreviewSupported.value) return;
+      void rpc<string>(Routes.download, {id: props.runId, index: props.resultIndex}).then(base64 => {
+        if (requestId !== mediaPreviewRequestId) return;
+        const blob = new Blob([decodeBase64(base64)], {type: responseMediaType(props.result)});
+        mediaPreviewUrl.value = URL.createObjectURL(blob);
+      }).catch(() => {
+        if (requestId === mediaPreviewRequestId) mediaPreviewFailed.value = true;
+      });
+    },
+    {immediate: true},
+);
+
+formatterWorker.addEventListener('message', (event: MessageEvent<{id: number; formatted: string}>) => {
+  if (event.data.id === formatterRequestId) {
+    formattedText.value = event.data.formatted.slice(0, Limits.previewBytes);
+  }
+});
+formatterWorker.addEventListener('error', () => {
+  formattedText.value = props.result.preview;
+});
+watch(
+    [formatActive, () => props.result.preview, () => props.result.binary,
+      () => props.result.previewAvailable, formatLanguage],
+    () => {
+      formattedText.value = props.result.preview;
+      formatterRequestId++;
+      if (!formatActive.value) return;
+      formatterWorker.postMessage({
+        id: formatterRequestId,
+        source: props.result.preview,
+        language: formatLanguage.value,
+      });
+    },
+    {immediate: true},
+);
+onBeforeUnmount(() => {
+  formatterWorker.terminate();
+  mediaPreviewRequestId++;
+  releaseMediaPreviewUrl();
+});
+
 function formatLabel(value: ResponseBodyFormat): string {
   if (value === ResponseBodyFormat.Auto) return t.value.AutoFormat({format: formatLabel(inferredFormat.value)});
   return {
@@ -133,6 +234,8 @@ function formatLabel(value: ResponseBodyFormat): string {
     [ResponseBodyFormat.Xml]: t.value.Xml,
     [ResponseBodyFormat.Html]: t.value.Html,
     [ResponseBodyFormat.JavaScript]: t.value.JavaScript,
+    [ResponseBodyFormat.Hex]: t.value.Hex,
+    [ResponseBodyFormat.Base64]: t.value.Base64,
     [ResponseBodyFormat.Raw]: t.value.Raw,
   }[value]();
 }
@@ -158,6 +261,8 @@ function navigate(direction: number) {
     </select>
     <button :class="{ selected: previewActive }" :disabled="!previewSupported" :aria-pressed="previewActive"
             @click="previewRequested = !previewRequested">{{ t.Preview() }}</button>
+    <button :class="{ selected: formatActive }" :disabled="!formatSupported" :aria-pressed="formatActive"
+            @click="formatRequested = !formatRequested">{{ t.FormatResponse() }}</button>
     <template v-if="previewActive && effectiveFormat === ResponseBodyFormat.Json && treeAllowed">
       <button @click="toggleAll(true)">{{ t.ExpandAll() }}</button>
       <button @click="toggleAll(false)">{{ t.CollapseAll() }}</button>
@@ -173,6 +278,7 @@ function navigate(direction: number) {
   </div>
   <p v-if="result.truncated" class="muted">{{ t.PreviewLimit() }}</p>
   <p v-if="previewRequested && !previewSupported" class="muted">{{ t.PreviewUnavailable() }}</p>
+  <p v-else-if="previewActive && mediaPreviewFailed" class="muted">{{ t.PreviewLoadFailed() }}</p>
   <p v-else-if="previewActive && effectiveFormat === ResponseBodyFormat.Json && parsedJson === undefined" class="muted">
     {{ t.InvalidJsonPreview() }}
   </p>
@@ -186,6 +292,15 @@ function navigate(direction: number) {
     </div>
     <iframe v-else-if="previewActive && effectiveFormat === ResponseBodyFormat.Html" class="html-response-preview"
             sandbox="" referrerpolicy="no-referrer" :srcdoc="htmlPreviewDocument" :title="t.HtmlPreview()"/>
+    <img v-else-if="previewActive && mediaPreview === ResponseMediaPreview.Image && mediaPreviewUrl"
+         class="binary-media-preview binary-image-preview" :src="mediaPreviewUrl" :alt="t.ImagePreview()"/>
+    <audio v-else-if="previewActive && mediaPreview === ResponseMediaPreview.Audio && mediaPreviewUrl"
+           class="binary-media-preview" :src="mediaPreviewUrl" :aria-label="t.AudioPreview()" controls/>
+    <video v-else-if="previewActive && mediaPreview === ResponseMediaPreview.Video && mediaPreviewUrl"
+           class="binary-media-preview" :src="mediaPreviewUrl" :aria-label="t.VideoPreview()" controls/>
+    <iframe v-else-if="previewActive && mediaPreview === ResponseMediaPreview.Pdf && mediaPreviewUrl"
+            class="html-response-preview" sandbox="" referrerpolicy="no-referrer" :src="mediaPreviewUrl"
+            :title="t.PdfPreview()"/>
     <pre v-else class="response-code"><SyntaxHighlightedText v-if="syntaxFormat" :text="text" :search="search"
                                                                :format="syntaxFormat"/><SearchText v-else
                                                                                                     :text="text"

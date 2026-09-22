@@ -1677,7 +1677,7 @@
     },
     {
       "key": "Plugin.ApiTester.PreviewLimit",
-      "defaultValue": "Preview limited to 1 MiB; complete body remains available while cached.",
+      "defaultValue": "Text preview limited to 1 MiB and binary encoding preview to 256 KiB; complete body remains available while cached.",
       "placeholders": [],
       "references": [
         {
@@ -1687,12 +1687,12 @@
         }
       ],
       "existingTranslations": {
-        "zh-CN": "预览限为 1 MiB；缓存未释放时可使用完整正文。"
+        "zh-CN": "文本预览限为 1 MiB，二进制编码预览限为 256 KiB；缓存未释放时仍可使用完整正文。"
       }
     },
     {
       "key": "Plugin.ApiTester.BinaryResponse",
-      "defaultValue": "Binary response. Save the body to inspect it.",
+      "defaultValue": "Binary response. Select Hex or Base64 to inspect its encoded preview.",
       "placeholders": [],
       "references": [
         {
@@ -1702,7 +1702,7 @@
         }
       ],
       "existingTranslations": {
-        "zh-CN": "二进制响应，请保存正文后查看。"
+        "zh-CN": "二进制响应。请选择十六进制或 Base64 查看编码预览。"
       }
     },
     {
@@ -3198,11 +3198,32 @@
       "existingTranslations": {"zh-CN": "JavaScript"}
     },
     {
+      "key": "Plugin.ApiTester.Hex",
+      "defaultValue": "Hex",
+      "placeholders": [],
+      "references": [{"filePath": "src/web/localization/i18n.ts", "symbol": "Hex"}],
+      "existingTranslations": {"zh-CN": "十六进制"}
+    },
+    {
+      "key": "Plugin.ApiTester.Base64",
+      "defaultValue": "Base64",
+      "placeholders": [],
+      "references": [{"filePath": "src/web/localization/i18n.ts", "symbol": "Base64"}],
+      "existingTranslations": {"zh-CN": "Base64"}
+    },
+    {
       "key": "Plugin.ApiTester.Preview",
       "defaultValue": "Preview",
       "placeholders": [],
       "references": [{"filePath": "src/web/localization/i18n.ts", "line": 56, "column": 5}],
       "existingTranslations": {"zh-CN": "预览"}
+    },
+    {
+      "key": "Plugin.ApiTester.FormatResponse",
+      "defaultValue": "Format",
+      "placeholders": [],
+      "references": [{"filePath": "src/web/localization/i18n.ts", "symbol": "FormatResponse"}],
+      "existingTranslations": {"zh-CN": "格式化"}
     },
     {
       "key": "Plugin.ApiTester.PreviewUnavailable",
@@ -3212,11 +3233,46 @@
       "existingTranslations": {"zh-CN": "当前响应格式不支持预览。"}
     },
     {
+      "key": "Plugin.ApiTester.PreviewLoadFailed",
+      "defaultValue": "Could not load the response preview.",
+      "placeholders": [],
+      "references": [{"filePath": "src/web/localization/i18n.ts", "symbol": "PreviewLoadFailed"}],
+      "existingTranslations": {"zh-CN": "无法加载响应预览。"}
+    },
+    {
       "key": "Plugin.ApiTester.HtmlPreview",
       "defaultValue": "HTML response preview",
       "placeholders": [],
       "references": [{"filePath": "src/web/localization/i18n.ts", "line": 57, "column": 5}],
       "existingTranslations": {"zh-CN": "HTML 响应预览"}
+    },
+    {
+      "key": "Plugin.ApiTester.ImagePreview",
+      "defaultValue": "Image response preview",
+      "placeholders": [],
+      "references": [{"filePath": "src/web/localization/i18n.ts", "symbol": "ImagePreview"}],
+      "existingTranslations": {"zh-CN": "图片响应预览"}
+    },
+    {
+      "key": "Plugin.ApiTester.AudioPreview",
+      "defaultValue": "Audio response preview",
+      "placeholders": [],
+      "references": [{"filePath": "src/web/localization/i18n.ts", "symbol": "AudioPreview"}],
+      "existingTranslations": {"zh-CN": "音频响应预览"}
+    },
+    {
+      "key": "Plugin.ApiTester.VideoPreview",
+      "defaultValue": "Video response preview",
+      "placeholders": [],
+      "references": [{"filePath": "src/web/localization/i18n.ts", "symbol": "VideoPreview"}],
+      "existingTranslations": {"zh-CN": "视频响应预览"}
+    },
+    {
+      "key": "Plugin.ApiTester.PdfPreview",
+      "defaultValue": "PDF response preview",
+      "placeholders": [],
+      "references": [{"filePath": "src/web/localization/i18n.ts", "symbol": "PdfPreview"}],
+      "existingTranslations": {"zh-CN": "PDF 响应预览"}
     },
     {
       "key": "Plugin.ApiTester.InvalidJsonPreview",

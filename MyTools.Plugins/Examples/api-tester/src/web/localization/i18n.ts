@@ -65,9 +65,17 @@ export const text = {
     Xml: () => bus.i18n.t('Plugin.ApiTester.Xml', {defaultValue: "XML"}),
     Html: () => bus.i18n.t('Plugin.ApiTester.Html', {defaultValue: "HTML"}),
     JavaScript: () => bus.i18n.t('Plugin.ApiTester.JavaScript', {defaultValue: "JavaScript"}),
+    Hex: () => bus.i18n.t('Plugin.ApiTester.Hex', {defaultValue: "Hex"}),
+    Base64: () => bus.i18n.t('Plugin.ApiTester.Base64', {defaultValue: "Base64"}),
+    FormatResponse: () => bus.i18n.t('Plugin.ApiTester.FormatResponse', {defaultValue: "Format"}),
     Preview: () => bus.i18n.t('Plugin.ApiTester.Preview', {defaultValue: "Preview"}),
     PreviewUnavailable: () => bus.i18n.t('Plugin.ApiTester.PreviewUnavailable', {defaultValue: "The current response format cannot be previewed."}),
+    PreviewLoadFailed: () => bus.i18n.t('Plugin.ApiTester.PreviewLoadFailed', {defaultValue: "Could not load the response preview."}),
     HtmlPreview: () => bus.i18n.t('Plugin.ApiTester.HtmlPreview', {defaultValue: "HTML response preview"}),
+    ImagePreview: () => bus.i18n.t('Plugin.ApiTester.ImagePreview', {defaultValue: "Image response preview"}),
+    AudioPreview: () => bus.i18n.t('Plugin.ApiTester.AudioPreview', {defaultValue: "Audio response preview"}),
+    VideoPreview: () => bus.i18n.t('Plugin.ApiTester.VideoPreview', {defaultValue: "Video response preview"}),
+    PdfPreview: () => bus.i18n.t('Plugin.ApiTester.PdfPreview', {defaultValue: "PDF response preview"}),
     InvalidJsonPreview: () => bus.i18n.t('Plugin.ApiTester.InvalidJsonPreview', {defaultValue: "This response is not valid JSON and cannot be shown as a tree."}),
     ExpandAll: () => bus.i18n.t('Plugin.ApiTester.ExpandAll', {defaultValue: "Expand all"}),
     CollapseAll: () => bus.i18n.t('Plugin.ApiTester.CollapseAll', {defaultValue: "Collapse all"}),
@@ -595,12 +603,12 @@ export const text = {
     PreviewLimit: (values: Record<string, string | number> = {}) =>
         bus.i18n.t('Plugin.ApiTester.PreviewLimit', {
             defaultValue:
-                'Preview limited to 1 MiB; complete body remains available while cached.',
+                'Text preview limited to 1 MiB and binary encoding preview to 256 KiB; complete body remains available while cached.',
             ...values,
         }),
     BinaryResponse: (values: Record<string, string | number> = {}) =>
         bus.i18n.t('Plugin.ApiTester.BinaryResponse', {
-            defaultValue: 'Binary response. Save the body to inspect it.',
+            defaultValue: 'Binary response. Select Hex or Base64 to inspect its encoded preview.',
             ...values,
         }),
     ContentTypeWarning: (values: Record<string, string | number> = {}) =>

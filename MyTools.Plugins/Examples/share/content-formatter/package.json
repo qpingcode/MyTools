@@ -1,0 +1,36 @@
+{
+  "name": "@qping/content-formatter",
+  "version": "0.1.0",
+  "description": "Content language detection and source formatting shared by MyTools plugins.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "clean": "rimraf dist test/dist",
+    "build": "npm run clean && tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "prepack": "npm run build",
+    "test": "npm run build && node --test test/formatter.test.mjs"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@prettier/plugin-xml": "^3.4.2",
+    "prettier": "^3.6.2"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "rimraf": "^6.0.1",
+    "typescript": "^7.0.2"
+  },
+  "license": "MIT"
+}

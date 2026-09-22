@@ -1,4 +1,4 @@
-import {HttpHeader, type RequestResult} from '../../../shared/model.js';
+import {ContentType, HttpHeader, type RequestResult} from '../../../shared/model.js';
 import {ResponseBodyFormat} from '../workspace/workspaceTypes.js';
 
 const JsonMediaTypePattern = /(?:^|\/)json$|\+json$/i;
@@ -18,7 +18,15 @@ const HtmlDocumentType = '<!doctype html>';
 const MarkupIndent = '  ';
 const PreviewContentSecurityPolicy = "default-src 'none'; img-src data: blob:; style-src 'unsafe-inline'; font-src data:; form-action 'none'; object-src 'none'; base-uri 'none'";
 
-function mediaType(result: RequestResult): string {
+export enum ResponseMediaPreview {
+    None = 'none',
+    Image = 'image',
+    Audio = 'audio',
+    Video = 'video',
+    Pdf = 'pdf',
+}
+
+export function responseMediaType(result: RequestResult): string {
     const value = result.headers.find(header => header.name.toLowerCase() === HttpHeader.ContentType)?.value ?? '';
     return value.split(';', 1)[0].trim().toLowerCase();
 }
@@ -39,12 +47,13 @@ function isXml(source: string): boolean {
 }
 
 export function inferResponseBodyFormat(result: RequestResult): ResponseBodyFormat {
-    const type = mediaType(result);
+    const type = responseMediaType(result);
     if (JsonMediaTypePattern.test(type)) return ResponseBodyFormat.Json;
     if (HtmlMediaTypes.has(type)) return ResponseBodyFormat.Html;
     if (XmlMediaTypePattern.test(type)) return ResponseBodyFormat.Xml;
     if (JavaScriptMediaTypes.has(type)) return ResponseBodyFormat.JavaScript;
-    if (result.binary || result.previewAvailable === false || result.truncated) return ResponseBodyFormat.Raw;
+    if (result.binary) return ResponseBodyFormat.Hex;
+    if (result.previewAvailable === false || result.truncated) return ResponseBodyFormat.Raw;
     if (isJson(result.preview)) return ResponseBodyFormat.Json;
     if (HtmlDocumentPattern.test(result.preview)) return ResponseBodyFormat.Html;
     if (JavaScriptSourcePattern.test(result.preview)) return ResponseBodyFormat.JavaScript;
@@ -53,6 +62,16 @@ export function inferResponseBodyFormat(result: RequestResult): ResponseBodyForm
         return root.localName.toLowerCase() === 'html' ? ResponseBodyFormat.Html : ResponseBodyFormat.Xml;
     }
     return ResponseBodyFormat.Raw;
+}
+
+export function inferResponseMediaPreview(result: RequestResult): ResponseMediaPreview {
+    if (!result.binary) return ResponseMediaPreview.None;
+    const type = responseMediaType(result);
+    if (type.startsWith('image/')) return ResponseMediaPreview.Image;
+    if (type.startsWith('audio/')) return ResponseMediaPreview.Audio;
+    if (type.startsWith('video/')) return ResponseMediaPreview.Video;
+    if (type === ContentType.Pdf) return ResponseMediaPreview.Pdf;
+    return ResponseMediaPreview.None;
 }
 
 export function parseJson(source: string): unknown | undefined {

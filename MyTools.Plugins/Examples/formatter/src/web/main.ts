@@ -17,7 +17,7 @@ import { searchKeymap } from "@codemirror/search";
 import { Compartment, EditorSelection, EditorState } from "@codemirror/state";
 import { EditorView, keymap } from "@codemirror/view";
 import { tags } from "@lezer/highlight";
-import { isLanguageId, type LanguageId, type LanguageSelection } from "../shared/language";
+import { isLanguageId, type LanguageId, type LanguageSelection } from "@qping/content-formatter";
 
 type WorkerResponse =
   | { id: number; ok: true; detected: LanguageId | null }

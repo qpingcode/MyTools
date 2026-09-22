@@ -62,6 +62,12 @@ import {
     httpStatusCategory,
     HttpStatusCategory,
 } from '../src/web/features/response/httpStatusCategory.js';
+import {decodeBase64, encodeBase64, formatBase64, formatHex} from '../src/web/features/response/binaryBodyFormat.js';
+import {
+    inferResponseBodyFormat,
+    inferResponseMediaPreview,
+    ResponseMediaPreview,
+} from '../src/web/features/response/responseBodyFormat.js';
 
 const SuccessStatus = 200;
 const PollIntervalMs = 10;
@@ -79,6 +85,7 @@ test('workspace view state accepts known selections and discards invalid persist
         responsePanels: {first: ResponsePanelId.ResponseHeaders, second: 'Missing'},
         responseBodyFormats: {first: ResponseBodyFormat.Json, second: 'Missing'},
         responseBodyPreviews: {first: true, second: 'Missing'},
+        responseBodyFormatting: {first: true, second: 'Missing'},
     }));
 
     assert.deepEqual(restored.openRequestIds, ['first', 'second']);
@@ -89,6 +96,7 @@ test('workspace view state accepts known selections and discards invalid persist
     assert.deepEqual(restored.responsePanels, {first: ResponsePanelId.ResponseHeaders});
     assert.deepEqual(restored.responseBodyFormats, {first: ResponseBodyFormat.Json});
     assert.deepEqual(restored.responseBodyPreviews, {first: true});
+    assert.deepEqual(restored.responseBodyFormatting, {first: true});
 
     const migrated = parseWorkspaceViewState({version: WorkspaceViewStateVersion, responseBodyViews: {
         first: 'formatted',
@@ -111,6 +119,26 @@ test('HTTP response statuses use semantic categories including custom codes', ()
     assert.equal(httpStatusCategory(99), HttpStatusCategory.Unknown);
     assert.equal(httpStatusCategory(600), HttpStatusCategory.Unknown);
     assert.equal(httpStatusCategory(undefined), HttpStatusCategory.Unknown);
+});
+
+test('binary response formats expose hex and base64 without losing bytes', () => {
+    const bytes = Uint8Array.from([0, 1, 2, 65, 126, 127, 255]);
+    const base64 = encodeBase64(bytes);
+    assert.deepEqual(decodeBase64(base64), bytes);
+    assert.equal(formatBase64(base64), base64);
+    assert.match(formatHex(base64), /^00000000  00 01 02 41 7e 7f ff\s+\|\.\.\.A~\.\.\|$/);
+});
+
+test('binary response inference uses hex and previews known media content types', () => {
+    const result = {
+        ...({} as import('../src/shared/model.js').RequestResult),
+        binary: true,
+        headers: [{name: HttpHeader.ContentType, value: 'image/png', enabled: true}],
+    };
+    assert.equal(inferResponseBodyFormat(result), ResponseBodyFormat.Hex);
+    assert.equal(inferResponseMediaPreview(result), ResponseMediaPreview.Image);
+    result.headers[0].value = 'application/octet-stream';
+    assert.equal(inferResponseMediaPreview(result), ResponseMediaPreview.None);
 });
 
 async function fixture() {

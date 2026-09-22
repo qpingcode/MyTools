@@ -6,8 +6,9 @@ import * as htmlPlugin from "prettier/plugins/html";
 import * as postcssPlugin from "prettier/plugins/postcss";
 import * as yamlPlugin from "prettier/plugins/yaml";
 import xmlPlugin from "@prettier/plugin-xml";
-import type { LanguageId } from "./language";
+import {detectLanguage, type LanguageId} from "./language.js";
 
+const FormatterIndentWidth = 2;
 const plugins = [
   babelPlugin,
   estreePlugin,
@@ -32,9 +33,19 @@ export async function formatSource(source: string, language: LanguageId): Promis
   return prettier.format(source, {
     parser: parsers[language],
     plugins,
-    tabWidth: 2,
+    tabWidth: FormatterIndentWidth,
     useTabs: false,
     endOfLine: "lf",
-    ...(language === "xml" ? { xmlWhitespaceSensitivity: "preserve" } : {}),
+    ...(language === "xml" ? {xmlWhitespaceSensitivity: "preserve"} : {}),
   });
+}
+
+export async function tryFormatSource(source: string, language?: LanguageId): Promise<string> {
+  const detected = language ?? detectLanguage(source);
+  if (!detected) return source;
+  try {
+    return await formatSource(source, detected);
+  } catch {
+    return source;
+  }
 }

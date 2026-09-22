@@ -13,7 +13,8 @@ import {
 
 const FixtureStatus = 200;
 const FixtureOutputPrefix = 'ui-fixture';
-const WebAssets = new Set(['/index.html', '/main.js', '/style.css']);
+const PngPixelBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+const WebAssets = new Set(['/index.html', '/main.js', '/response-formatter.worker.js', '/style.css']);
 const ContentTypes = {
   '.html': 'text/html',
   '.js': 'text/javascript',
@@ -66,6 +67,11 @@ async function createRuntime(workerIndex) {
     if (request.url === '/javascript-response') {
       response.writeHead(FixtureStatus, {'Content-Type': 'text/javascript'});
       response.end('// fixture\nconst answer = 42;\nconst ready = true;\nconsole.log(`answer: ${answer}`);');
+      return;
+    }
+    if (request.url === '/png-response') {
+      response.writeHead(FixtureStatus, {'Content-Type': 'image/png'});
+      response.end(Buffer.from(PngPixelBase64, 'base64'));
       return;
     }
     if (request.url === '/changing-response') {

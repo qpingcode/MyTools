@@ -1,5 +1,4 @@
-import { detectLanguage, isLanguageId, type LanguageId } from "../shared/language";
-import { formatSource } from "../shared/format";
+import { detectLanguage, formatSource, isLanguageId, type LanguageId } from "@qping/content-formatter";
 
 type WorkerRequest =
   | { id: number; operation: "detect"; source: string }

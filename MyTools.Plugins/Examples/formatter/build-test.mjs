@@ -5,7 +5,7 @@ import path from "node:path";
 fs.rmSync(path.resolve("test/dist"), { recursive: true, force: true });
 
 await build({
-  entryPoints: ["src/shared/index.ts"],
+  entryPoints: ["@qping/content-formatter"],
   bundle: true,
   platform: "node",
   format: "esm",

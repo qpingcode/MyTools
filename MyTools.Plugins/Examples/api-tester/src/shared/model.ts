@@ -39,6 +39,7 @@ export const ContentType = {
     Text: 'text/plain; charset=utf-8',
     Form: 'application/x-www-form-urlencoded',
     Binary: 'application/octet-stream',
+    Pdf: 'application/pdf',
     Multipart: 'multipart/form-data'
 } as const;
 export const Routes = {
@@ -65,6 +66,7 @@ export const Limits = {
     timeoutMs: 30_000,
     redirects: 10,
     previewBytes: 1024 * 1024,
+    binaryPreviewBytes: 256 * 1024,
     bodyBytes: 20 * 1024 * 1024,
     cachedBodyBytes: 40 * 1024 * 1024,
     cachedPreviewBytes: 8 * 1024 * 1024,

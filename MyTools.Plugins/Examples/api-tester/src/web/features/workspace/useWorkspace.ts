@@ -64,6 +64,7 @@ export function useWorkspace() {
     const responsePanels = ref<Record<string, ResponsePanelId>>({});
     const responseBodyFormats = ref<Record<string, ResponseBodyFormat>>({});
     const responseBodyPreviews = ref<Record<string, boolean>>({});
+    const responseBodyFormatting = ref<Record<string, boolean>>({});
     const runnerOpen = ref(false);
     const runnerActive = ref(false);
     const revealRequestId = ref('');
@@ -192,6 +193,7 @@ export function useWorkspace() {
         responsePanels.value = saved.responsePanels;
         responseBodyFormats.value = saved.responseBodyFormats;
         responseBodyPreviews.value = saved.responseBodyPreviews;
+        responseBodyFormatting.value = saved.responseBodyFormatting;
     }
 
     let pendingViewStateSave = Promise.resolve();
@@ -206,7 +208,7 @@ export function useWorkspace() {
     }
 
     watch(
-        [documentTabIds, active, expandedCollectionIds, requestPanels, responsePanels, responseBodyFormats, responseBodyPreviews],
+        [documentTabIds, active, expandedCollectionIds, requestPanels, responsePanels, responseBodyFormats, responseBodyPreviews, responseBodyFormatting],
         () => {
             if (!workspaceReady.value) return;
             const requestIds = new Set(workspace.value.collections.flatMap(owner =>
@@ -230,6 +232,7 @@ export function useWorkspace() {
                 responsePanels: filterRecord(responsePanels.value),
                 responseBodyFormats: filterRecord(responseBodyFormats.value),
                 responseBodyPreviews: filterRecord(responseBodyPreviews.value),
+                responseBodyFormatting: filterRecord(responseBodyFormatting.value),
             }).catch(error => console.error('Could not persist API Tester view state.', error));
         },
         {deep: true, flush: 'sync'},
@@ -741,6 +744,7 @@ export function useWorkspace() {
         responsePanels,
         responseBodyFormats,
         responseBodyPreviews,
+        responseBodyFormatting,
         runnerOpen,
         runnerActive,
         revealRequestId,

@@ -212,7 +212,8 @@ function toggleMaximizedFromToolbar(event: MouseEvent) {
     <p v-if="result.warnings.length" class="muted response-warning">
       {{ t.ContentTypeWarning() }}
     </p>
-    <ResponseBodyView v-if="panel === ResponsePanelId.Body" :result="result" :request-id="viewStateRequestId"/>
+    <ResponseBodyView v-if="panel === ResponsePanelId.Body" :result="result" :request-id="viewStateRequestId"
+                      :run-id="runId" :result-index="index"/>
     <div v-if="panel === ResponsePanelId.ScriptConsole" class="response-code script-console">
       <p v-if="!result.scriptLogs?.length" class="muted">{{ t.NoScriptLogs() }}</p>
       <div v-for="(log, index) in result.scriptLogs" :key="index"

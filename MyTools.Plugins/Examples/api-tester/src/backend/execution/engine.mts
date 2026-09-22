@@ -39,6 +39,7 @@ const SupportedMethods = new Set<string>(Object.values(HttpMethod));
 const StatusSeeOther = 303;
 const LegacyPostRedirects = new Set([301, 302]);
 const ResponseCharsetPattern = /charset\s*=\s*["']?([^\s;"']+)/i;
+const BinaryResponseMediaTypePattern = /^(?:image|audio|video)\/|^application\/pdf(?:;|$)/i;
 const MultipartBoundaryPrefix = 'mytools-api-';
 const MaximumTimerMs = 2_147_483_647;
 
@@ -408,7 +409,7 @@ export async function executeRequest(request: ApiRequest, settings: Settings, va
         const bytes = Buffer.concat(chunks);
         const contentType = response.headers[Header.ContentType] || '';
         result.binary = !/^(text\/|application\/(json|.*\+json|xml|.*\+xml|javascript|x-www-form-urlencoded))/i.test(contentType) && bytes.includes(0);
-        if (/^(image|audio|video)\//i.test(contentType) || contentType.startsWith(Mime.Binary)) result.binary = true;
+        if (BinaryResponseMediaTypePattern.test(contentType) || contentType.startsWith(Mime.Binary)) result.binary = true;
         let text = '';
         if (!result.binary) {
             try {
@@ -421,9 +422,11 @@ export async function executeRequest(request: ApiRequest, settings: Settings, va
         }
         result.execution = ExecutionState.Complete;
         result.bodyAvailable = true;
-        result.preview = Buffer.from(text).subarray(0, Limits.previewBytes).toString('utf8');
+        result.preview = result.binary
+            ? bytes.subarray(0, Limits.binaryPreviewBytes).toString('base64')
+            : Buffer.from(text).subarray(0, Limits.previewBytes).toString('utf8');
         result.previewAvailable = true;
-        result.truncated = bytes.length > Limits.previewBytes;
+        result.truncated = bytes.length > (result.binary ? Limits.binaryPreviewBytes : Limits.previewBytes);
         if (request.scripts?.enabled && request.scripts.after.trim()) {
             try {
                 const output = await runScript(request.scripts.after, ScriptPhase.After, request, {...variables, ...writes}, signal, result, text);

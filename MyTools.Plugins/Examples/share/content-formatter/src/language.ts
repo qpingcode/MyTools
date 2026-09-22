@@ -3,6 +3,8 @@ export const languageIds = ["javascript", "typescript", "html", "css", "json", "
 export type LanguageId = typeof languageIds[number];
 export type LanguageSelection = "auto" | LanguageId;
 
+const YamlLineRecognitionRatio = 0.6;
+
 export function isLanguageId(value: unknown): value is LanguageId {
   return typeof value === "string" && (languageIds as readonly string[]).includes(value);
 }
@@ -46,7 +48,7 @@ function looksLikeYaml(source: string): boolean {
   const meaningful = source.split(/\r?\n/).filter(line => line.trim() && !/^\s*#/.test(line));
   if (meaningful.length < 2) return false;
   const yamlLines = meaningful.filter(line => /^\s*(?:-\s+)?[\w."'][^:{}\[\]]*:\s*(?:.*)?$/.test(line) || /^\s*-\s+\S/.test(line));
-  return yamlLines.length >= Math.ceil(meaningful.length * 0.6) && !/[;{}]/.test(source);
+  return yamlLines.length >= Math.ceil(meaningful.length * YamlLineRecognitionRatio) && !/[;{}]/.test(source);
 }
 
 function looksLikeJavaScript(source: string): boolean {

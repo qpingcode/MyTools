@@ -75,6 +75,23 @@ test('URL input defaults to HTTPS when the HTTP protocol is omitted', () => {
     assert.equal(withDefaultHttpProtocol(''), '');
 });
 
+test('binary responses retain a base64 preview for hex and base64 views', async () => {
+    const bytes = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0, 0xff]);
+    const server = await fixture((_request, response) => {
+        response.setHeader('Content-Type', 'image/png');
+        response.end(bytes);
+    });
+    try {
+        const output = await send(requestAt(server.url));
+        assert.equal(output.result.binary, true);
+        assert.equal(output.result.preview, bytes.toString('base64'));
+        assert.equal(output.result.previewAvailable, true);
+        assert.equal(output.result.truncated, false);
+    } finally {
+        await server.close();
+    }
+});
+
 async function completed(runner: Runner, id: string): Promise<RunView> {
     const deadline = Date.now() + TestDeadlineMs;
     while (Date.now() < deadline) {

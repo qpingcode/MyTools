@@ -37,6 +37,8 @@ export enum ResponseBodyFormat {
     Xml = 'xml',
     Html = 'html',
     JavaScript = 'javascript',
+    Hex = 'hex',
+    Base64 = 'base64',
     Raw = 'raw',
 }
 

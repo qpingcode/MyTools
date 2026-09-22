@@ -21,6 +21,7 @@ export interface WorkspaceViewState {
     responsePanels: Record<string, ResponsePanelId>;
     responseBodyFormats: Record<string, ResponseBodyFormat>;
     responseBodyPreviews: Record<string, boolean>;
+    responseBodyFormatting: Record<string, boolean>;
 }
 
 export function emptyWorkspaceViewState(): WorkspaceViewState {
@@ -34,6 +35,7 @@ export function emptyWorkspaceViewState(): WorkspaceViewState {
         responsePanels: {},
         responseBodyFormats: {},
         responseBodyPreviews: {},
+        responseBodyFormatting: {},
     };
 }
 
@@ -103,6 +105,7 @@ export function parseWorkspaceViewState(source: unknown): WorkspaceViewState {
             responsePanels: enumRecord(value.responsePanels, Object.values(ResponsePanelId)),
             responseBodyFormats: responseBodyFormats(value),
             responseBodyPreviews: booleanRecord(value.responseBodyPreviews),
+            responseBodyFormatting: booleanRecord(value.responseBodyFormatting),
         };
     } catch {
         return emptyWorkspaceViewState();

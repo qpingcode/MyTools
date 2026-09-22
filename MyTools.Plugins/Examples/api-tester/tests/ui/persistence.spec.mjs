@@ -21,6 +21,7 @@ test('restores open requests, selected views, expanded collections, and environm
   await page.locator('.request-title').getByText('First request', {exact: true}).click();
   await page.getByRole('tab', {name: 'Headers', exact: true}).click();
   await page.getByRole('button', {name: 'Send', exact: true}).click();
+  await page.locator('.response').getByRole('button', {name: 'Format', exact: true}).click();
   await page.locator('.response').getByRole('combobox', {name: 'Response format', exact: true}).selectOption('json');
   await page.locator('.response').getByRole('button', {name: 'Response headers', exact: true}).click();
   await page.getByRole('button', {name: 'History', exact: true}).click();
@@ -49,6 +50,9 @@ test('restores open requests, selected views, expanded collections, and environm
   assert.equal(await response.getByRole('button', {name: 'Response headers', exact: true}).getAttribute('aria-pressed'), 'true');
   await response.getByRole('button', {name: 'Body', exact: true}).click();
   assert.equal(await response.getByRole('combobox', {name: 'Response format', exact: true}).inputValue(), 'json');
+  assert.equal(await response.getByRole('button', {name: 'Format', exact: true}).getAttribute('aria-pressed'), 'true');
+  await page.waitForFunction(() => document.querySelector('.response-code')?.textContent?.includes('\n'));
+  assert.match(await response.locator('.response-code').innerText(), /\{\s+"auth": ""\s+\}/);
 
   const historyTab = page.locator('.document-tab').filter({has: page.locator('button[title="First request"]')}).nth(1);
   await historyTab.getByRole('button', {name: 'Close', exact: true}).click();
