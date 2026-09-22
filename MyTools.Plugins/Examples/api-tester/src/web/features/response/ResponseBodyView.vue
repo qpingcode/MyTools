@@ -24,6 +24,7 @@ import {decodeBase64, encodeBase64, formatBase64, formatHex} from './binaryBodyF
 const MaximumJsonDepth = 64;
 const HtmlMarkupPattern = /<\/?[A-Za-z][^>]*>|<!doctype\s+html\b/i;
 const ResponseFormatterWorkerPath = 'response-formatter.worker.js';
+const FormatGroupSeparator = '────────────';
 const props = defineProps<{ result: RequestResult; requestId?: string; runId?: string; resultIndex?: number }>();
 const t = useText();
 const {responseBodyFormats, responseBodyPreviews, responseBodyFormatting} = useWorkspaceContext();
@@ -257,7 +258,10 @@ function navigate(direction: number) {
 <template>
   <div class="body-toolbar">
     <select v-model="format" class="response-format-select" :aria-label="t.ResponseFormat()">
-      <option v-for="item in formats" :key="item" :value="item">{{ formatLabel(item) }}</option>
+      <template v-for="item in formats" :key="item">
+        <option v-if="item === ResponseBodyFormat.Hex" disabled aria-hidden="true">{{ FormatGroupSeparator }}</option>
+        <option :value="item">{{ formatLabel(item) }}</option>
+      </template>
     </select>
     <button :class="{ selected: previewActive }" :disabled="!previewSupported" :aria-pressed="previewActive"
             @click="previewRequested = !previewRequested">{{ t.Preview() }}</button>

@@ -29,6 +29,9 @@ test('infers response formats and previews structured text and binary media safe
   await page.locator('.request-title').getByText('JSON response', {exact: true}).click();
   await page.getByRole('button', {name: 'Send', exact: true}).click();
   await response.locator('.status-badge').filter({hasText: '200'}).waitFor();
+  const formatSeparator = format.locator('option:disabled');
+  assert.equal(await formatSeparator.count(), 1);
+  assert.equal((await formatSeparator.textContent()).trim(), '────────────');
   assert.equal((await format.locator('option:checked').textContent()).trim(), 'Auto (JSON)');
   assert.ok(await response.locator('.syntax-property').count() > 0);
   assert.ok(await response.locator('.syntax-string').count() > 0);
