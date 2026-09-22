@@ -113,6 +113,11 @@ function navigate(event: KeyboardEvent, panel: Panel) {
       ?.querySelectorAll<HTMLButtonElement>('[role=tab]')
       [next].focus();
 }
+
+async function sendFromUrl(event: KeyboardEvent) {
+  if (!tab.value || !(await changeUrl(event, tab.value))) return;
+  await send(tab.value);
+}
 </script>
 <template>
   <div v-if="tab" class="request-editor">
@@ -151,7 +156,7 @@ function navigate(event: KeyboardEvent, panel: Panel) {
           :placeholder="t.UrlPlaceholder()"
           data-primary-input="true"
           @change="changeUrl($event, tab)"
-          @keydown.enter.prevent="send(tab)"
+          @keydown.enter.prevent="sendFromUrl($event)"
       />
       <button class="primary send-button" @click="send(tab)">
         <Icon :name="tab.running ? 'stop' : 'play'"/>

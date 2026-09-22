@@ -562,22 +562,24 @@ export function useWorkspace() {
             await mutate(() => (workspace.value.defaults = copy));
     }
 
-    async function changeUrl(event: Event, item: Tab) {
+    async function changeUrl(event: Event, item: Tab): Promise<boolean> {
         const value = (event.target as HTMLInputElement).value;
         if (
             item.request.params.some((pair) => !pair.enabled) &&
             !(await confirm(() => t.value.ReplaceParams()))
         ) {
             (event.target as HTMLInputElement).value = item.request.url;
-            return;
+            return false;
         }
         try {
             const parsed = parseQuery(value.trim());
             item.request.url = value;
             item.request.params = parsed;
+            return true;
         } catch {
             notification.value = {kind: ErrorKind.Configuration, field: 'url'};
             (event.target as HTMLInputElement).value = item.request.url;
+            return false;
         }
     }
 
